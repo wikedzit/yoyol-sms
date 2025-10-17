@@ -62,12 +62,13 @@ export default function CreateClassModal({ open, setOpen, fetcher }: any) {
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              className="py-2 px-16 rounded-[8px] cursor-pointer duration-300 hover:bg-gray-100 focus:ring-2 focus:ring-gray-300"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer duration-300 hover:bg-[var(--color-purple)] focus:ring-2 focus:ring-[var(--color-purple)] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {fetcher.state === 'submitting'
                 ? 'Creating...'

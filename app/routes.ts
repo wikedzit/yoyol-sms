@@ -1,6 +1,28 @@
-import { type RouteConfig, index, route } from '@react-router/dev/routes';
+import {
+  type RouteConfig,
+  index,
+  layout,
+  prefix,
+  route,
+} from '@react-router/dev/routes';
 
-export default [
-  index('routes/home.tsx'),
-  route('classes', './routes/classes.tsx'),
-] satisfies RouteConfig;
+const routes: RouteConfig = [
+  ...prefix('auth', [
+    layout('./layout/AuthLayout.tsx', [
+      route('login', './routes/auth/SignIn.tsx'),
+    ]),
+  ]),
+
+  layout('./layout/DashboardLyout.tsx', [
+    index('routes/home.tsx'),
+    route('classrooms', './routes/classrooms.tsx'),
+    route('classrooms/:id', './routes/classroomItem.$id.tsx'),
+    route('students', './routes/students.tsx'),
+    route('courses', './routes/courses.tsx'),
+    route('grades', './routes/grades.tsx'),
+    route('settings', './routes/settings.tsx'),
+    route('attendance', './routes/attendance.tsx'),
+  ]),
+];
+
+export default routes;
