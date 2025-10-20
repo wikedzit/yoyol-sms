@@ -1,3 +1,4 @@
+// app/components/DeleteStudentButton.tsx
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,10 +10,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
-import { X } from 'lucide-react';
-import { useFetcher } from 'react-router';
+import { Trash2 } from 'lucide-react';
+import { useFetcher } from 'react-router-dom';
 
-export const DeleteClassButton = ({
+export const DeleteStudentButton = ({
   id,
   name,
   fetcher: externalFetcher,
@@ -21,24 +22,26 @@ export const DeleteClassButton = ({
   name: string;
   fetcher?: any;
 }) => {
-  const fetcher = externalFetcher || useFetcher(); // use parent's fetcher if passed in
+  const fetcher = externalFetcher || useFetcher();
 
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <button
           type="button"
-          className="absolute top-3 right-3 text-white bg-red-500 rounded-full p-1 hover:scale-110 transition"
+          className="text-red-500 hover:text-red-700 transition"
+          title="Delete student"
         >
-          <X className="w-4 h-4" />
+          <Trash2 className="w-5 h-5" />
         </button>
       </AlertDialogTrigger>
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {name}</AlertDialogTitle>
+          <AlertDialogTitle>Delete Student</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete <strong>{name}</strong>? This action
+            Are you sure you want to delete{' '}
+            <strong className="font-semibold">{name}</strong>? This action
             cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { useLoaderData, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
   Table,
@@ -10,78 +12,183 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Eye, Pencil } from 'lucide-react';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '~/components/ui/select';
 
-const students = [
-  {
-    id: 1,
-    name: 'Emma Wilson',
-    email: 'emma.w@email.com',
-    course: 'Computer Science',
-    grade: 'A',
-    status: 'Active',
-  },
-  {
-    id: 2,
-    name: 'James Smith',
-    email: 'james.s@email.com',
-    course: 'Mathematics',
-    grade: 'B+',
-    status: 'Active',
-  },
-  {
-    id: 3,
-    name: 'Sophia Brown',
-    email: 'sophia.b@email.com',
-    course: 'Physics',
-    grade: 'A-',
-    status: 'Pending',
-  },
-  {
-    id: 4,
-    name: 'Oliver Davis',
-    email: 'oliver.d@email.com',
-    course: 'Chemistry',
-    grade: 'B',
-    status: 'Active',
-  },
-  {
-    id: 5,
-    name: 'Ava Johnson',
-    email: 'ava.j@email.com',
-    course: 'Biology',
-    grade: 'A',
-    status: 'Active',
-  },
-  {
-    id: 6,
-    name: 'William Martinez',
-    email: 'william.m@email.com',
-    course: 'Computer Science',
-    grade: 'B+',
-    status: 'Active',
-  },
-  {
-    id: 7,
-    name: 'Isabella Garcia',
-    email: 'isabella.g@email.com',
-    course: 'Mathematics',
-    grade: 'A-',
-    status: 'Active',
-  },
-  {
-    id: 8,
-    name: 'Lucas Anderson',
-    email: 'lucas.a@email.com',
-    course: 'Physics',
-    grade: 'B',
-    status: 'Inactive',
-  },
-];
+import AddStudentModal from '~/components/modal/AddStudentModal';
+import EditStudentModal from '~/components/modal/EditStudentModal';
+import { DeleteStudentButton } from '~/components/DeleteStudentButton';
+import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
+import type StudentService from 'workers/services/student';
 
+// 🧠 Loader – fetch students
+export async function loader({ context }: LoaderFunctionArgs) {
+  const services = context.services as { student: StudentService };
+
+  const students = await services.student?.getAll({
+    limit: 100,
+    offset: 0,
+    sortBy: 'createdAt',
+    sortOrder: 'asc',
+  });
+
+  return { students };
+}
+
+// ⚙️ Action – handle create, update, delete
+export async function action({ request, context }: ActionFunctionArgs) {
+  const services = context.services as { student: StudentService };
+  const form = await request.formData();
+  const method = (form.get('_method') as string) || request.method;
+
+  try {
+    // --- CREATE STUDENT ---
+    if (method === 'POST') {
+      // Convert FormDataEntryValue | null to the expected string/union types.
+      const data = {
+        firstName: String(form.get('firstName') ?? ''),
+        lastName: String(form.get('lastName') ?? ''),
+        gender: String(form.get('gender') ?? 'Select gender') as
+          | 'Male'
+          | 'Female',
+        dob: String(form.get('dob') ?? ''),
+        email: form.get('email') ? String(form.get('email')) : undefined,
+        phone: form.get('phone') ? String(form.get('phone')) : undefined,
+        address: form.get('address') ? String(form.get('address')) : undefined,
+        guardianName: form.get('guardianName')
+          ? String(form.get('guardianName'))
+          : undefined,
+        guardianPhone: form.get('guardianPhone')
+          ? String(form.get('guardianPhone'))
+          : undefined,
+        photoUrl: form.get('photoUrl')
+          ? String(form.get('photoUrl'))
+          : undefined,
+        course: form.get('course') ? String(form.get('course')) : undefined,
+        grade: form.get('grade') ? String(form.get('grade')) : undefined,
+        enrollmentDate: form.get('enrollmentDate')
+          ? String(form.get('enrollmentDate'))
+          : undefined,
+        classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        status: String(form.get('status') ?? 'Active') as
+          | 'Active'
+          | 'Pending'
+          | 'Inactive',
+      };
+
+      const created = await services.student.create(data);
+      return new Response(JSON.stringify({ success: true, student: created }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // --- UPDATE STUDENT ---
+    if (method === 'PUT') {
+      const id = form.get('id');
+      if (!id) {
+        return new Response(
+          JSON.stringify({ error: 'Student ID is required' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      const data = {
+        firstName: String(form.get('firstName') ?? ''),
+        lastName: String(form.get('lastName') ?? ''),
+        gender: String(form.get('gender') ?? 'Select gender') as
+          | 'Male'
+          | 'Female',
+        dob: String(form.get('dob') ?? ''),
+        email: form.get('email') ? String(form.get('email')) : undefined,
+        phone: form.get('phone') ? String(form.get('phone')) : undefined,
+        address: form.get('address') ? String(form.get('address')) : undefined,
+        guardianName: form.get('guardianName')
+          ? String(form.get('guardianName'))
+          : undefined,
+        guardianPhone: form.get('guardianPhone')
+          ? String(form.get('guardianPhone'))
+          : undefined,
+        photoUrl: form.get('photoUrl')
+          ? String(form.get('photoUrl'))
+          : undefined,
+        course: form.get('course') ? String(form.get('course')) : undefined,
+        grade: form.get('grade') ? String(form.get('grade')) : undefined,
+        enrollmentDate: form.get('enrollmentDate')
+          ? String(form.get('enrollmentDate'))
+          : undefined,
+
+        classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        status: String(form.get('status') ?? 'Active') as
+          | 'Active'
+          | 'Pending'
+          | 'Inactive',
+      };
+
+      const updated = await services.student.update(String(id), data);
+      return { success: true, student: updated };
+    }
+
+    // --- DELETE STUDENT ---
+    if (method === 'DELETE') {
+      const id = form.get('id');
+      if (!id) {
+        return new Response(
+          JSON.stringify({ error: 'Student ID is required' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      await services.student.delete(String(id));
+      return { success: true };
+    }
+
+    return new Response(JSON.stringify({ error: 'Unknown method' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err: any) {
+    console.error('students.action error:', err);
+    return new Response(
+      JSON.stringify({ error: err?.message || 'Server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
 export default function Students() {
+  const { students: initialStudents } = useLoaderData() as { students: any[] };
+  const fetcher = useFetcher();
+
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
+  const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
+  const filteredStudents = initialStudents?.filter((student) => {
+    const matchesSearch =
+      student.firstName.toLowerCase().includes(search.toLowerCase()) ||
+      student.lastName.toLowerCase().includes(search.toLowerCase()) ||
+      student.email.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter =
+      filter === 'all' || student.course === filter || student.grade === filter;
+    return matchesSearch && matchesFilter;
+  });
+
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Students</h1>
@@ -89,53 +196,78 @@ export default function Students() {
             Manage and view all student records
           </p>
         </div>
-        <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer duration-300 hover:bg-[var(--color-purple)] focus:ring-2 focus:ring-[var(--color-purple)] disabled:opacity-50 disabled:cursor-not-allowed">
-          <Plus className="h-4 w-4" />
+        <Button
+          className="bg-primary text-white hover:bg-primary/80 cursor-pointer"
+          onClick={() => setAddStudentModalOpen(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
           Add Student
         </Button>
       </div>
 
+      {/* Search & Filter */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search students..."
                 className="pl-10 bg-muted/50"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by course/grade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="A">Grade A</SelectItem>
+                <SelectItem value="B+">Grade B+</SelectItem>
+                <SelectItem value="B">Grade B</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
+
+        {/* Table */}
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead>SN</TableHead>
+                <TableHead>First name</TableHead>
+                <TableHead>Last name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Course</TableHead>
                 <TableHead>Grade</TableHead>
+                <TableHead>Enrolled</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {students.map((student) => (
+              {filteredStudents?.map((student) => (
                 <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.name}</TableCell>
+                  <TableCell className="font-medium">{student.id}</TableCell>
+                  <TableCell>{student.firstName}</TableCell>
+                  <TableCell>{student.lastName}</TableCell>
                   <TableCell className="text-muted-foreground">
                     {student.email}
                   </TableCell>
                   <TableCell>{student.course}</TableCell>
                   <TableCell>
-                    <Badge variant="outline">{student.grade}</Badge>
+                    <Badge variant="outline" className="border-none">
+                      {student.grade}
+                    </Badge>
                   </TableCell>
-                  <TableCell>
+                  <TableCell>{student.enrollmentDate}</TableCell>
+                  <TableCell className="border-none">
                     <Badge
                       variant={
                         student.status === 'Active'
@@ -144,14 +276,28 @@ export default function Students() {
                           ? 'secondary'
                           : 'outline'
                       }
+                      className="border-none"
                     >
                       {student.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      View
+                  <TableCell className="text-right flex justify-end gap-2">
+                    <StudentProfilesModal student={student} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setEditStudentModalOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
                     </Button>
+                    <DeleteStudentButton
+                      id={student.id}
+                      name={student.name}
+                      fetcher={fetcher}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -159,6 +305,25 @@ export default function Students() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Add Student Modal */}
+      {addStudentModalOpen && (
+        <AddStudentModal
+          open={addStudentModalOpen}
+          setOpen={setAddStudentModalOpen}
+          fetcher={fetcher}
+        />
+      )}
+
+      {/* Edit Student Modal */}
+      {editStudentModalOpen && selectedStudent && (
+        <EditStudentModal
+          open={editStudentModalOpen}
+          setOpen={setEditStudentModalOpen}
+          student={selectedStudent}
+          fetcher={fetcher}
+        />
+      )}
     </div>
   );
 }

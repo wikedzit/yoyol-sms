@@ -19,7 +19,6 @@ import { Button } from '~/components/ui/button';
 import { Link } from 'react-router-dom';
 import CreateClassModal from '~/components/modal/CreateClassModal';
 import EditClassModal from '~/components/modal/EditClassModal';
-import { DeleteClassModal } from '~/components/modal/DeleteClassModal';
 
 // 🧠 Loader – fetch classes
 export async function loader({ context }: LoaderFunctionArgs) {
