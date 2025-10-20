@@ -17,9 +17,17 @@ export default function EditClassModal({
   editingClass,
 }: any) {
   const [name, setName] = useState('');
+  const [editingEducationalLevel, setEditingEducationalLevel] = useState(
+    editingClass?.EducationalLevel
+  );
+  const [editingSection, setEditingSection] = useState(editingClass?.section);
+  const [editingYear, setEditingYear] = useState(editingClass?.year);
 
   useEffect(() => {
     if (editingClass) setName(editingClass.name);
+    if (editingClass) setEditingEducationalLevel(editingClass.EducationalLevel);
+    if (editingClass) setEditingSection(editingClass.section);
+    if (editingClass) setEditingYear(editingClass.year);
   }, [editingClass]);
 
   if (!editingClass) return null;
@@ -63,6 +71,43 @@ export default function EditClassModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Advanced Physics"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Education level
+              </label>
+              <Input
+                name="EducationalLevel"
+                value={editingEducationalLevel}
+                onChange={(e) => setEditingEducationalLevel(e.target.value)}
+                placeholder="e.g. Advanced Physics"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Section
+              </label>
+              <Input
+                name="section"
+                value={editingSection}
+                onChange={(e) => setEditingSection(e.target.value)}
+                placeholder="e.g. Advanced Physics"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Year
+              </label>
+              <Input
+                name="year"
+                type="number"
+                value={editingYear}
+                onChange={(e) => setEditingYear(parseInt(e.target.value))}
+                placeholder="e.g. 2023"
                 required
               />
             </div>

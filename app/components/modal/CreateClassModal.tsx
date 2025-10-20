@@ -8,10 +8,24 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CreateClassModal({ open, setOpen, fetcher }: any) {
   const [name, setName] = useState('');
+  const [EducationalLevel, setEducationalLevel] = useState('');
+  const [section, setSection] = useState('');
+  const [year, setYear] = useState('');
+
+  //close modal on successful submission
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      setOpen(false);
+      setName('');
+      setEducationalLevel('');
+      setSection('');
+      setYear('');
+    }
+  }, [fetcher.data]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -41,18 +55,57 @@ export default function CreateClassModal({ open, setOpen, fetcher }: any) {
             </p>
 
             {/* input */}
-            <input type="hidden" name="_method" value="POST" />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Classroom Name
-              </label>
-              <Input
-                name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Grade 6 Science"
-                required
-              />
+
+            <div className="space-y-6">
+              <input type="hidden" name="_method" value="POST" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Classroom Name
+                </label>
+                <Input
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. CLass 5"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Education level
+                </label>
+                <Input
+                  name="EducationalLevel"
+                  value={EducationalLevel}
+                  onChange={(e) => setEducationalLevel(e.target.value)}
+                  placeholder="e.g.  Grade 6"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Section
+                </label>
+                <Input
+                  name="section"
+                  value={section}
+                  onChange={(e) => setSection(e.target.value)}
+                  placeholder="e.g. A"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year
+                </label>
+                <Input
+                  name="year"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  placeholder="e.g. 2023"
+                  required
+                />
+              </div>
             </div>
           </div>
 
