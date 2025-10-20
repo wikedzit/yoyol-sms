@@ -42,27 +42,51 @@ export async function action({ request, context }: ActionFunctionArgs) {
   try {
     if (method === 'POST') {
       const name = form.get('name');
-      if (!name || typeof name !== 'string') {
-        return new Response(JSON.stringify({ error: 'Name is required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      const EducationalLevel = form.get('EducationalLevel');
+      const section = form.get('section');
+      const year = form.get('year');
+
+      if (!EducationalLevel || !section || !year) {
+        return new Response(
+          JSON.stringify({
+            error: 'EducationalLevel, section, and year are required',
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
-      const created = await services.class.create({ name });
+
+      const created = await services.class.create({
+        name,
+        EducationalLevel,
+        section,
+        year: year ? parseInt(String(year)) : undefined,
+      });
       return { success: true, class: created };
     }
 
     if (method === 'PUT') {
       const id = form.get('id');
       const name = form.get('name');
-      if (!id || !name)
+      const EducationalLevel = form.get('EducationalLevel');
+      const section = form.get('section');
+      const year = form.get('year');
+
+      if (!id || !name || !EducationalLevel || !section || !year) {
         return new Response(JSON.stringify({ error: 'Invalid payload' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
+      }
       const updated = await services.class.update(parseInt(String(id)), {
         name: String(name),
+        EducationalLevel: String(EducationalLevel),
+        section: String(section),
+        year: year ? parseInt(String(year)) : undefined,
       });
+      console.log('Updated class:', updated);
       return { success: true, class: updated };
     }
 
@@ -203,37 +227,54 @@ export default function ClassesRoute() {
                 className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition"
               >
                 <img src="assets/card_image.png" alt="card Image" />
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {c.name}
-                  </h3>
-                  <GraduationCap className="text-primary" size={22} />
+                <div className="">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs  text-gray-900">
+                      <strong>Name:</strong>
+                      {c.name}
+                    </h3>
+                    <p className="text-xs  text-gray-900">
+                      <strong>Year:</strong> {c.year}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs  text-gray-900">
+                      <strong>Level:</strong> {c.EducationalLevel}
+                    </p>
+                    <p className="text-xs  text-gray-900">
+                      <strong>Section:</strong> {c.section}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between mt-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault(); // prevent navigation
-                      setEditingClass(c);
-                      setOpenEdit(true);
-                    }}
-                    className="flex items-center gap-2 border-none shadow-none text-gray-200 hover:bg-purple-100 hover:text-purple-900 cursor-pointer"
-                  >
-                    <Pencil size={16} />
-                  </Button>
-
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={(e) => {
                       e.preventDefault();
-                      setOpenDelete(true);
+                      setEditingClass(c);
+                      setOpenEdit(true);
                     }}
-                    className="flex items-center gap-2 text-gray-200 hover:text-red-800 cursor-pointer"
+                    className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
                   >
-                    <Trash2 size={16} />
+                    <Pencil size={16} />
+                    Edit
                   </Button>
+
+                  <div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        fetcher.submit({ id: c.id }, { method: 'DELETE' });
+                      }}
+                      className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
+                    >
+                      <Trash2 size={16} />
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -250,14 +291,18 @@ export default function ClassesRoute() {
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary-gradient rounded-lg flex items-center justify-center">
-                  <GraduationCap size={24} className="text-white" />
+                  <img
+                    src="assets/card_image.png"
+                    alt="card Image"
+                    className="w-12 h-12 object-cover rounded-lg"
+                  />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">
                     {c.name}
                   </h3>
-                  <p className="text-sm text-gray-600 line-clamp-1">
-                    {c.description || 'No description provided'}
+                  <p className="text-sm text-gray-500">
+                    {c.EducationalLevel} - Section {c.section} - Year {c.year}
                   </p>
                 </div>
               </div>
@@ -275,17 +320,17 @@ export default function ClassesRoute() {
 
               <div className="flex items-center gap-3">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.preventDefault();
                     setEditingClass(c);
                     setOpenEdit(true);
                   }}
-                  className="flex items-center gap-2 border-purple-300 text-purple-700 hover:bg-purple-100 hover:text-purple-900"
+                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
                 >
                   <Pencil size={16} />
-                  <span>Edit</span>
+                  Edit
                 </Button>
 
                 <Button
@@ -295,10 +340,10 @@ export default function ClassesRoute() {
                     e.preventDefault();
                     fetcher.submit({ id: c.id }, { method: 'DELETE' });
                   }}
-                  className="flex items-center gap-2 text-red-600 hover:text-red-800"
+                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                 >
-                  <Trash size={16} />
-                  <span>Delete</span>
+                  <Trash2 size={16} />
+                  Delete
                 </Button>
               </div>
             </Link>

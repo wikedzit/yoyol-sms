@@ -1,148 +1,338 @@
-import { Plus } from 'lucide-react';
 import { useState } from 'react';
+import { useLoaderData, useFetcher } from 'react-router';
+import { Card, CardContent, CardHeader } from '~/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
+import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Plus, Search, Eye, Pencil } from 'lucide-react';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '~/components/ui/select';
 
-export default function StudentsPage() {
-  const [open, setOpen] = useState(false);
+import AddStudentModal from '~/components/modal/AddStudentModal';
+import EditStudentModal from '~/components/modal/EditStudentModal';
+import { DeleteStudentButton } from '~/components/DeleteStudentButton';
+import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
+import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
+import type StudentService from 'workers/services/student';
 
-  const [students, setStudents] = useState([
-    {
-      id: 1,
-      studentId: 'STU001',
-      firstName: 'John',
-      secondName: 'Doe',
-      gender: 'Male',
-      dob: '2005-03-12',
-      className: 'Form 1',
-      phone: '+255 712 345 678',
-      address: 'Arusha, Tanzania',
-    },
-    {
-      id: 2,
-      studentId: 'STU002',
-      firstName: 'Jane',
-      secondName: 'Smith',
-      gender: 'Female',
-      dob: '2006-05-21',
-      className: 'Form 2',
-      phone: '+255 713 876 543',
-      address: 'Moshi, Tanzania',
-    },
-    {
-      id: 3,
-      studentId: 'STU003',
-      firstName: 'Michael',
-      secondName: 'Brown',
-      gender: 'Male',
-      dob: '2004-11-02',
-      className: 'Form 3',
-      phone: '+255 715 567 890',
-      address: 'Dar es Salaam, Tanzania',
-    },
-  ]);
+// 🧠 Loader – fetch students
+export async function loader({ context }: LoaderFunctionArgs) {
+  const services = context.services as { student: StudentService };
 
-  const handleEdit = (student: any) => {
-    console.log('Edit student:', student);
-    setOpen(true);
-  };
+  const students = await services.student?.getAll({
+    limit: 100,
+    offset: 0,
+    sortBy: 'createdAt',
+    sortOrder: 'asc',
+  });
 
-  const handleDelete = (id: number) => {
-    console.log('Delete student ID:', id);
-    setStudents((prev) => prev.filter((s) => s.id !== id));
-  };
+  return { students };
+}
+
+// ⚙️ Action – handle create, update, delete
+export async function action({ request, context }: ActionFunctionArgs) {
+  const services = context.services as { student: StudentService };
+  const form = await request.formData();
+  const method = (form.get('_method') as string) || request.method;
+
+  try {
+    // --- CREATE STUDENT ---
+    if (method === 'POST') {
+      // Convert FormDataEntryValue | null to the expected string/union types.
+      const data = {
+        firstName: String(form.get('firstName') ?? ''),
+        lastName: String(form.get('lastName') ?? ''),
+        gender: String(form.get('gender') ?? 'Select gender') as
+          | 'Male'
+          | 'Female',
+        dob: String(form.get('dob') ?? ''),
+        email: form.get('email') ? String(form.get('email')) : undefined,
+        phone: form.get('phone') ? String(form.get('phone')) : undefined,
+        address: form.get('address') ? String(form.get('address')) : undefined,
+        guardianName: form.get('guardianName')
+          ? String(form.get('guardianName'))
+          : undefined,
+        guardianPhone: form.get('guardianPhone')
+          ? String(form.get('guardianPhone'))
+          : undefined,
+        photoUrl: form.get('photoUrl')
+          ? String(form.get('photoUrl'))
+          : undefined,
+        course: form.get('course') ? String(form.get('course')) : undefined,
+        grade: form.get('grade') ? String(form.get('grade')) : undefined,
+        enrollmentDate: form.get('enrollmentDate')
+          ? String(form.get('enrollmentDate'))
+          : undefined,
+        classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        status: String(form.get('status') ?? 'Active') as
+          | 'Active'
+          | 'Pending'
+          | 'Inactive',
+      };
+
+      const created = await services.student.create(data);
+      return new Response(JSON.stringify({ success: true, student: created }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // --- UPDATE STUDENT ---
+    if (method === 'PUT') {
+      const id = form.get('id');
+      if (!id) {
+        return new Response(
+          JSON.stringify({ error: 'Student ID is required' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      const data = {
+        firstName: String(form.get('firstName') ?? ''),
+        lastName: String(form.get('lastName') ?? ''),
+        gender: String(form.get('gender') ?? 'Select gender') as
+          | 'Male'
+          | 'Female',
+        dob: String(form.get('dob') ?? ''),
+        email: form.get('email') ? String(form.get('email')) : undefined,
+        phone: form.get('phone') ? String(form.get('phone')) : undefined,
+        address: form.get('address') ? String(form.get('address')) : undefined,
+        guardianName: form.get('guardianName')
+          ? String(form.get('guardianName'))
+          : undefined,
+        guardianPhone: form.get('guardianPhone')
+          ? String(form.get('guardianPhone'))
+          : undefined,
+        photoUrl: form.get('photoUrl')
+          ? String(form.get('photoUrl'))
+          : undefined,
+        course: form.get('course') ? String(form.get('course')) : undefined,
+        grade: form.get('grade') ? String(form.get('grade')) : undefined,
+        enrollmentDate: form.get('enrollmentDate')
+          ? String(form.get('enrollmentDate'))
+          : undefined,
+
+        classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        status: String(form.get('status') ?? 'Active') as
+          | 'Active'
+          | 'Pending'
+          | 'Inactive',
+      };
+
+      const updated = await services.student.update(String(id), data);
+      return { success: true, student: updated };
+    }
+
+    // --- DELETE STUDENT ---
+    if (method === 'DELETE') {
+      const id = form.get('id');
+      if (!id) {
+        return new Response(
+          JSON.stringify({ error: 'Student ID is required' }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      await services.student.delete(String(id));
+      return { success: true };
+    }
+
+    return new Response(JSON.stringify({ error: 'Unknown method' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err: any) {
+    console.error('students.action error:', err);
+    return new Response(
+      JSON.stringify({ error: err?.message || 'Server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+export default function Students() {
+  const { students: initialStudents } = useLoaderData() as { students: any[] };
+  const fetcher = useFetcher();
+
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
+  const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
+  const filteredStudents = initialStudents?.filter((student) => {
+    const matchesSearch =
+      student.firstName.toLowerCase().includes(search.toLowerCase()) ||
+      student.lastName.toLowerCase().includes(search.toLowerCase()) ||
+      student.email.toLowerCase().includes(search.toLowerCase());
+    const matchesFilter =
+      filter === 'all' || student.course === filter || student.grade === filter;
+    return matchesSearch && matchesFilter;
+  });
 
   return (
-    <div className="p-4 sm:p-6">
+    <div className="space-y-6 h-screen overflow-y-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
-        <h1 className="text-xl sm:text-2xl font-semibold text-gray-800">
-          Students
-        </h1>
-        <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer duration-300 hover:bg-[var(--color-purple)] focus:ring-2 focus:ring-[var(--color-purple)] disabled:opacity-50 disabled:cursor-not-allowed">
-          <Plus className="h-4 w-4" />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Students</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage and view all student records
+          </p>
+        </div>
+        <Button
+          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+          onClick={() => setAddStudentModalOpen(true)}
+        >
+          <Plus className="h-4 w-4 mr-2" />
           Add Student
         </Button>
       </div>
-
-      {/* Table Container */}
-      <div className="overflow-x-auto border rounded-lg shadow-sm bg-white">
-        <table className="w-full text-left border-collapse min-w-[800px]">
-          <thead>
-            <tr className="bg-gray-100 text-xs sm:text-sm uppercase text-gray-600">
-              <th className="p-3">Student ID</th>
-              <th className="p-3">First Name</th>
-              <th className="p-3">Second Name</th>
-              <th className="p-3">Gender</th>
-              <th className="p-3">Birth Date</th>
-              <th className="p-3">Class</th>
-              <th className="p-3">Phone</th>
-              <th className="p-3">Address</th>
-              <th className="p-3 text-center">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((student) => (
-              <tr
-                key={student.id}
-                className="border-t hover:bg-gray-50 transition text-xs sm:text-sm"
-              >
-                <td className="p-3 font-medium">{student.studentId}</td>
-                <td className="p-3">{student.firstName}</td>
-                <td className="p-3">{student.secondName}</td>
-                <td className="p-3">{student.gender}</td>
-                <td className="p-3">{student.dob}</td>
-                <td className="p-3">{student.className}</td>
-                <td className="p-3">{student.phone}</td>
-                <td className="p-3">{student.address}</td>
-                <td className="p-3 flex flex-wrap sm:flex-nowrap justify-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={() => handleEdit(student)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="w-full sm:w-auto"
-                    onClick={() => handleDelete(student.id)}
-                  >
-                    Delete
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal (still static for now) */}
-      {open && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-[90%] sm:w-[400px] shadow-xl">
-            <h2 className="text-lg sm:text-xl font-semibold mb-4">
-              Add / Edit Student
-            </h2>
-            <p className="text-gray-600 mb-4 text-sm">
-              Form content will go here.
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button size="sm" onClick={() => setOpen(false)}>
-                Save
-              </Button>
+      {/* Search & Filter */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search students..."
+                className="pl-10 bg-muted/50"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
+
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by course/grade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="A">Grade A</SelectItem>
+                <SelectItem value="B+">Grade B+</SelectItem>
+                <SelectItem value="B">Grade B</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
+        </CardHeader>
+
+        {/* Table */}
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>SN</TableHead>
+                <TableHead>First name</TableHead>
+                <TableHead>Last name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead>Grade</TableHead>
+                <TableHead>Enrolled</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {filteredStudents?.map((student) => (
+                <TableRow key={student.id}>
+                  <TableCell className="font-medium">{student.id}</TableCell>
+                  <TableCell>{student.firstName}</TableCell>
+                  <TableCell>{student.lastName}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {student.email}
+                  </TableCell>
+                  <TableCell>{student.course}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="border-none">
+                      {student.grade}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{student.enrollmentDate}</TableCell>
+                  <TableCell className="border-none">
+                    <Badge
+                      variant={
+                        student.status === 'Active'
+                          ? 'default'
+                          : student.status === 'Pending'
+                          ? 'secondary'
+                          : 'outline'
+                      }
+                      className="border-none"
+                    >
+                      {student.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right flex justify-end gap-2">
+                    <StudentProfilesModal student={student} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setEditStudentModalOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <DeleteStudentButton
+                      id={student.id}
+                      name={student.name}
+                      fetcher={fetcher}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      {/* Add Student Modal */}
+      {addStudentModalOpen && (
+        <AddStudentModal
+          open={addStudentModalOpen}
+          setOpen={setAddStudentModalOpen}
+          fetcher={fetcher}
+        />
       )}
+      {/* Edit Student Modal */}
+      {editStudentModalOpen && selectedStudent && (
+        <EditStudentModal
+          open={editStudentModalOpen}
+          setOpen={setEditStudentModalOpen}
+          student={selectedStudent}
+          fetcher={fetcher}
+        />
+      )}
+
+      <div className="pt-4">
+        <Button
+          variant="outline"
+          onClick={() => {
+            window.history.back();
+          }}
+          className="bg-primary-gradient text-white hover:text-white py-2 px-4 rounded-[8px] cursor-pointer"
+        >
+          &larr; Back to Classroom
+        </Button>
+      </div>
     </div>
   );
 }

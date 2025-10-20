@@ -5,6 +5,9 @@ import { sql } from 'drizzle-orm';
 export const classes = sqliteTable('classes', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
+  EducationalLevel: text('level').notNull(),
+  section: text('section').default('General'),
+  year: integer('year').notNull(),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
