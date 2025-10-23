@@ -16,11 +16,8 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
-import { useFetcher } from 'react-router-dom';
 
-export default function AddStudentModal({ open, setOpen }: any) {
-  const fetcher = useFetcher();
-
+export default function AddStudentModal({ open, setOpen, fetcher }: any) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -115,6 +112,14 @@ export default function AddStudentModal({ open, setOpen }: any) {
                   }
                   name={field}
                   value={(formData as any)[field]}
+                  placeholder={
+                    'Enter ' +
+                    (field === 'firstName'
+                      ? 'First Name'
+                      : field === 'lastName'
+                      ? 'Last Name'
+                      : field.charAt(0).toUpperCase() + field.slice(1))
+                  }
                   onChange={handleChange}
                   required
                 />

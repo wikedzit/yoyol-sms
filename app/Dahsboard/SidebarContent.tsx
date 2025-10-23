@@ -13,8 +13,9 @@ import { cn } from '~/lib/utils';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Students', href: '/students', icon: Users },
+  { name: 'Students List', href: '/students', icon: Users },
   { name: 'Classrooms', href: '/classrooms', icon: BarChart3 },
+  { name: 'Teachers', href: '/teachers', icon: Users },
   { name: 'Courses', href: '/courses', icon: BookOpen },
   { name: 'Grades', href: '/grades', icon: GraduationCap },
   { name: 'Attendance', href: '/attendance', icon: Calendar },

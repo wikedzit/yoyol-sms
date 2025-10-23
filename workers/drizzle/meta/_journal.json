@@ -15,6 +15,20 @@
       "when": 1760960616307,
       "tag": "0001_simple_blackheart",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1761143557271,
+      "tag": "0002_exotic_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1761145014279,
+      "tag": "0003_even_blink",
+      "breakpoints": true
     }
   ]
 }
