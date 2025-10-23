@@ -16,6 +16,7 @@ const mainNavigation = [
   { name: 'Students List', href: '/students', icon: Users },
   { name: 'Classrooms', href: '/classrooms', icon: BarChart3 },
   { name: 'Teachers', href: '/teachers', icon: Users },
+  { name: 'Departments', href: '/departments', icon: BarChart3 },
   { name: 'Courses', href: '/courses', icon: BookOpen },
   { name: 'Grades', href: '/grades', icon: GraduationCap },
   { name: 'Attendance', href: '/attendance', icon: Calendar },

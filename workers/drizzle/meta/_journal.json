@@ -29,6 +29,13 @@
       "when": 1761145014279,
       "tag": "0003_even_blink",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1761215353925,
+      "tag": "0004_third_meteorite",
+      "breakpoints": true
     }
   ]
 }
