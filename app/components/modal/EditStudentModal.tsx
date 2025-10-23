@@ -18,11 +18,12 @@ import {
 } from '~/components/ui/select';
 import { useFetcher } from 'react-router-dom';
 
-export default function EditStudentModal({ open, setOpen, student }: any) {
-  console.log('student', student);
-  const fetcher = useFetcher();
-  console.log('fetcher', fetcher.data);
-
+export default function EditStudentModal({
+  open,
+  setOpen,
+  student,
+  fetcher,
+}: any) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

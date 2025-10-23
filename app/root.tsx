@@ -9,18 +9,7 @@ import {
 
 import type { Route } from './+types/root';
 import './app.css';
-
-export async function action({ context }: Route.ActionArgs) {
-  const services = context.services;
-
-  const classData = await services.class.create({
-    name: 'Class 1',
-  });
-
-  return {
-    class: classData,
-  };
-}
+import { Toaster } from './components/ui/sonner';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -46,6 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <Toaster richColors position="top-right" />
         <ScrollRestoration />
         <Scripts />
       </body>

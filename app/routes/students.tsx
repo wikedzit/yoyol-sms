@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLoaderData, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
@@ -27,6 +27,7 @@ import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
+import { toast } from 'sonner';
 
 // 🧠 Loader – fetch students
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -169,7 +170,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function Students() {
   const { students: initialStudents } = useLoaderData() as { students: any[] };
   const fetcher = useFetcher();
-
+  const listFetcher = useFetcher();
+  const lastMethod = useRef<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
@@ -186,6 +188,49 @@ export default function Students() {
     return matchesSearch && matchesFilter;
   });
 
+  useEffect(() => {
+    // 🧠 Keep track of last submitted method
+    if (fetcher.state === 'submitting' && fetcher.formData) {
+      const method = fetcher.formData.get('_method') as string | null;
+      lastMethod.current = method ?? fetcher.formMethod;
+    }
+  }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
+
+  useEffect(() => {
+    // 🧩 Only run after successful completion
+    if (fetcher.state === 'idle' && fetcher.data) {
+      const data = fetcher.data;
+
+      if (data.error) {
+        toast.error(data.error || 'An unexpected error occurred.');
+        return;
+      }
+
+      if (data.success) {
+        // 🔄 Only reload *after* success — and only once per action
+        switch (lastMethod.current) {
+          case 'POST':
+            toast.success('Student added successfully!');
+            listFetcher.load(window.location.pathname);
+            break;
+          case 'PUT':
+            toast.success('Student updated successfully!');
+            listFetcher.load(window.location.pathname);
+            break;
+          case 'DELETE':
+            toast.error('Student deleted successfully!');
+            listFetcher.load(window.location.pathname);
+            break;
+          default:
+            toast.success('Action completed successfully.');
+        }
+
+        // 🧹 Reset last method to prevent double reload
+        lastMethod.current = null;
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
+
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
       {/* Header */}
@@ -197,7 +242,7 @@ export default function Students() {
           </p>
         </div>
         <Button
-          className="bg-primary text-white hover:bg-primary/80 cursor-pointer"
+          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
           onClick={() => setAddStudentModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -286,6 +331,7 @@ export default function Students() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="cursor-pointer"
                       onClick={() => {
                         setSelectedStudent(student);
                         setEditStudentModalOpen(true);

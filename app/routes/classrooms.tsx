@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Calendar,
   GraduationCap,
@@ -19,6 +19,7 @@ import { Button } from '~/components/ui/button';
 import { Link } from 'react-router-dom';
 import CreateClassModal from '~/components/modal/CreateClassModal';
 import EditClassModal from '~/components/modal/EditClassModal';
+import { toast } from 'sonner';
 
 // 🧠 Loader – fetch classes
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -120,53 +121,61 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function ClassesRoute() {
   const { classes: initialClasses } = useLoaderData() as { classes: any[] };
   const fetcher = useFetcher();
-  const listFetcher = useFetcher();
+  const lastMethod = useRef<string | null>(null);
   const [classes, setClasses] = useState(initialClasses ?? []);
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false);
   const [editingClass, setEditingClass] = useState<any | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'list'>('grid'); // 🟢 Add view state
 
-  useEffect(() => {
-    if (listFetcher.data?.classes) {
-      setClasses(listFetcher.data.classes);
-    }
-  }, [listFetcher.data]);
+  const deletingId = useRef<number | null>(null);
 
+  useEffect(() => {
+    if (fetcher.state === 'submitting' && fetcher.formData) {
+      const method =
+        (fetcher.formData.get('_method') as string) ?? fetcher.formMethod;
+      lastMethod.current = method;
+    }
+  }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
+
+  // Handle toast + optimistic UI updates
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
+
       if (data.error) {
-        setToast(`Error: ${data.error}`);
+        toast.error(data.error || 'An unexpected error occurred.');
+        deletingId.current = null;
+        lastMethod.current = null;
         return;
       }
-      if (data.success) {
-        if (data.class && !editingClass) {
-          setClasses((prev) => [data.class, ...prev]);
-          setToast('Class added successfully.');
-        }
-        if (data.class && editingClass) {
-          setClasses((prev) =>
-            prev.map((c) => (c.id === data.class.id ? data.class : c))
-          );
-          setToast('Class updated successfully.');
-        }
-        if (data.success && !data.class && !editingClass) {
-          const deletedId = fetcher.formData?.get('id');
-          if (deletedId) {
+
+      switch (lastMethod.current) {
+        case 'POST':
+          if (data.class) setClasses((prev) => [data.class, ...prev]);
+          toast.success('Classroom added successfully!');
+          break;
+        case 'PUT':
+          if (data.class)
             setClasses((prev) =>
-              prev.filter((c) => c.id !== Number(deletedId))
+              prev.map((c) => (c.id === data.class.id ? data.class : c))
             );
+          toast.success('Classroom updated successfully!');
+          break;
+        case 'DELETE':
+          if (deletingId.current !== null) {
+            setClasses((prev) =>
+              prev.filter((c) => c.id !== deletingId.current)
+            );
+            toast.error('Classroom deleted successfully!');
+            deletingId.current = null;
           }
-          setToast('Class deleted successfully.');
-        }
-        setEditingClass(null);
-        listFetcher.load(window.location.pathname);
+          break;
+        default:
+          toast.success('Action completed successfully.');
       }
-      const timeout = setTimeout(() => setToast(null), 5000);
-      return () => clearTimeout(timeout);
+
+      lastMethod.current = null;
     }
   }, [fetcher.state, fetcher.data]);
 
@@ -187,7 +196,9 @@ export default function ClassesRoute() {
             <button
               onClick={() => setView('grid')}
               className={`p-2 ${
-                view === 'grid' ? 'bg-primary text-white' : 'text-gray-500'
+                view === 'grid'
+                  ? 'bg-primary-gradient  text-white'
+                  : 'text-gray-500 cursor-pointer'
               }`}
             >
               <LayoutGrid size={18} />
@@ -195,7 +206,9 @@ export default function ClassesRoute() {
             <button
               onClick={() => setView('list')}
               className={`p-2 ${
-                view === 'list' ? 'bg-primary text-white' : 'text-gray-500'
+                view === 'list'
+                  ? 'bg-primary-gradient  text-white'
+                  : 'text-gray-500 cursor-pointer'
               }`}
             >
               <List size={18} />
@@ -205,7 +218,7 @@ export default function ClassesRoute() {
           {/* Create button */}
           <Button
             onClick={() => setOpenCreate(true)}
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
           >
             <span className="text-2xl leading-none">+</span>
             <span className="font-medium">Add Classroom</span>
@@ -267,6 +280,8 @@ export default function ClassesRoute() {
                       size="sm"
                       onClick={(e) => {
                         e.preventDefault();
+                        lastMethod.current = 'DELETE'; // track method
+                        deletingId.current = c.id; // track which class to remove
                         fetcher.submit({ id: c.id }, { method: 'DELETE' });
                       }}
                       className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
@@ -364,12 +379,12 @@ export default function ClassesRoute() {
         editingClass={editingClass}
       />
 
-      {/* Toast */}
+      {/* Toast
       {toast && (
         <div className="fixed bottom-6 right-6 bg-green-500 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-500 animate-fade-in">
           {toast}
         </div>
-      )}
+      )} */}
     </div>
   );
 }

@@ -63,9 +63,6 @@ export function StudentProfilesModal({ student }: { student: any }) {
             <p>
               <strong>Address:</strong> {student.address}
             </p>
-            <p>
-              <strong>Students ID:</strong> {student.studentsID}
-            </p>
           </div>
         </div>
       </DialogContent>
