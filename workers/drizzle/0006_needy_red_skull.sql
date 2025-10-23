@@ -1,0 +1,1 @@
+ALTER TABLE `subjects` ADD `enrolledStudents` integer DEFAULT 0;

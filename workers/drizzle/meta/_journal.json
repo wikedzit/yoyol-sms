@@ -36,6 +36,34 @@
       "when": 1761215353925,
       "tag": "0004_third_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1761229348614,
+      "tag": "0005_late_nightshade",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1761230382176,
+      "tag": "0006_needy_red_skull",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1761231101563,
+      "tag": "0007_closed_falcon",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1761254689677,
+      "tag": "0008_certain_lorna_dane",
+      "breakpoints": true
     }
   ]
 }
