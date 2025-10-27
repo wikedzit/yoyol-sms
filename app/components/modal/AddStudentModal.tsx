@@ -16,8 +16,21 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
+import { useFetcher } from 'react-router-dom';
 
-export default function AddStudentModal({ open, setOpen, fetcher }: any) {
+interface AddStudentModalProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  classId: string | { id: string } | undefined; // <-- accept classId
+}
+
+export default function AddStudentModal({
+  open,
+  setOpen,
+  classId,
+}: AddStudentModalProps) {
+  const fetcher = useFetcher();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -64,6 +77,17 @@ export default function AddStudentModal({ open, setOpen, fetcher }: any) {
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
+          {/* <-- hidden input for classId */}
+
+          <input
+            type="hidden"
+            name="classId"
+            value={
+              classId && typeof classId === 'object' && 'id' in classId
+                ? classId.id
+                : classId ?? ''
+            }
+          />
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-2">
@@ -112,14 +136,6 @@ export default function AddStudentModal({ open, setOpen, fetcher }: any) {
                   }
                   name={field}
                   value={(formData as any)[field]}
-                  placeholder={
-                    'Enter ' +
-                    (field === 'firstName'
-                      ? 'First Name'
-                      : field === 'lastName'
-                      ? 'Last Name'
-                      : field.charAt(0).toUpperCase() + field.slice(1))
-                  }
                   onChange={handleChange}
                   required
                 />
@@ -133,7 +149,10 @@ export default function AddStudentModal({ open, setOpen, fetcher }: any) {
                 <Select
                   value={formData.gender}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, gender: value })
+                    setFormData({
+                      ...formData,
+                      gender: value,
+                    })
                   }
                   name="gender"
                 >
@@ -154,7 +173,10 @@ export default function AddStudentModal({ open, setOpen, fetcher }: any) {
                 <Select
                   value={formData.status}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, status: value })
+                    setFormData({
+                      ...formData,
+                      status: value,
+                    })
                   }
                   name="status"
                 >

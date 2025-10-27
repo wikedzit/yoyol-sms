@@ -1,5 +1,6 @@
+// app/routes/classes/$classId.tsx
 import { useState } from 'react';
-import { useLoaderData, useFetcher } from 'react-router';
+import { useLoaderData, useFetcher, useParams } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
   Table,
@@ -12,7 +13,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Eye, Pencil } from 'lucide-react';
+import { Plus, Search, Pencil, Trash } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -20,155 +21,137 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from '~/components/ui/pagination';
 
 import AddStudentModal from '~/components/modal/AddStudentModal';
 import EditStudentModal from '~/components/modal/EditStudentModal';
-import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
-import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
+import {
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+  Link,
+} from 'react-router-dom';
 import type StudentService from 'workers/services/student';
+import { usePagination } from '~/hooks/usePagination';
+import { PaginationControls } from '~/components/shared/PaginationControls';
+import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
-// 🧠 Loader – fetch students
-export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as { student: StudentService };
-
-  const students = await services.student?.getAll({
+// --- Loader ---
+export async function loader({ params, context }: LoaderFunctionArgs) {
+  const { classId } = params;
+  const services = context.services as { student: StudentService; class: any };
+  const students = await services.student.getAll({
     limit: 100,
     offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'asc',
   });
+  // Filter students belonging to this class
+  const filtered = students.filter((s) => s.classId === Number(classId));
+  //capture the class details
+  const classInfo = await services.class.getById(Number(classId));
 
-  return { students };
+  return { students: filtered, class: classInfo };
 }
 
-// ⚙️ Action – handle create, update, delete
-export async function action({ request, context }: ActionFunctionArgs) {
+// --- Action ---
+export async function action({ request, context, params }: ActionFunctionArgs) {
+  const { classId } = params;
   const services = context.services as { student: StudentService };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
 
   try {
-    // --- CREATE STUDENT ---
     if (method === 'POST') {
-      // Convert FormDataEntryValue | null to the expected string/union types.
-      const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        gender: String(form.get('gender') ?? 'Select gender') as
-          | 'Male'
-          | 'Female',
-        dob: String(form.get('dob') ?? ''),
+      // Ensure classId is always a valid number or undefined
+      const rawClassId = form.get('classId') ?? classId;
+      const parsedClassId =
+        rawClassId !== undefined && rawClassId !== null && rawClassId !== ''
+          ? Number(rawClassId)
+          : undefined;
+
+      // CREATE student in this class
+      const studentData = {
+        firstName: String(form.get('firstName') || ''),
+        lastName: String(form.get('lastName') || ''),
+        gender: String(form.get('gender') || 'Other'),
+        status:
+          (String(form.get('status')) as 'Active' | 'Pending' | 'Inactive') ||
+          'Active',
+        classId: parsedClassId,
+        dob: form.get('dob') ? String(form.get('dob')) : undefined,
         email: form.get('email') ? String(form.get('email')) : undefined,
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        address: form.get('address') ? String(form.get('address')) : undefined,
-        guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
-          : undefined,
-        guardianPhone: form.get('guardianPhone')
-          ? String(form.get('guardianPhone'))
-          : undefined,
-        photoUrl: form.get('photoUrl')
-          ? String(form.get('photoUrl'))
-          : undefined,
         course: form.get('course') ? String(form.get('course')) : undefined,
         grade: form.get('grade') ? String(form.get('grade')) : undefined,
         enrollmentDate: form.get('enrollmentDate')
           ? String(form.get('enrollmentDate'))
           : undefined,
-        classId: form.get('classId') ? String(form.get('classId')) : undefined,
-        status: String(form.get('status') ?? 'Active') as
-          | 'Active'
-          | 'Pending'
-          | 'Inactive',
       };
-
-      const created = await services.student.create(data);
+      const created = await services.student.create(studentData);
       return new Response(JSON.stringify({ success: true, student: created }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    // --- UPDATE STUDENT ---
     if (method === 'PUT') {
-      const id = form.get('id');
-      if (!id) {
-        return new Response(
-          JSON.stringify({ error: 'Student ID is required' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        gender: String(form.get('gender') ?? 'Select gender') as
-          | 'Male'
-          | 'Female',
-        dob: String(form.get('dob') ?? ''),
-        email: form.get('email') ? String(form.get('email')) : undefined,
-        phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        address: form.get('address') ? String(form.get('address')) : undefined,
-        guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
-          : undefined,
-        guardianPhone: form.get('guardianPhone')
-          ? String(form.get('guardianPhone'))
-          : undefined,
-        photoUrl: form.get('photoUrl')
-          ? String(form.get('photoUrl'))
-          : undefined,
-        course: form.get('course') ? String(form.get('course')) : undefined,
-        grade: form.get('grade') ? String(form.get('grade')) : undefined,
-        enrollmentDate: form.get('enrollmentDate')
-          ? String(form.get('enrollmentDate'))
-          : undefined,
-
-        classId: form.get('classId') ? String(form.get('classId')) : undefined,
-        status: String(form.get('status') ?? 'Active') as
-          | 'Active'
-          | 'Pending'
-          | 'Inactive',
-      };
-
-      const updated = await services.student.update(String(id), data);
-      return { success: true, student: updated };
+      // UPDATE student
+      const id = form.get('id') as string;
+      const data = Object.fromEntries(form.entries());
+      const updated = await services.student.update(id, {
+        ...data,
+        classId: Number(classId),
+      });
+      return new Response(JSON.stringify({ success: true, student: updated }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // --- DELETE STUDENT ---
     if (method === 'DELETE') {
-      const id = form.get('id');
-      if (!id) {
-        return new Response(
-          JSON.stringify({ error: 'Student ID is required' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-      await services.student.delete(String(id));
-      return { success: true };
+      const id = form.get('id') as string;
+      await services.student.delete(id);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (method === 'REMOVE') {
+      // Remove from class without deleting
+      const id = form.get('id') as string;
+      // set classId to undefined to clear the association (matches z.number().optional() type)
+      await services.student.update(id, { classId: undefined });
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     return new Response(JSON.stringify({ error: 'Unknown method' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {
-    console.error('students.action error:', err);
+    console.error('ClassDetails.action error:', err);
     return new Response(
       JSON.stringify({ error: err?.message || 'Server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 500 }
     );
   }
 }
-export default function Students() {
-  const { students: initialStudents } = useLoaderData() as { students: any[] };
+
+// --- Component ---
+export default function ClassDetails({ params }: { params: any }) {
+  const { students: initialStudents, class: classInfo } = useLoaderData() as {
+    students: any[];
+    class: any;
+  };
   const fetcher = useFetcher();
+  const { classId } = useParams();
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -176,24 +159,44 @@ export default function Students() {
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
+  // filtering logic
   const filteredStudents = initialStudents?.filter((student) => {
     const matchesSearch =
       student.firstName.toLowerCase().includes(search.toLowerCase()) ||
       student.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      student.email.toLowerCase().includes(search.toLowerCase());
+      (student.email &&
+        student.email.toLowerCase().includes(search.toLowerCase()));
     const matchesFilter =
       filter === 'all' || student.course === filter || student.grade === filter;
     return matchesSearch && matchesFilter;
   });
 
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedStudents,
+    startIndex,
+    goToPage,
+  } = usePagination(filteredStudents, 10);
+
+  const handleRemoveFromClass = (id: string) => {
+    const formData = new FormData();
+    formData.append('id', id);
+    formData.append('_method', 'REMOVE');
+    fetcher.submit(formData, { method: 'post' });
+    console.log('Removed student from class:', id);
+  };
+
   return (
-    <div className="space-y-6 h-screen overflow-y-auto">
+    <div className="space-y-2 h-min-screen overflow-y-auto w-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Students</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {classInfo?.name}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Manage and view all student records
+            Manage students in this class
           </p>
         </div>
         <Button
@@ -204,6 +207,7 @@ export default function Students() {
           Add Student
         </Button>
       </div>
+
       {/* Search & Filter */}
       <Card>
         <CardHeader>
@@ -233,7 +237,6 @@ export default function Students() {
           </div>
         </CardHeader>
 
-        {/* Table */}
         <CardContent>
           <Table>
             <TableHeader>
@@ -251,9 +254,11 @@ export default function Students() {
             </TableHeader>
 
             <TableBody>
-              {filteredStudents?.map((student) => (
+              {paginatedStudents?.map((student, index) => (
                 <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.id}</TableCell>
+                  <TableCell className="font-medium">
+                    {startIndex + index + 1}
+                  </TableCell>
                   <TableCell>{student.firstName}</TableCell>
                   <TableCell>{student.lastName}</TableCell>
                   <TableCell className="text-muted-foreground">
@@ -266,7 +271,7 @@ export default function Students() {
                     </Badge>
                   </TableCell>
                   <TableCell>{student.enrollmentDate}</TableCell>
-                  <TableCell className="border-none">
+                  <TableCell>
                     <Badge
                       variant={
                         student.status === 'Active'
@@ -294,45 +299,52 @@ export default function Students() {
                     </Button>
                     <DeleteStudentButton
                       id={student.id}
-                      name={student.name}
+                      name={`${student.firstName} ${student.lastName}`}
                       fetcher={fetcher}
                     />
+                    {/* <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFromClass(student.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button> */}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+          />
         </CardContent>
       </Card>
-      {/* Add Student Modal */}
+      {/* back button to class list
+      <Link to="/classes">
+        <Button variant="outline" className="mt-4">
+          Back to Class List
+        </Button>
+      </Link> */}
+
+      {/* Modals */}
       {addStudentModalOpen && (
         <AddStudentModal
           open={addStudentModalOpen}
           setOpen={setAddStudentModalOpen}
-          fetcher={fetcher}
+          classId={classId}
         />
       )}
-      {/* Edit Student Modal */}
       {editStudentModalOpen && selectedStudent && (
         <EditStudentModal
           open={editStudentModalOpen}
           setOpen={setEditStudentModalOpen}
           student={selectedStudent}
-          fetcher={fetcher}
+          classId={classId}
         />
       )}
-
-      <div className="pt-4">
-        <Button
-          variant="outline"
-          onClick={() => {
-            window.history.back();
-          }}
-          className="bg-primary-gradient text-white hover:text-white py-2 px-4 rounded-[8px] cursor-pointer"
-        >
-          &larr; Back to Classroom
-        </Button>
-      </div>
     </div>
   );
 }

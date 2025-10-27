@@ -28,7 +28,10 @@ const CreateStudentSchema = z.object({
   course: z.string().optional(),
   grade: z.string().optional(),
   enrollmentDate: z.string().optional(), // YYYY-MM-DD
-  classId: z.string().optional(),
+  classId: z.preprocess(
+    (v) => (v ? Number(v) : undefined),
+    z.number().optional()
+  ),
   status: z.enum(['Active', 'Pending', 'Inactive']).default('Active'),
 });
 

@@ -18,12 +18,21 @@ import {
 } from '~/components/ui/select';
 import { useFetcher } from 'react-router-dom';
 
+interface EditStudentModalProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  student: any;
+  classId: string | undefined; // <-- classId prop
+}
+
 export default function EditStudentModal({
   open,
   setOpen,
   student,
-  fetcher,
-}: any) {
+  classId,
+}: EditStudentModalProps) {
+  const fetcher = useFetcher();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -78,7 +87,16 @@ export default function EditStudentModal({
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="id" value={student?.id} />
-
+          <input
+            type="hidden"
+            name="classId"
+            value={
+              classId && typeof classId === 'object' && 'id' in classId
+                ? classId.id
+                : classId ?? ''
+            }
+          />
+          {/* <-- added */}
           <div className="flex-1 overflow-y-auto pr-2">
             <div className="flex justify-between items-center mb-8">
               <SheetHeader className="p-0">
@@ -104,13 +122,10 @@ export default function EditStudentModal({
               'enrollmentDate',
               'dob',
               'address',
-              'status',
             ].map((field) => (
               <div key={field} className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {field === 'name'
-                    ? 'Full Name'
-                    : field.charAt(0).toUpperCase() + field.slice(1)}
+                  {field.charAt(0).toUpperCase() + field.slice(1)}
                 </label>
                 <Input
                   type={
@@ -124,7 +139,9 @@ export default function EditStudentModal({
                   value={(formData as any)[field]}
                   onChange={handleChange}
                   required={
-                    field === 'name' || field === 'email' || field === 'course'
+                    field === 'firstName' ||
+                    field === 'lastName' ||
+                    field === 'email'
                   }
                 />
               </div>
@@ -172,7 +189,6 @@ export default function EditStudentModal({
               </Select>
             </div>
           </div>
-
           <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
             <Button
               type="button"

@@ -15,8 +15,8 @@ const routes: RouteConfig = [
 
   layout('./layout/DashboardLyout.tsx', [
     index('routes/home.tsx'),
-    route('classrooms', './routes/classrooms.tsx'),
-    route('classrooms/:id', './routes/classroomItem.$id.tsx'),
+    route('classes', './routes/classes.tsx'),
+    route('classes/:classId', './routes/classes.$classId.tsx'),
     route('students', './routes/students.tsx'),
     route('departments', './routes/departments.tsx'),
     route('subjects', './routes/subject.tsx'),

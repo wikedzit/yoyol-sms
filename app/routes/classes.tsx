@@ -24,13 +24,15 @@ import { toast } from 'sonner';
 // 🧠 Loader – fetch classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services;
-  const classes = await services.class.getAll({
+
+  const classes = await services.class.getAllWithStudentCount({
     offset: 0,
     sortBy: 'name',
     sortOrder: 'asc',
     search: '',
     limit: 100,
   });
+
   return { classes };
 }
 
@@ -235,7 +237,7 @@ export default function ClassesRoute() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {classes.map((c) => (
               <Link
-                to={`/classrooms/${c.id}`}
+                to={`/classes/${c.id}`}
                 key={c.id}
                 className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition"
               >
@@ -257,6 +259,13 @@ export default function ClassesRoute() {
                     <p className="text-xs  text-gray-900">
                       <strong>Section:</strong> {c.section}
                     </p>
+                  </div>
+                </div>
+                {/* number of student for this class */}
+                <div className="flex items-center gap-6 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <Users size={16} />
+                    <span>{c.studentCount} students</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-3">
@@ -300,7 +309,7 @@ export default function ClassesRoute() {
         <div className="space-y-3">
           {classes.map((c) => (
             <Link
-              to={`/classrooms/${c.id}`}
+              to={`/classes/${c.id}`}
               key={c.id}
               className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
             >
@@ -325,11 +334,7 @@ export default function ClassesRoute() {
               <div className="flex items-center gap-6 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
                   <Users size={16} />
-                  <span>0 students</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar size={16} />
-                  <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                  <span>{c.studentCount} students</span>
                 </div>
               </div>
 
@@ -353,6 +358,8 @@ export default function ClassesRoute() {
                   size="sm"
                   onClick={(e) => {
                     e.preventDefault();
+                    lastMethod.current = 'DELETE'; // track method
+                    deletingId.current = c.id; // track which class to remove
                     fetcher.submit({ id: c.id }, { method: 'DELETE' });
                   }}
                   className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
