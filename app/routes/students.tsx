@@ -28,6 +28,8 @@ import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
 import { toast } from 'sonner';
+import { usePagination } from '~/hooks/usePagination';
+import { PaginationControls } from '~/components/shared/PaginationControls';
 
 // 🧠 Loader – fetch students
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -188,6 +190,15 @@ export default function Students() {
     return matchesSearch && matchesFilter;
   });
 
+  //pagination logic
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedStudentsList,
+    startIndex,
+    goToPage,
+  } = usePagination(filteredStudents, 10);
+
   useEffect(() => {
     // 🧠 Keep track of last submitted method
     if (fetcher.state === 'submitting' && fetcher.formData) {
@@ -232,7 +243,7 @@ export default function Students() {
   }, [fetcher.state, fetcher.data]);
 
   return (
-    <div className="space-y-6 h-screen overflow-y-auto">
+    <div className="space-y-2 h-min-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -297,9 +308,11 @@ export default function Students() {
             </TableHeader>
 
             <TableBody>
-              {filteredStudents?.map((student) => (
+              {paginatedStudentsList?.map((student) => (
                 <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.id}</TableCell>
+                  <TableCell className="font-medium">
+                    {startIndex + student.id}
+                  </TableCell>
                   <TableCell>{student.firstName}</TableCell>
                   <TableCell>{student.lastName}</TableCell>
                   <TableCell className="text-muted-foreground">
@@ -349,6 +362,11 @@ export default function Students() {
               ))}
             </TableBody>
           </Table>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+          />
         </CardContent>
       </Card>
 

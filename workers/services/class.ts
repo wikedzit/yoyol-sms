@@ -1,7 +1,8 @@
-import { eq, desc, asc, like } from 'drizzle-orm';
+import { eq, desc, asc, like, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { classes, type InsertClass, type SelectClass } from '../database/class';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { students } from 'workers/database';
 
 // Zod schemas for validation
 const CreateClassSchema = z.object({
@@ -139,6 +140,56 @@ export default class ClassService {
       }
     } catch (error) {
       console.error('Error fetching classes:', error);
+      return [];
+    }
+  }
+
+  // get all classes with student count
+  async getAllWithStudentCount(
+    options: GetClassesInput
+  ): Promise<(SelectClass & { studentCount: number })[]> {
+    try {
+      const { limit, offset, sortBy, sortOrder, search } =
+        GetClassesSchema.parse(options) ?? {};
+
+      const sortColumn =
+        sortBy === 'name'
+          ? classes.name
+          : sortBy === 'createdAt'
+          ? classes.createdAt
+          : classes.updatedAt;
+
+      // 💡 One SQL query using LEFT JOIN for performance
+      const result = await this.db
+        .select({
+          id: classes.id,
+          name: classes.name,
+          EducationalLevel: classes.EducationalLevel,
+          section: classes.section,
+          year: classes.year,
+          createdAt: classes.createdAt,
+          updatedAt: classes.updatedAt,
+          studentCount: sql<number>`COUNT(${students.id})`.as('studentCount'),
+        })
+        .from(classes)
+        .leftJoin(students, eq(students.classId, classes.id))
+        .where(search ? like(classes.name, `%${search}%`) : undefined)
+        .groupBy(
+          classes.id,
+          classes.name,
+          classes.EducationalLevel,
+          classes.section,
+          classes.year,
+          classes.createdAt,
+          classes.updatedAt
+        )
+        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit ?? 10)
+        .offset(offset ?? 0);
+
+      return result;
+    } catch (error) {
+      console.error('Error fetching classes with student counts:', error);
       return [];
     }
   }
