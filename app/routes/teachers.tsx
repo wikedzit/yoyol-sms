@@ -28,6 +28,8 @@ import EditTeacherModal from '~/components/modal/EditTeacherModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
+import { PaginationControls } from '~/components/shared/PaginationControls';
+import { usePagination } from '~/hooks/usePagination';
 
 // 🧠 Loader – fetch teachers
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -149,7 +151,7 @@ export default function Teachers() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
-  const filteredTeachers = initialTeachers?.filter((teacher) => {
+  const filteredStudents = initialTeachers?.filter((teacher) => {
     const matchesSearch =
       teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
       teacher.lastName.toLowerCase().includes(search.toLowerCase()) ||
@@ -158,6 +160,15 @@ export default function Teachers() {
       statusFilter === 'all' || teacher.status === statusFilter;
     return matchesSearch && matchesFilter;
   });
+
+  //pagination logic
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedStudentsList,
+    startIndex,
+    goToPage,
+  } = usePagination(filteredStudents, 10);
 
   //use useEffect to show sonner form shardcn as a toast on successful add, edit, delete
   useEffect(() => {
@@ -252,9 +263,9 @@ export default function Teachers() {
             </TableHeader>
 
             <TableBody>
-              {filteredTeachers?.map((teacher, index) => (
+              {paginatedStudentsList?.map((teacher, index) => (
                 <TableRow key={teacher.id}>
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{startIndex + index + 1}</TableCell>
                   <TableCell>{teacher.firstName}</TableCell>
                   <TableCell>{teacher.lastName}</TableCell>
                   <TableCell>{teacher.subject}</TableCell>
@@ -291,6 +302,12 @@ export default function Teachers() {
               ))}
             </TableBody>
           </Table>
+
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+          />
         </CardContent>
       </Card>
 

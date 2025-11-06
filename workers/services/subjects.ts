@@ -13,6 +13,8 @@ export const subjectSchema = z.object({
   description: z.string().max(500).optional(),
   enrolledStudents: z.number().min(0).optional(),
   status: z.enum(['Active', 'Inactive']).default('Active'),
+  // New field for departmentId
+  departmentId: z.number().optional(),
 });
 
 const updateSubjectSchema = subjectSchema.partial();
@@ -54,9 +56,13 @@ export default class SubjectService {
         .execute();
 
       return result[0] || null;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating subject:', error);
-      return null;
+      // Check for UNIQUE constraint violation
+      if (error?.message?.includes('UNIQUE constraint failed: subjects.code')) {
+        throw new Error('A subject with this code already exists. Please use a different code.');
+      }
+      throw error;
     }
   }
 
@@ -73,6 +79,40 @@ export default class SubjectService {
     } catch (error) {
       console.error('Error fetching subject by ID:', error);
       return null;
+    }
+  }
+
+  // Get subject by code
+  async getSubjectByCode(code: string): Promise<SelectSubject | null> {
+    try {
+      const result = await this.db
+        .select()
+        .from(subject)
+        .where(eq(subject.code, code))
+        .execute();
+
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching subject by code:', error);
+      return null;
+    }
+  }
+
+  // Get Subjects by Department ID
+  async getSubjectsByDepartmentId(
+    departmentId: number
+  ): Promise<SelectSubject[]> {
+    try {
+      const result = await this.db
+        .select()
+        .from(subject)
+        .where(eq(subject.departmentId, departmentId))
+        .execute();
+
+      return result;
+    } catch (error) {
+      console.error('Error fetching subjects by department ID:', error);
+      return [];
     }
   }
 

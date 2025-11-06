@@ -30,7 +30,6 @@ export default function AddStudentModal({
   classId,
 }: AddStudentModalProps) {
   const fetcher = useFetcher();
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',

@@ -16,6 +16,8 @@ const CreateClassSchema = z.object({
     .number()
     .min(1900, 'Year must be valid')
     .max(2100, 'Year must be valid'),
+  // new field for departmentId
+  departmentId: z.number().optional(),
 });
 
 const UpdateClassSchema = z.object({
@@ -74,6 +76,7 @@ export default class ClassService {
           EducationalLevel: validatedData.EducationalLevel,
           section: validatedData.section,
           year: validatedData.year,
+          departmentId: validatedData.departmentId ?? null,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -101,6 +104,63 @@ export default class ClassService {
     } catch (error) {
       console.error('Error fetching class:', error);
       return null;
+    }
+  }
+
+  // Get all classes by department ID
+  async getClassesByDepartmentId(departmentId: number): Promise<SelectClass[]> {
+    try {
+      const result = await this.db
+        .select()
+        .from(classes)
+        .where(eq(classes.departmentId, departmentId))
+        .execute();
+      return result || [];
+    } catch (error) {
+      console.error('Error fetching classes by department ID:', error);
+      return [];
+    }
+  }
+
+  // Get all classes by department ID with student count
+  async getClassesByDepartmentIdWithStudentCount(
+    departmentId: number
+  ): Promise<(SelectClass & { studentCount: number })[]> {
+    try {
+      const result = await this.db
+        .select({
+          id: classes.id,
+          name: classes.name,
+          EducationalLevel: classes.EducationalLevel,
+          section: classes.section,
+          year: classes.year,
+          departmentId: classes.departmentId,
+          createdAt: classes.createdAt,
+          updatedAt: classes.updatedAt,
+          studentCount: sql<number>`COUNT(${students.id})`.as('studentCount'),
+        })
+        .from(classes)
+        .leftJoin(students, eq(students.classId, classes.id))
+        .where(eq(classes.departmentId, departmentId))
+        .groupBy(
+          classes.id,
+          classes.name,
+          classes.EducationalLevel,
+          classes.section,
+          classes.year,
+          classes.departmentId,
+          classes.createdAt,
+          classes.updatedAt
+        )
+        .orderBy(desc(classes.createdAt));
+
+      return result;
+    } catch (error) {
+      console.error(
+        'Error fetching classes by department ID with student counts:',
+        error
+      );
+      return [];
     }
   }
 
@@ -199,13 +259,14 @@ export default class ClassService {
    */
   async update(
     id: number,
-    data: UpdateClassInput
+    data: UpdateClassInput & { departmentId?: number }
   ): Promise<SelectClass | null> {
     try {
       const validatedData = UpdateClassSchema.parse(data);
 
       const updateValues: Partial<InsertClass> = {
         ...validatedData,
+        departmentId: data.departmentId ?? undefined,
         updatedAt: Date.now(),
       };
 

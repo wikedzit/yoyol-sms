@@ -71,6 +71,34 @@
       "when": 1761490314529,
       "tag": "0009_thankful_meteorite",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1762209857557,
+      "tag": "0010_stale_pet_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1762209969434,
+      "tag": "0011_dear_captain_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1762252025254,
+      "tag": "0012_luxuriant_sue_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1762342140919,
+      "tag": "0013_lyrical_shinobi_shaw",
+      "breakpoints": true
     }
   ]
 }

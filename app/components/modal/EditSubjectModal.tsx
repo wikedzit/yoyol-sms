@@ -15,6 +15,7 @@ export default function EditSubjectModal({
   setOpen,
   fetcher,
   subject,
+  id,
 }: any) {
   const [formData, setFormData] = useState({
     subjectName: '',
@@ -23,6 +24,7 @@ export default function EditSubjectModal({
     instructor: '',
     description: '',
   });
+  const [error, setError] = useState<string | null>(null);
 
   // 🧩 Pre-fill form data when modal opens
   useEffect(() => {
@@ -41,12 +43,19 @@ export default function EditSubjectModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) setError(null);
   };
 
   // ✅ Close modal on successful update
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
+      setError(null);
+    }
+    // ✅ Handle error from server
+    if (fetcher.data?.error) {
+      setError(fetcher.data.error);
     }
   }, [fetcher.data]);
 
@@ -58,8 +67,13 @@ export default function EditSubjectModal({
         side="right"
         className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
       >
-        <fetcher.Form method="post" className="flex flex-col h-full">
+        <fetcher.Form 
+          method="post" 
+          action={id ? `/departments/${id}` : '/subjects'}
+          className="flex flex-col h-full"
+        >
           <input type="hidden" name="_method" value="PUT" />
+          <input type="hidden" name="_entity" value="subject" />
           <input type="hidden" name="id" value={subject.id} />
 
           {/* Header */}
@@ -77,6 +91,13 @@ export default function EditSubjectModal({
           <p className="text-sm text-[#898989] mb-8">
             Update the information for this subject below.
           </p>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-2">

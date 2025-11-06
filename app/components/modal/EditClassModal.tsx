@@ -15,13 +15,14 @@ export default function EditClassModal({
   setOpen,
   fetcher,
   editingClass,
+  id,
 }: any) {
-  const [name, setName] = useState('');
+  const [name, setName] = useState(editingClass?.name || '');
   const [editingEducationalLevel, setEditingEducationalLevel] = useState(
-    editingClass?.EducationalLevel
+    editingClass?.EducationalLevel || ''
   );
-  const [editingSection, setEditingSection] = useState(editingClass?.section);
-  const [editingYear, setEditingYear] = useState(editingClass?.year);
+  const [editingSection, setEditingSection] = useState(editingClass?.section || '');
+  const [editingYear, setEditingYear] = useState<number | undefined>(editingClass?.year);
 
   useEffect(() => {
     if (editingClass) setName(editingClass.name);
@@ -29,6 +30,17 @@ export default function EditClassModal({
     if (editingClass) setEditingSection(editingClass.section);
     if (editingClass) setEditingYear(editingClass.year);
   }, [editingClass]);
+
+  // Close modal on successful submission
+  useEffect(() => {
+    if (fetcher.data?.success && fetcher.state === 'idle') {
+      setOpen(false);
+    }
+    if (fetcher.data?.error) {
+      console.error('Error updating classroom:', fetcher.data.error);
+      alert(`Error: ${fetcher.data.error}`);
+    }
+  }, [fetcher.data, fetcher.state, setOpen]);
 
   if (!editingClass) return null;
 
@@ -40,8 +52,8 @@ export default function EditClassModal({
       >
         <fetcher.Form
           method="post"
+          action={id ? `/departments/${id}` : '/classes'}
           className="flex flex-col justify-between h-full"
-          onSubmit={() => setOpen(false)}
         >
           {/* header */}
           <div>
@@ -61,6 +73,7 @@ export default function EditClassModal({
 
             {/* Input */}
             <input type="hidden" name="_method" value="PUT" />
+            <input type="hidden" name="_entity" value="class" />
             <input type="hidden" name="id" value={editingClass.id} />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -105,8 +118,8 @@ export default function EditClassModal({
               <Input
                 name="year"
                 type="number"
-                value={editingYear}
-                onChange={(e) => setEditingYear(parseInt(e.target.value))}
+                value={editingYear || ''}
+                onChange={(e) => setEditingYear(e.target.value ? parseInt(e.target.value) : undefined)}
                 placeholder="e.g. 2023"
                 required
               />

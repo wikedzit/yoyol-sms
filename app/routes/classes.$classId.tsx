@@ -1,6 +1,6 @@
 // app/routes/classes/$classId.tsx
 import { useState } from 'react';
-import { useLoaderData, useFetcher, useParams } from 'react-router';
+import { useLoaderData, useFetcher, useParams, Link } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
   Table,
@@ -13,7 +13,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Pencil, Trash } from 'lucide-react';
+import { Plus, Search, Pencil, Trash, ArrowBigLeftDash } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -21,14 +21,6 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from '~/components/ui/pagination';
 
 import AddStudentModal from '~/components/modal/AddStudentModal';
 import EditStudentModal from '~/components/modal/EditStudentModal';
@@ -36,7 +28,6 @@ import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
 import {
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
-  Link,
 } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
 import { usePagination } from '~/hooks/usePagination';
@@ -189,6 +180,18 @@ export default function ClassDetails({ params }: { params: any }) {
 
   return (
     <div className="space-y-2 h-min-screen overflow-y-auto w-full">
+      {/* link to go back to class */}
+      {/* back to class but also there is class within department */}
+      <Link
+        to={classId ? `/classes` : ''}
+        className="flex gap-2 bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-fit"
+      >
+        <ArrowBigLeftDash />
+        <span>
+          {classId ? 'Back to Classes' : 'Back to Department Classes'}
+        </span>
+      </Link>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -19,6 +19,8 @@ const CreateTeacherSchema = z.object({
     const num = Number(val);
     return isNaN(num) ? undefined : num;
   }, z.number().min(0).optional()),
+  // New field for departmentId
+  departmentId: z.number().optional(),
   status: z.enum(['Active', 'Inactive']).default('Active'),
 });
 
@@ -73,6 +75,23 @@ export default class TeacherService {
     } catch (error) {
       console.error('Error fetching teacher:', error);
       return null;
+    }
+  }
+
+  // Get Teachers by Department ID
+  async getTeachersByDepartmentId(
+    departmentId: number
+  ): Promise<SelectTeacher[]> {
+    try {
+      const result = await this.db
+        .select()
+        .from(teachers)
+        .where(eq(teachers.departmentId, departmentId))
+        .execute();
+      return result || [];
+    } catch (error) {
+      console.error('Error fetching teachers by department ID:', error);
+      return [];
     }
   }
 
