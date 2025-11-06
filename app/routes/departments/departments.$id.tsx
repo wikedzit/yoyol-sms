@@ -70,10 +70,13 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       if (method === 'PUT') {
         const idStr = form.get('id') as string;
         const updateData = Object.fromEntries(form.entries());
-        const updated = await services.teacher.updateTeacherById(Number(idStr), {
-          ...updateData,
-          departmentId: Number(id),
-        });
+        const updated = await services.teacher.updateTeacherById(
+          Number(idStr),
+          {
+            ...updateData,
+            departmentId: Number(id),
+          }
+        );
         return new Response(
           JSON.stringify({ success: true, teacher: updated }),
           {
@@ -112,12 +115,15 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       if (method === 'POST') {
         const departmentId = id ? Number(id) : undefined;
         const code = String(form.get('code') || '');
-        
+
         // Check if subject code already exists
         const existingSubject = await services.subject.getSubjectByCode(code);
         if (existingSubject) {
           return new Response(
-            JSON.stringify({ error: 'A subject with this code already exists. Please use a different code.' }),
+            JSON.stringify({
+              error:
+                'A subject with this code already exists. Please use a different code.',
+            }),
             {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
@@ -144,7 +150,10 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
         const created = await services.subject.createSubject(subjectData);
         if (!created) {
           return new Response(
-            JSON.stringify({ error: 'Failed to create subject. Please check all required fields.' }),
+            JSON.stringify({
+              error:
+                'Failed to create subject. Please check all required fields.',
+            }),
             {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
@@ -179,12 +188,17 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
         // Check if code has changed and if the new code already exists
         const newCode = String(updateData.code || '');
         const currentSubject = await services.subject.getSubjectById(idNum);
-        
+
         if (currentSubject && newCode !== currentSubject.code) {
-          const existingSubject = await services.subject.getSubjectByCode(newCode);
+          const existingSubject = await services.subject.getSubjectByCode(
+            newCode
+          );
           if (existingSubject) {
             return new Response(
-              JSON.stringify({ error: 'A subject with this code already exists. Please use a different code.' }),
+              JSON.stringify({
+                error:
+                  'A subject with this code already exists. Please use a different code.',
+              }),
               {
                 status: 400,
                 headers: { 'Content-Type': 'application/json' },
@@ -202,10 +216,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
             : undefined,
         };
 
-        const updated = await services.subject.updateSubject(
-          idNum,
-          cleanData
-        );
+        const updated = await services.subject.updateSubject(idNum, cleanData);
         return new Response(
           JSON.stringify({ success: true, subject: updated }),
           {
@@ -349,27 +360,8 @@ export default function DepartmentDetailsPage() {
   const { teachers, subjects, classrooms, departments } =
     useLoaderData<typeof loader>();
 
-  // // // Dummy data
-  // const department = {
-  //   id,
-  //   name: 'Computer Science',
-  //   description:
-  //     'This department focuses on software engineering, AI, and data science.',
-  // };
-
   return (
     <div className="space-y-6">
-      {/* <Card className="shadow-sm border rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold">
-            {department.name}
-          </CardTitle>
-          <p className="text-muted-foreground text-sm">
-            {department.description}
-          </p>
-        </CardHeader>
-      </Card> */}
-
       <Tabs defaultValue="classrooms" className="w-full">
         <TabsList className="flex gap-4">
           <TabsTrigger value="classrooms">Classrooms</TabsTrigger>

@@ -306,15 +306,19 @@ export default function Teachers() {
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>SN</TableHead>
-                <TableHead>First name</TableHead>
-                <TableHead>Last name</TableHead>
-                <TableHead>Assigned Subjects</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-gray-100">
+                <TableHead className="font-semibold">SN</TableHead>
+                <TableHead className="font-semibold">First name</TableHead>
+                <TableHead className="font-semibold">Last name</TableHead>
+                <TableHead className="font-semibold">
+                  Assigned Subjects
+                </TableHead>
+                <TableHead className="font-semibold">Email</TableHead>
+                <TableHead className="font-semibold">Phone</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="text-right font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
 

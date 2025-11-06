@@ -321,15 +321,21 @@ export default function DepartmentsPage() {
           <div>
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Head</TableHead>
-                  <TableHead className="text-center">Students</TableHead>
-                  <TableHead className="text-center">Faculty</TableHead>
-                  <TableHead>Established</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold">Code</TableHead>
+                  <TableHead className="font-semibold">Name</TableHead>
+                  <TableHead className="font-semibold">Head</TableHead>
+                  <TableHead className="text-center font-semibold">
+                    Students
+                  </TableHead>
+                  <TableHead className="text-center font-semibold">
+                    Faculty
+                  </TableHead>
+                  <TableHead className="font-semibold">Established</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
