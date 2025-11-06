@@ -12,7 +12,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Pencil } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -23,17 +23,24 @@ import {
 
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import type TeacherService from 'workers/services/teachers';
+import type SubjectService from 'workers/services/subjects';
+import type TeacherSubjectService from 'workers/services/teacher-subjects';
 import AddTeacherModal from '~/components/modal/AddTeacherModal';
 import EditTeacherModal from '~/components/modal/EditTeacherModal';
+import AssignSubjectsModal from '~/components/modal/AssignSubjectsModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 
-// 🧠 Loader – fetch teachers
+// 🧠 Loader – fetch teachers with their subjects
 export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as { teacher: TeacherService };
+  const services = context.services as {
+    teacher: TeacherService;
+    subject: SubjectService;
+    teacherSubject: TeacherSubjectService;
+  };
 
   const teachers = await services.teacher?.getAllTeachers({
     limit: 100,
@@ -42,17 +49,56 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  return { teachers };
+  // Get all subjects for assignment modal
+  const subjects = await services.subject?.getAllSubjects({
+    limit: 100,
+    offset: 0,
+    sortBy: 'subjectName',
+    sortOrder: 'asc',
+  });
+
+  // Get subjects for each teacher
+  const teachersWithSubjects = await Promise.all(
+    teachers.map(async (teacher) => {
+      const assignedSubjects =
+        await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
+      return {
+        ...teacher,
+        subjects: assignedSubjects || [],
+      };
+    })
+  );
+
+  return { teachers: teachersWithSubjects, allSubjects: subjects };
 }
 
-// ⚙️ Action – handle create, update, delete
+// ⚙️ Action – handle create, update, delete, and subject assignments
 export async function action({ request, context }: ActionFunctionArgs) {
-  const services = context.services as { teacher: TeacherService };
+  const services = context.services as {
+    teacher: TeacherService;
+    teacherSubject: TeacherSubjectService;
+  };
   const form = await request.formData();
 
   const method = (form.get('_method') as string) || request.method;
+  const action = form.get('action') as string | null;
 
   try {
+    // --- ASSIGN SUBJECTS TO TEACHER ---
+    if (action === 'assign_subjects') {
+      const teacherId = Number(form.get('teacherId'));
+      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+
+      if (!teacherId) {
+        return { error: 'Teacher ID is required' };
+      }
+
+      await services.teacherSubject?.replaceTeacherSubjects(
+        teacherId,
+        subjectIds
+      );
+      return { success: true, action: 'assign_subjects' };
+    }
     // --- CREATE TEACHER ---
     if (method === 'POST') {
       const data = {
@@ -73,7 +119,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
 
       const created = await services.teacher.createTeacher(data);
-      console.log('Created teacher:', created);
       return new Response(JSON.stringify({ success: true, teacher: created }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -142,13 +187,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🧑‍🏫 UI – Teachers Table & Modals
 export default function Teachers() {
-  const { teachers: initialTeachers } = useLoaderData() as { teachers: any[] };
+  const { teachers: initialTeachers, allSubjects } = useLoaderData() as {
+    teachers: any[];
+    allSubjects: any[];
+  };
   const fetcher = useFetcher();
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
   const filteredStudents = initialTeachers?.filter((teacher) => {
@@ -174,7 +223,14 @@ export default function Teachers() {
   useEffect(() => {
     if (fetcher.data?.success) {
       const method = fetcher.formData?.get('_method');
+      const action = fetcher.formData?.get('action');
       let message = '';
+
+      if (action === 'assign_subjects') {
+        message = 'Subjects assigned successfully!';
+        toast.success(message);
+        return;
+      }
 
       switch (method) {
         case 'POST':
@@ -254,7 +310,7 @@ export default function Teachers() {
                 <TableHead>SN</TableHead>
                 <TableHead>First name</TableHead>
                 <TableHead>Last name</TableHead>
-                <TableHead>Subject</TableHead>
+                <TableHead>Assigned Subjects</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Status</TableHead>
@@ -268,7 +324,25 @@ export default function Teachers() {
                   <TableCell>{startIndex + index + 1}</TableCell>
                   <TableCell>{teacher.firstName}</TableCell>
                   <TableCell>{teacher.lastName}</TableCell>
-                  <TableCell>{teacher.subject}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {teacher.subjects?.length > 0 ? (
+                        teacher.subjects.map((subject: any) => (
+                          <Badge
+                            key={subject.id}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {subject.code}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          No subjects
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{teacher.email}</TableCell>
                   <TableCell>{teacher.phone}</TableCell>
                   <TableCell>
@@ -282,6 +356,17 @@ export default function Teachers() {
                   </TableCell>
                   <TableCell className="text-right flex justify-end gap-2">
                     <TeacherProfileModal teacher={teacher} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Assign Subjects"
+                      onClick={() => {
+                        setSelectedTeacher(teacher);
+                        setAssignSubjectsModalOpen(true);
+                      }}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -326,6 +411,18 @@ export default function Teachers() {
           open={editModalOpen}
           setOpen={setEditModalOpen}
           teacher={selectedTeacher}
+          fetcher={fetcher}
+        />
+      )}
+
+      {/* Assign Subjects Modal */}
+      {assignSubjectsModalOpen && selectedTeacher && (
+        <AssignSubjectsModal
+          open={assignSubjectsModalOpen}
+          setOpen={setAssignSubjectsModalOpen}
+          teacher={selectedTeacher}
+          availableSubjects={allSubjects}
+          assignedSubjects={selectedTeacher.subjects || []}
           fetcher={fetcher}
         />
       )}

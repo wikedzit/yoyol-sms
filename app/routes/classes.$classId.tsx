@@ -175,7 +175,6 @@ export default function ClassDetails({ params }: { params: any }) {
     formData.append('id', id);
     formData.append('_method', 'REMOVE');
     fetcher.submit(formData, { method: 'post' });
-    console.log('Removed student from class:', id);
   };
 
   return (

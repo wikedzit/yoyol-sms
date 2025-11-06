@@ -89,7 +89,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
         section: String(section),
         year: year ? parseInt(String(year)) : undefined,
       });
-      console.log('Updated class:', updated);
       return { success: true, class: updated };
     }
 

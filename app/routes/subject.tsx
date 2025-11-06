@@ -19,8 +19,11 @@ import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 // Service import
 import type SubjectService from 'workers/services/subjects';
 import type DepartmentService from 'workers/services/departments';
+import type TeacherService from 'workers/services/teachers';
+import type TeacherSubjectService from 'workers/services/teacher-subjects';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
+import AssignTeachersModal from '~/components/modal/AssignTeachersModal';
 import {
   Select,
   SelectContent,
@@ -32,11 +35,13 @@ import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 
-// 🧩 Loader — fetch subjects from DB
+//Loader — fetch subjects with their teachers from DB
 export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as { 
+  const services = context.services as {
     subject: SubjectService;
     department: DepartmentService;
+    teacher: TeacherService;
+    teacherSubject: TeacherSubjectService;
   };
   const subjects = await services.subject.getAllSubjects({
     limit: 100,
@@ -50,16 +55,77 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortBy: 'name',
     sortOrder: 'asc',
   });
-  return { subjects, departments };
+
+  // Get all teachers for assignment modal
+  const teachers = await services.teacher.getAllTeachers({
+    limit: 100,
+    offset: 0,
+    sortBy: 'firstName',
+    sortOrder: 'asc',
+  });
+
+  // Get teachers for each subject
+  const subjectsWithTeachers = await Promise.all(
+    subjects.map(async (subject) => {
+      const assignedTeachers =
+        await services.teacherSubject?.getTeachersBySubject(subject.id);
+      return {
+        ...subject,
+        teachers: assignedTeachers || [],
+      };
+    })
+  );
+
+  return { subjects: subjectsWithTeachers, departments, allTeachers: teachers };
 }
 
-// 🧠 Action — handle create, update, delete
+// Action — handle create, update, delete, and teacher assignments
 export async function action({ request, context }: ActionFunctionArgs) {
-  const services = context.services as { subject: SubjectService };
+  const services = context.services as {
+    subject: SubjectService;
+    teacherSubject: TeacherSubjectService;
+  };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
+  const action = form.get('action') as string | null;
 
   try {
+    // --- ASSIGN TEACHERS TO SUBJECT ---
+    if (action === 'assign_teachers') {
+      const subjectId = Number(form.get('subjectId'));
+      const teacherIds = JSON.parse(String(form.get('teacherIds') || '[]'));
+
+      if (!subjectId) {
+        return { error: 'Subject ID is required' };
+      }
+
+      // For subjects, we need to clear old assignments and add new ones
+      // First get existing teachers for this subject
+      const existingTeachers =
+        await services.teacherSubject?.getTeachersBySubject(subjectId);
+
+      // Remove teachers that are no longer assigned
+      if (existingTeachers) {
+        for (const teacher of existingTeachers) {
+          if (!teacherIds.includes(teacher.id)) {
+            await services.teacherSubject?.removeSubjectFromTeacher(
+              teacher.id,
+              subjectId
+            );
+          }
+        }
+      }
+
+      // Add new teachers
+      for (const teacherId of teacherIds) {
+        await services.teacherSubject?.assignSubjectToTeacher(
+          teacherId,
+          subjectId
+        );
+      }
+
+      return { success: true, action: 'assign_teachers' };
+    }
     // CREATE
     if (method === 'POST') {
       const data = {
@@ -76,7 +142,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
       const created = await services.subject.createSubject(data);
       if (!created) {
-        return { error: 'Failed to create subject. Please check all required fields.' };
+        return {
+          error: 'Failed to create subject. Please check all required fields.',
+        };
       }
       return { success: true, subject: created };
     }
@@ -96,7 +164,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
       };
       const updated = await services.subject.updateSubject(id, data);
-      console.log('Updated subject:', updated);
+
       return { success: true, subject: updated };
     }
 
@@ -117,17 +185,25 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🎓 Subject Management Page
 export default function SubjectsPage() {
-  const { subjects: initialSubjects, departments } = useLoaderData<{ subjects: any[]; departments: any[] }>();
+  const {
+    subjects: initialSubjects,
+    departments,
+    allTeachers,
+  } = useLoaderData<{
+    subjects: any[];
+    departments: any[];
+    allTeachers: any[];
+  }>();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
-
-  console.log({ subjects: initialSubjects });
 
   const [subjects, setSubjects] = useState(initialSubjects);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAssignTeachersModalOpen, setIsAssignTeachersModalOpen] =
+    useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
 
   // 🧩 Track last method
@@ -149,6 +225,12 @@ export default function SubjectsPage() {
       }
 
       if (data.success) {
+        // Check for specific action first
+        if (data.action === 'assign_teachers') {
+          toast.success('Teachers assigned successfully!');
+          return;
+        }
+
         switch (lastMethod.current) {
           case 'POST':
             toast.success('Subject added successfully!');
@@ -185,8 +267,6 @@ export default function SubjectsPage() {
 
     return matchesSearch && matchesStatus;
   });
-
-  console.log({ filteredSubjects: filteredSubjects });
 
   const handleOpenAddDialog = () => setIsAddModalOpen(true);
   const handleEditModalOpen = (subject: any) => {
@@ -308,9 +388,9 @@ export default function SubjectsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Code</TableHead>
-                    <TableHead>Subjet Name</TableHead>
+                    <TableHead>Subject Name</TableHead>
                     <TableHead>Department</TableHead>
-                    <TableHead>Instructor</TableHead>
+                    <TableHead>Assigned Teachers</TableHead>
                     <TableHead>Enrolled Students</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Status</TableHead>
@@ -332,7 +412,25 @@ export default function SubjectsPage() {
                         <TableCell>{subject.code}</TableCell>
                         <TableCell>{subject.subjectName}</TableCell>
                         <TableCell>{subject.departments}</TableCell>
-                        <TableCell>{subject.instructor}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {subject.teachers?.length > 0 ? (
+                              subject.teachers.map((teacher: any) => (
+                                <Badge
+                                  key={teacher.id}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {teacher.firstName} {teacher.lastName}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                No teachers
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{subject.enrolledStudents || 0}</TableCell>
                         <TableCell>{subject.description || '—'}</TableCell>
                         <TableCell>
@@ -347,6 +445,17 @@ export default function SubjectsPage() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Assign Teachers"
+                            onClick={() => {
+                              setSelectedSubject(subject);
+                              setIsAssignTeachersModalOpen(true);
+                            }}
+                          >
+                            <User className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -391,6 +500,18 @@ export default function SubjectsPage() {
           setOpen={setIsEditModalOpen}
           fetcher={fetcher}
           subject={selectedSubject}
+        />
+      )}
+
+      {/* Assign Teachers Modal */}
+      {isAssignTeachersModalOpen && selectedSubject && (
+        <AssignTeachersModal
+          open={isAssignTeachersModalOpen}
+          setOpen={setIsAssignTeachersModalOpen}
+          subject={selectedSubject}
+          availableTeachers={allTeachers}
+          assignedTeachers={selectedSubject.teachers || []}
+          fetcher={fetcher}
         />
       )}
     </div>

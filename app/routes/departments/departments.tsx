@@ -71,7 +71,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
         status: String(form.get('status') ?? 'Active') as 'Active' | 'Inactive',
       };
       const created = await services.department.createDepartment(data);
-      console.log('Created department:', created);
       return { success: true, department: created };
     }
 
@@ -203,13 +202,11 @@ export default function DepartmentsPage() {
 
   const handleOpenAddDialog = () => {
     setIsAddDepartmentModalOpen(true);
-    console.log('Add Department Modal Opened');
   };
 
   const handleEditModalOpen = (department: any) => {
     setSelectedDepartment(department);
     setIsEditDepartmentModalOpen(true);
-    console.log('Edit Department Modal Opened for:', department);
   };
 
   const deleteDepartment = (id: string) => {
