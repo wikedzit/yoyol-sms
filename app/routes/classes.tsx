@@ -283,15 +283,18 @@ export default function ClassesRoute() {
                     Edit
                   </Button>
 
+                  {/* TODO: delete not working  on class:  You can't delete a class with students enrolled */}
                   <div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={(e) => {
                         e.preventDefault();
-                        lastMethod.current = 'DELETE'; // track method
-                        deletingId.current = c.id; // track which class to remove
-                        fetcher.submit({ id: c.id }, { method: 'DELETE' });
+                        const formData = new FormData();
+                        formData.append('_method', 'DELETE');
+                        formData.append('id', String(c.id));
+                        deletingId.current = c.id;
+                        fetcher.submit(formData, { method: 'post' });
                       }}
                       className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                     >
@@ -353,14 +356,17 @@ export default function ClassesRoute() {
                   Edit
                 </Button>
 
+                {/* TODO: delete not working  on class:  You can't delete a class with students enrolled */}
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.preventDefault();
-                    lastMethod.current = 'DELETE'; // track method
-                    deletingId.current = c.id; // track which class to remove
-                    fetcher.submit({ id: c.id }, { method: 'DELETE' });
+                    const formData = new FormData();
+                    formData.append('_method', 'DELETE');
+                    formData.append('id', String(c.id));
+                    deletingId.current = c.id;
+                    fetcher.submit(formData, { method: 'post' });
                   }}
                   className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                 >

@@ -10,7 +10,7 @@ import {
 } from '~/components/ui/sheet';
 import { useState, useEffect } from 'react';
 
-export default function CreateClassModal({ open, setOpen, fetcher }: any) {
+export default function CreateClassModal({ open, setOpen, fetcher, id }: any) {
   const [name, setName] = useState('');
   const [EducationalLevel, setEducationalLevel] = useState('');
   const [section, setSection] = useState('');
@@ -25,7 +25,11 @@ export default function CreateClassModal({ open, setOpen, fetcher }: any) {
       setSection('');
       setYear('');
     }
-  }, [fetcher.data]);
+    if (fetcher.data?.error) {
+      console.error('Error creating classroom:', fetcher.data.error);
+      alert(`Error: ${fetcher.data.error}`);
+    }
+  }, [fetcher.data, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -35,8 +39,8 @@ export default function CreateClassModal({ open, setOpen, fetcher }: any) {
       >
         <fetcher.Form
           method="post"
+          action={id ? `/departments/${id}` : '/classes'}
           className="flex flex-col justify-between h-full"
-          onSubmit={() => setOpen(false)}
         >
           {/* header */}
           <div>
@@ -58,6 +62,8 @@ export default function CreateClassModal({ open, setOpen, fetcher }: any) {
 
             <div className="space-y-6">
               <input type="hidden" name="_method" value="POST" />
+              <input type="hidden" name="_entity" value="class" />
+              <input type="hidden" name="departmentId" value={id} />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Classroom Name

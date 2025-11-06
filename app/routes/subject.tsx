@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
 import { useFetcher, useLoaderData } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Card } from '~/components/ui/card';
+import { Card, CardContent } from '~/components/ui/card';
 import {
   Table,
   TableBody,
@@ -18,6 +18,7 @@ import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
 // Service import
 import type SubjectService from 'workers/services/subjects';
+import type DepartmentService from 'workers/services/departments';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import {
@@ -28,17 +29,28 @@ import {
   SelectValue,
 } from '~/components/ui/select';
 import { Badge } from '~/components/ui/badge';
+import { PaginationControls } from '~/components/shared/PaginationControls';
+import { usePagination } from '~/hooks/usePagination';
 
 // 🧩 Loader — fetch subjects from DB
 export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as { subject: SubjectService };
+  const services = context.services as { 
+    subject: SubjectService;
+    department: DepartmentService;
+  };
   const subjects = await services.subject.getAllSubjects({
     limit: 100,
     offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'asc',
   });
-  return { subjects };
+  const departments = await services.department.getDepartments({
+    limit: 100,
+    offset: 0,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
+  return { subjects, departments };
 }
 
 // 🧠 Action — handle create, update, delete
@@ -60,8 +72,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
+        departmentId: Number(form.get('departmentId')),
       };
       const created = await services.subject.createSubject(data);
+      if (!created) {
+        return { error: 'Failed to create subject. Please check all required fields.' };
+      }
       return { success: true, subject: created };
     }
 
@@ -101,9 +117,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🎓 Subject Management Page
 export default function SubjectsPage() {
-  const { subjects: initialSubjects } = useLoaderData<{ subjects: any[] }>();
+  const { subjects: initialSubjects, departments } = useLoaderData<{ subjects: any[]; departments: any[] }>();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
+
+  console.log({ subjects: initialSubjects });
 
   const [subjects, setSubjects] = useState(initialSubjects);
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,11 +186,22 @@ export default function SubjectsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  console.log({ filteredSubjects: filteredSubjects });
+
   const handleOpenAddDialog = () => setIsAddModalOpen(true);
   const handleEditModalOpen = (subject: any) => {
     setSelectedSubject(subject);
     setIsEditModalOpen(true);
   };
+
+  // --- Pagination logic ---
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedSubjectsList,
+    startIndex,
+    goToPage,
+  } = usePagination(filteredSubjects, 10);
 
   return (
     <div className="min-h-screen">
@@ -274,65 +303,74 @@ export default function SubjectsPage() {
           </div>
 
           <div className="mt-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Instructor</TableHead>
-                  <TableHead>Enrolled Students</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredSubjects.length === 0 ? (
+            <CardContent>
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <p className="text-muted-foreground">
-                        No subjects found.
-                      </p>
-                    </TableCell>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Subjet Name</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Instructor</TableHead>
+                    <TableHead>Enrolled Students</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredSubjects.map((subject) => (
-                    <TableRow key={subject.id}>
-                      <TableCell>{subject.code}</TableCell>
-                      <TableCell>{subject.subjectName}</TableCell>
-                      <TableCell>{subject.departments}</TableCell>
-                      <TableCell>{subject.instructor}</TableCell>
-                      <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                      <TableCell>{subject.description || '—'}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            subject.status === 'Active' ? 'default' : 'outline'
-                          }
-                        >
-                          {subject.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditModalOpen(subject)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <DeleteStudentButton
-                          id={subject.id}
-                          name={subject.subjectName}
-                          fetcher={fetcher}
-                        />
+                </TableHeader>
+                <TableBody>
+                  {paginatedSubjectsList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        <p className="text-muted-foreground">
+                          No subjects found.
+                        </p>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    paginatedSubjectsList.map((subject) => (
+                      <TableRow key={subject.id}>
+                        <TableCell>{subject.code}</TableCell>
+                        <TableCell>{subject.subjectName}</TableCell>
+                        <TableCell>{subject.departments}</TableCell>
+                        <TableCell>{subject.instructor}</TableCell>
+                        <TableCell>{subject.enrolledStudents || 0}</TableCell>
+                        <TableCell>{subject.description || '—'}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              subject.status === 'Active'
+                                ? 'default'
+                                : 'outline'
+                            }
+                          >
+                            {subject.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditModalOpen(subject)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <DeleteStudentButton
+                            id={subject.id}
+                            name={subject.subjectName}
+                            fetcher={fetcher}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={goToPage}
+            />
           </div>
         </Card>
       </div>
@@ -343,6 +381,7 @@ export default function SubjectsPage() {
           open={isAddModalOpen}
           setOpen={setIsAddModalOpen}
           fetcher={fetcher}
+          departments={departments}
         />
       )}
 

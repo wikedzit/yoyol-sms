@@ -34,7 +34,7 @@ const DashboardLayout = () => {
             <div className="bg-white border-b border-border-layout h-[70px] py-2 flex items-center justify-between px-8 flex-shrink-0">
               <div className="flex items-center space-x-4">
                 <h1 className="text-lg font-semibold text-gray-900">
-                  Dashboard
+                  breadcrum
                 </h1>
               </div>
               <div className="max-w-[280px]">

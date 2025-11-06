@@ -1,7 +1,7 @@
 // app/routes/admin+/departments.tsx
 import { useEffect, useRef, useState } from 'react';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { useFetcher, useLoaderData } from 'react-router';
+import { Link, useFetcher, useLoaderData } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Card } from '~/components/ui/card';
@@ -27,7 +27,7 @@ import type DepartmentService from 'workers/services/departments';
 import EditDepartmentModal from '~/components/modal/EditDepartmentModal';
 import AddDepartmentModal from '~/components/modal/AddDeparmentModal';
 import { toast } from 'sonner';
-import { DeleteStudentButton } from '~/components/DeleteStudentButton';
+
 import { Select } from '@radix-ui/react-select';
 import {
   SelectContent,
@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
+import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
 // --- Loader: fetch departments ---
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -211,6 +212,13 @@ export default function DepartmentsPage() {
     console.log('Edit Department Modal Opened for:', department);
   };
 
+  const deleteDepartment = (id: string) => {
+    // Implement delete logic here, possibly using fetcher
+    fetcher.submit(
+      { _method: 'DELETE', id },
+      { method: 'post', action: '/departments' }
+    );
+  };
   return (
     <div className="min-h-screen">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -360,14 +368,19 @@ export default function DepartmentsPage() {
                           {department.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right flex justify-end gap-2">
+                      <TableCell className="text-right flex items-center justify-end gap-2">
+                        <Link to={`/departments/${department.id}`}>
+                          <span className="font-semibold">View</span>
+                        </Link>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEditModalOpen(department)}
+                          className="cursor-pointer"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {/* TODO: delete not working  on department */}
                         <DeleteStudentButton
                           id={department.id}
                           name={department.name}

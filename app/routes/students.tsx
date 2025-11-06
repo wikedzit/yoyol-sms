@@ -308,10 +308,10 @@ export default function Students() {
             </TableHeader>
 
             <TableBody>
-              {paginatedStudentsList?.map((student) => (
+              {paginatedStudentsList?.map((student, index) => (
                 <TableRow key={student.id}>
                   <TableCell className="font-medium">
-                    {startIndex + student.id}
+                    {startIndex + index + 1}
                   </TableCell>
                   <TableCell>{student.firstName}</TableCell>
                   <TableCell>{student.lastName}</TableCell>

@@ -29,8 +29,8 @@ export const DeleteStudentButton = ({
       <AlertDialogTrigger asChild>
         <button
           type="button"
-          className="text-red-500 hover:text-red-700 transition"
-          title="Delete student"
+          className="text-red-500 hover:text-red-700 transition cursor-pointer"
+          title="Delete"
         >
           <Trash2 className="w-5 h-5" />
         </button>
@@ -38,7 +38,7 @@ export const DeleteStudentButton = ({
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Student</AlertDialogTitle>
+          <AlertDialogTitle>Delete</AlertDialogTitle>
           <AlertDialogDescription>
             Are you sure you want to delete{' '}
             <strong className="font-semibold">{name}</strong>? This action

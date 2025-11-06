@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { departments } from './departments';
 
 export const teachers = sqliteTable('teachers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -8,11 +9,14 @@ export const teachers = sqliteTable('teachers', {
   subject: text('subject').notNull(),
   email: text('email').notNull(),
   phone: text('phone').notNull(),
-  address: text('address'),
+  address: text('address').notNull(),
   qualification: text('qualification'),
   gender: text('gender').notNull(),
   experience: integer('experience'),
   status: text('status').notNull().default('Active'),
+
+  // Foreign Key to Departments table
+  departmentId: integer('department_id').references(() => departments.id),
 
   createdAt: integer('created_at')
     .notNull()
