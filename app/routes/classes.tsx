@@ -20,10 +20,18 @@ import { Link } from 'react-router-dom';
 import CreateClassModal from '~/components/modal/CreateClassModal';
 import EditClassModal from '~/components/modal/EditClassModal';
 import { toast } from 'sonner';
+import type SubjectService from 'workers/services/subjects';
+import type ClassService from 'workers/services/class';
+import type ClassSubjectService from 'workers/services/class-subjects';
+import { BookOpen } from 'lucide-react';
 
-// 🧠 Loader – fetch classes
+// 🧠 Loader – fetch classes with student and subject counts
 export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services;
+  const services = context.services as {
+    class: ClassService;
+    subject: SubjectService;
+    classSubject: ClassSubjectService;
+  };
 
   const classes = await services.class.getAllWithStudentCount({
     offset: 0,
@@ -33,7 +41,20 @@ export async function loader({ context }: LoaderFunctionArgs) {
     limit: 100,
   });
 
-  return { classes };
+  // Get subject count for each class
+  const classesWithSubjectCount = await Promise.all(
+    classes.map(async (classItem) => {
+      const subjects = await services.classSubject.getSubjectsByClass(
+        classItem.id
+      );
+      return {
+        ...classItem,
+        subjectCount: subjects.length,
+      };
+    })
+  );
+
+  return { classes: classesWithSubjectCount };
 }
 
 // ⚙️ Action – handle create, update, delete
@@ -120,7 +141,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function ClassesRoute() {
-  const { classes: initialClasses } = useLoaderData() as { classes: any[] };
+  const { classes: initialClasses } = useLoaderData() as {
+    classes: Array<{
+      id: number;
+      name: string;
+      EducationalLevel: string;
+      section: string;
+      year: number;
+      studentCount: number;
+      subjectCount: number;
+    }>;
+  };
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
   const [classes, setClasses] = useState(initialClasses ?? []);
@@ -153,13 +184,21 @@ export default function ClassesRoute() {
 
       switch (lastMethod.current) {
         case 'POST':
-          if (data.class) setClasses((prev) => [data.class, ...prev]);
+          if (data.class)
+            setClasses((prev) => [
+              { ...data.class, subjectCount: 0, studentCount: 0 },
+              ...prev,
+            ]);
           toast.success('Classroom added successfully!');
           break;
         case 'PUT':
           if (data.class)
             setClasses((prev) =>
-              prev.map((c) => (c.id === data.class.id ? data.class : c))
+              prev.map((c) =>
+                c.id === data.class.id
+                  ? { ...data.class, subjectCount: c.subjectCount || 0, studentCount: c.studentCount || 0 }
+                  : c
+              )
             );
           toast.success('Classroom updated successfully!');
           break;
@@ -260,11 +299,15 @@ export default function ClassesRoute() {
                     </p>
                   </div>
                 </div>
-                {/* number of student for this class */}
+                {/* number of students and subjects for this class */}
                 <div className="flex items-center gap-6 text-sm text-gray-500">
                   <div className="flex items-center gap-2">
                     <Users size={16} />
-                    <span>{c.studentCount} students</span>
+                    <span>{c.studentCount || 0} students</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={16} />
+                    <span>{c.subjectCount || 0} subjects</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between mt-3">
@@ -336,7 +379,11 @@ export default function ClassesRoute() {
               <div className="flex items-center gap-6 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
                   <Users size={16} />
-                  <span>{c.studentCount} students</span>
+                  <span>{c.studentCount || 0} students</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <BookOpen size={16} />
+                  <span>{c.subjectCount || 0} subjects</span>
                 </div>
               </div>
 

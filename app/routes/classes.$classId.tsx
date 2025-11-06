@@ -30,14 +30,23 @@ import {
   type ActionFunctionArgs,
 } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
+import type SubjectService from 'workers/services/subjects';
+import type ClassSubjectService from 'workers/services/class-subjects';
 import { usePagination } from '~/hooks/usePagination';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
+import AssignSubjectsToClassModal from '~/components/modal/AssignSubjectsToClassModal';
+import { BookOpen } from 'lucide-react';
 
 // --- Loader ---
 export async function loader({ params, context }: LoaderFunctionArgs) {
   const { classId } = params;
-  const services = context.services as { student: StudentService; class: any };
+  const services = context.services as {
+    student: StudentService;
+    class: any;
+    subject: SubjectService;
+    classSubject: ClassSubjectService;
+  };
   const students = await services.student.getAll({
     limit: 100,
     offset: 0,
@@ -49,17 +58,61 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
   //capture the class details
   const classInfo = await services.class.getById(Number(classId));
 
-  return { students: filtered, class: classInfo };
+  // Get all subjects
+  const allSubjects = await services.subject.getAllSubjects({
+    limit: 100,
+    offset: 0,
+    sortBy: 'subjectName',
+    sortOrder: 'asc',
+  });
+
+  // Get subjects assigned to this class
+  const assignedSubjects = await services.classSubject.getSubjectsByClass(
+    Number(classId)
+  );
+
+  return {
+    students: filtered,
+    class: classInfo,
+    allSubjects,
+    assignedSubjects,
+  };
 }
 
 // --- Action ---
 export async function action({ request, context, params }: ActionFunctionArgs) {
   const { classId } = params;
-  const services = context.services as { student: StudentService };
+  const services = context.services as {
+    student: StudentService;
+    classSubject: ClassSubjectService;
+  };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
+  const action = form.get('action') as string | null;
 
   try {
+    // --- ASSIGN SUBJECTS TO CLASS ---
+    if (action === 'assign_subjects') {
+      const formClassId = Number(form.get('classId'));
+      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+
+      if (!formClassId) {
+        return new Response(JSON.stringify({ error: 'Class ID is required' }), {
+          status: 400,
+        });
+      }
+
+      // Replace all subject assignments for this class
+      await services.classSubject.replaceClassSubjects(formClassId, subjectIds);
+
+      return new Response(
+        JSON.stringify({ success: true, action: 'assign_subjects' }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     if (method === 'POST') {
       // Ensure classId is always a valid number or undefined
       const rawClassId = form.get('classId') ?? classId;
@@ -137,9 +190,16 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 
 // --- Component ---
 export default function ClassDetails({ params }: { params: any }) {
-  const { students: initialStudents, class: classInfo } = useLoaderData() as {
+  const {
+    students: initialStudents,
+    class: classInfo,
+    allSubjects,
+    assignedSubjects,
+  } = useLoaderData() as {
     students: any[];
     class: any;
+    allSubjects: any[];
+    assignedSubjects: any[];
   };
   const fetcher = useFetcher();
   const { classId } = useParams();
@@ -149,6 +209,7 @@ export default function ClassDetails({ params }: { params: any }) {
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
 
   // filtering logic
   const filteredStudents = initialStudents?.filter((student) => {
@@ -198,17 +259,45 @@ export default function ClassDetails({ params }: { params: any }) {
             {classInfo?.name}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage students in this class
+            Manage students and subjects in this class
           </p>
         </div>
-        <Button
-          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
-          onClick={() => setAddStudentModalOpen(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Student
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="border-primary text-primary"
+            onClick={() => setAssignSubjectsModalOpen(true)}
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Assign Subjects to {classInfo?.name}
+          </Button>
+          <Button
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+            onClick={() => setAddStudentModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Student
+          </Button>
+        </div>
       </div>
+
+      {/* Assigned Subjects Card */}
+      {assignedSubjects.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Assigned Subjects</h3>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {assignedSubjects.map((subject: any) => (
+                <Badge key={subject.id} variant="secondary" className="text-sm">
+                  {subject.subjectName} ({subject.code})
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search & Filter */}
       <Card>
@@ -345,6 +434,21 @@ export default function ClassDetails({ params }: { params: any }) {
           setOpen={setEditStudentModalOpen}
           student={selectedStudent}
           classId={classId}
+        />
+      )}
+      {assignSubjectsModalOpen && classInfo && (
+        <AssignSubjectsToClassModal
+          open={assignSubjectsModalOpen}
+          setOpen={setAssignSubjectsModalOpen}
+          classData={{
+            id: classInfo.id,
+            name: classInfo.name,
+            EducationalLevel: classInfo.EducationalLevel,
+            section: classInfo.section,
+          }}
+          availableSubjects={allSubjects}
+          assignedSubjects={assignedSubjects}
+          fetcher={fetcher}
         />
       )}
     </div>

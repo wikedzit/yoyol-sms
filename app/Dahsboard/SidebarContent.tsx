@@ -4,19 +4,19 @@ import {
   BookOpen,
   GraduationCap,
   Calendar,
-  BarChart3,
   Settings,
   ChevronRight,
+  Landmark,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '~/lib/utils';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Departments', href: '/departments', icon: BarChart3 },
+  { name: 'Departments', href: '/departments', icon: Landmark },
   // TODO: doing it later
   // { name: 'Courses', href: '/courses', icon: BookOpen },
-  { name: 'Classrooms', href: '/classes', icon: BarChart3 },
+  { name: 'Classrooms', href: '/classes', icon: GraduationCap },
   { name: 'Subjects', href: '/subjects', icon: BookOpen },
   { name: 'Teachers', href: '/teachers', icon: Users },
   { name: 'Students List', href: '/students', icon: Users },

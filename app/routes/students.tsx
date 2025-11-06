@@ -294,16 +294,18 @@ export default function Students() {
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>SN</TableHead>
-                <TableHead>First name</TableHead>
-                <TableHead>Last name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Grade</TableHead>
-                <TableHead>Enrolled</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-gray-100">
+                <TableHead className="font-semibold">SN</TableHead>
+                <TableHead className="font-semibold">First name</TableHead>
+                <TableHead className="font-semibold">Last name</TableHead>
+                <TableHead className="font-semibold">Email</TableHead>
+                <TableHead className="font-semibold">Course</TableHead>
+                <TableHead className="font-semibold">Grade</TableHead>
+                <TableHead className="font-semibold">Enrolled</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="text-right font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
 

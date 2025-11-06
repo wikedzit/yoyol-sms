@@ -21,6 +21,7 @@ import type SubjectService from 'workers/services/subjects';
 import type DepartmentService from 'workers/services/departments';
 import type TeacherService from 'workers/services/teachers';
 import type TeacherSubjectService from 'workers/services/teacher-subjects';
+import type ClassSubjectService from 'workers/services/class-subjects';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import AssignTeachersModal from '~/components/modal/AssignTeachersModal';
@@ -35,13 +36,14 @@ import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 
-//Loader — fetch subjects with their teachers from DB
+//Loader — fetch subjects with their teachers and classes from DB
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     subject: SubjectService;
     department: DepartmentService;
     teacher: TeacherService;
     teacherSubject: TeacherSubjectService;
+    classSubject: ClassSubjectService;
   };
   const subjects = await services.subject.getAllSubjects({
     limit: 100,
@@ -64,19 +66,27 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get teachers for each subject
-  const subjectsWithTeachers = await Promise.all(
+  // Get teachers and classes for each subject
+  const subjectsWithTeachersAndClasses = await Promise.all(
     subjects.map(async (subject) => {
       const assignedTeachers =
         await services.teacherSubject?.getTeachersBySubject(subject.id);
+      const assignedClasses = await services.classSubject?.getClassesBySubject(
+        subject.id
+      );
       return {
         ...subject,
         teachers: assignedTeachers || [],
+        classes: assignedClasses || [],
       };
     })
   );
 
-  return { subjects: subjectsWithTeachers, departments, allTeachers: teachers };
+  return {
+    subjects: subjectsWithTeachersAndClasses,
+    departments,
+    allTeachers: teachers,
+  };
 }
 
 // Action — handle create, update, delete, and teacher assignments
@@ -386,15 +396,24 @@ export default function SubjectsPage() {
             <CardContent>
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Subject Name</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Assigned Teachers</TableHead>
-                    <TableHead>Enrolled Students</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="font-semibold">Code</TableHead>
+                    <TableHead className="font-semibold">
+                      Subject Name
+                    </TableHead>
+                    <TableHead className="font-semibold">Department</TableHead>
+                    <TableHead className="font-semibold">
+                      Assigned Teachers
+                    </TableHead>
+                    <TableHead className="font-semibold">Classes</TableHead>
+                    <TableHead className="font-semibold">
+                      Enrolled Students
+                    </TableHead>
+                    <TableHead className="font-semibold">Description</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -427,6 +446,25 @@ export default function SubjectsPage() {
                             ) : (
                               <span className="text-xs text-muted-foreground">
                                 No teachers
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {subject.classes?.length > 0 ? (
+                              subject.classes.map((classItem: any) => (
+                                <Badge
+                                  key={classItem.id}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {classItem.name}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                No classes
                               </span>
                             )}
                           </div>

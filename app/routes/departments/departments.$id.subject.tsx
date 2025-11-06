@@ -17,11 +17,7 @@ import {
   SelectItem,
   SelectContent,
 } from '~/components/ui/select';
-import {
-  useFetcher,
-  useLoaderData,
-  useParams,
-} from 'react-router';
+import { useFetcher, useLoaderData, useParams } from 'react-router';
 import { Badge } from '~/components/ui/badge';
 import { DeleteButton } from '~/components/DeleteButton';
 import { useState } from 'react';
@@ -30,9 +26,16 @@ import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 
-export default function DepartmentSubjects({ subjects, departments }: { subjects: any[]; departments: any[] }) {
+export default function DepartmentSubjects({
+  subjects,
+  departments,
+}: {
+  subjects: any[];
+  departments: any[];
+}) {
   const loaderData = useLoaderData() as { subjects: any[]; departments: any[] };
-  const { subjects: initialSubjects, departments: loaderDepartments } = loaderData;
+  const { subjects: initialSubjects, departments: loaderDepartments } =
+    loaderData;
   const fetcher = useFetcher();
   const { id } = useParams();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -116,15 +119,19 @@ export default function DepartmentSubjects({ subjects, departments }: { subjects
         <CardContent>
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Subject Name</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Instructor</TableHead>
-                <TableHead>Enrolled Students</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-gray-100">
+                <TableHead className="font-semibold">Code</TableHead>
+                <TableHead className="font-semibold">Subject Name</TableHead>
+                <TableHead className="font-semibold">Department</TableHead>
+                <TableHead className="font-semibold">Instructor</TableHead>
+                <TableHead className="font-semibold">
+                  Enrolled Students
+                </TableHead>
+                <TableHead className="font-semibold">Description</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="text-right font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
