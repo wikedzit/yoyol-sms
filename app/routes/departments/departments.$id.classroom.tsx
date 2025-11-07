@@ -84,6 +84,7 @@ export default function DepartmentClassrooms({
     <>
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between my-4 gap-3">
+        {/* TODO: show the selected department name just this name */}
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Department Classrooms
         </h1>
@@ -189,13 +190,15 @@ export default function DepartmentClassrooms({
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm('Are you sure you want to delete this classroom?')) {
+                    if (
+                      confirm('Are you sure you want to delete this classroom?')
+                    ) {
                       const formData = new FormData();
                       formData.append('id', String(classroom.id));
                       formData.append('_method', 'DELETE');
                       formData.append('_entity', 'class');
-                      fetcher.submit(formData, { 
-                        method: 'POST'
+                      fetcher.submit(formData, {
+                        method: 'POST',
                       });
                     }
                   }}
@@ -258,13 +261,15 @@ export default function DepartmentClassrooms({
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (confirm('Are you sure you want to delete this classroom?')) {
+                    if (
+                      confirm('Are you sure you want to delete this classroom?')
+                    ) {
                       const formData = new FormData();
                       formData.append('id', String(classroom.id));
                       formData.append('_method', 'DELETE');
                       formData.append('_entity', 'class');
-                      fetcher.submit(formData, { 
-                        method: 'POST'
+                      fetcher.submit(formData, {
+                        method: 'POST',
                       });
                     }
                   }}
@@ -300,4 +305,3 @@ export default function DepartmentClassrooms({
     </>
   );
 }
-

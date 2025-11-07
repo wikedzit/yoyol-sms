@@ -12,7 +12,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Eye, Pencil } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, BookOpen } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -25,15 +25,22 @@ import AddStudentModal from '~/components/modal/AddStudentModal';
 import EditStudentModal from '~/components/modal/EditStudentModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
+import AssignSubjectsToStudentModal from '~/components/modal/AssignSubjectsToStudentModal';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
+import type SubjectService from 'workers/services/subjects';
+import type StudentSubjectService from 'workers/services/student-subjects';
 import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 
-// 🧠 Loader – fetch students
+// 🧠 Loader – fetch students with their assigned subjects
 export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as { student: StudentService };
+  const services = context.services as {
+    student: StudentService;
+    subject: SubjectService;
+    studentSubjects: StudentSubjectService;
+  };
 
   const students = await services.student?.getAll({
     limit: 100,
@@ -42,16 +49,58 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  return { students };
+  // Get all subjects for assignment modal
+  const subjects = await services.subject?.getAllSubjects({
+    limit: 100,
+    offset: 0,
+    sortBy: 'subjectName',
+    sortOrder: 'asc',
+  });
+
+  // Get subjects for each student
+  const studentsWithSubjects = await Promise.all(
+    students.map(async (student) => {
+      const assignedSubjects =
+        await services.studentSubjects?.getSubjectsByStudent(student.id);
+      return {
+        ...student,
+        subjects: assignedSubjects || [],
+      };
+    })
+  );
+
+  return {
+    students: studentsWithSubjects,
+    allSubjects: subjects,
+  };
 }
 
-// ⚙️ Action – handle create, update, delete
+// ⚙️ Action – handle create, update, delete, and subject assignments
 export async function action({ request, context }: ActionFunctionArgs) {
-  const services = context.services as { student: StudentService };
+  const services = context.services as {
+    student: StudentService;
+    studentSubjects: StudentSubjectService;
+  };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
+  const action = form.get('action') as string | null;
 
   try {
+    // --- ASSIGN SUBJECTS TO STUDENT ---
+    if (action === 'assign_subjects') {
+      const studentId = Number(form.get('studentId'));
+      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+
+      if (!studentId) {
+        return { error: 'Student ID is required' };
+      }
+
+      await services.studentSubjects?.replaceStudentSubjects(
+        studentId,
+        subjectIds
+      );
+      return { success: true, action: 'assign_subjects' };
+    }
     // --- CREATE STUDENT ---
     if (method === 'POST') {
       // Convert FormDataEntryValue | null to the expected string/union types.
@@ -170,7 +219,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 export default function Students() {
-  const { students: initialStudents } = useLoaderData() as { students: any[] };
+  const { students: initialStudents, allSubjects } = useLoaderData() as {
+    students: any[];
+    allSubjects: any[];
+  };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
@@ -178,6 +230,7 @@ export default function Students() {
   const [filter, setFilter] = useState('all');
   const [addStudentModalOpen, setAddStudentModalOpen] = useState(false);
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
+  const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   const filteredStudents = initialStudents?.filter((student) => {
@@ -218,6 +271,15 @@ export default function Students() {
       }
 
       if (data.success) {
+        const action = fetcher.formData?.get('action');
+        
+        if (action === 'assign_subjects') {
+          toast.success('Subjects assigned successfully!');
+          listFetcher.load(window.location.pathname);
+          lastMethod.current = null;
+          return;
+        }
+
         // 🔄 Only reload *after* success — and only once per action
         switch (lastMethod.current) {
           case 'POST':
@@ -240,7 +302,7 @@ export default function Students() {
         lastMethod.current = null;
       }
     }
-  }, [fetcher.state, fetcher.data]);
+  }, [fetcher.state, fetcher.data, fetcher.formData]);
 
   return (
     <div className="space-y-2 h-min-screen">
@@ -301,6 +363,7 @@ export default function Students() {
                 <TableHead className="font-semibold">Email</TableHead>
                 <TableHead className="font-semibold">Course</TableHead>
                 <TableHead className="font-semibold">Grade</TableHead>
+                <TableHead className="font-semibold">Assigned Subjects</TableHead>
                 <TableHead className="font-semibold">Enrolled</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="text-right font-semibold">
@@ -326,6 +389,25 @@ export default function Students() {
                       {student.grade}
                     </Badge>
                   </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {student.subjects?.length > 0 ? (
+                        student.subjects.map((subject: any) => (
+                          <Badge
+                            key={subject.id}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {subject.code}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          No subjects
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{student.enrollmentDate}</TableCell>
                   <TableCell className="border-none">
                     <Badge
@@ -343,6 +425,18 @@ export default function Students() {
                   </TableCell>
                   <TableCell className="text-right flex justify-end gap-2">
                     <StudentProfilesModal student={student} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Assign Subjects"
+                      className="cursor-pointer"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setAssignSubjectsModalOpen(true);
+                      }}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -387,6 +481,18 @@ export default function Students() {
           open={editStudentModalOpen}
           setOpen={setEditStudentModalOpen}
           student={selectedStudent}
+          fetcher={fetcher}
+        />
+      )}
+
+      {/* Assign Subjects Modal */}
+      {assignSubjectsModalOpen && selectedStudent && (
+        <AssignSubjectsToStudentModal
+          open={assignSubjectsModalOpen}
+          setOpen={setAssignSubjectsModalOpen}
+          student={selectedStudent}
+          availableSubjects={allSubjects}
+          assignedSubjects={selectedStudent.subjects || []}
           fetcher={fetcher}
         />
       )}

@@ -15,14 +15,7 @@ import {
 } from '~/components/ui/table';
 import { Badge } from '~/components/ui/badge';
 
-import {
-  Plus,
-  Search,
-  Pencil,
-  Trash2,
-  Users,
-  GraduationCap,
-} from 'lucide-react';
+import { Plus, Search, Pencil, Users, GraduationCap } from 'lucide-react';
 import type DepartmentService from 'workers/services/departments';
 import EditDepartmentModal from '~/components/modal/EditDepartmentModal';
 import AddDepartmentModal from '~/components/modal/AddDeparmentModal';
@@ -328,9 +321,9 @@ export default function DepartmentsPage() {
                   <TableHead className="text-center font-semibold">
                     Students
                   </TableHead>
-                  <TableHead className="text-center font-semibold">
+                  {/* <TableHead className="text-center font-semibold">
                     Faculty
-                  </TableHead>
+                  </TableHead> */}
                   <TableHead className="font-semibold">Established</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right font-semibold">
@@ -356,9 +349,9 @@ export default function DepartmentsPage() {
                       <TableCell className="text-center">
                         {department.totalStudent}
                       </TableCell>
-                      <TableCell className="text-center">
+                      {/* <TableCell className="text-center">
                         {department.totalFaculty}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell>{department.establishedDate}</TableCell>
                       <TableCell>
                         <Badge
