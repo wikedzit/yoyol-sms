@@ -127,7 +127,7 @@ export default function DepartmentSubjects({
                 <TableHead className="font-semibold">
                   Enrolled Students
                 </TableHead>
-                <TableHead className="font-semibold">Description</TableHead>
+                {/* <TableHead className="font-semibold">Description</TableHead> */}
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="text-right font-semibold">
                   Actions
@@ -152,7 +152,7 @@ export default function DepartmentSubjects({
                     <TableCell>{subject.departments}</TableCell>
                     <TableCell>{subject.instructor}</TableCell>
                     <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                    <TableCell>{subject.description || '—'}</TableCell>
+                    {/* <TableCell>{subject.description || '—'}</TableCell> */}
                     <TableCell>
                       <Badge
                         variant={
