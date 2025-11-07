@@ -82,6 +82,7 @@ export default function DepartmentSubjects({
   return (
     <>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between my-4">
+        {/* TODO: show the selected department name just this name */}
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Department Subjects
         </h1>
