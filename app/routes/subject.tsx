@@ -409,7 +409,7 @@ export default function SubjectsPage() {
                     <TableHead className="font-semibold">
                       Enrolled Students
                     </TableHead>
-                    <TableHead className="font-semibold">Description</TableHead>
+                    {/* <TableHead className="font-semibold">Description</TableHead> */}
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">
                       Actions
@@ -470,7 +470,9 @@ export default function SubjectsPage() {
                           </div>
                         </TableCell>
                         <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                        <TableCell>{subject.description || '—'}</TableCell>
+                        {/* <TableCell className="max-w-[200px] truncate">
+                          {subject.description || '—'}
+                        </TableCell> */}
                         <TableCell>
                           <Badge
                             variant={

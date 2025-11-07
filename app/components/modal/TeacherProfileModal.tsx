@@ -64,6 +64,9 @@ export function TeacherProfileModal({ teacher }: { teacher: any }) {
               <strong>Address:</strong> {teacher.address}
             </p>
             <p>
+              <strong>subject:</strong> {teacher.subject}
+            </p>
+            <p>
               <strong>Status:</strong>{' '}
               <span
                 className={`${

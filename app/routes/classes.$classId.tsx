@@ -1,5 +1,5 @@
 // app/routes/classes/$classId.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLoaderData, useFetcher, useParams, Link } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
@@ -32,11 +32,15 @@ import {
 import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type ClassSubjectService from 'workers/services/class-subjects';
+import type TeacherClassService from 'workers/services/teacher-classes';
+import type TeacherService from 'workers/services/teachers';
 import { usePagination } from '~/hooks/usePagination';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import AssignSubjectsToClassModal from '~/components/modal/AssignSubjectsToClassModal';
-import { BookOpen } from 'lucide-react';
+import AssignTeachersToClassModal from '~/components/modal/AssignTeachersToClassModal';
+import { BookOpen, Users as UsersIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 // --- Loader ---
 export async function loader({ params, context }: LoaderFunctionArgs) {
@@ -46,6 +50,8 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     class: any;
     subject: SubjectService;
     classSubject: ClassSubjectService;
+    teacherClass: TeacherClassService;
+    teacher: TeacherService;
   };
   const students = await services.student.getAll({
     limit: 100,
@@ -66,8 +72,21 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
+  // Get all teachers
+  const allTeachers = await services.teacher.getAllTeachers({
+    limit: 100,
+    offset: 0,
+    sortBy: 'createdAt',
+    sortOrder: 'asc',
+  });
+
   // Get subjects assigned to this class
   const assignedSubjects = await services.classSubject.getSubjectsByClass(
+    Number(classId)
+  );
+
+  // Get teachers assigned to this class
+  const assignedTeachers = await services.teacherClass.getTeachersByClass(
     Number(classId)
   );
 
@@ -76,6 +95,8 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     class: classInfo,
     allSubjects,
     assignedSubjects,
+    allTeachers,
+    assignedTeachers,
   };
 }
 
@@ -85,6 +106,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   const services = context.services as {
     student: StudentService;
     classSubject: ClassSubjectService;
+    teacherClass: TeacherClassService;
   };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
@@ -107,6 +129,28 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 
       return new Response(
         JSON.stringify({ success: true, action: 'assign_subjects' }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // --- ASSIGN TEACHERS TO CLASS ---
+    if (action === 'assign_teachers') {
+      const formClassId = Number(form.get('classId'));
+      const teacherIds = JSON.parse(String(form.get('teacherIds') || '[]'));
+
+      if (!formClassId) {
+        return new Response(JSON.stringify({ error: 'Class ID is required' }), {
+          status: 400,
+        });
+      }
+
+      // Replace all teacher assignments for this class
+      await services.teacherClass.replaceClassTeachers(formClassId, teacherIds);
+
+      return new Response(
+        JSON.stringify({ success: true, action: 'assign_teachers' }),
         {
           headers: { 'Content-Type': 'application/json' },
         }
@@ -195,11 +239,15 @@ export default function ClassDetails({ params }: { params: any }) {
     class: classInfo,
     allSubjects,
     assignedSubjects,
+    allTeachers,
+    assignedTeachers,
   } = useLoaderData() as {
     students: any[];
     class: any;
     allSubjects: any[];
     assignedSubjects: any[];
+    allTeachers: any[];
+    assignedTeachers: any[];
   };
   const fetcher = useFetcher();
   const { classId } = useParams();
@@ -210,6 +258,7 @@ export default function ClassDetails({ params }: { params: any }) {
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
+  const [assignTeachersModalOpen, setAssignTeachersModalOpen] = useState(false);
 
   // filtering logic
   const filteredStudents = initialStudents?.filter((student) => {
@@ -238,6 +287,23 @@ export default function ClassDetails({ params }: { params: any }) {
     fetcher.submit(formData, { method: 'post' });
   };
 
+  // Handle toast notifications
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      const actionValue = fetcher.formData?.get('action');
+      const action = actionValue ? String(actionValue) : null;
+      if (action === 'assign_subjects') {
+        toast.success('Subjects assigned successfully!');
+      } else if (action === 'assign_teachers') {
+        toast.success('Teachers assigned successfully!');
+      }
+    }
+
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data.error || 'An error occurred');
+    }
+  }, [fetcher.data, fetcher.formData]);
+
   return (
     <div className="space-y-2 h-min-screen overflow-y-auto w-full">
       {/* link to go back to class */}
@@ -259,7 +325,7 @@ export default function ClassDetails({ params }: { params: any }) {
             {classInfo?.name}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Manage students and subjects in this class
+            Manage students, subjects, and teachers in this class
           </p>
         </div>
         <div className="flex gap-3">
@@ -269,7 +335,15 @@ export default function ClassDetails({ params }: { params: any }) {
             onClick={() => setAssignSubjectsModalOpen(true)}
           >
             <BookOpen className="h-4 w-4 mr-2" />
-            Assign Subjects to {classInfo?.name}
+            Assign Subjects
+          </Button>
+          <Button
+            variant="outline"
+            className="border-primary text-primary"
+            onClick={() => setAssignTeachersModalOpen(true)}
+          >
+            <UsersIcon className="h-4 w-4 mr-2" />
+            Assign Teachers
           </Button>
           <Button
             className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
@@ -292,6 +366,29 @@ export default function ClassDetails({ params }: { params: any }) {
               {assignedSubjects.map((subject: any) => (
                 <Badge key={subject.id} variant="secondary" className="text-sm">
                   {subject.subjectName} ({subject.code})
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Assigned Teachers Card */}
+      {assignedTeachers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-semibold">Assigned Teachers</h3>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {assignedTeachers.map((teacher: any) => (
+                <Badge key={teacher.id} variant="outline" className="text-sm">
+                  {teacher.firstName} {teacher.lastName}
+                  {teacher.email && (
+                    <span className="text-muted-foreground ml-1">
+                      ({teacher.email})
+                    </span>
+                  )}
                 </Badge>
               ))}
             </div>
@@ -448,6 +545,21 @@ export default function ClassDetails({ params }: { params: any }) {
           }}
           availableSubjects={allSubjects}
           assignedSubjects={assignedSubjects}
+          fetcher={fetcher}
+        />
+      )}
+      {assignTeachersModalOpen && classInfo && (
+        <AssignTeachersToClassModal
+          open={assignTeachersModalOpen}
+          setOpen={setAssignTeachersModalOpen}
+          classData={{
+            id: classInfo.id,
+            name: classInfo.name,
+            EducationalLevel: classInfo.EducationalLevel,
+            section: classInfo.section,
+          }}
+          availableTeachers={allTeachers}
+          assignedTeachers={assignedTeachers}
           fetcher={fetcher}
         />
       )}

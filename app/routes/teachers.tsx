@@ -25,21 +25,27 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import type TeacherService from 'workers/services/teachers';
 import type SubjectService from 'workers/services/subjects';
 import type TeacherSubjectService from 'workers/services/teacher-subjects';
+import type TeacherClassService from 'workers/services/teacher-classes';
+import type ClassService from 'workers/services/class';
 import AddTeacherModal from '~/components/modal/AddTeacherModal';
 import EditTeacherModal from '~/components/modal/EditTeacherModal';
 import AssignSubjectsModal from '~/components/modal/AssignSubjectsModal';
+import AssignClassesToTeacherModal from '~/components/modal/AssignClassesToTeacherModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { GraduationCap } from 'lucide-react';
 
-// 🧠 Loader – fetch teachers with their subjects
+// 🧠 Loader – fetch teachers with their subjects and classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
     subject: SubjectService;
     teacherSubject: TeacherSubjectService;
+    teacherClass: TeacherClassService;
+    class: ClassService;
   };
 
   const teachers = await services.teacher?.getAllTeachers({
@@ -57,26 +63,42 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get subjects for each teacher
-  const teachersWithSubjects = await Promise.all(
+  // Get all classes for assignment modal
+  const allClasses = await services.class.getAll({
+    limit: 100,
+    offset: 0,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
+
+  // Get subjects and classes for each teacher
+  const teachersWithSubjectsAndClasses = await Promise.all(
     teachers.map(async (teacher) => {
       const assignedSubjects =
         await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
+      const assignedClasses =
+        await services.teacherClass?.getClassesByTeacher(teacher.id);
       return {
         ...teacher,
         subjects: assignedSubjects || [],
+        classes: assignedClasses || [],
       };
     })
   );
 
-  return { teachers: teachersWithSubjects, allSubjects: subjects };
+  return {
+    teachers: teachersWithSubjectsAndClasses,
+    allSubjects: subjects,
+    allClasses: allClasses,
+  };
 }
 
-// ⚙️ Action – handle create, update, delete, and subject assignments
+// ⚙️ Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
     teacherSubject: TeacherSubjectService;
+    teacherClass: TeacherClassService;
   };
   const form = await request.formData();
 
@@ -98,6 +120,19 @@ export async function action({ request, context }: ActionFunctionArgs) {
         subjectIds
       );
       return { success: true, action: 'assign_subjects' };
+    }
+
+    // --- ASSIGN CLASSES TO TEACHER ---
+    if (action === 'assign_classes') {
+      const teacherId = Number(form.get('teacherId'));
+      const classIds = JSON.parse(String(form.get('classIds') || '[]'));
+
+      if (!teacherId) {
+        return { error: 'Teacher ID is required' };
+      }
+
+      await services.teacherClass?.replaceTeacherClasses(teacherId, classIds);
+      return { success: true, action: 'assign_classes' };
     }
     // --- CREATE TEACHER ---
     if (method === 'POST') {
@@ -187,9 +222,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🧑‍🏫 UI – Teachers Table & Modals
 export default function Teachers() {
-  const { teachers: initialTeachers, allSubjects } = useLoaderData() as {
+  const {
+    teachers: initialTeachers,
+    allSubjects,
+    allClasses,
+  } = useLoaderData() as {
     teachers: any[];
     allSubjects: any[];
+    allClasses: any[];
   };
   const fetcher = useFetcher();
 
@@ -198,6 +238,7 @@ export default function Teachers() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
+  const [assignClassesModalOpen, setAssignClassesModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
   const filteredStudents = initialTeachers?.filter((teacher) => {
@@ -228,6 +269,12 @@ export default function Teachers() {
 
       if (action === 'assign_subjects') {
         message = 'Subjects assigned successfully!';
+        toast.success(message);
+        return;
+      }
+
+      if (action === 'assign_classes') {
+        message = 'Classes assigned successfully!';
         toast.success(message);
         return;
       }
@@ -313,6 +360,9 @@ export default function Teachers() {
                 <TableHead className="font-semibold">
                   Assigned Subjects
                 </TableHead>
+                <TableHead className="font-semibold">
+                  Assigned Classes
+                </TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
                 <TableHead className="font-semibold">Phone</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
@@ -347,6 +397,25 @@ export default function Teachers() {
                       )}
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {teacher.classes?.length > 0 ? (
+                        teacher.classes.map((classItem: any) => (
+                          <Badge
+                            key={classItem.id}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {classItem.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          No classes
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{teacher.email}</TableCell>
                   <TableCell>{teacher.phone}</TableCell>
                   <TableCell>
@@ -370,6 +439,17 @@ export default function Teachers() {
                       }}
                     >
                       <BookOpen className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      title="Assign Classes"
+                      onClick={() => {
+                        setSelectedTeacher(teacher);
+                        setAssignClassesModalOpen(true);
+                      }}
+                    >
+                      <GraduationCap className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -427,6 +507,18 @@ export default function Teachers() {
           teacher={selectedTeacher}
           availableSubjects={allSubjects}
           assignedSubjects={selectedTeacher.subjects || []}
+          fetcher={fetcher}
+        />
+      )}
+
+      {/* Assign Classes Modal */}
+      {assignClassesModalOpen && selectedTeacher && (
+        <AssignClassesToTeacherModal
+          open={assignClassesModalOpen}
+          setOpen={setAssignClassesModalOpen}
+          teacher={selectedTeacher}
+          availableClasses={allClasses}
+          assignedClasses={selectedTeacher.classes || []}
           fetcher={fetcher}
         />
       )}

@@ -17,14 +17,20 @@ import {
   SelectValue,
 } from '../ui/select';
 
-export default function AddSubjectModal({ open, setOpen, fetcher, departments, id }: any) {
+export default function AddSubjectModal({
+  open,
+  setOpen,
+  fetcher,
+  departments,
+  id,
+}: any) {
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
     departments: '',
     instructor: '',
     enrolledStudents: 0,
-    description: '',
+    // description: '',
     status: 'Active',
     departmentId: id || '',
   });
@@ -52,9 +58,11 @@ export default function AddSubjectModal({ open, setOpen, fetcher, departments, i
   // ✅ Set department name when modal opens with pre-selected department
   useEffect(() => {
     if (open && id && departments) {
-      const selectedDept = departments.find((d: any) => String(d.id) === String(id));
+      const selectedDept = departments.find(
+        (d: any) => String(d.id) === String(id)
+      );
       if (selectedDept) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           departmentId: String(id),
           departments: selectedDept.name,
@@ -74,7 +82,7 @@ export default function AddSubjectModal({ open, setOpen, fetcher, departments, i
         departments: '',
         instructor: '',
         enrolledStudents: 0,
-        description: '',
+        // description: '',
         status: 'Active',
         departmentId: id || '',
       });
@@ -91,16 +99,24 @@ export default function AddSubjectModal({ open, setOpen, fetcher, departments, i
         side="right"
         className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
       >
-        <fetcher.Form 
-          method="post" 
+        <fetcher.Form
+          method="post"
           action={id ? `/departments/${id}` : '/subjects'}
           className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="POST" />
           <input type="hidden" name="_entity" value="subject" />
           <input type="hidden" name="status" value={formData.status} />
-          <input type="hidden" name="departmentId" value={formData.departmentId} />
-          <input type="hidden" name="departments" value={formData.departments} />
+          <input
+            type="hidden"
+            name="departmentId"
+            value={formData.departmentId}
+          />
+          <input
+            type="hidden"
+            name="departments"
+            value={formData.departments}
+          />
 
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
@@ -159,11 +175,13 @@ export default function AddSubjectModal({ open, setOpen, fetcher, departments, i
               <Select
                 value={formData.departmentId}
                 onValueChange={(value) => {
-                  const selectedDept = departments?.find((d: any) => String(d.id) === String(value));
-                  setFormData({ 
-                    ...formData, 
+                  const selectedDept = departments?.find(
+                    (d: any) => String(d.id) === String(value)
+                  );
+                  setFormData({
+                    ...formData,
                     departmentId: value,
-                    departments: selectedDept?.name || '' 
+                    departments: selectedDept?.name || '',
                   });
                 }}
               >
@@ -186,7 +204,7 @@ export default function AddSubjectModal({ open, setOpen, fetcher, departments, i
               </Select>
             </div>
 
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
@@ -197,7 +215,7 @@ export default function AddSubjectModal({ open, setOpen, fetcher, departments, i
                 placeholder="Enter subject description"
                 className="w-full border rounded-md p-2"
               />
-            </div>
+            </div> */}
 
             <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
