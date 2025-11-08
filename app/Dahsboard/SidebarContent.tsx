@@ -13,13 +13,14 @@ import { cn } from '~/lib/utils';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Faculties', href: '/faculties', icon: Users },
   { name: 'Departments', href: '/departments', icon: Landmark },
   // TODO: doing it later
-  // { name: 'Courses', href: '/courses', icon: BookOpen },
+  { name: 'Courses', href: '/courses', icon: BookOpen },
   { name: 'Classrooms', href: '/classes', icon: GraduationCap },
   { name: 'Subjects', href: '/subjects', icon: BookOpen },
-  { name: 'Teachers', href: '/teachers', icon: Users },
   { name: 'Students List', href: '/students', icon: Users },
+  { name: 'Teachers', href: '/teachers', icon: Users },
   // TODO: doing it later
   // { name: 'Grades', href: '/grades', icon: GraduationCap },
   { name: 'Attendance', href: '/attendance', icon: Calendar },

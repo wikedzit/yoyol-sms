@@ -9,6 +9,7 @@ import TeacherSubjectService from './teacher-subjects';
 import ClassSubjectService from './class-subjects';
 import TeacherClassService from './teacher-classes';
 import StudentSubjectService from './student-subjects';
+import FacultyService from './faculties';
 
 /**
  * Service Container that aggregates all individual services
@@ -24,6 +25,7 @@ export default class ServiceContainer {
   public readonly classSubject: ClassSubjectService;
   public readonly teacherClass: TeacherClassService;
   public readonly studentSubjects: StudentSubjectService;
+  public readonly faculty: FacultyService;
   private db: DrizzleD1Database;
 
   constructor(database: D1Database) {
@@ -39,6 +41,7 @@ export default class ServiceContainer {
     this.classSubject = new ClassSubjectService(this.db);
     this.teacherClass = new TeacherClassService(this.db);
     this.studentSubjects = new StudentSubjectService(this.db);
+    this.faculty = new FacultyService(this.db);
   }
 
   /**
@@ -56,6 +59,7 @@ export default class ServiceContainer {
       classSubject: this.classSubject,
       teacherClass: this.teacherClass,
       studentSubjects: this.studentSubjects,
+      faculty: this.faculty,
     };
   }
 
@@ -77,6 +81,7 @@ export default class ServiceContainer {
       classSubject: true, // ClassSubjectService doesn't have async initialization
       teacherClass: true, // TeacherClassService doesn't have async initialization
       studentSubjects: true, // StudentSubjectService doesn't have async initialization
+      faculty: true, // FacultyService doesn't have async initialization
     };
 
     // Check if all services are available
