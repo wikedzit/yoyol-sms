@@ -29,17 +29,24 @@ import {
   SelectValue,
 } from '~/components/ui/select';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
+import type FacultyService from 'workers/services/faculties';
 
 // --- Loader: fetch departments ---
 export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as { department: DepartmentService };
+  const services = context.services as {
+    department: DepartmentService;
+    faculty: FacultyService;
+  };
   const departments = await services.department.getDepartments({
     limit: 100,
     offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'asc',
   });
-  return { departments };
+
+  const faculties = await services.faculty.getFaculties();
+
+  return { departments, faculties };
 }
 
 // --- Action: handle create, update, delete ---
@@ -58,6 +65,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
         totalStudent: Number(form.get('totalStudent') ?? 0),
         totalFaculty: Number(form.get('totalFaculty') ?? 0),
         establishedDate: String(form.get('establishedDate') ?? ''),
+        facultyId: form.get('facultyId')
+          ? Number(form.get('facultyId'))
+          : undefined,
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
@@ -107,9 +117,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // --- Department Page Component ---
 export default function DepartmentsPage() {
-  const { departments: initialDepartments } = useLoaderData<{
-    departments: any[];
-  }>();
+  const { departments: initialDepartments, faculties: initialFaculties } =
+    useLoaderData<{
+      departments: any[];
+      faculties: any[];
+    }>();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
 
@@ -321,9 +333,9 @@ export default function DepartmentsPage() {
                   <TableHead className="text-center font-semibold">
                     Students
                   </TableHead>
-                  {/* <TableHead className="text-center font-semibold">
+                  <TableHead className="text-center font-semibold">
                     Faculty
-                  </TableHead> */}
+                  </TableHead>
                   <TableHead className="font-semibold">Established</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right font-semibold">
@@ -349,9 +361,12 @@ export default function DepartmentsPage() {
                       <TableCell className="text-center">
                         {department.totalStudent}
                       </TableCell>
-                      {/* <TableCell className="text-center">
-                        {department.totalFaculty}
-                      </TableCell> */}
+                      {/* display the facult name */}
+                      <TableCell className="text-center">
+                        {initialFaculties.find(
+                          (f) => f.id === department.facultyId
+                        )?.name || '—'}
+                      </TableCell>
                       <TableCell>{department.establishedDate}</TableCell>
                       <TableCell>
                         <Badge
@@ -398,6 +413,7 @@ export default function DepartmentsPage() {
           open={isAddDepartmentModalOpen}
           setOpen={setIsAddDepartmentModalOpen}
           fetcher={fetcher}
+          faculties={initialFaculties}
         />
       )}
 

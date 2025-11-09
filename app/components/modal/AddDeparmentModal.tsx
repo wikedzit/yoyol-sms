@@ -17,16 +17,21 @@ import {
   SelectItem,
 } from '~/components/ui/select';
 
-export default function AddDepartmentModal({ open, setOpen, fetcher }: any) {
+export default function AddDepartmentModal({
+  open,
+  setOpen,
+  fetcher,
+  faculties, // ✅ received from parent
+}: any) {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
     headOfDepartment: '',
     totalStudent: 0,
-    // totalFaculty: 0,
     establishedDate: '',
     status: 'Active',
     description: '',
+    facultyId: '', // ✅ new field for dropdown
   });
 
   const handleChange = (
@@ -44,10 +49,10 @@ export default function AddDepartmentModal({ open, setOpen, fetcher }: any) {
         code: '',
         headOfDepartment: '',
         totalStudent: 0,
-        // totalFaculty: 0,
         establishedDate: '',
         status: 'Active',
         description: '',
+        facultyId: '',
       });
     }
   }, [fetcher.data]);
@@ -78,7 +83,44 @@ export default function AddDepartmentModal({ open, setOpen, fetcher }: any) {
               Fill in the details below to add a new department.
             </p>
 
-            {/* Form Fields */}
+            {/* ✅ Faculty Dropdown */}
+            <div className="mb-4 w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Faculty
+              </label>
+              <Select
+                value={formData.facultyId}
+                onValueChange={(value) => {
+                  const selectedFaculty = faculties?.find(
+                    (f: any) => String(f.id) === String(value)
+                  );
+                  setFormData({
+                    ...formData,
+                    facultyId: value,
+                    facultyName: selectedFaculty?.name || '',
+                  });
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select Faculty" />
+                </SelectTrigger>
+                <SelectContent>
+                  {!faculties || faculties.length === 0 ? (
+                    <SelectItem value="no-faculty" disabled>
+                      No faculties available
+                    </SelectItem>
+                  ) : (
+                    faculties.map((faculty: any) => (
+                      <SelectItem key={faculty.id} value={String(faculty.id)}>
+                        {faculty.name} ({faculty.code})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Other fields */}
             {[
               { label: 'Name', field: 'name', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
@@ -92,7 +134,6 @@ export default function AddDepartmentModal({ open, setOpen, fetcher }: any) {
                 field: 'totalStudent',
                 type: 'number',
               },
-              // { label: 'Total Faculty', field: 'totalFaculty', type: 'number' },
               {
                 label: 'Established Date',
                 field: 'establishedDate',
@@ -114,6 +155,7 @@ export default function AddDepartmentModal({ open, setOpen, fetcher }: any) {
               </div>
             ))}
 
+            {/* Status */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
@@ -135,6 +177,7 @@ export default function AddDepartmentModal({ open, setOpen, fetcher }: any) {
               </Select>
             </div>
 
+            {/* Description */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description

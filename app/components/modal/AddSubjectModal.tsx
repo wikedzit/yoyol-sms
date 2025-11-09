@@ -141,6 +141,42 @@ export default function AddSubjectModal({
             </div>
           )}
 
+          <div className="mb-4 w-full">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Department
+            </label>
+            <Select
+              value={formData.departmentId}
+              onValueChange={(value) => {
+                const selectedDept = departments?.find(
+                  (d: any) => String(d.id) === String(value)
+                );
+                setFormData({
+                  ...formData,
+                  departmentId: value,
+                  departments: selectedDept?.name || '',
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select department" />
+              </SelectTrigger>
+              <SelectContent>
+                {!departments || departments.length === 0 ? (
+                  <SelectItem value="no-dept" disabled>
+                    No departments available
+                  </SelectItem>
+                ) : (
+                  departments.map((dept: any) => (
+                    <SelectItem key={dept.id} value={String(dept.id)}>
+                      {dept.name} ({dept.code})
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-2">
             {[
@@ -167,42 +203,6 @@ export default function AddSubjectModal({
                 />
               </div>
             ))}
-
-            <div className="mb-4 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department
-              </label>
-              <Select
-                value={formData.departmentId}
-                onValueChange={(value) => {
-                  const selectedDept = departments?.find(
-                    (d: any) => String(d.id) === String(value)
-                  );
-                  setFormData({
-                    ...formData,
-                    departmentId: value,
-                    departments: selectedDept?.name || '',
-                  });
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {!departments || departments.length === 0 ? (
-                    <SelectItem value="no-dept" disabled>
-                      No departments available
-                    </SelectItem>
-                  ) : (
-                    departments.map((dept: any) => (
-                      <SelectItem key={dept.id} value={String(dept.id)}>
-                        {dept.name} ({dept.code})
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
 
             {/* <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">

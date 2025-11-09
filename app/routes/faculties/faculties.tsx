@@ -193,12 +193,12 @@ const FacultiesPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header>
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center gap-3 mb-6">
-            <GraduationCap className="h-8 w-8 text-primary" />
+            {/* <GraduationCap className="h-8 w-8 text-primary" /> */}
             <h1 className="text-3xl font-bold text-foreground">
               Faculty Management
             </h1>
@@ -219,7 +219,7 @@ const FacultiesPage = () => {
             <div className="flex gap-2 flex-wrap">
               <Button
                 variant="default"
-                className="gap-2"
+                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
                 onClick={handleOpenAddDialog}
               >
                 <Plus className="h-4 w-4" />
@@ -313,8 +313,7 @@ const FacultiesPage = () => {
                 </div>
 
                 <div className="flex gap-2 pt-4 border-t">
-                  {/* <Link to={`/faculties/${faculty.id}`} className="flex-1"> */}
-                  <Link to="#">
+                  <Link to={`/faculties/${faculty.id}`} className="flex-1">
                     <Button
                       variant="outline"
                       size="sm"
@@ -352,28 +351,6 @@ const FacultiesPage = () => {
               </p>
             </CardContent>
           </Card>
-        )}
-
-        {/* Pagination placeholder */}
-        {filteredFaculties.length > 0 && (
-          <div className="flex justify-center gap-2 mt-8">
-            <Button variant="outline" size="sm" disabled>
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-primary text-primary-foreground"
-            >
-              1
-            </Button>
-            <Button variant="outline" size="sm">
-              2
-            </Button>
-            <Button variant="outline" size="sm">
-              Next
-            </Button>
-          </div>
         )}
       </main>
 

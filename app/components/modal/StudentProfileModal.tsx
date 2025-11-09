@@ -51,9 +51,10 @@ export function StudentProfilesModal({ student }: { student: any }) {
             <p>
               <strong>Course:</strong> {student.course}
             </p>
-            <p>
+            {/* for later */}
+            {/* <p>
               <strong>Grade:</strong> {student.grade}
-            </p>
+            </p> */}
             <p>
               <strong>Email:</strong> {student.email}
             </p>

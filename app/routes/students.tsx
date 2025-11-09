@@ -272,7 +272,7 @@ export default function Students() {
 
       if (data.success) {
         const action = fetcher.formData?.get('action');
-        
+
         if (action === 'assign_subjects') {
           toast.success('Subjects assigned successfully!');
           listFetcher.load(window.location.pathname);
@@ -362,8 +362,10 @@ export default function Students() {
                 <TableHead className="font-semibold">Last name</TableHead>
                 <TableHead className="font-semibold">Email</TableHead>
                 <TableHead className="font-semibold">Course</TableHead>
-                <TableHead className="font-semibold">Grade</TableHead>
-                <TableHead className="font-semibold">Assigned Subjects</TableHead>
+                {/* <TableHead className="font-semibold">Grade</TableHead> */}
+                <TableHead className="font-semibold">
+                  Assigned Subjects
+                </TableHead>
                 <TableHead className="font-semibold">Enrolled</TableHead>
                 <TableHead className="font-semibold">Status</TableHead>
                 <TableHead className="text-right font-semibold">
@@ -384,11 +386,11 @@ export default function Students() {
                     {student.email}
                   </TableCell>
                   <TableCell>{student.course}</TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <Badge variant="outline" className="border-none">
                       {student.grade}
                     </Badge>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <div className="flex items-center gap-2 flex-wrap">
                       {student.subjects?.length > 0 ? (
