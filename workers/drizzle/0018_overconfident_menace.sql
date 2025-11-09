@@ -1,0 +1,1 @@
+ALTER TABLE `departments` ADD `faculty_id` integer REFERENCES faculties(id);

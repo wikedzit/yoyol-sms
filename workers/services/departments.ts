@@ -17,6 +17,7 @@ const CreateDepartmentSchema = z.object({
   description: z.string().optional(),
   establishedDate: z.string().optional(), // YYYY-MM-DD
   status: z.enum(['Active', 'Inactive']).default('Active'),
+  facultyId: z.number().optional(),
 });
 
 const UpdateDepartmentSchema = CreateDepartmentSchema.partial();
@@ -57,6 +58,7 @@ export default class DepartmentService {
         .insert(departments)
         .values({
           ...validated,
+          facultyId: validated.facultyId ?? null,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -75,12 +77,28 @@ export default class DepartmentService {
       const result = await this.db
         .select()
         .from(departments)
-        .where(eq(departments.id, id))
+        .where(eq(departments.id, parseInt(id)))
         .get();
       return result || null;
     } catch (error) {
       console.error('Error fetching department:', error);
       return null;
+    }
+  }
+
+  // ✅ Get departments by faculty ID
+  async getDepartmentsByFacultyId(
+    facultyId: number
+  ): Promise<SelectDepartment[]> {
+    try {
+      const result = await this.db
+        .select()
+        .from(departments)
+        .where(eq(departments.facultyId, facultyId));
+      return result || [];
+    } catch (error) {
+      console.error('Error fetching departments by faculty ID:', error);
+      return [];
     }
   }
 

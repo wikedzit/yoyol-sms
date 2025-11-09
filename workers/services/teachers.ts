@@ -1,6 +1,7 @@
 import { eq, like, asc, desc } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { teachers, type SelectTeacher } from 'workers/database';
+import { departments } from '../database/departments';
 
 import { z } from 'zod';
 
@@ -91,6 +92,38 @@ export default class TeacherService {
       return result || [];
     } catch (error) {
       console.error('Error fetching teachers by department ID:', error);
+      return [];
+    }
+  }
+
+  // Get Teachers by Faculty ID (through departments)
+  async getTeachersByFacultyId(facultyId: number): Promise<SelectTeacher[]> {
+    try {
+      const result = await this.db
+        .select({
+          id: teachers.id,
+          firstName: teachers.firstName,
+          lastName: teachers.lastName,
+          subject: teachers.subject,
+          email: teachers.email,
+          phone: teachers.phone,
+          address: teachers.address,
+          qualification: teachers.qualification,
+          gender: teachers.gender,
+          experience: teachers.experience,
+          status: teachers.status,
+          departmentId: teachers.departmentId,
+          createdAt: teachers.createdAt,
+          updatedAt: teachers.updatedAt,
+        })
+        .from(teachers)
+        .innerJoin(departments, eq(teachers.departmentId, departments.id))
+        .where(eq(departments.facultyId, facultyId))
+        .execute();
+
+      return result;
+    } catch (error) {
+      console.error('Error fetching teachers by faculty ID:', error);
       return [];
     }
   }

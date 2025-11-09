@@ -96,9 +96,12 @@ export default class FacultyService {
       const faculty = await this.getFacultyById(id);
       if (!faculty) return null;
 
-      // Count departments (when faculty_id is added to departments table)
-      // For now, return 0 as departments don't have faculty_id yet
-      const departmentsCount = 0;
+      // Count departments by faculty ID
+      const departmentsList = await this.db
+        .select()
+        .from(departments)
+        .where(eq(departments.facultyId, faculty.id));
+      const departmentsCount = departmentsList.length;
 
       // Count courses (when faculty_id is added to subjects/courses table)
       // For now, return 0 as courses don't have faculty_id yet
@@ -158,13 +161,19 @@ export default class FacultyService {
       const facultiesList = await this.getFaculties(options);
 
       // Map faculties and add stats
-      // Note: When faculty_id is added to departments and subjects tables,
-      // we can calculate actual counts using JOIN queries
-      return facultiesList.map((faculty) => ({
-        ...faculty,
-        departments: 0, // TODO: Calculate from departments table when faculty_id exists
-        courses: 0, // TODO: Calculate from subjects/courses table when faculty_id exists
-      }));
+      return Promise.all(
+        facultiesList.map(async (faculty) => {
+          const departmentsList = await this.db
+            .select()
+            .from(departments)
+            .where(eq(departments.facultyId, faculty.id));
+          return {
+            ...faculty,
+            departments: departmentsList.length,
+            courses: 0, // TODO: Calculate from subjects/courses table when faculty_id exists
+          };
+        })
+      );
     } catch (error) {
       console.error('Error fetching faculties with stats:', error);
       return [];
