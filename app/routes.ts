@@ -35,7 +35,8 @@ const routes: RouteConfig = [
       './routes/departments/departments.$id.classroom.tsx'
     ),
     route('subjects', './routes/subject.tsx'),
-    route('courses', './routes/courses.tsx'),
+    route('courses', './routes/courses/courses.tsx'),
+    route('courses/:id', './routes/courses/courses.$id.tsx'),
     route('teachers', './routes/teachers.tsx'),
     route('grades', './routes/grades.tsx'),
     route('settings', './routes/settings.tsx'),
