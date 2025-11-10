@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { useFetcher, useLoaderData } from 'react-router';
+import { Navigate, useFetcher, useLoaderData, useNavigate } from 'react-router';
 import { Card } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
@@ -112,6 +112,7 @@ const CoursePage = () => {
       courses: any[];
       departments: any[];
     }>();
+  const navigate = useNavigate();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
 
@@ -214,6 +215,7 @@ const CoursePage = () => {
             <Card
               key={course.id}
               className="p-6 hover:shadow-lg transition-all cursor-pointer group border-none shadow-none flex flex-col justify-between gap-3"
+              onClick={() => navigate(`${course.id}`)}
             >
               <div className="">
                 <div className="flex items-center gap-3 space-y-1 mb-2">
@@ -261,11 +263,16 @@ const CoursePage = () => {
                     <Pencil className="h-4 w-4" />
                   </Button>
 
-                  <DeleteStudentButton
-                    id={String(course.id)}
-                    name={course.name}
-                    fetcher={fetcher}
-                  />
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-block"
+                  >
+                    <DeleteStudentButton
+                      id={String(course.id)}
+                      name={course.name}
+                      fetcher={fetcher}
+                    />
+                  </div>
                 </div>
               </div>
             </Card>
