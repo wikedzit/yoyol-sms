@@ -276,18 +276,6 @@ const FacultiesPage = () => {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="secondary" className="font-mono text-xs">
-                        {faculty.code}
-                      </Badge>
-                      <Badge
-                        variant={
-                          faculty.status === 'active' ? 'default' : 'secondary'
-                        }
-                      >
-                        {faculty.status}
-                      </Badge>
-                    </div>
                     <CardTitle className="text-xl mb-1">
                       {faculty.name}
                     </CardTitle>
@@ -296,6 +284,18 @@ const FacultiesPage = () => {
                       Dean: {faculty.dean}
                     </CardDescription>
                   </div>
+                </div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    {faculty.code}
+                  </Badge>
+                  <Badge
+                    variant={
+                      faculty.status === 'active' ? 'default' : 'secondary'
+                    }
+                  >
+                    {faculty.status}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -330,7 +330,6 @@ const FacultiesPage = () => {
                     onClick={() => handleEditModalOpen(faculty)}
                   >
                     <Pencil className="h-4 w-4" />
-                    Edit
                   </Button>
                   <DeleteStudentButton
                     id={faculty.id}
