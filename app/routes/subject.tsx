@@ -316,7 +316,7 @@ export default function SubjectsPage() {
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="p-6">
+          <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <BookOpen className="h-6 w-6 text-primary" />
@@ -331,7 +331,7 @@ export default function SubjectsPage() {
               </div>
             </div>
           </Card>
-          <Card className="p-6">
+          <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <User className="h-6 w-6 text-primary" />
@@ -346,7 +346,7 @@ export default function SubjectsPage() {
               </div>
             </div>
           </Card>
-          <Card className="p-6">
+          <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <User className="h-6 w-6 text-primary" />
@@ -367,7 +367,7 @@ export default function SubjectsPage() {
         </div>
 
         {/* Search + Table */}
-        <Card className="p-6">
+        <Card className="p-6 border-none shadow-none">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -392,135 +392,129 @@ export default function SubjectsPage() {
             </Select>
           </div>
 
-          <div className="mt-4">
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-100">
-                    <TableHead className="font-semibold">Code</TableHead>
-                    <TableHead className="font-semibold">
-                      Subject Name
-                    </TableHead>
-                    <TableHead className="font-semibold">Department</TableHead>
-                    <TableHead className="font-semibold">
-                      Assigned Teachers
-                    </TableHead>
-                    <TableHead className="font-semibold">Classes</TableHead>
-                    <TableHead className="font-semibold">
-                      Enrolled Students
-                    </TableHead>
-                    {/* <TableHead className="font-semibold">Description</TableHead> */}
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">
-                      Actions
-                    </TableHead>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold">Code</TableHead>
+                  <TableHead className="font-semibold">Subject Name</TableHead>
+                  <TableHead className="font-semibold">Department</TableHead>
+                  <TableHead className="font-semibold">
+                    Assigned Teachers
+                  </TableHead>
+                  <TableHead className="font-semibold">Classes</TableHead>
+                  <TableHead className="font-semibold">
+                    Enrolled Students
+                  </TableHead>
+                  {/* <TableHead className="font-semibold">Description</TableHead> */}
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedSubjectsList.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <p className="text-muted-foreground">
+                        No subjects found.
+                      </p>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedSubjectsList.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
-                        <p className="text-muted-foreground">
-                          No subjects found.
-                        </p>
+                ) : (
+                  paginatedSubjectsList.map((subject) => (
+                    <TableRow key={subject.id}>
+                      <TableCell>{subject.code}</TableCell>
+                      <TableCell>{subject.subjectName}</TableCell>
+                      <TableCell>{subject.departments}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {subject.teachers?.length > 0 ? (
+                            subject.teachers.map((teacher: any) => (
+                              <Badge
+                                key={teacher.id}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {teacher.firstName} {teacher.lastName}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No teachers
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginatedSubjectsList.map((subject) => (
-                      <TableRow key={subject.id}>
-                        <TableCell>{subject.code}</TableCell>
-                        <TableCell>{subject.subjectName}</TableCell>
-                        <TableCell>{subject.departments}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {subject.teachers?.length > 0 ? (
-                              subject.teachers.map((teacher: any) => (
-                                <Badge
-                                  key={teacher.id}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {teacher.firstName} {teacher.lastName}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                No teachers
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {subject.classes?.length > 0 ? (
-                              subject.classes.map((classItem: any) => (
-                                <Badge
-                                  key={classItem.id}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {classItem.name}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                No classes
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                        {/* <TableCell className="max-w-[200px] truncate">
+                      <TableCell>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {subject.classes?.length > 0 ? (
+                            subject.classes.map((classItem: any) => (
+                              <Badge
+                                key={classItem.id}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {classItem.name}
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No classes
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{subject.enrolledStudents || 0}</TableCell>
+                      {/* <TableCell className="max-w-[200px] truncate">
                           {subject.description || '—'}
                         </TableCell> */}
-                        <TableCell>
-                          <Badge
-                            variant={
-                              subject.status === 'Active'
-                                ? 'default'
-                                : 'outline'
-                            }
-                          >
-                            {subject.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Assign Teachers"
-                            onClick={() => {
-                              setSelectedSubject(subject);
-                              setIsAssignTeachersModalOpen(true);
-                            }}
-                          >
-                            <User className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditModalOpen(subject)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <DeleteStudentButton
-                            id={subject.id}
-                            name={subject.subjectName}
-                            fetcher={fetcher}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={goToPage}
-            />
-          </div>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            subject.status === 'Active' ? 'default' : 'outline'
+                          }
+                        >
+                          {subject.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Assign Teachers"
+                          onClick={() => {
+                            setSelectedSubject(subject);
+                            setIsAssignTeachersModalOpen(true);
+                          }}
+                        >
+                          <User className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditModalOpen(subject)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <DeleteStudentButton
+                          id={subject.id}
+                          name={subject.subjectName}
+                          fetcher={fetcher}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={goToPage}
+          />
         </Card>
       </div>
 

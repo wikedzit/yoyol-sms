@@ -324,7 +324,7 @@ export default function Students() {
       </div>
 
       {/* Search & Filter */}
-      <Card>
+      <Card className="border-none shadow-none ">
         <CardHeader>
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">

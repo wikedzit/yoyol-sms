@@ -122,6 +122,7 @@ export default function DepartmentsPage() {
       departments: any[];
       faculties: any[];
     }>();
+  console.log('Initial Faculties:', initialFaculties);
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
 
@@ -244,7 +245,7 @@ export default function DepartmentsPage() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card className="p-6">
+          <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <GraduationCap className="h-6 w-6 text-primary" />
@@ -259,7 +260,7 @@ export default function DepartmentsPage() {
               </div>
             </div>
           </Card>
-          <Card className="p-6">
+          <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
@@ -277,7 +278,7 @@ export default function DepartmentsPage() {
               </div>
             </div>
           </Card>
-          <Card className="p-6">
+          <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
@@ -298,7 +299,7 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Search & Table */}
-        <Card className="p-6">
+        <Card className="p-6 border-none shadow-none">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

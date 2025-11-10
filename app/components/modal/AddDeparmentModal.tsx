@@ -65,6 +65,7 @@ export default function AddDepartmentModal({
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
+          <input type="hidden" name="facultyId" value={formData.facultyId} />
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-2">

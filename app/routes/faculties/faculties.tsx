@@ -233,14 +233,14 @@ const FacultiesPage = () => {
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         {/* Statistics Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8 ">
+          <Card className="border-none shadow-none">
             <CardHeader className="pb-3">
               <CardDescription>Total Faculties</CardDescription>
               <CardTitle className="text-3xl">{faculties.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="border-none shadow-none">
             <CardHeader className="pb-3">
               <CardDescription>Active Faculties</CardDescription>
               <CardTitle className="text-3xl">
@@ -248,7 +248,7 @@ const FacultiesPage = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="border-none shadow-none">
             <CardHeader className="pb-3">
               <CardDescription>Total Departments</CardDescription>
               <CardTitle className="text-3xl">
@@ -256,7 +256,7 @@ const FacultiesPage = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="border-none shadow-none">
             <CardHeader className="pb-3">
               <CardDescription>Total Courses</CardDescription>
               <CardTitle className="text-3xl">
@@ -271,7 +271,7 @@ const FacultiesPage = () => {
           {filteredFaculties.map((faculty) => (
             <Card
               key={faculty.id}
-              className="hover:shadow-lg transition-shadow"
+              className="border-none shadow-none hover:shadow-lg transition-shadow"
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
