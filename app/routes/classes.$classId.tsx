@@ -331,7 +331,7 @@ export default function ClassDetails({ params }: { params: any }) {
         <div className="flex gap-3">
           <Button
             variant="outline"
-            className="border-primary text-primary"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer hover:text-white"
             onClick={() => setAssignSubjectsModalOpen(true)}
           >
             <BookOpen className="h-4 w-4 mr-2" />
@@ -339,14 +339,14 @@ export default function ClassDetails({ params }: { params: any }) {
           </Button>
           <Button
             variant="outline"
-            className="border-primary text-primary"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer hover:text-white"
             onClick={() => setAssignTeachersModalOpen(true)}
           >
             <UsersIcon className="h-4 w-4 mr-2" />
             Assign Teachers
           </Button>
           <Button
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
             onClick={() => setAddStudentModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -397,7 +397,7 @@ export default function ClassDetails({ params }: { params: any }) {
       )}
 
       {/* Search & Filter */}
-      <Card>
+      <Card className="border-none shadow-none">
         <CardHeader>
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">

@@ -94,7 +94,7 @@ export default function DepartmentSubjects({
         </Button>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-6 border-none shadow-none">
         <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

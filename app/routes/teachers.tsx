@@ -76,8 +76,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     teachers.map(async (teacher) => {
       const assignedSubjects =
         await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
-      const assignedClasses =
-        await services.teacherClass?.getClassesByTeacher(teacher.id);
+      const assignedClasses = await services.teacherClass?.getClassesByTeacher(
+        teacher.id
+      );
       return {
         ...teacher,
         subjects: assignedSubjects || [],
@@ -322,7 +323,7 @@ export default function Teachers() {
       </div>
 
       {/* Search & Filter */}
-      <Card>
+      <Card className="border-none shadow-none">
         <CardHeader>
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">

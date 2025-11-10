@@ -198,87 +198,45 @@ const FacultyDetails = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div>
       {/* Breadcrumb */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-6 py-4">
-          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link
-              to="/"
-              className="flex items-center gap-1 hover:text-foreground transition-colors"
-            >
-              <Home className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <ChevronRight className="h-4 w-4" />
-            <Link
-              to="/faculties"
-              className="hover:text-foreground transition-colors"
-            >
-              Faculties
-            </Link>
-            <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground font-medium">{faculty.name}</span>
-          </nav>
-        </div>
+      <div className="container mx-auto  mb-4">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Link
+            to="/"
+            className="flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <Home className="h-4 w-4" />
+            Dashboard
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link
+            to="/faculties"
+            className="hover:text-foreground transition-colors"
+          >
+            Faculties
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground font-medium">{faculty.name}</span>
+        </nav>
       </div>
-      {/* Header */}
-      <div className="border-b bg-card">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Badge variant="secondary" className="font-mono">
-                  {faculty.code}
-                </Badge>
-                <Badge
-                  variant={
-                    faculty.status === 'active' ? 'default' : 'secondary'
-                  }
-                >
-                  {faculty.status}
-                </Badge>
-              </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                {faculty.name}
-              </h1>
-              {faculty.description && (
-                <p className="text-muted-foreground max-w-3xl">
-                  {faculty.description}
-                </p>
-              )}
-            </div>
-          </div>
 
-          {/* Dean Info Card */}
-          {faculty.dean && (
-            <Card className="bg-accent/30">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Dean of Faculty</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-semibold">{faculty.dean}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      {/* Header */}
+      <div className="container mx-auto mb-4">
+        <h1 className="text-3xl font-bold text-foreground">{faculty.name}</h1>
       </div>
+
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto">
         <Tabs defaultValue="departments" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="departments">Departments</TabsTrigger>
             <TabsTrigger value="courses">Courses</TabsTrigger>
           </TabsList>
 
           {/* Departments Tab */}
           <TabsContent value="departments" className="mt-6">
-            <Card>
+            <Card className="border-none shadow-none">
               <CardHeader>
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>

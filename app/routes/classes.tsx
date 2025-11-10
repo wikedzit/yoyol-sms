@@ -360,12 +360,12 @@ export default function ClassesRoute() {
       ) : view === 'grid' ? (
         // Grid view
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 border-none shadow-none">
             {classes.map((c) => (
               <Link
                 to={`/classes/${c.id}`}
                 key={c.id}
-                className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition"
+                className="bg-white rounded-xl shadow-none p-4 flex flex-col gap-3 hover:shadow-md transition"
               >
                 <img src="assets/card_image.png" alt="card Image" />
                 <div className="">
@@ -462,7 +462,7 @@ export default function ClassesRoute() {
             <Link
               to={`/classes/${c.id}`}
               key={c.id}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
+              className="flex items-center justify-between p-4 border-none  border-gray-200 rounded-lg hover:shadow-md transition bg-white"
             >
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary-gradient rounded-lg flex items-center justify-center">
