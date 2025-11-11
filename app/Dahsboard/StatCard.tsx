@@ -9,9 +9,14 @@ interface StatCardProps {
   changeType?: 'positive' | 'negative' | 'neutral';
   icon: LucideIcon;
   iconColor?: string;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
 }
 
 export default function StatCard({
+  trend,
   title,
   value,
   change,
@@ -36,6 +41,17 @@ export default function StatCard({
                 )}
               >
                 {change}
+              </p>
+            )}
+            {trend && (
+              <p
+                className={cn(
+                  'text-sm font-medium',
+                  trend.isPositive ? 'text-success' : 'text-destructive'
+                )}
+              >
+                {trend.isPositive ? '+' : ''}
+                {trend.value}% from last month
               </p>
             )}
           </div>
