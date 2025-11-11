@@ -1,11 +1,268 @@
 import { GraduationCap, Users, Building2, BookOpen, Award } from 'lucide-react';
+import { useLoaderData } from 'react-router';
+import type { LoaderFunctionArgs } from 'react-router-dom';
 import { DepartmentInsights } from '~/Dahsboard/DepartmentInsights';
 import { NoticesEvents } from '~/Dahsboard/NoticesEvents';
 import { PerformanceChart } from '~/Dahsboard/PerformanceChart';
 import StatCard from '~/Dahsboard/StatCard';
 import { StudentActivity } from '~/Dahsboard/StudentActivity';
+import type StudentService from 'workers/services/student';
+import type TeacherService from 'workers/services/teachers';
+import type DepartmentService from 'workers/services/departments';
+import type CourseService from 'workers/services/courses';
+import type GradeService from 'workers/services/grades';
+import type NoticeService from 'workers/services/notices';
+
+// Loader function to fetch dashboard data
+export async function loader({ context }: LoaderFunctionArgs) {
+  const services = context.services as {
+    student: StudentService;
+    teacher: TeacherService;
+    department: DepartmentService;
+    course: CourseService;
+    grade: GradeService;
+    notice: NoticeService;
+  };
+  console.log('Available services:', services);
+
+  // Fetch all data in parallel
+  const [students, teachers, departments, courses, allGrades, notices] =
+    await Promise.all([
+      services.student.getAll({
+        limit: 100,
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+      services.teacher.getAllTeachers({
+        limit: 100,
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+      services.department.getDepartments({
+        limit: 100,
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+      services.course.getCourses({
+        limit: 100,
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+      services.grade.getAll({
+        limit: 100,
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      }),
+      services.notice.getActiveNotices(10),
+    ]);
+
+  console.log('Fetched all dashboard data:', {
+    students,
+    teachers,
+    departments,
+    courses,
+    allGrades,
+  });
+
+  // Calculate statistics
+  const totalStudents = students.length;
+  const totalTeachers = teachers.length;
+  const totalDepartments = departments.length;
+  const totalCourses = courses.length;
+
+  // Calculate average GPA (convert score 0-100 to GPA 0-4.0 scale)
+  const validGrades = allGrades.filter((g) => g.score != null && g.score >= 0);
+  const averageGPA =
+    validGrades.length > 0
+      ? (
+          validGrades.reduce((sum, g) => sum + ((g.score || 0) / 100) * 4, 0) /
+          validGrades.length
+        ).toFixed(2)
+      : '0.00';
+
+  // Calculate performance chart data (grade distribution by month)
+  const performanceData = calculatePerformanceData(allGrades);
+
+  // Calculate department insights (students per department)
+  const departmentInsights = calculateDepartmentInsights(departments, students);
+
+  // Get recent student activity
+  const recentStudents = students
+    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    .slice(0, 10);
+
+  // Calculate student activity stats
+  const now = Date.now();
+  const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const newThisWeek = students.filter(
+    (s) => (s.createdAt || 0) >= oneWeekAgo
+  ).length;
+  const activeStudents = students.filter((s) => s.status === 'Active').length;
+  const inactiveStudents = students.filter(
+    (s) => s.status === 'Inactive'
+  ).length;
+
+  // Helper function to format time ago
+  const formatTimeAgo = (timestamp: number | null | undefined): string => {
+    if (!timestamp) return 'available';
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return 'just now';
+    if (minutes < 60) return `${minutes} min${minutes !== 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+    if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+    return 'available';
+  };
+
+  // Get most recent update time for each entity
+  const lastStudentUpdate =
+    students.length > 0
+      ? Math.max(...students.map((s) => s.createdAt || 0))
+      : null;
+  const lastTeacherUpdate =
+    teachers.length > 0
+      ? Math.max(
+          ...teachers.map((t) => {
+            const ts =
+              typeof t.createdAt === 'string'
+                ? new Date(t.createdAt).getTime()
+                : t.createdAt || 0;
+            return ts;
+          })
+        )
+      : null;
+  const lastDepartmentUpdate =
+    departments.length > 0
+      ? Math.max(...departments.map((d) => d.createdAt || 0))
+      : null;
+  const lastCourseUpdate =
+    courses.length > 0
+      ? Math.max(...courses.map((c) => c.createdAt || 0))
+      : null;
+  const lastGradeUpdate =
+    allGrades.length > 0
+      ? Math.max(...allGrades.map((g) => g.createdAt || 0))
+      : null;
+
+  return {
+    stats: {
+      totalStudents,
+      totalTeachers,
+      totalDepartments,
+      totalCourses,
+      averageGPA,
+    },
+    statuses: {
+      students: formatTimeAgo(lastStudentUpdate),
+      teachers: formatTimeAgo(lastTeacherUpdate),
+      departments: formatTimeAgo(lastDepartmentUpdate),
+      courses: formatTimeAgo(lastCourseUpdate),
+      gpa: formatTimeAgo(lastGradeUpdate),
+    },
+    performanceData,
+    departmentInsights,
+    recentStudents,
+    activityStats: {
+      newThisWeek,
+      activeStudents,
+      inactiveStudents,
+    },
+    notices,
+  };
+}
+
+// Helper function to calculate performance data by month
+function calculatePerformanceData(grades: any[]) {
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
+
+  const data = monthNames.map((monthName, monthIndex) => {
+    const monthGrades = grades.filter((g) => {
+      if (!g.createdAt) return false;
+      // Handle both timestamp (number) and date string
+      const timestamp =
+        typeof g.createdAt === 'number'
+          ? g.createdAt
+          : new Date(g.createdAt).getTime();
+      const gradeDate = new Date(timestamp);
+      return gradeDate.getMonth() === monthIndex;
+    });
+
+    const total = monthGrades.length;
+    const excellent = monthGrades.filter((g) => g.grade === 'A').length;
+    const good = monthGrades.filter((g) => g.grade === 'B').length;
+    const average = monthGrades.filter((g) => g.grade === 'C').length;
+    const poor = monthGrades.filter((g) => ['D', 'F'].includes(g.grade))
+      .length;
+
+    // Calculate percentages
+    return {
+      month: monthName,
+      excellent: total > 0 ? Math.round((excellent / total) * 100) : 0,
+      good: total > 0 ? Math.round((good / total) * 100) : 0,
+      average: total > 0 ? Math.round((average / total) * 100) : 0,
+      poor: total > 0 ? Math.round((poor / total) * 100) : 0,
+    };
+  });
+
+  return data;
+}
+
+// Helper function to calculate department insights
+function calculateDepartmentInsights(departments: any[], students: any[]) {
+  const totalStudentsCount = students.length;
+
+  return departments
+    .map((dept) => {
+      // Count students in this department (assuming students have departmentId or we need to join)
+      // For now, we'll use a simple calculation based on department totalStudent field
+      const studentCount = dept.totalStudent || 0;
+      const percentage =
+        totalStudentsCount > 0
+          ? Math.round((studentCount / totalStudentsCount) * 100)
+          : 0;
+
+      return {
+        name: dept.name,
+        students: studentCount,
+        percentage,
+      };
+    })
+    .sort((a, b) => b.students - a.students)
+    .slice(0, 5); // Top 5 departments
+}
 
 const Dashboard = () => {
+  const {
+    stats,
+    statuses,
+    performanceData,
+    departmentInsights,
+    recentStudents,
+    activityStats,
+    notices,
+  } = useLoaderData<typeof loader>();
+
   return (
     <div className="space-y-6">
       <div>
@@ -18,43 +275,51 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title="Total Students"
-          value="1,332"
+          value={stats.totalStudents.toLocaleString()}
           icon={GraduationCap}
-          trend={{ value: 12, isPositive: true }}
+          status={statuses.students}
         />
         <StatCard
           title="Total Teachers"
-          value="87"
+          value={stats.totalTeachers.toLocaleString()}
           icon={Users}
-          trend={{ value: 5, isPositive: true }}
+          status={statuses.teachers}
         />
-        <StatCard title="Departments" value="12" icon={Building2} />
+        <StatCard
+          title="Departments"
+          value={stats.totalDepartments.toLocaleString()}
+          icon={Building2}
+          status={statuses.departments}
+        />
         <StatCard
           title="Total Courses"
-          value="156"
+          value={stats.totalCourses.toLocaleString()}
           icon={BookOpen}
-          trend={{ value: 8, isPositive: true }}
+          status={statuses.courses}
         />
         <StatCard
           title="Average GPA"
-          value="3.45"
+          value={stats.averageGPA}
           icon={Award}
-          trend={{ value: 3, isPositive: true }}
+          status={statuses.gpa}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <PerformanceChart />
+          <PerformanceChart data={performanceData} />
         </div>
         <div>
-          <DepartmentInsights />
+          <DepartmentInsights data={departmentInsights} />
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <StudentActivity />
-        <NoticesEvents />
+        <StudentActivity
+          recentStudents={recentStudents}
+          activityStats={activityStats}
+        />
+        <NoticesEvents notices={notices} />
       </div>
     </div>
   );

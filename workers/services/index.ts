@@ -15,6 +15,7 @@ import YearService from './years';
 import SemesterService from './semesters';
 import SemesterSubjectService from './semester-subjects';
 import GradeService from './grades';
+import NoticeService from './notices';
 
 /**
  * Service Container that aggregates all individual services
@@ -36,6 +37,7 @@ export default class ServiceContainer {
   public readonly semester: SemesterService;
   public readonly semesterSubject: SemesterSubjectService;
   public readonly grade: GradeService;
+  public readonly notice: NoticeService;
   private db: DrizzleD1Database;
 
   constructor(database: D1Database) {
@@ -57,6 +59,7 @@ export default class ServiceContainer {
     this.semester = new SemesterService(this.db);
     this.semesterSubject = new SemesterSubjectService(this.db);
     this.grade = new GradeService(this.db);
+    this.notice = new NoticeService(this.db);
   }
 
   /**
@@ -80,6 +83,7 @@ export default class ServiceContainer {
       semester: this.semester,
       semesterSubject: this.semesterSubject,
       grade: this.grade,
+      notice: this.notice,
     };
   }
 
@@ -107,6 +111,7 @@ export default class ServiceContainer {
       semester: true, // SemesterService doesn't have async initialization
       semesterSubject: true, // SemesterSubjectService doesn't have async initialization
       grade: true, // GradeService doesn't have async initialization
+      notice: true, // NoticeService doesn't have async initialization
     };
 
     // Check if all services are available

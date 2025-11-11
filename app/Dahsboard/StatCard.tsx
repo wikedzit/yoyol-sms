@@ -9,14 +9,11 @@ interface StatCardProps {
   changeType?: 'positive' | 'negative' | 'neutral';
   icon: LucideIcon;
   iconColor?: string;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-  };
+  status?: string; // e.g., "5 mins ago", "available", "updated recently"
 }
 
 export default function StatCard({
-  trend,
+  status,
   title,
   value,
   change,
@@ -43,15 +40,9 @@ export default function StatCard({
                 {change}
               </p>
             )}
-            {trend && (
-              <p
-                className={cn(
-                  'text-sm font-medium',
-                  trend.isPositive ? 'text-success' : 'text-destructive'
-                )}
-              >
-                {trend.isPositive ? '+' : ''}
-                {trend.value}% from last month
+            {status && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {status}
               </p>
             )}
           </div>

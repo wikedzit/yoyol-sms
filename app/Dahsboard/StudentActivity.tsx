@@ -1,54 +1,77 @@
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { UserPlus, UserCheck, UserX, Calendar } from 'lucide-react';
+import { UserPlus, UserCheck, UserX } from 'lucide-react';
 
-const activities = [
-  {
-    type: 'registration',
-    student: 'Emma Johnson',
-    detail: 'Enrolled in Computer Science',
-    time: '2 hours ago',
-    icon: UserPlus,
-  },
-  {
-    type: 'active',
-    student: 'Michael Chen',
-    detail: 'Completed Assignment #5',
-    time: '4 hours ago',
-    icon: UserCheck,
-  },
-  {
-    type: 'registration',
-    student: 'Sarah Williams',
-    detail: 'Enrolled in Business Admin',
-    time: '6 hours ago',
-    icon: UserPlus,
-  },
-  {
-    type: 'attendance',
-    student: 'Class Average',
-    detail: '95% attendance rate this week',
-    time: 'Today',
-    icon: Calendar,
-  },
-];
+interface Student {
+  id: number;
+  firstName: string;
+  lastName: string;
+  course?: string | null;
+  createdAt?: number | null;
+  status?: string | null;
+}
 
-const stats = [
-  {
-    label: 'New This Week',
-    value: '24',
-    icon: UserPlus,
-    color: 'text-success',
-  },
-  {
-    label: 'Active Students',
-    value: '1,284',
-    icon: UserCheck,
-    color: 'text-info',
-  },
-  { label: 'Inactive', value: '48', icon: UserX, color: 'text-warning' },
-];
+interface StudentActivityProps {
+  recentStudents: Student[];
+  activityStats: {
+    newThisWeek: number;
+    activeStudents: number;
+    inactiveStudents: number;
+  };
+}
 
-export function StudentActivity() {
+function formatTimeAgo(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+  const minutes = Math.floor(diff / (1000 * 60));
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  if (minutes < 60) {
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  } else if (hours < 24) {
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  } else {
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
+  }
+}
+
+export function StudentActivity({
+  recentStudents,
+  activityStats,
+}: StudentActivityProps) {
+  const stats = [
+    {
+      label: 'New This Week',
+      value: activityStats.newThisWeek.toLocaleString(),
+      icon: UserPlus,
+      color: 'text-success',
+    },
+    {
+      label: 'Active Students',
+      value: activityStats.activeStudents.toLocaleString(),
+      icon: UserCheck,
+      color: 'text-info',
+    },
+    {
+      label: 'Inactive',
+      value: activityStats.inactiveStudents.toLocaleString(),
+      icon: UserX,
+      color: 'text-warning',
+    },
+  ];
+
+  const activities = recentStudents.slice(0, 4).map((student) => ({
+    type: 'registration' as const,
+    student: `${student.firstName} ${student.lastName}`,
+    detail: student.course
+      ? `Enrolled in ${student.course}`
+      : 'New student registration',
+    time: student.createdAt
+      ? formatTimeAgo(student.createdAt)
+      : 'Recently',
+    icon: UserPlus,
+  }));
+
   return (
     <Card>
       <CardHeader>
@@ -71,27 +94,33 @@ export function StudentActivity() {
         </div>
 
         <div className="space-y-4">
-          {activities.map((activity, index) => (
-            <div
-              key={index}
-              className="flex items-start gap-3 pb-4 last:pb-0 border-b border-border last:border-0"
-            >
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <activity.icon className="w-5 h-5 text-primary" />
+          {activities.length > 0 ? (
+            activities.map((activity, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-3 pb-4 last:pb-0 border-b border-border last:border-0"
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <activity.icon className="w-5 h-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {activity.student}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {activity.detail}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {activity.time}
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">
-                  {activity.student}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {activity.detail}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {activity.time}
-                </p>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No recent student activity
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
