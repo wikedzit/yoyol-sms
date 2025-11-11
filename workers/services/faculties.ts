@@ -1,4 +1,4 @@
-import { eq, desc, asc, like, sql } from 'drizzle-orm';
+import { eq, desc, asc, like, sql, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   faculties,
@@ -7,6 +7,7 @@ import {
 } from '../database/faculties';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { departments } from '../database/departments';
+import { courses } from '../database/courses';
 
 // --- Zod Schemas for Validation ---
 const CreateFacultySchema = z.object({
@@ -103,9 +104,16 @@ export default class FacultyService {
         .where(eq(departments.facultyId, faculty.id));
       const departmentsCount = departmentsList.length;
 
-      // Count courses (when faculty_id is added to subjects/courses table)
-      // For now, return 0 as courses don't have faculty_id yet
-      const coursesCount = 0;
+      // Count courses: get all courses for departments in this faculty
+      const departmentIds = departmentsList.map((d) => d.id);
+      let coursesCount = 0;
+      if (departmentIds.length > 0) {
+        const coursesList = await this.db
+          .select()
+          .from(courses)
+          .where(inArray(courses.departmentId, departmentIds));
+        coursesCount = coursesList.length;
+      }
 
       return {
         ...faculty,
@@ -167,10 +175,23 @@ export default class FacultyService {
             .select()
             .from(departments)
             .where(eq(departments.facultyId, faculty.id));
+          const departmentsCount = departmentsList.length;
+
+          // Count courses: get all courses for departments in this faculty
+          const departmentIds = departmentsList.map((d) => d.id);
+          let coursesCount = 0;
+          if (departmentIds.length > 0) {
+            const coursesList = await this.db
+              .select()
+              .from(courses)
+              .where(inArray(courses.departmentId, departmentIds));
+            coursesCount = coursesList.length;
+          }
+
           return {
             ...faculty,
-            departments: departmentsList.length,
-            courses: 0, // TODO: Calculate from subjects/courses table when faculty_id exists
+            departments: departmentsCount,
+            courses: coursesCount,
           };
         })
       );

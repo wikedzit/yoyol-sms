@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { Button } from '~/components/ui/button';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AssignSubjectsToSemesterModal from '~/components/modal/AssignSubjectsToSemesterModal';
 import { DeleteButton } from '../DeleteButton';
 
@@ -50,6 +50,13 @@ export function SemesterTabs({
     }
   };
 
+  // Reset selected semester when modal closes
+  useEffect(() => {
+    if (!isAssignModalOpen && selectedSemester) {
+      setSelectedSemester(null);
+    }
+  }, [isAssignModalOpen, selectedSemester]);
+
   if (semesters.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -83,7 +90,7 @@ export function SemesterTabs({
                 <h4 className="text-lg font-semibold">
                   Subjects ({semester.subjects.length})
                 </h4>
-                {/* <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   {onEdit && (
                     <button
                       type="button"
@@ -114,7 +121,7 @@ export function SemesterTabs({
                     <Plus className="h-4 w-4 mr-2" />
                     Assign Subjects
                   </Button>
-                </div> */}
+                </div>
               </div>
 
               {semester.subjects.length > 0 ? (
