@@ -30,6 +30,7 @@ import {
 import type FacultyService from 'workers/services/faculties';
 import type DepartmentService from 'workers/services/departments';
 import type TeacherService from 'workers/services/teachers';
+import type CourseService from 'workers/services/courses';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
@@ -42,6 +43,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     faculty: FacultyService;
     department: DepartmentService;
     teacher: TeacherService;
+    course: CourseService;
   };
 
   // Fetch faculty
@@ -57,11 +59,19 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
   // Fetch teachers by faculty ID (through departments)
   const teachers = await services.teacher.getTeachersByFacultyId(Number(id));
 
+  // Fetch courses for all departments in this faculty
+  const coursesPromises = assignedDepartments.map((dept) =>
+    services.course.getCoursesByDepartmentId(dept.id)
+  );
+  const coursesArrays = await Promise.all(coursesPromises);
+  const courses = coursesArrays.flat();
+
   return {
     faculty,
     assignedDepartments,
     departments: assignedDepartments, // Keep for backward compatibility
     teachers,
+    courses,
   };
 }
 
@@ -101,11 +111,11 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       const currentlyAssignedIds = new Set(currentlyAssigned.map((d) => d.id));
       const newAssignedIds = new Set(departmentIds);
 
-      // Find departments to remove (set facultyId to null)
+      // Find departments to remove (set facultyId to undefined)
       for (const dept of currentlyAssigned) {
         if (!newAssignedIds.has(dept.id)) {
           await services.department.updateDepartment(String(dept.id), {
-            facultyId: null,
+            facultyId: undefined,
           });
         }
       }
@@ -122,12 +132,13 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 
 const FacultyDetails = () => {
   const { id } = useParams();
-  const { faculty, assignedDepartments, departments, teachers } =
+  const { faculty, assignedDepartments, departments, teachers, courses } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
   const [departmentSearchQuery, setDepartmentSearchQuery] = useState('');
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
+  const [courseSearchQuery, setCourseSearchQuery] = useState('');
   // const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>([]);
 
@@ -195,6 +206,23 @@ const FacultyDetails = () => {
         .toLowerCase()
         .includes(teacherSearchQuery.toLowerCase())
   );
+
+  // Filter courses
+  const filteredCourses = courses.filter(
+    (course) =>
+      course.name.toLowerCase().includes(courseSearchQuery.toLowerCase()) ||
+      course.code.toLowerCase().includes(courseSearchQuery.toLowerCase()) ||
+      (course.description || '')
+        .toLowerCase()
+        .includes(courseSearchQuery.toLowerCase())
+  );
+
+  // Get department name for a course
+  const getDepartmentName = (departmentId: number | null) => {
+    if (!departmentId) return '—';
+    const dept = departments.find((d) => d.id === departmentId);
+    return dept?.name || '—';
+  };
 
   return (
     <div>
@@ -321,20 +349,85 @@ const FacultyDetails = () => {
             </Card>
           </TabsContent>
 
-          {/* Courses Tab - Placeholder for future implementation */}
+          {/* Courses Tab */}
           <TabsContent value="courses" className="mt-6">
-            <Card>
+            <Card className="border-none shadow-none">
               <CardHeader>
-                <CardTitle>Courses</CardTitle>
-                <CardDescription>
-                  Course management will be available soon.
-                </CardDescription>
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <CardTitle>Courses</CardTitle>
+                    <CardDescription>
+                      All courses offered by departments in this faculty
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search courses..."
+                        className="pl-10"
+                        value={courseSearchQuery}
+                        onChange={(e) => setCourseSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Course data will be displayed here.</p>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-100">
+                      <TableHead className="font-semibold">Code</TableHead>
+                      <TableHead className="font-semibold">Name</TableHead>
+                      <TableHead className="font-semibold">Department</TableHead>
+                      <TableHead className="font-semibold">Duration</TableHead>
+                      <TableHead className="font-semibold">Students</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCourses.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="h-24 text-center text-muted-foreground"
+                        >
+                          No courses found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredCourses.map((course) => (
+                        <TableRow key={course.id}>
+                          <TableCell>
+                            <Badge variant="secondary" className="font-mono">
+                              {course.code}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {course.name}
+                          </TableCell>
+                          <TableCell>
+                            {getDepartmentName(course.departmentId)}
+                          </TableCell>
+                          <TableCell>{course.duration}</TableCell>
+                          <TableCell>{course.totalStudent || 0}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                course.status === 'Active'
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                            >
+                              {course.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
