@@ -20,7 +20,7 @@ export const subjectSchema = z.object({
 const updateSubjectSchema = subjectSchema.partial();
 
 const getSubjectsSchema = z.object({
-  limit: z.number().min(1).max(100).default(50).optional(),
+  limit: z.number().min(1),
   offset: z.number().min(0).default(0).optional(),
   sortBy: z
     .enum(['subjectName', 'code', 'createdAt', 'updatedAt'])
@@ -60,7 +60,9 @@ export default class SubjectService {
       console.error('Error creating subject:', error);
       // Check for UNIQUE constraint violation
       if (error?.message?.includes('UNIQUE constraint failed: subjects.code')) {
-        throw new Error('A subject with this code already exists. Please use a different code.');
+        throw new Error(
+          'A subject with this code already exists. Please use a different code.'
+        );
       }
       throw error;
     }
@@ -139,7 +141,7 @@ export default class SubjectService {
 
       const results = await query
         .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
-        .limit(limit ?? 50)
+        .limit(limit)
         .offset(offset ?? 0)
         .execute();
 

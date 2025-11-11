@@ -196,7 +196,7 @@ const FacultiesPage = () => {
     <div className="min-h-screen">
       {/* Header */}
       <header>
-        <div className="container mx-auto px-6 py-6">
+        <div className="container mx-auto mb-6">
           <div className="flex items-center gap-3 mb-6">
             {/* <GraduationCap className="h-8 w-8 text-primary" /> */}
             <h1 className="text-3xl font-bold text-foreground">
@@ -231,7 +231,7 @@ const FacultiesPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto">
         {/* Statistics Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8 ">
           <Card className="border-none shadow-none">

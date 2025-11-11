@@ -9,10 +9,10 @@ export const studentSubjects = sqliteTable(
   {
     studentId: integer('student_id')
       .notNull()
-      .references(() => students.id),
+      .references(() => students.id, { onDelete: 'cascade' }),
     subjectId: integer('subject_id')
       .notNull()
-      .references(() => subject.id),
+      .references(() => subject.id, { onDelete: 'cascade' }),
     assignedAt: integer('assigned_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

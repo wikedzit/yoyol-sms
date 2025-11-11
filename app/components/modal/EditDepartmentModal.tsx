@@ -31,11 +31,11 @@ export default function EditDepartmentModal({
   department,
 }: EditDepartmentModalProps) {
   const [formData, setFormData] = useState({
+    faculties: '',
     name: '',
     code: '',
     headOfDepartment: '',
     totalStudent: 0,
-    // totalFaculty: 0,
     establishedDate: '',
     status: 'Active',
     description: '',
@@ -45,11 +45,11 @@ export default function EditDepartmentModal({
   useEffect(() => {
     if (department) {
       setFormData({
+        faculties: department.faculties || '',
         name: department.name || '',
         code: department.code || '',
         headOfDepartment: department.headOfDepartment || '',
         totalStudent: department.totalStudent || 0,
-        // totalFaculty: department.totalFaculty || 0,
         establishedDate: department.establishedDate || '',
         status: department.status || 'Active',
         description: department.description || '',
@@ -126,6 +126,7 @@ export default function EditDepartmentModal({
                   type={type}
                   name={field}
                   value={(formData as any)[field]}
+                  facu
                   placeholder={`Enter ${label}`}
                   onChange={handleChange}
                   required

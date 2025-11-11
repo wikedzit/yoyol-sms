@@ -122,7 +122,7 @@ export default function DepartmentsPage() {
       departments: any[];
       faculties: any[];
     }>();
-  console.log('Initial Faculties:', initialFaculties);
+
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
 
@@ -424,6 +424,7 @@ export default function DepartmentsPage() {
           setOpen={setIsEditDepartmentModalOpen}
           fetcher={fetcher}
           department={selectedDepartment}
+          faculties={initialFaculties}
         />
       )}
     </div>
