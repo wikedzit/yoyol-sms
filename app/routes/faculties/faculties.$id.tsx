@@ -286,70 +286,77 @@ const FacultyDetails = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-100">
-                      <TableHead className="font-semibold">Code</TableHead>
-                      <TableHead className="font-semibold">Name</TableHead>
-                      <TableHead className="font-semibold">
-                        Head of Department
-                      </TableHead>
-                      <TableHead className="font-semibold">Students</TableHead>
-                      <TableHead className="font-semibold">
-                        Established
-                      </TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredDepartments.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={8}
-                          className="h-24 text-center text-muted-foreground"
-                        >
-                          No departments found.
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-100">
+                        <TableHead className="font-semibold">Code</TableHead>
+                        <TableHead className="font-semibold">Name</TableHead>
+                        <TableHead className="font-semibold">
+                          Head of Department
+                        </TableHead>
+                        <TableHead className="font-semibold">
+                          Students
+                        </TableHead>
+                        <TableHead className="font-semibold">
+                          Established
+                        </TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredDepartments.map((department) => (
-                        <TableRow key={department.id}>
-                          <TableCell>
-                            <Badge variant="secondary" className="font-mono">
-                              {department.code}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {department.name}
-                          </TableCell>
-                          <TableCell>
-                            {department.headOfDepartment || '—'}
-                          </TableCell>
-                          <TableCell>{department.totalStudent || 0}</TableCell>
-                          <TableCell>
-                            {department.establishedDate || '—'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                department.status === 'Active'
-                                  ? 'default'
-                                  : 'outline'
-                              }
-                            >
-                              {department.status}
-                            </Badge>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDepartments.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={8}
+                            className="h-24 text-center text-muted-foreground"
+                          >
+                            No departments found.
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filteredDepartments.map((department) => (
+                          <TableRow key={department.id}>
+                            <TableCell>
+                              <Badge variant="secondary" className="font-mono">
+                                {department.code}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {department.name}
+                            </TableCell>
+                            <TableCell>
+                              {department.headOfDepartment || '—'}
+                            </TableCell>
+                            <TableCell>
+                              {department.totalStudent || 0}
+                            </TableCell>
+                            <TableCell>
+                              {department.establishedDate || '—'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  department.status === 'Active'
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                              >
+                                {department.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           {/* Courses Tab */}
+
           <TabsContent value="courses" className="mt-6">
             <Card className="border-none shadow-none">
               <CardHeader>
@@ -375,59 +382,67 @@ const FacultyDetails = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-100">
-                      <TableHead className="font-semibold">Code</TableHead>
-                      <TableHead className="font-semibold">Name</TableHead>
-                      <TableHead className="font-semibold">Department</TableHead>
-                      <TableHead className="font-semibold">Duration</TableHead>
-                      <TableHead className="font-semibold">Students</TableHead>
-                      <TableHead className="font-semibold">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCourses.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          className="h-24 text-center text-muted-foreground"
-                        >
-                          No courses found.
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-gray-100">
+                        <TableHead className="font-semibold">Code</TableHead>
+                        <TableHead className="font-semibold">Name</TableHead>
+                        <TableHead className="font-semibold">
+                          Department
+                        </TableHead>
+                        <TableHead className="font-semibold">
+                          Duration
+                        </TableHead>
+                        <TableHead className="font-semibold">
+                          Students
+                        </TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
                       </TableRow>
-                    ) : (
-                      filteredCourses.map((course) => (
-                        <TableRow key={course.id}>
-                          <TableCell>
-                            <Badge variant="secondary" className="font-mono">
-                              {course.code}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {course.name}
-                          </TableCell>
-                          <TableCell>
-                            {getDepartmentName(course.departmentId)}
-                          </TableCell>
-                          <TableCell>{course.duration}</TableCell>
-                          <TableCell>{course.totalStudent || 0}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                course.status === 'Active'
-                                  ? 'default'
-                                  : 'outline'
-                              }
-                            >
-                              {course.status}
-                            </Badge>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCourses.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={6}
+                            className="h-24 text-center text-muted-foreground"
+                          >
+                            No courses found.
                           </TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        filteredCourses.map((course) => (
+                          <TableRow key={course.id}>
+                            <TableCell>
+                              <Badge variant="secondary" className="font-mono">
+                                {course.code}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {course.name}
+                            </TableCell>
+                            <TableCell>
+                              {getDepartmentName(course.departmentId)}
+                            </TableCell>
+                            <TableCell>{course.duration}</TableCell>
+                            <TableCell>{course.totalStudent || 0}</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  course.status === 'Active'
+                                    ? 'default'
+                                    : 'outline'
+                                }
+                              >
+                                {course.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

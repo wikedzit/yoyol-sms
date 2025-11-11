@@ -12,3 +12,4 @@ export * from './courses';
 export * from './years';
 export * from './semesters';
 export * from './semester-subjects';
+export * from './grades';

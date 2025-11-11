@@ -95,7 +95,7 @@ export default function DepartmentSubjects({
       </div>
 
       <Card className="p-6 border-none shadow-none">
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
+        <div className="flex flex-col md:flex-row items-center gap-4 ">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -117,77 +117,79 @@ export default function DepartmentSubjects({
             </SelectContent>
           </Select>
         </div>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="font-semibold">Code</TableHead>
-                <TableHead className="font-semibold">Subject Name</TableHead>
-                <TableHead className="font-semibold">Department</TableHead>
-                <TableHead className="font-semibold">Instructor</TableHead>
-                <TableHead className="font-semibold">
-                  Enrolled Students
-                </TableHead>
-                {/* <TableHead className="font-semibold">Description</TableHead> */}
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="text-right font-semibold">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedStudentsList?.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="h-24 text-center text-muted-foreground"
-                  >
-                    No subjects found.
-                  </TableCell>
+        <CardContent className="p-0">
+          <div className="rounded-md border p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold">Code</TableHead>
+                  <TableHead className="font-semibold">Subject Name</TableHead>
+                  <TableHead className="font-semibold">Department</TableHead>
+                  <TableHead className="font-semibold">Instructor</TableHead>
+                  <TableHead className="font-semibold">
+                    Enrolled Students
+                  </TableHead>
+                  {/* <TableHead className="font-semibold">Description</TableHead> */}
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    Actions
+                  </TableHead>
                 </TableRow>
-              ) : (
-                paginatedStudentsList?.map((subject, index) => (
-                  <TableRow key={subject.id}>
-                    <TableCell>{subject.code}</TableCell>
-                    <TableCell>{subject.subjectName}</TableCell>
-                    <TableCell>{subject.departments}</TableCell>
-                    <TableCell>{subject.instructor}</TableCell>
-                    <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                    {/* <TableCell>{subject.description || '—'}</TableCell> */}
-                    <TableCell>
-                      <Badge
-                        variant={
-                          subject.status === 'Active' ? 'default' : 'outline'
-                        }
-                      >
-                        {subject.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setSelectedSubject(subject);
-                          setIsEditModalOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <DeleteButton
-                        id={subject.id}
-                        name={subject.subjectName}
-                        fetcher={fetcher}
-                        action={`/departments/${id}`}
-                        entityName="Subject"
-                        entityType="subject"
-                      />
+              </TableHeader>
+              <TableBody>
+                {paginatedStudentsList?.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="h-24 text-center text-muted-foreground"
+                    >
+                      No subjects found.
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  paginatedStudentsList?.map((subject, index) => (
+                    <TableRow key={subject.id}>
+                      <TableCell>{subject.code}</TableCell>
+                      <TableCell>{subject.subjectName}</TableCell>
+                      <TableCell>{subject.departments}</TableCell>
+                      <TableCell>{subject.instructor}</TableCell>
+                      <TableCell>{subject.enrolledStudents || 0}</TableCell>
+                      {/* <TableCell>{subject.description || '—'}</TableCell> */}
+                      <TableCell>
+                        <Badge
+                          variant={
+                            subject.status === 'Active' ? 'default' : 'outline'
+                          }
+                        >
+                          {subject.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedSubject(subject);
+                            setIsEditModalOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <DeleteButton
+                          id={subject.id}
+                          name={subject.subjectName}
+                          fetcher={fetcher}
+                          action={`/departments/${id}`}
+                          entityName="Subject"
+                          entityType="subject"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}

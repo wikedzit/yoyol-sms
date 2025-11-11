@@ -354,112 +354,114 @@ export default function Students() {
 
         {/* Table */}
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-100">
-                <TableHead className="font-semibold">SN</TableHead>
-                <TableHead className="font-semibold">First name</TableHead>
-                <TableHead className="font-semibold">Last name</TableHead>
-                <TableHead className="font-semibold">Email</TableHead>
-                <TableHead className="font-semibold">Course</TableHead>
-                {/* <TableHead className="font-semibold">Grade</TableHead> */}
-                <TableHead className="font-semibold">
-                  Assigned Subjects
-                </TableHead>
-                <TableHead className="font-semibold">Enrolled</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-                <TableHead className="text-right font-semibold">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold">SN</TableHead>
+                  <TableHead className="font-semibold">First name</TableHead>
+                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Course</TableHead>
+                  {/* <TableHead className="font-semibold">Grade</TableHead> */}
+                  <TableHead className="font-semibold">
+                    Assigned Subjects
+                  </TableHead>
+                  <TableHead className="font-semibold">Enrolled</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
 
-            <TableBody>
-              {paginatedStudentsList?.map((student, index) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">
-                    {startIndex + index + 1}
-                  </TableCell>
-                  <TableCell>{student.firstName}</TableCell>
-                  <TableCell>{student.lastName}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {student.email}
-                  </TableCell>
-                  <TableCell>{student.course}</TableCell>
-                  {/* <TableCell>
+              <TableBody>
+                {paginatedStudentsList?.map((student, index) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">
+                      {startIndex + index + 1}
+                    </TableCell>
+                    <TableCell>{student.firstName}</TableCell>
+                    <TableCell>{student.lastName}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {student.email}
+                    </TableCell>
+                    <TableCell>{student.course}</TableCell>
+                    {/* <TableCell>
                     <Badge variant="outline" className="border-none">
                       {student.grade}
                     </Badge>
                   </TableCell> */}
-                  <TableCell>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {student.subjects?.length > 0 ? (
-                        student.subjects.map((subject: any) => (
-                          <Badge
-                            key={subject.id}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {subject.code}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          No subjects
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>{student.enrollmentDate}</TableCell>
-                  <TableCell className="border-none">
-                    <Badge
-                      variant={
-                        student.status === 'Active'
-                          ? 'default'
-                          : student.status === 'Pending'
-                          ? 'secondary'
-                          : 'outline'
-                      }
-                      className="border-none"
-                    >
-                      {student.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right flex justify-end gap-2">
-                    <StudentProfilesModal student={student} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      title="Assign Subjects"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        setAssignSubjectsModalOpen(true);
-                      }}
-                    >
-                      <BookOpen className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        setEditStudentModalOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <DeleteStudentButton
-                      id={student.id}
-                      name={student.name}
-                      fetcher={fetcher}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <TableCell>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {student.subjects?.length > 0 ? (
+                          student.subjects.map((subject: any) => (
+                            <Badge
+                              key={subject.id}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {subject.code}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No subjects
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{student.enrollmentDate}</TableCell>
+                    <TableCell className="border-none">
+                      <Badge
+                        variant={
+                          student.status === 'Active'
+                            ? 'default'
+                            : student.status === 'Pending'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                        className="border-none"
+                      >
+                        {student.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right flex justify-end gap-2">
+                      <StudentProfilesModal student={student} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Assign Subjects"
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setAssignSubjectsModalOpen(true);
+                        }}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setEditStudentModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <DeleteStudentButton
+                        id={student.id}
+                        name={student.name}
+                        fetcher={fetcher}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}

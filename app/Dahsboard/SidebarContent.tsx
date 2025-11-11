@@ -23,7 +23,7 @@ const mainNavigation = [
   { name: 'Students List', href: '/students', icon: GraduationCap },
   { name: 'Teachers', href: '/teachers', icon: Users },
   // TODO: doing it later
-  // { name: 'Grades', href: '/grades', icon: GraduationCap },
+  { name: 'Grades', href: '/grades', icon: GraduationCap },
   // { name: 'Attendance', href: '/attendance', icon: Calendar },
 ];
 
