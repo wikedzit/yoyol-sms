@@ -324,7 +324,7 @@ export default function DepartmentsPage() {
             </Select>
           </div>
 
-          <div>
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">

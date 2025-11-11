@@ -393,122 +393,128 @@ export default function SubjectsPage() {
           </div>
 
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold">Code</TableHead>
-                  <TableHead className="font-semibold">Subject Name</TableHead>
-                  <TableHead className="font-semibold">Department</TableHead>
-                  <TableHead className="font-semibold">
-                    Assigned Teachers
-                  </TableHead>
-                  <TableHead className="font-semibold">Classes</TableHead>
-                  <TableHead className="font-semibold">
-                    Enrolled Students
-                  </TableHead>
-                  {/* <TableHead className="font-semibold">Description</TableHead> */}
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="text-right font-semibold">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedSubjectsList.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      <p className="text-muted-foreground">
-                        No subjects found.
-                      </p>
-                    </TableCell>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-100">
+                    <TableHead className="font-semibold">Code</TableHead>
+                    <TableHead className="font-semibold">
+                      Subject Name
+                    </TableHead>
+                    <TableHead className="font-semibold">Department</TableHead>
+                    <TableHead className="font-semibold">
+                      Assigned Teachers
+                    </TableHead>
+                    <TableHead className="font-semibold">Classes</TableHead>
+                    <TableHead className="font-semibold">
+                      Enrolled Students
+                    </TableHead>
+                    {/* <TableHead className="font-semibold">Description</TableHead> */}
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="text-right font-semibold">
+                      Actions
+                    </TableHead>
                   </TableRow>
-                ) : (
-                  paginatedSubjectsList.map((subject) => (
-                    <TableRow key={subject.id}>
-                      <TableCell>{subject.code}</TableCell>
-                      <TableCell>{subject.subjectName}</TableCell>
-                      <TableCell>{subject.departments}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {subject.teachers?.length > 0 ? (
-                            subject.teachers.map((teacher: any) => (
-                              <Badge
-                                key={teacher.id}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {teacher.firstName} {teacher.lastName}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              No teachers
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {subject.classes?.length > 0 ? (
-                            subject.classes.map((classItem: any) => (
-                              <Badge
-                                key={classItem.id}
-                                variant="outline"
-                                className="text-xs"
-                              >
-                                {classItem.name}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              No classes
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                      {/* <TableCell className="max-w-[200px] truncate">
-                          {subject.description || '—'}
-                        </TableCell> */}
-                      <TableCell>
-                        <Badge
-                          variant={
-                            subject.status === 'Active' ? 'default' : 'outline'
-                          }
-                        >
-                          {subject.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Assign Teachers"
-                          onClick={() => {
-                            setSelectedSubject(subject);
-                            setIsAssignTeachersModalOpen(true);
-                          }}
-                        >
-                          <User className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditModalOpen(subject)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <DeleteStudentButton
-                          id={subject.id}
-                          name={subject.subjectName}
-                          fetcher={fetcher}
-                        />
+                </TableHeader>
+                <TableBody>
+                  {paginatedSubjectsList.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="h-24 text-center">
+                        <p className="text-muted-foreground">
+                          No subjects found.
+                        </p>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    paginatedSubjectsList.map((subject) => (
+                      <TableRow key={subject.id}>
+                        <TableCell>{subject.code}</TableCell>
+                        <TableCell>{subject.subjectName}</TableCell>
+                        <TableCell>{subject.departments}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {subject.teachers?.length > 0 ? (
+                              subject.teachers.map((teacher: any) => (
+                                <Badge
+                                  key={teacher.id}
+                                  variant="secondary"
+                                  className="text-xs"
+                                >
+                                  {teacher.firstName} {teacher.lastName}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                No teachers
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {subject.classes?.length > 0 ? (
+                              subject.classes.map((classItem: any) => (
+                                <Badge
+                                  key={classItem.id}
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {classItem.name}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                No classes
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{subject.enrolledStudents || 0}</TableCell>
+                        {/* <TableCell className="max-w-[200px] truncate">
+                          {subject.description || '—'}
+                        </TableCell> */}
+                        <TableCell>
+                          <Badge
+                            variant={
+                              subject.status === 'Active'
+                                ? 'default'
+                                : 'outline'
+                            }
+                          >
+                            {subject.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Assign Teachers"
+                            onClick={() => {
+                              setSelectedSubject(subject);
+                              setIsAssignTeachersModalOpen(true);
+                            }}
+                          >
+                            <User className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditModalOpen(subject)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <DeleteStudentButton
+                            id={subject.id}
+                            name={subject.subjectName}
+                            fetcher={fetcher}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
           <PaginationControls
             currentPage={currentPage}

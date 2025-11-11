@@ -62,7 +62,7 @@ export default function DepartmentTeachers({ teachers }: { teachers: any[] }) {
       </div>
 
       <Card className="p-6 border-none shadow-none">
-        <div className="flex flex-col md:flex-row items-center gap-4 mb-4">
+        <div className="flex flex-col md:flex-row items-center gap-4">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -85,75 +85,77 @@ export default function DepartmentTeachers({ teachers }: { teachers: any[] }) {
           </Select>
         </div>
 
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-100">
-              <TableHead className="font-semibold">SN</TableHead>
-              <TableHead className="font-semibold">First name</TableHead>
-              <TableHead className="font-semibold">Last name</TableHead>
-              <TableHead className="font-semibold">Subject</TableHead>
-              <TableHead className="font-semibold">Email</TableHead>
-              <TableHead className="font-semibold">Phone</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="text-right font-semibold">
-                Actions
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredTeachers?.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="h-24 text-center text-muted-foreground"
-                >
-                  No subjects found.
-                </TableCell>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gray-100">
+                <TableHead className="font-semibold">SN</TableHead>
+                <TableHead className="font-semibold">First name</TableHead>
+                <TableHead className="font-semibold">Last name</TableHead>
+                <TableHead className="font-semibold">Subject</TableHead>
+                <TableHead className="font-semibold">Email</TableHead>
+                <TableHead className="font-semibold">Phone</TableHead>
+                <TableHead className="font-semibold">Status</TableHead>
+                <TableHead className="text-right font-semibold">
+                  Actions
+                </TableHead>
               </TableRow>
-            ) : (
-              filteredTeachers?.map((teacher) => (
-                <TableRow key={teacher.id}>
-                  <TableCell>{teacher.id}</TableCell>
-                  <TableCell>{teacher.firstName}</TableCell>
-                  <TableCell>{teacher.lastName}</TableCell>
-                  <TableCell>{teacher.subject}</TableCell>
-                  <TableCell>{teacher.email}</TableCell>
-                  <TableCell>{teacher.phone}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        teacher.status === 'Active' ? 'default' : 'outline'
-                      }
-                    >
-                      {teacher.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right flex justify-end gap-2">
-                    <TeacherProfileModal teacher={teacher} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedTeacher(teacher);
-                        setEditModalOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <DeleteButton
-                      id={teacher.id}
-                      name={`${teacher.firstName} ${teacher.lastName}`}
-                      fetcher={fetcher}
-                      action={`/departments/${id}`}
-                      entityName="teacher"
-                      entityType="teacher"
-                    />
+            </TableHeader>
+            <TableBody>
+              {filteredTeachers?.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-24 text-center text-muted-foreground"
+                  >
+                    No subjects found.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                filteredTeachers?.map((teacher) => (
+                  <TableRow key={teacher.id}>
+                    <TableCell>{teacher.id}</TableCell>
+                    <TableCell>{teacher.firstName}</TableCell>
+                    <TableCell>{teacher.lastName}</TableCell>
+                    <TableCell>{teacher.subject}</TableCell>
+                    <TableCell>{teacher.email}</TableCell>
+                    <TableCell>{teacher.phone}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          teacher.status === 'Active' ? 'default' : 'outline'
+                        }
+                      >
+                        {teacher.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right flex justify-end gap-2">
+                      <TeacherProfileModal teacher={teacher} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedTeacher(teacher);
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <DeleteButton
+                        id={teacher.id}
+                        name={`${teacher.firstName} ${teacher.lastName}`}
+                        fetcher={fetcher}
+                        action={`/departments/${id}`}
+                        entityName="teacher"
+                        entityType="teacher"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
 
       {/* Add Modal */}
