@@ -169,6 +169,13 @@
       "when": 1762889125788,
       "tag": "0023_sleepy_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1762899686621,
+      "tag": "0024_oval_star_brand",
+      "breakpoints": true
     }
   ]
 }
