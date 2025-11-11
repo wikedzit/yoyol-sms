@@ -1,19 +1,6 @@
 import { useState } from 'react';
-import {
-  LayoutDashboard,
-  Users,
-  BookOpen,
-  GraduationCap,
-  Calendar,
-  BarChart3,
-  Settings,
-  ChevronRight,
-  Menu,
-  X,
-} from 'lucide-react';
-import { cn } from '~/lib/utils';
+import { Menu, X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
-import { Link, useLocation } from 'react-router-dom';
 import { SidebarContent } from './SidebarContent';
 
 export default function AppSidebar() {

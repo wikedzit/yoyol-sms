@@ -2,23 +2,25 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
-  GraduationCap,
-  Calendar,
+  DoorOpen,
   Settings,
   ChevronRight,
-  Landmark,
+  Building2,
+  GitBranch,
+  FileText,
+  GraduationCap,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '~/lib/utils';
 
 const mainNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Faculties', href: '/faculties', icon: Users },
-  { name: 'Departments', href: '/departments', icon: Landmark },
+  { name: 'Faculties', href: '/faculties', icon: Building2 },
+  { name: 'Departments', href: '/departments', icon: GitBranch },
   { name: 'Courses', href: '/courses', icon: BookOpen },
-  { name: 'Classrooms', href: '/classes', icon: GraduationCap },
-  { name: 'Subjects', href: '/subjects', icon: BookOpen },
-  { name: 'Students List', href: '/students', icon: Users },
+  { name: 'Classrooms', href: '/classes', icon: DoorOpen },
+  { name: 'Subjects', href: '/subjects', icon: FileText },
+  { name: 'Students List', href: '/students', icon: GraduationCap },
   { name: 'Teachers', href: '/teachers', icon: Users },
   // TODO: doing it later
   // { name: 'Grades', href: '/grades', icon: GraduationCap },

@@ -1,7 +1,7 @@
 //dashobard layout for sidebar an main content
 import { Bell } from 'lucide-react';
 import { Outlet } from 'react-router';
-import AppSidebar from '~/Dahsboard/sidebar';
+import AppSidebar from '~/Dahsboard/Sidebar';
 
 const DashboardLayout = () => {
   return (
@@ -33,9 +33,11 @@ const DashboardLayout = () => {
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="bg-white border-b border-border-layout h-[70px] py-2 flex items-center justify-between px-8 flex-shrink-0">
               <div className="flex items-center space-x-4">
-                <h1 className="text-lg font-semibold text-gray-900">
-                  breadcrum
-                </h1>
+                <div className="flex-1">
+                  <h1 className="text-xl font-semibold text-foreground">
+                    Student Management System
+                  </h1>
+                </div>
               </div>
               <div className="max-w-[280px]">
                 <Bell />
