@@ -136,7 +136,10 @@ export default function DepartmentClassrooms({
               key={classroom.id}
               className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition"
             >
-              <Link to={`/departments/${id}/classes/${classroom.id}`}>
+              <Link
+                to="."
+                // to={`/departments/${id}/classes/${classroom.id}`}
+              >
                 <img
                   src="/assets/card_image.png"
                   alt="card Image"
@@ -144,7 +147,10 @@ export default function DepartmentClassrooms({
                 />
               </Link>
 
-              <Link to={`/departments/${id}/classes/${classroom.id}`}>
+              <Link
+                to="."
+                // to={`/departments/${id}/classes/${classroom.id}`}
+              >
                 <div>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs text-gray-900">
@@ -218,7 +224,8 @@ export default function DepartmentClassrooms({
               className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
             >
               <Link
-                to={`/departments/${id}/classes/${classroom.id}`}
+                to="."
+                // to={`/departments/${id}/classes/${classroom.id}`}
                 className="flex items-center gap-4 flex-1"
               >
                 <img

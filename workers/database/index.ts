@@ -10,3 +10,5 @@ export * from './student-subjects';
 export * from './faculties';
 export * from './courses';
 export * from './years';
+export * from './semesters';
+export * from './semester-subjects';

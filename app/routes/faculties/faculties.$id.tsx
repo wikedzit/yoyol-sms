@@ -53,7 +53,6 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
   // Fetch departments by faculty ID (currently assigned)
   const assignedDepartments =
     await services.department.getDepartmentsByFacultyId(Number(id));
-  console.log({ assignedDepartments: assignedDepartments });
 
   // Fetch teachers by faculty ID (through departments)
   const teachers = await services.teacher.getTeachersByFacultyId(Number(id));
