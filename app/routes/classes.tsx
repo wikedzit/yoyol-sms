@@ -27,6 +27,7 @@ import type TeacherClassService from 'workers/services/teacher-classes';
 import type TeacherService from 'workers/services/teachers';
 import { BookOpen, Users as UsersIcon } from 'lucide-react';
 import AssignTeachersToClassModal from '~/components/modal/AssignTeachersToClassModal';
+import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
 // 🧠 Loader – fetch classes with student, subject, and teacher counts
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -218,6 +219,7 @@ export default function ClassesRoute() {
   };
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
+  const listFetcher = useFetcher();
   const [classes, setClasses] = useState(initialClasses ?? []);
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
@@ -240,6 +242,7 @@ export default function ClassesRoute() {
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
+      listFetcher.load(window.location.pathname); // refresh list after any action
 
       if (data.error) {
         toast.error(data.error || 'An unexpected error occurred.');
@@ -256,7 +259,8 @@ export default function ClassesRoute() {
       if (action === 'assign_teachers') {
         toast.success('Teachers assigned successfully!');
         // Reload to refresh teacher counts
-        window.location.reload();
+        listFetcher.load(window.location.pathname);
+        lastMethod.current = null;
         return;
       }
 
@@ -273,6 +277,7 @@ export default function ClassesRoute() {
               ...prev,
             ]);
           toast.success('Classroom added successfully!');
+          listFetcher.load(window.location.pathname);
           break;
         case 'PUT':
           if (data.class)
@@ -289,43 +294,51 @@ export default function ClassesRoute() {
               )
             );
           toast.success('Classroom updated successfully!');
+          listFetcher.load(window.location.pathname);
           break;
         case 'DELETE':
-          if (deletingId.current !== null) {
-            setClasses((prev) =>
-              prev.filter((c) => c.id !== deletingId.current)
-            );
-            toast.error('Classroom deleted successfully!');
-            deletingId.current = null;
-          }
+          toast.error('Faculty deleted successfully!');
+          setClasses((prev) => prev.filter((c) => c.id !== data.id));
+          listFetcher.load(window.location.pathname);
           break;
+
         default:
           toast.success('Action completed successfully.');
+          listFetcher.load(window.location.pathname);
       }
 
       lastMethod.current = null;
     }
   }, [fetcher.state, fetcher.data]);
 
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state === 'idle' && listFetcher.data) {
+      setClasses(listFetcher.data.classes);
+    }
+  }, [listFetcher.state, listFetcher.data]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Classrooms</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Classrooms
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Manage and organize your classrooms
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 justify-end">
           {/* View toggle */}
           <div className="flex items-center border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('grid')}
               className={`p-2 ${
                 view === 'grid'
-                  ? 'bg-primary-gradient  text-white'
+                  ? 'bg-primary-gradient text-white'
                   : 'text-gray-500 cursor-pointer'
               }`}
             >
@@ -335,7 +348,7 @@ export default function ClassesRoute() {
               onClick={() => setView('list')}
               className={`p-2 ${
                 view === 'list'
-                  ? 'bg-primary-gradient  text-white'
+                  ? 'bg-primary-gradient text-white'
                   : 'text-gray-500 cursor-pointer'
               }`}
             >
@@ -346,10 +359,12 @@ export default function ClassesRoute() {
           {/* Create button */}
           <Button
             onClick={() => setOpenCreate(true)}
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
           >
             <span className="text-2xl leading-none">+</span>
-            <span className="font-medium">Add Classroom</span>
+            <span className="font-medium text-sm sm:text-base">
+              Add Classroom
+            </span>
           </Button>
         </div>
       </div>
@@ -358,146 +373,120 @@ export default function ClassesRoute() {
       {classes.length === 0 ? (
         <p className="text-center text-gray-500 mt-10">No classrooms yet.</p>
       ) : view === 'grid' ? (
-        // Grid view
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 border-none shadow-none">
-            {classes.map((c) => (
-              <Link
-                to={`/classes/${c.id}`}
-                key={c.id}
-                className="bg-white rounded-xl shadow-none p-4 flex flex-col gap-3 hover:shadow-md transition"
-              >
-                <img src="assets/card_image.png" alt="card Image" />
-                <div className="">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs  text-gray-900">
-                      <strong>Name:</strong>
-                      {c.name}
+        // ✅ Grid view responsive
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 border-none shadow-none">
+          {classes.map((c) => (
+            <div className="bg-white rounded-xl shadow-none p-4 flex flex-col gap-3 hover:shadow-md transition">
+              <Link to={`/classes/${c.id}`} key={c.id}>
+                <img
+                  src="assets/card_image.png"
+                  alt="card Image"
+                  className="w-full h-32 object-cover rounded-md"
+                />
+                <div>
+                  <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm">
+                    <h3 className="text-gray-900 font-medium">
+                      <strong>Name:</strong> {c.name}
                     </h3>
-                    <p className="text-xs  text-gray-900">
+                    <p className="text-gray-900">
                       <strong>Year:</strong> {c.year}
                     </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs  text-gray-900">
+                  <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm mt-1">
+                    <p className="text-gray-900">
                       <strong>Level:</strong> {c.EducationalLevel}
                     </p>
-                    <p className="text-xs  text-gray-900">
+                    <p className="text-gray-900">
                       <strong>Section:</strong> {c.section}
                     </p>
                   </div>
                 </div>
-                {/* number of students, subjects, and teachers for this class */}
-                <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
+
+                {/* Counts */}
+                <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-500 mt-2">
                   <div className="flex items-center gap-2">
-                    <Users size={16} />
+                    <Users size={14} />
                     <span>{c.studentCount || 0} students</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <BookOpen size={16} />
+                    <BookOpen size={14} />
                     <span>{c.subjectCount || 0} subjects</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <UsersIcon size={16} />
+                    <UsersIcon size={14} />
                     <span>{c.teacherCount || 0} teachers</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setEditingClass(c);
-                      setOpenEdit(true);
-                    }}
-                    className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
-                  >
-                    <Pencil size={16} />
-                    Edit
-                  </Button>
-                  {/* <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setSelectedClass(c);
-                      setAssignTeachersModalOpen(true);
-                    }}
-                    className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
-                    title="Assign Teachers"
-                  >
-                    <UsersIcon size={16} />
-                    Teachers
-                  </Button> */}
+              </Link>
 
-                  {/* TODO: delete not working  on class:  You can't delete a class with students enrolled */}
+              {/* Actions */}
+              <div className="flex flex-wrap items-center justify-between mt-3 gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setEditingClass(c);
+                    setOpenEdit(true);
+                  }}
+                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
+                >
+                  <Pencil size={16} />
+                  Edit
+                </Button>
+                <DeleteStudentButton
+                  id={String(c.id)}
+                  name={c.name}
+                  fetcher={fetcher}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // ✅ List view responsive
+        <div className="space-y-3">
+          {classes.map((c) => (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border-none rounded-lg hover:shadow-md transition bg-white">
+              <Link
+                to={`/classes/${c.id}`}
+                key={c.id}
+                className="flex items-center gap-20"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden">
+                    <img
+                      src="assets/card_image.png"
+                      alt="card Image"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const formData = new FormData();
-                        formData.append('_method', 'DELETE');
-                        formData.append('id', String(c.id));
-                        deletingId.current = c.id;
-                        fetcher.submit(formData, { method: 'post' });
-                      }}
-                      className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-                    >
-                      <Trash2 size={16} />
-                      Delete
-                    </Button>
+                    <h3 className="font-semibold text-lg text-gray-900">
+                      {c.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {c.EducationalLevel} - Section {c.section} - Year {c.year}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <Users size={14} />
+                    <span>{c.studentCount || 0} students</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={14} />
+                    <span>{c.subjectCount || 0} subjects</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <UsersIcon size={14} />
+                    <span>{c.teacherCount || 0} teachers</span>
                   </div>
                 </div>
               </Link>
-            ))}
-          </div>
-        </>
-      ) : (
-        // List view
-        <div className="space-y-3">
-          {classes.map((c) => (
-            <Link
-              to={`/classes/${c.id}`}
-              key={c.id}
-              className="flex items-center justify-between p-4 border-none  border-gray-200 rounded-lg hover:shadow-md transition bg-white"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary-gradient rounded-lg flex items-center justify-center">
-                  <img
-                    src="assets/card_image.png"
-                    alt="card Image"
-                    className="w-12 h-12 object-cover rounded-lg"
-                  />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">
-                    {c.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    {c.EducationalLevel} - Section {c.section} - Year {c.year}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-6 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <Users size={16} />
-                  <span>{c.studentCount || 0} students</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <BookOpen size={16} />
-                  <span>{c.subjectCount || 0} subjects</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <UsersIcon size={16} />
-                  <span>{c.teacherCount || 0} teachers</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -516,22 +505,6 @@ export default function ClassesRoute() {
                   size="sm"
                   onClick={(e) => {
                     e.preventDefault();
-                    setSelectedClass(c);
-                    setAssignTeachersModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
-                  title="Assign Teachers"
-                >
-                  <UsersIcon size={16} />
-                  Teachers
-                </Button>
-
-                {/* TODO: delete not working  on class:  You can't delete a class with students enrolled */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
                     const formData = new FormData();
                     formData.append('_method', 'DELETE');
                     formData.append('id', String(c.id));
@@ -541,10 +514,9 @@ export default function ClassesRoute() {
                   className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                 >
                   <Trash2 size={16} />
-                  Delete
                 </Button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
@@ -562,7 +534,6 @@ export default function ClassesRoute() {
         editingClass={editingClass}
       />
 
-      {/* Assign Teachers Modal */}
       {assignTeachersModalOpen && selectedClass && (
         <AssignTeachersToClassModal
           open={assignTeachersModalOpen}
@@ -573,13 +544,6 @@ export default function ClassesRoute() {
           fetcher={fetcher}
         />
       )}
-
-      {/* Toast
-      {toast && (
-        <div className="fixed bottom-6 right-6 bg-green-500 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-500 animate-fade-in">
-          {toast}
-        </div>
-      )} */}
     </div>
   );
 }

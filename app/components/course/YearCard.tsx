@@ -81,8 +81,9 @@ export function YearCard({
   // Show toast on completion (handled by parent component now)
   // This effect is kept for local state updates if needed, but parent handles revalidation
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
+    if (fetcher.state === 'idle' && fetcher.data?.success) {
       const data = fetcher.data;
+      fetcher.load('');
       const entity = fetcher.formData?.get('_entity') as string | null;
 
       // Only handle local state updates for immediate UI feedback

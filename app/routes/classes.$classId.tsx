@@ -305,33 +305,34 @@ export default function ClassDetails({ params }: { params: any }) {
   }, [fetcher.data, fetcher.formData]);
 
   return (
-    <div className="space-y-2 h-min-screen overflow-y-auto w-full">
-      {/* link to go back to class */}
-      {/* back to class but also there is class within department */}
+    <div className="space-y-2 min-h-screen w-full overflow-y-auto p-2 sm:p-4">
+      {/* Back Button */}
       <Link
         to={classId ? `/classes` : ''}
-        className="flex gap-2 bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-fit"
+        className="flex items-center gap-2 bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-fit text-sm sm:text-base"
       >
-        <ArrowBigLeftDash />
+        <ArrowBigLeftDash className="h-4 w-4 sm:h-5 sm:w-5" />
         <span>
           {classId ? 'Back to Classes' : 'Back to Department Classes'}
         </span>
       </Link>
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             {classInfo?.name}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Manage students, subjects, and teachers in this class
           </p>
         </div>
-        <div className="flex gap-3">
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <Button
             variant="outline"
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer hover:text-white"
+            className="bg-primary-gradient text-white py-2 px-3 sm:px-4 rounded-[8px] text-sm sm:text-base hover:text-white"
             onClick={() => setAssignSubjectsModalOpen(true)}
           >
             <BookOpen className="h-4 w-4 mr-2" />
@@ -339,14 +340,14 @@ export default function ClassDetails({ params }: { params: any }) {
           </Button>
           <Button
             variant="outline"
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer hover:text-white"
+            className="bg-primary-gradient text-white py-2 px-3 sm:px-4 rounded-[8px] text-sm sm:text-base hover:text-white"
             onClick={() => setAssignTeachersModalOpen(true)}
           >
             <UsersIcon className="h-4 w-4 mr-2" />
             Assign Teachers
           </Button>
           <Button
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+            className="bg-primary-gradient text-white py-2 px-3 sm:px-4 rounded-[8px] text-sm sm:text-base"
             onClick={() => setAddStudentModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -355,7 +356,7 @@ export default function ClassDetails({ params }: { params: any }) {
         </div>
       </div>
 
-      {/* Assigned Subjects Card */}
+      {/* Assigned Subjects */}
       {assignedSubjects.length > 0 && (
         <Card>
           <CardHeader>
@@ -373,7 +374,7 @@ export default function ClassDetails({ params }: { params: any }) {
         </Card>
       )}
 
-      {/* Assigned Teachers Card */}
+      {/* Assigned Teachers */}
       {assignedTeachers.length > 0 && (
         <Card>
           <CardHeader>
@@ -385,7 +386,7 @@ export default function ClassDetails({ params }: { params: any }) {
                 <Badge key={teacher.id} variant="outline" className="text-sm">
                   {teacher.firstName} {teacher.lastName}
                   {teacher.email && (
-                    <span className="text-muted-foreground ml-1">
+                    <span className="text-muted-foreground ml-1 text-xs sm:text-sm">
                       ({teacher.email})
                     </span>
                   )}
@@ -399,20 +400,20 @@ export default function ClassDetails({ params }: { params: any }) {
       {/* Search & Filter */}
       <Card className="border-none shadow-none">
         <CardHeader>
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="relative flex-1 w-full">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search students..."
-                className="pl-10 bg-muted/50"
+                className="pl-10 bg-muted/50 w-full"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder="Filter by course/grade" />
               </SelectTrigger>
               <SelectContent>
@@ -425,84 +426,77 @@ export default function ClassDetails({ params }: { params: any }) {
           </div>
         </CardHeader>
 
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SN</TableHead>
-                <TableHead>First name</TableHead>
-                <TableHead>Last name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Course</TableHead>
-                <TableHead>Grade</TableHead>
-                <TableHead>Enrolled</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {paginatedStudents?.map((student, index) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">
-                    {startIndex + index + 1}
-                  </TableCell>
-                  <TableCell>{student.firstName}</TableCell>
-                  <TableCell>{student.lastName}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {student.email}
-                  </TableCell>
-                  <TableCell>{student.course}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="border-none">
-                      {student.grade}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{student.enrollmentDate}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        student.status === 'Active'
-                          ? 'default'
-                          : student.status === 'Pending'
-                          ? 'secondary'
-                          : 'outline'
-                      }
-                      className="border-none"
-                    >
-                      {student.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right flex justify-end gap-2">
-                    <StudentProfilesModal student={student} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        setEditStudentModalOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <DeleteStudentButton
-                      id={student.id}
-                      name={`${student.firstName} ${student.lastName}`}
-                      fetcher={fetcher}
-                    />
-                    {/* <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveFromClass(student.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button> */}
-                  </TableCell>
+        {/* Students Table (responsive) */}
+        <CardContent className="overflow-x-auto">
+          <div className="min-w-[700px] sm:min-w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>SN</TableHead>
+                  <TableHead>First name</TableHead>
+                  <TableHead>Last name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Course</TableHead>
+                  <TableHead>Grade</TableHead>
+                  <TableHead>Enrolled</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+
+              <TableBody>
+                {paginatedStudents?.map((student, index) => (
+                  <TableRow key={student.id}>
+                    <TableCell>{startIndex + index + 1}</TableCell>
+                    <TableCell>{student.firstName}</TableCell>
+                    <TableCell>{student.lastName}</TableCell>
+                    <TableCell className="truncate max-w-[150px] sm:max-w-none text-muted-foreground">
+                      {student.email}
+                    </TableCell>
+                    <TableCell>{student.course}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-none">
+                        {student.grade}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{student.enrollmentDate}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          student.status === 'Active'
+                            ? 'default'
+                            : student.status === 'Pending'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                        className="border-none"
+                      >
+                        {student.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="flex justify-end gap-2">
+                      <StudentProfilesModal student={student} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setEditStudentModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <DeleteStudentButton
+                        id={student.id}
+                        name={`${student.firstName} ${student.lastName}`}
+                        fetcher={fetcher}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
@@ -510,12 +504,6 @@ export default function ClassDetails({ params }: { params: any }) {
           />
         </CardContent>
       </Card>
-      {/* back button to class list
-      <Link to="/classes">
-        <Button variant="outline" className="mt-4">
-          Back to Class List
-        </Button>
-      </Link> */}
 
       {/* Modals */}
       {addStudentModalOpen && (
@@ -537,12 +525,7 @@ export default function ClassDetails({ params }: { params: any }) {
         <AssignSubjectsToClassModal
           open={assignSubjectsModalOpen}
           setOpen={setAssignSubjectsModalOpen}
-          classData={{
-            id: classInfo.id,
-            name: classInfo.name,
-            EducationalLevel: classInfo.EducationalLevel,
-            section: classInfo.section,
-          }}
+          classData={classInfo}
           availableSubjects={allSubjects}
           assignedSubjects={assignedSubjects}
           fetcher={fetcher}
@@ -552,12 +535,7 @@ export default function ClassDetails({ params }: { params: any }) {
         <AssignTeachersToClassModal
           open={assignTeachersModalOpen}
           setOpen={setAssignTeachersModalOpen}
-          classData={{
-            id: classInfo.id,
-            name: classInfo.name,
-            EducationalLevel: classInfo.EducationalLevel,
-            section: classInfo.section,
-          }}
+          classData={classInfo}
           availableTeachers={allTeachers}
           assignedTeachers={assignedTeachers}
           fetcher={fetcher}

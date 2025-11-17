@@ -42,7 +42,7 @@ export default function AddFacultyModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Close modal on successful submission
+  // Reset when success
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
@@ -65,7 +65,6 @@ export default function AddFacultyModal({
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
 
-          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-2">
             <div className="flex justify-between items-center mb-8">
               <SheetHeader className="p-0">
@@ -73,6 +72,7 @@ export default function AddFacultyModal({
                   Add New Faculty
                 </SheetTitle>
               </SheetHeader>
+
               <SheetClose asChild className="cursor-pointer">
                 <X size={25} />
               </SheetClose>
@@ -82,18 +82,17 @@ export default function AddFacultyModal({
               Fill in the details below to add a new faculty.
             </p>
 
-            {/* Form Fields */}
+            {/* Input fields */}
             {[
-              { label: 'Name', field: 'name', type: 'text' },
-              { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Dean', field: 'dean', type: 'text' },
-            ].map(({ label, field, type }) => (
+              { label: 'Name', field: 'name' },
+              { label: 'Code', field: 'code' },
+              { label: 'Dean', field: 'dean' },
+            ].map(({ label, field }) => (
               <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   {label}
                 </label>
                 <Input
-                  type={type}
                   name={field}
                   value={(formData as any)[field]}
                   placeholder={`Enter ${label}`}
@@ -103,10 +102,9 @@ export default function AddFacultyModal({
               </div>
             ))}
 
+            {/* Status */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium mb-1">Status</label>
               <Select
                 value={formData.status}
                 onValueChange={(value) =>
@@ -122,10 +120,12 @@ export default function AddFacultyModal({
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+              <input type="hidden" name="status" value={formData.status} />
             </div>
 
+            {/* Description */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1">
                 Description
               </label>
               <textarea
@@ -139,20 +139,17 @@ export default function AddFacultyModal({
             </div>
           </div>
 
-          {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          {/* Sticky footer */}
+          <div className="flex justify-end gap-3 pt-4 border-t mt-6 bg-white sticky bottom-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
-            >
+
+            <Button type="submit" className="bg-primary-gradient text-white">
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Faculty'}
             </Button>
           </div>
@@ -161,4 +158,3 @@ export default function AddFacultyModal({
     </Sheet>
   );
 }
-

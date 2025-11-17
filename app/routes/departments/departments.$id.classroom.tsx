@@ -1,15 +1,15 @@
 import {
   Plus,
   Pencil,
-  Trash2,
   Search,
   Users,
   LayoutGrid,
   List,
+  Trash2,
 } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Link,
   useFetcher,
@@ -84,7 +84,6 @@ export default function DepartmentClassrooms({
     <>
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between my-4 gap-3">
-        {/* TODO: show the selected department name just this name */}
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Department Classrooms
         </h1>
@@ -136,10 +135,7 @@ export default function DepartmentClassrooms({
               key={classroom.id}
               className="bg-white rounded-xl shadow-sm p-4 flex flex-col gap-3 hover:shadow-md transition"
             >
-              <Link
-                to="."
-                // to={`/departments/${id}/classes/${classroom.id}`}
-              >
+              <Link to=".">
                 <img
                   src="/assets/card_image.png"
                   alt="card Image"
@@ -147,10 +143,7 @@ export default function DepartmentClassrooms({
                 />
               </Link>
 
-              <Link
-                to="."
-                // to={`/departments/${id}/classes/${classroom.id}`}
-              >
+              <Link to=".">
                 <div>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs text-gray-900">
@@ -160,7 +153,6 @@ export default function DepartmentClassrooms({
                       <strong>Year:</strong> {classroom.year}
                     </p>
                   </div>
-
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-gray-900">
                       <strong>Level:</strong> {classroom.EducationalLevel}
@@ -223,11 +215,7 @@ export default function DepartmentClassrooms({
               key={classroom.id}
               className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition"
             >
-              <Link
-                to="."
-                // to={`/departments/${id}/classes/${classroom.id}`}
-                className="flex items-center gap-4 flex-1"
-              >
+              <Link to="." className="flex items-center gap-4 flex-1">
                 <img
                   src="/assets/card_image.png"
                   alt="card Image"

@@ -115,6 +115,7 @@ const CoursePage = () => {
   const navigate = useNavigate();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
+  const listFetcher = useFetcher();
 
   const [courses, setCourses] = useState(initialCourses);
   const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
@@ -131,11 +132,13 @@ const CoursePage = () => {
 
   // Show toast on completion
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
+    if (fetcher.state === 'idle' && fetcher.data?.success) {
+      fetcher.load(window.location.pathname); // refresh list after any action
       const data = fetcher.data;
 
       if (data.error) {
         toast.error(data.error || 'An unexpected error occurred.');
+        listFetcher.load(window.location.pathname);
         return;
       }
 
@@ -144,25 +147,35 @@ const CoursePage = () => {
           case 'POST':
             toast.success('Course added successfully!');
             setCourses((prev) => [...prev, data.course]);
+            listFetcher.load(window.location.pathname);
             break;
           case 'PUT':
             toast.success('Course updated successfully!');
             setCourses((prev) =>
               prev.map((c) => (c.id === data.course.id ? data.course : c))
             );
+            listFetcher.load(window.location.pathname);
             break;
           case 'DELETE':
-            toast.success('Course deleted successfully!');
+            toast.error('Course deleted successfully!');
             setCourses((prev) => prev.filter((c) => c.id !== data.id));
+            listFetcher.load(window.location.pathname);
             break;
           default:
             toast.success('Action completed successfully.');
+            listFetcher.load(window.location.pathname);
         }
 
         lastMethod.current = null;
       }
     }
   }, [fetcher.state, fetcher.data]);
+
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state !== 'idle' || !listFetcher.data) return;
+    setCourses(listFetcher.data.courses);
+  }, [listFetcher.state, listFetcher.data]);
 
   const statusColors = {
     Active: 'bg-success text-white',

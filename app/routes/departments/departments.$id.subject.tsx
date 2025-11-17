@@ -47,14 +47,6 @@ export default function DepartmentSubjects({
   // Use departments from props first, fallback to loader data
   const departmentsList = departments || loaderDepartments;
 
-  // Debug log
-  console.log('DepartmentSubjects - departments:', {
-    fromProps: departments?.length,
-    fromLoader: loaderDepartments?.length,
-    final: departmentsList?.length,
-    id,
-  });
-
   // --- Filtering Logic ---
   const filteredSubjects = initialSubjects?.filter((subject) => {
     const matchesSearch =

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLoaderData, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
@@ -12,7 +12,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Pencil, BookOpen } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen, Feather } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -233,6 +233,9 @@ export default function Teachers() {
     allClasses: any[];
   };
   const fetcher = useFetcher();
+  const listFetcher = useFetcher();
+  const lastMethod = useRef<string | null>(null);
+  const [teachers, setTeachers] = useState<any[]>(initialTeachers || []);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -261,47 +264,61 @@ export default function Teachers() {
     goToPage,
   } = usePagination(filteredStudents, 10);
 
-  //use useEffect to show sonner form shardcn as a toast on successful add, edit, delete
+  //truck last method used in fetcher
   useEffect(() => {
-    if (fetcher.data?.success) {
-      const method = fetcher.formData?.get('_method');
-      const action = fetcher.formData?.get('action');
-      let message = '';
+    if (fetcher.state === 'submitting' && fetcher.formData) {
+      const method =
+        ((fetcher.formData.get('_method') as string) || null) ?? null;
+      lastMethod.current = method ?? (fetcher.formMethod || null);
+    }
+  }, [fetcher.formData, fetcher.state, fetcher.formMethod]);
+  //use useEffect to show sonner form shardcn as a toast on successful add, edit, delete
 
-      if (action === 'assign_subjects') {
-        message = 'Subjects assigned successfully!';
-        toast.success(message);
-        return;
-      }
+  // react on finished action
+  useEffect(() => {
+    if (fetcher.state !== 'idle' || !fetcher.data) return;
+    const data = fetcher.data;
+    fetcher.load(window.location.pathname);
 
-      if (action === 'assign_classes') {
-        message = 'Classes assigned successfully!';
-        toast.success(message);
-        return;
-      }
+    // Refresh list
+    listFetcher.load(window.location.pathname);
 
-      switch (method) {
+    if (data.error) {
+      toast.error(data.error || 'An error occurred.');
+      lastMethod.current = null;
+      return;
+    }
+
+    if (data.success) {
+      switch (lastMethod.current) {
         case 'POST':
-          message = 'Teacher added successfully!';
-          toast.success(message);
+          toast.success('Teacher added successfully!');
+          // Optimistic: add returned teacher
+          if (data.teacher) {
+            setTeachers((prev) => [...prev, data.teacher]);
+          }
           break;
-        case 'PUT':
-          message = 'Teacher updated successfully!';
-          toast.success(message);
-          break;
-        case 'DELETE':
-          message = 'Teacher deleted successfully!';
-          toast.error(message);
-          break;
-        default:
-          toast.success('Action completed successfully.');
-      }
-    }
 
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error || 'An unexpected error occurred.');
+        case 'PUT':
+          toast.success('Teacher updated successfully!');
+          if (data.teacher) {
+            setTeachers((prev) =>
+              prev.map((t) => (t.id === data.teacher.id ? data.teacher : t))
+            );
+          }
+          break;
+
+        case 'DELETE':
+          toast.error('Teacher deleted successfully!');
+          if (data.id) {
+            setTeachers((prev) => prev.filter((t) => t.id !== data.id));
+          }
+          break;
+      }
+
+      lastMethod.current = null;
     }
-  }, [fetcher.data]);
+  }, [fetcher.state, fetcher.data]);
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">

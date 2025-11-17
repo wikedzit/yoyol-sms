@@ -6,11 +6,9 @@ import {
   Plus,
   Building2,
   BookOpen,
-  GraduationCap,
   Users,
   Eye,
   Pencil,
-  Trash2,
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -29,7 +27,6 @@ import { toast } from 'sonner';
 import type FacultyService from 'workers/services/faculties';
 import type { FacultyWithStats } from 'workers/services/faculties';
 
-// --- Loader: fetch faculties ---
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as { faculty: FacultyService };
   const faculties = await services.faculty.getFacultiesWithStats({
@@ -41,14 +38,12 @@ export async function loader({ context }: LoaderFunctionArgs) {
   return { faculties };
 }
 
-// --- Action: handle create, update, delete ---
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { faculty: FacultyService };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
 
   try {
-    // CREATE
     if (method === 'POST') {
       const data = {
         name: String(form.get('name') ?? ''),
@@ -59,18 +54,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
           : undefined,
         status: String(form.get('status') ?? 'active') as 'active' | 'inactive',
       };
+
       const created = await services.faculty.createFaculty(data);
-      if (!created) {
-        return { error: 'Failed to create faculty' };
-      }
-      return { success: true, faculty: created };
+      return { success: true, faculty: { ...created } };
     }
 
-    // UPDATE
     if (method === 'PUT') {
       const id = form.get('id');
-      if (!id) return { error: 'Faculty ID is required' };
-      const data = {
+      if (!id) return { error: 'ID is required' };
+      const payload = {
         name: form.get('name') ? String(form.get('name')) : undefined,
         code: form.get('code') ? String(form.get('code')) : undefined,
         dean: form.get('dean') ? String(form.get('dean')) : undefined,
@@ -81,27 +73,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
           ? (String(form.get('status')) as 'active' | 'inactive')
           : undefined,
       };
-      const updated = await services.faculty.updateFaculty(String(id), data);
-      if (!updated) {
-        return { error: 'Failed to update faculty' };
-      }
-      return { success: true, faculty: updated };
+
+      const updated = await services.faculty.updateFaculty(String(id), payload);
+      return { success: true, faculty: { ...updated } };
     }
 
-    // DELETE
     if (method === 'DELETE') {
       const id = form.get('id');
-      if (!id) return { error: 'Faculty ID is required' };
-      const deleted = await services.faculty.deleteFaculty(String(id));
-      if (!deleted) {
-        return { error: 'Failed to delete faculty' };
-      }
-      return { success: true, id }; // return deleted id
+      if (!id) return { error: 'ID is required' };
+      await services.faculty.deleteFaculty(String(id));
+      return { success: true, id: String(id) };
     }
 
     return { error: 'Unknown method' };
   } catch (err: any) {
-    console.error('faculties action error:', err);
+    console.error('faculties.action error:', err);
     return { error: err?.message || 'Server error' };
   }
 }
@@ -111,6 +97,7 @@ const FacultiesPage = () => {
     faculties: FacultyWithStats[];
   }>();
   const fetcher = useFetcher();
+  const listFetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
 
   const [faculties, setFaculties] =
@@ -121,60 +108,80 @@ const FacultiesPage = () => {
   const [selectedFaculty, setSelectedFaculty] =
     useState<FacultyWithStats | null>(null);
 
-  // Update local state after successful fetcher submission
+  // track submitted method
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
-      const method = fetcher.formData.get('_method') as string | null;
-      lastMethod.current = method ?? fetcher.formMethod;
+      const method = (fetcher.formData.get('_method') as string | null) ?? null;
+      lastMethod.current = method ?? fetcher.formMethod ?? null;
     }
   }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
 
-  // Show toast on completion
+  // react on finished action
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const data = fetcher.data;
+    if (fetcher.state !== 'idle' || !fetcher.data) return;
+    const data = fetcher.data;
+    fetcher.load(window.location.pathname); // refresh list after any action
 
-      if (data.error) {
-        toast.error(data.error || 'An unexpected error occurred.');
-        return;
+    if (data.error) {
+      toast.error(data.error || 'An error occurred.');
+      lastMethod.current = null;
+      return;
+    }
+
+    if (data.success) {
+      switch (lastMethod.current) {
+        case 'POST':
+          toast.success('Faculty added successfully!');
+          // immediate optimistic update
+          setFaculties((prev) => [
+            ...prev,
+            {
+              ...data.faculty,
+              departments: data.faculty.departments ?? 0,
+              courses: data.faculty.courses ?? 0,
+            },
+          ]);
+          // keep server-of-truth in sync (optional)
+          listFetcher.load(window.location.pathname);
+          break;
+
+        case 'PUT':
+          toast.success('Faculty updated successfully!');
+          setFaculties((prev) =>
+            prev.map((f) =>
+              f.id === data.faculty.id
+                ? {
+                    ...data.faculty,
+                    departments: f.departments, // preserve counts if server didn't return them
+                    courses: f.courses,
+                  }
+                : f
+            )
+          );
+          listFetcher.load(window.location.pathname);
+          break;
+
+        case 'DELETE':
+          toast.error('Faculty deleted successfully!');
+          setFaculties((prev) => prev.filter((f) => f.id !== data.id));
+          listFetcher.load(window.location.pathname);
+          break;
+
+        default:
+          // fallback: refresh list
+          listFetcher.load(window.location.pathname);
       }
 
-      if (data.success) {
-        switch (lastMethod.current) {
-          case 'POST':
-            toast.success('Faculty added successfully!');
-            // Add the new faculty with default stats
-            setFaculties((prev) => [
-              ...prev,
-              { ...data.faculty, departments: 0, courses: 0 },
-            ]);
-            break;
-          case 'PUT':
-            toast.success('Faculty updated successfully!');
-            setFaculties((prev) =>
-              prev.map((f) =>
-                f.id === data.faculty.id
-                  ? {
-                      ...data.faculty,
-                      departments: f.departments,
-                      courses: f.courses,
-                    }
-                  : f
-              )
-            );
-            break;
-          case 'DELETE':
-            toast.success('Faculty deleted successfully!');
-            setFaculties((prev) => prev.filter((f) => f.id !== data.id));
-            break;
-          default:
-            toast.success('Action completed successfully.');
-        }
-
-        lastMethod.current = null;
-      }
+      lastMethod.current = null;
     }
   }, [fetcher.state, fetcher.data]);
+
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state === 'idle' && listFetcher.data?.faculties) {
+      setFaculties(listFetcher.data.faculties);
+    }
+  }, [listFetcher.state, listFetcher.data]);
 
   const filteredFaculties = faculties.filter(
     (faculty) =>
@@ -182,10 +189,6 @@ const FacultiesPage = () => {
       faculty.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (faculty.dean || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleOpenAddDialog = () => {
-    setIsAddFacultyModalOpen(true);
-  };
 
   const handleEditModalOpen = (faculty: FacultyWithStats) => {
     setSelectedFaculty(faculty);
@@ -198,7 +201,6 @@ const FacultiesPage = () => {
       <header>
         <div className="container mx-auto mb-6">
           <div className="flex items-center gap-3 mb-6">
-            {/* <GraduationCap className="h-8 w-8 text-primary" /> */}
             <h1 className="text-3xl font-bold text-foreground">
               Faculty Management
             </h1>
@@ -220,7 +222,7 @@ const FacultiesPage = () => {
               <Button
                 variant="default"
                 className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
-                onClick={handleOpenAddDialog}
+                onClick={() => setIsAddFacultyModalOpen(true)}
               >
                 <Plus className="h-4 w-4" />
                 Add Faculty
@@ -252,7 +254,7 @@ const FacultiesPage = () => {
             <CardHeader className="pb-3">
               <CardDescription>Total Departments</CardDescription>
               <CardTitle className="text-3xl">
-                {faculties.reduce((acc, f) => acc + f.departments, 0)}
+                {faculties.reduce((acc, f) => acc + (f.departments || 0), 0)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -260,7 +262,7 @@ const FacultiesPage = () => {
             <CardHeader className="pb-3">
               <CardDescription>Total Courses</CardDescription>
               <CardTitle className="text-3xl">
-                {faculties.reduce((acc, f) => acc + f.courses, 0)}
+                {faculties.reduce((acc, f) => acc + (f.courses || 0), 0)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -303,12 +305,16 @@ const FacultiesPage = () => {
                   <div className="flex items-center gap-2 text-sm">
                     <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Departments:</span>
-                    <span className="font-semibold">{faculty.departments}</span>
+                    <span className="font-semibold">
+                      {faculty.departments || 0}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <BookOpen className="h-4 w-4 text-muted-foreground" />
                     <span className="text-muted-foreground">Courses:</span>
-                    <span className="font-semibold">{faculty.courses}</span>
+                    <span className="font-semibold">
+                      {faculty.courses || 0}
+                    </span>
                   </div>
                 </div>
 
@@ -332,7 +338,7 @@ const FacultiesPage = () => {
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <DeleteStudentButton
-                    id={faculty.id}
+                    id={String(faculty.id)}
                     name={faculty.name}
                     fetcher={fetcher}
                   />
@@ -362,6 +368,7 @@ const FacultiesPage = () => {
         />
       )}
 
+      {/* edit faculty modal */}
       {isEditFacultyModalOpen && selectedFaculty && (
         <EditFacultyModal
           open={isEditFacultyModalOpen}

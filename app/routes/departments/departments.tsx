@@ -125,6 +125,7 @@ export default function DepartmentsPage() {
 
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
+  const listFetcher = useFetcher();
 
   const [departments, setDepartments] = useState(initialDepartments);
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,9 +160,11 @@ export default function DepartmentsPage() {
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
+      fetcher.load(window.location.pathname); // Refresh list after any action
 
       if (data.error) {
         toast.error(data.error || 'An unexpected error occurred.');
+        lastMethod.current = null;
         return;
       }
 
@@ -170,6 +173,7 @@ export default function DepartmentsPage() {
           case 'POST':
             toast.success('Department added successfully!');
             setDepartments((prev) => [...prev, data.department]);
+            listFetcher.load(window.location.pathname);
             break;
           case 'PUT':
             toast.success('Department updated successfully!');
@@ -178,20 +182,31 @@ export default function DepartmentsPage() {
                 d.id === data.department.id ? data.department : d
               )
             );
+            listFetcher.load(window.location.pathname);
             break;
           case 'DELETE':
-            toast.success('Department deleted successfully!');
+            toast.error('Department deleted successfully!');
             // ✅ Remove deleted department immediately
             setDepartments((prev) => prev.filter((d) => d.id !== data.id));
+            listFetcher.load(window.location.pathname);
             break;
           default:
             toast.success('Action completed successfully.');
+            listFetcher.load(window.location.pathname);
         }
 
         lastMethod.current = null;
       }
     }
   }, [fetcher.state, fetcher.data]);
+
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state === 'idle' && listFetcher.data?.departments) {
+      setDepartments(listFetcher.data.departments);
+    }
+  }, [listFetcher.state, listFetcher.data]);
+
   const filteredDepartments = departments.filter((d) => {
     const matchesSearch =
       d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

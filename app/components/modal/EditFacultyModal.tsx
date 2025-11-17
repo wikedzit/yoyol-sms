@@ -21,7 +21,7 @@ interface EditFacultyModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   fetcher: any;
-  faculty: any; // faculty object to edit
+  faculty: any;
 }
 
 export default function EditFacultyModal({
@@ -38,9 +38,9 @@ export default function EditFacultyModal({
     description: '',
   });
 
-  // Populate form with faculty data when modal opens
+  // Load faculty data when modal opens
   useEffect(() => {
-    if (faculty) {
+    if (faculty && open) {
       setFormData({
         name: faculty.name || '',
         code: faculty.code || '',
@@ -57,7 +57,7 @@ export default function EditFacultyModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Close modal on successful submission
+  // Close after successful update
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
@@ -74,7 +74,6 @@ export default function EditFacultyModal({
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="id" value={faculty?.id} />
 
-          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-2">
             <div className="flex justify-between items-center mb-8">
               <SheetHeader className="p-0">
@@ -82,46 +81,43 @@ export default function EditFacultyModal({
                   Edit Faculty
                 </SheetTitle>
               </SheetHeader>
+
               <SheetClose asChild className="cursor-pointer">
                 <X size={25} />
               </SheetClose>
             </div>
 
             <p className="text-sm text-[#898989] mb-8">
-              Update the details of the faculty below.
+              Update the faculty details below.
             </p>
 
-            {/* Form Fields */}
+            {/* Inputs */}
             {[
-              { label: 'Name', field: 'name', type: 'text' },
-              { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Dean', field: 'dean', type: 'text' },
-            ].map(({ label, field, type }) => (
+              { label: 'Name', field: 'name' },
+              { label: 'Code', field: 'code' },
+              { label: 'Dean', field: 'dean' },
+            ].map(({ label, field }) => (
               <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1">
                   {label}
                 </label>
                 <Input
-                  type={type}
                   name={field}
                   value={(formData as any)[field]}
-                  placeholder={`Enter ${label}`}
                   onChange={handleChange}
                   required={field !== 'dean'}
                 />
               </div>
             ))}
 
+            {/* Status */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
+              <label className="block text-sm font-medium mb-1">Status</label>
               <Select
                 value={formData.status}
                 onValueChange={(value) =>
                   setFormData({ ...formData, status: value })
                 }
-                name="status"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -131,37 +127,34 @@ export default function EditFacultyModal({
                   <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+              <input type="hidden" name="status" value={formData.status} />
             </div>
 
+            {/* Description */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1">
                 Description
               </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder="Enter faculty description"
                 className="w-full border rounded-md p-2"
                 rows={4}
               />
             </div>
           </div>
 
-          {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          {/* Sticky footer */}
+          <div className="flex justify-end gap-3 pt-4 border-t mt-6 bg-white sticky bottom-0">
             <Button
-              type="button"
               variant="outline"
+              type="button"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
-            >
+            <Button type="submit" className="bg-primary-gradient text-white">
               {fetcher.state === 'submitting' ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -170,4 +163,3 @@ export default function EditFacultyModal({
     </Sheet>
   );
 }
-
