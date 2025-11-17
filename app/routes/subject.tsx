@@ -35,6 +35,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { list } from 'isbot';
 
 //Loader — fetch subjects with their teachers and classes from DB
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -206,6 +207,7 @@ export default function SubjectsPage() {
   }>();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
+  const listMethod = useFetcher();
 
   const [subjects, setSubjects] = useState(initialSubjects);
   const [searchQuery, setSearchQuery] = useState('');
@@ -227,6 +229,7 @@ export default function SubjectsPage() {
   // ✅ Toasts + instant state update
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
+      fetcher.load(window.location.pathname); // Reset fetcher state
       const data = fetcher.data;
 
       if (data.error) {
@@ -238,6 +241,7 @@ export default function SubjectsPage() {
         // Check for specific action first
         if (data.action === 'assign_teachers') {
           toast.success('Teachers assigned successfully!');
+          listMethod.load(window.location.pathname);
           return;
         }
 
@@ -245,17 +249,21 @@ export default function SubjectsPage() {
           case 'POST':
             toast.success('Subject added successfully!');
             setSubjects((prev) => [...prev, data.subject]);
+            listMethod.load(window.location.pathname);
             break;
           case 'PUT':
             toast.success('Subject updated successfully!');
             setSubjects((prev) =>
               prev.map((s) => (s.id === data.subject.id ? data.subject : s))
             );
+            listMethod.load(window.location.pathname);
             break;
           case 'DELETE':
-            toast.success('Subject deleted successfully!');
+            toast.error('Subject deleted successfully!');
             setSubjects((prev) => prev.filter((s) => s.id !== data.id));
+            listMethod.load(window.location.pathname);
             break;
+            listMethod.load(window.location.pathname);
           default:
             toast.success('Action completed successfully.');
         }

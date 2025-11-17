@@ -23,7 +23,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     grade: GradeService;
     notice: NoticeService;
   };
-  console.log('Available services:', services);
 
   // Fetch all data in parallel
   const [students, teachers, departments, courses, allGrades, notices] =
@@ -60,14 +59,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
       }),
       services.notice.getActiveNotices(10),
     ]);
-
-  console.log('Fetched all dashboard data:', {
-    students,
-    teachers,
-    departments,
-    courses,
-    allGrades,
-  });
 
   // Calculate statistics
   const totalStudents = students.length;
@@ -212,8 +203,7 @@ function calculatePerformanceData(grades: any[]) {
     const excellent = monthGrades.filter((g) => g.grade === 'A').length;
     const good = monthGrades.filter((g) => g.grade === 'B').length;
     const average = monthGrades.filter((g) => g.grade === 'C').length;
-    const poor = monthGrades.filter((g) => ['D', 'F'].includes(g.grade))
-      .length;
+    const poor = monthGrades.filter((g) => ['D', 'F'].includes(g.grade)).length;
 
     // Calculate percentages
     return {

@@ -22,21 +22,19 @@ const mainNavigation = [
   { name: 'Subjects', href: '/subjects', icon: FileText },
   { name: 'Students List', href: '/students', icon: GraduationCap },
   { name: 'Teachers', href: '/teachers', icon: Users },
-  // TODO: doing it later
   { name: 'Grades', href: '/grades', icon: GraduationCap },
-  // { name: 'Attendance', href: '/attendance', icon: Calendar },
 ];
-
+// TODO: will deal with it letter
 const bottomNavigation = [
-  { name: 'Settings', href: '/settings', icon: Settings },
+  // { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col justify-between h-full border-r border-sidebar-border">
-      {/* Top Navigation */}
+    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-sidebar-border bg-white">
+      {/* --- Top Navigation --- */}
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {mainNavigation.map((item) => {
           const isActive = location.pathname === item.href;
@@ -46,14 +44,14 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               to={item.href}
               onClick={onNavigate}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] sidebar-item-hover',
+                'w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] sidebar-item-hover transition-colors duration-200 ease-in-out',
                 isActive
                   ? 'sidebar-item-active text-white'
                   : 'text-black-2020 hover:text-gray-900'
               )}
             >
               <item.icon className="h-5 w-5" />
-              {item.name}
+              <span className="truncate">{item.name}</span>
               {isActive && (
                 <ChevronRight className="ml-auto h-4 w-4 text-white" />
               )}
@@ -62,8 +60,9 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
         })}
       </nav>
 
-      {/* Bottom (Settings + Admin Info) */}
-      <div className="p-4 border-t border-sidebar-border absolute bottom-0 w-1/5">
+      {/* --- Bottom Section (Sticky) --- */}
+      <div className="p-4 border-t border-sidebar-border bg-white absolute bottom-0 w-1/5">
+        {/* Settings */}
         {bottomNavigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (

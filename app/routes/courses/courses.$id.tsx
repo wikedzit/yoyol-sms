@@ -303,8 +303,9 @@ export default function CoursePageDetails() {
 
   // Show toast on completion
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
+    if (fetcher.state === 'idle' && fetcher.data?.success) {
       const data = fetcher.data;
+      fetcher.load('');
       const formData = fetcher.formData as FormData | undefined;
       const entity = formData
         ? (formData.get('_entity') as string | null)

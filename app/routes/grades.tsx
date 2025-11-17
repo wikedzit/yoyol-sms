@@ -37,6 +37,7 @@ import type SemesterService from 'workers/services/semesters';
 import type SubjectService from 'workers/services/subjects';
 import type StudentService from 'workers/services/student';
 import type TeacherService from 'workers/services/teachers';
+import { DeleteButton } from '~/components/DeleteButton';
 
 // Loader: fetch grades and all related data
 export async function loader({ context, request }: LoaderFunctionArgs) {
@@ -226,12 +227,14 @@ export default function Grades() {
   } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
+  const listFetcher = useFetcher();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<GradeWithRelations | null>(null);
   const [grades, setGrades] = useState<GradeWithRelations[]>(initialGrades);
 
   // Filter states
+
   const [selectedFaculty, setSelectedFaculty] = useState<string>('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
   const [selectedYear, setSelectedYear] = useState<string>('');
@@ -248,37 +251,50 @@ export default function Grades() {
     }
   }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
 
-  // Update grades when fetcher completes
+  // react on finished action
+  // react on finished action
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      const data = fetcher.data as {
-        success?: boolean;
-        error?: string;
-        id?: number;
-      };
+    if (fetcher.state !== 'idle' || !fetcher.data) return;
+    const data = fetcher.data;
 
-      if (data.error) {
-        toast.error(data.error || 'An unexpected error occurred.');
-        return;
-      }
+    if (data.error) {
+      toast.error(data.error);
+      lastMethod.current = null;
+      return;
+    }
 
-      if (data.success) {
-        const method = lastMethod.current;
-        if (method === 'POST') {
+    if (data.success) {
+      switch (lastMethod.current) {
+        case 'POST':
           toast.success('Grade added successfully!');
-          // Reload to get updated data
-          window.location.reload();
-        } else if (method === 'PUT') {
+          setGrades((prev) => [...prev, data.grade]); // optimistic add
+          break;
+
+        case 'PUT':
           toast.success('Grade updated successfully!');
-          window.location.reload();
-        } else if (method === 'DELETE') {
-          toast.success('Grade deleted successfully!');
-          setGrades((prev) => prev.filter((g) => g.id !== data.id));
-        }
-        lastMethod.current = null;
+          setGrades((prev) =>
+            prev.map((g) => (g.id === data.grade.id ? data.grade : g))
+          );
+          break;
+
+        case 'DELETE':
+          toast.error('Grade deleted successfully!');
+          setGrades((prev) => prev.filter((g) => g.id !== Number(data.id)));
+          break;
       }
+
+      // Refresh from server to sync full data (relations)
+      listFetcher.load(window.location.pathname);
+      lastMethod.current = null;
     }
   }, [fetcher.state, fetcher.data]);
+
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state === 'idle' && listFetcher.data?.grades) {
+      setGrades(listFetcher.data.grades);
+    }
+  }, [listFetcher.state, listFetcher.data]);
 
   const handleEdit = (grade: GradeWithRelations) => {
     setEditData(grade);
@@ -430,7 +446,7 @@ export default function Grades() {
                   <SelectValue placeholder="Subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubjects.map((subject) => (
+                  {filteredSubjects?.map((subject) => (
                     <SelectItem key={subject.id} value={String(subject.id)}>
                       {subject.subjectName}
                     </SelectItem>
@@ -521,24 +537,35 @@ export default function Grades() {
                   grades.map((grade) => (
                     <TableRow key={grade.id}>
                       <TableCell className="font-medium">
-                        {grade.student.firstName} {grade.student.lastName}
+                        {grade.student
+                          ? `${grade.student.firstName} ${grade.student.lastName}`
+                          : '—'}
                       </TableCell>
-                      <TableCell>{grade.subject.subjectName}</TableCell>
+
+                      <TableCell>
+                        {grade.subject ? grade.subject.subjectName : '—'}
+                      </TableCell>
+
                       <TableCell>{grade.score}</TableCell>
+
                       <TableCell>
                         <GradeBadge
                           grade={grade.grade as 'A' | 'B' | 'C' | 'D' | 'F'}
                         />
                       </TableCell>
+
                       <TableCell className="max-w-xs truncate">
-                        {grade.remarks || '-'}
+                        {grade.remarks || '—'}
                       </TableCell>
+
                       <TableCell>
                         {grade.teacher
                           ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-                          : '-'}
+                          : '—'}
                       </TableCell>
-                      <TableCell>{grade.semester.name}</TableCell>
+
+                      <TableCell>{grade.semester?.name || '—'}</TableCell>
+
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -548,13 +575,15 @@ export default function Grades() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(grade.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <DeleteButton
+                            id={grade.id}
+                            name={
+                              grade.student
+                                ? `${grade.student.firstName} ${grade.student.lastName}`
+                                : 'Grade'
+                            }
+                            fetcher={fetcher}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>

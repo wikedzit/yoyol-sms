@@ -35,7 +35,7 @@ export const DeleteButton = ({
       <AlertDialogTrigger asChild>
         <button
           type="button"
-          className="text-red-500 hover:text-red-700 transition cursor-pointer"
+          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
           title="Delete"
         >
           <Trash2 className="w-5 h-5" />
@@ -73,4 +73,3 @@ export const DeleteButton = ({
     </AlertDialog>
   );
 };
-
