@@ -20,11 +20,12 @@ import {
 import { useFetcher, useLoaderData, useParams } from 'react-router';
 import { Badge } from '~/components/ui/badge';
 import { DeleteButton } from '~/components/DeleteButton';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { toast } from 'sonner';
 
 export default function DepartmentSubjects({
   subjects,
@@ -37,7 +38,10 @@ export default function DepartmentSubjects({
   const { subjects: initialSubjects, departments: loaderDepartments } =
     loaderData;
   const fetcher = useFetcher();
+  const listFetcher = useFetcher();
+  const lastMethod = useRef<string | null>(null);
   const { id } = useParams();
+  const [subject, setSubject] = useState<any[]>(initialSubjects || []);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
@@ -62,6 +66,62 @@ export default function DepartmentSubjects({
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
   };
+
+  // Capture the method when form is submitted
+  useEffect(() => {
+    if (fetcher.state === 'submitting' && fetcher.formData) {
+      const method = fetcher.formData.get('_method') as string | null;
+      lastMethod.current = method ?? fetcher.formMethod;
+    }
+  }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
+
+  //Show toast on completion
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data) {
+      const data = fetcher.data;
+      fetcher.load(window.location.pathname); // Refresh data
+
+      if (data.error) {
+        toast.error(data.error || 'An unexpected error occurred.');
+        lastMethod.current = null;
+        return;
+      }
+
+      if (data.success) {
+        switch (lastMethod.current) {
+          case 'POST':
+            toast.success('Subject added successfully!');
+            setSubject((prev) => [...prev, data.subject]);
+            listFetcher.load(window.location.pathname);
+            break;
+          case 'PUT':
+            toast.success('Subject updated successfully!');
+            setSubject((prev) =>
+              prev.map((s) => (s.id === data.subject.id ? data.subject : s))
+            );
+            listFetcher.load(window.location.pathname);
+            break;
+          case 'DELETE':
+            toast.error('Subject deleted successfully!');
+            setSubject((prev) => prev.filter((subj) => subj.id !== data.id));
+            listFetcher.load(window.location.pathname);
+            break;
+          default:
+            toast.success('Action completed successfully.');
+            listFetcher.load(window.location.pathname);
+        }
+
+        lastMethod.current = null;
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state === 'idle' && listFetcher.data?.subjects) {
+      setSubject(listFetcher.data.subjects);
+    }
+  }, [listFetcher.state, listFetcher.data]);
 
   // --- Pagination Logic ---
   const {

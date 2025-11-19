@@ -18,16 +18,20 @@ import {
   SelectItem,
   SelectContent,
 } from '~/components/ui/select';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFetcher, useLoaderData, useParams } from 'react-router';
 import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { DeleteButton } from '~/components/DeleteButton';
 import AddTeacherModal from '~/components/modal/AddTeacherModal';
 import EditTeacherModal from '~/components/modal/EditTeacherModal';
+import { toast } from 'sonner';
 
 export default function DepartmentTeachers({ teachers }: { teachers: any[] }) {
   const { id } = useParams();
   const fetcher = useFetcher();
+  const lastMethod = useRef<string | null>(null);
+  const listFetcher = useFetcher();
+  const [teacher, setTeacher] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [addModalOpen, setAddModalOpen] = useState(false);
@@ -45,6 +49,62 @@ export default function DepartmentTeachers({ teachers }: { teachers: any[] }) {
       statusFilter === 'all' || teacher.status === statusFilter;
     return matchesSearch && matchesFilter;
   });
+
+  // Capture the method when form is submitted
+  useEffect(() => {
+    if (fetcher.state === 'submitting' && fetcher.formData) {
+      const method = fetcher.formData.get('_method') as string | null;
+      lastMethod.current = method ?? fetcher.formMethod;
+    }
+  }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
+
+  //Show toast on completion
+  useEffect(() => {
+    if (fetcher.state === 'idle' && fetcher.data) {
+      const data = fetcher.data;
+      fetcher.load(window.location.pathname); // Refresh data
+
+      if (data.error) {
+        toast.error(data.error || 'An unexpected error occurred.');
+        lastMethod.current = null;
+        return;
+      }
+
+      if (data.success) {
+        switch (lastMethod.current) {
+          case 'POST':
+            toast.success('Teacher added successfully!');
+            setTeacher((prev) => [...prev, data.teacher]);
+            listFetcher.load(window.location.pathname);
+            break;
+          case 'PUT':
+            toast.success('Teacher updated successfully!');
+            setTeacher((prev) =>
+              prev.map((s) => (s.id === data.teacher.id ? data.teacher : s))
+            );
+            listFetcher.load(window.location.pathname);
+            break;
+          case 'DELETE':
+            toast.error('Teacher deleted successfully!');
+            setTeacher((prev) => prev.filter((teach) => teach.id !== data.id));
+            listFetcher.load(window.location.pathname);
+            break;
+          default:
+            toast.success('Action completed successfully.');
+            listFetcher.load(window.location.pathname);
+        }
+
+        lastMethod.current = null;
+      }
+    }
+  }, [fetcher.state, fetcher.data]);
+
+  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  useEffect(() => {
+    if (listFetcher.state === 'idle' && listFetcher.data?.teachers) {
+      setTeacher(listFetcher.data.teachers);
+    }
+  }, [listFetcher.state, listFetcher.data]);
 
   return (
     <>
