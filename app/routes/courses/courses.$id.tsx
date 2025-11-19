@@ -284,38 +284,46 @@ export default function CoursePageDetails() {
   }>();
 
   const fetcher = useFetcher();
-  const revalidator = useRevalidator();
+  const listMethod = useFetcher();
   const lastMethod = useRef<string | null>(null);
+  const lastEntity = useRef<string | null>(null);
   const [years, setYears] = useState(initialYears);
   const [isAddYearModalOpen, setIsAddYearModalOpen] = useState(false);
   const [isEditYearModalOpen, setIsEditYearModalOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<any>(null);
 
-  // Update local state after successful fetcher submission
+  // Track the submission method and entity
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
       const method = fetcher.formData.get('_method') as string | null;
       const entity = fetcher.formData.get('_entity') as string | null;
-      // Track method for both year and semester operations
+      // Track method and entity for both year and semester operations
       lastMethod.current = method ?? fetcher.formMethod;
+      lastEntity.current = entity;
     }
   }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
 
   // Show toast on completion
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.success) {
+    if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
-      fetcher.load('');
+
       const formData = fetcher.formData as FormData | undefined;
       const entity = formData
         ? (formData.get('_entity') as string | null)
         : null;
 
-      // Handle semester operations by refetching data
-      if (entity === 'semester' || entity === 'semester-subject') {
-        if (data.error) {
-          toast.error(data.error || 'An unexpected error occurred.');
-        } else if (data.success) {
+      // Handle errors
+      if (data.error) {
+        toast.error(data.error || 'An unexpected error occurred.');
+        listMethod.load(window.location.pathname);
+        return;
+      }
+
+      // Handle success
+      if (data.success) {
+        // Handle SEMESTER operations by refetching data
+        if (entity === 'semester' || entity === 'semester-subject') {
           if (entity === 'semester') {
             toast.success(
               lastMethod.current === 'POST'
@@ -328,41 +336,55 @@ export default function CoursePageDetails() {
             toast.success('Subjects assigned successfully!');
           }
           // Refetch data to ensure consistency
-          revalidator.revalidate();
+          listMethod.load(window.location.pathname);
+          lastMethod.current = null;
+          return;
         }
-        return;
-      }
 
-      // Handle year operations
-      if (data.error) {
-        toast.error(data.error || 'An unexpected error occurred.');
-        return;
-      }
-
-      if (data.success) {
+        // Handle YEAR operations
         switch (lastMethod.current) {
           case 'POST':
             toast.success('Year added successfully!');
-            setYears((prev) => [...prev, data.year]);
+            // Optimistically update UI
+            if (data.year) {
+              setYears((prev) => [...prev, { ...data.year, semesters: [] }]);
+            }
+            listMethod.load(window.location.pathname);
             break;
           case 'PUT':
             toast.success('Year updated successfully!');
-            setYears((prev) =>
-              prev.map((y) => (y.id === data.year.id ? data.year : y))
-            );
+            if (data.year) {
+              setYears((prev) =>
+                prev.map((y) =>
+                  y.id === data.year.id
+                    ? { ...data.year, semesters: y.semesters }
+                    : y
+                )
+              );
+            }
+            listMethod.load(window.location.pathname);
             break;
           case 'DELETE':
-            toast.success('Year deleted successfully!');
+            toast.error('Year deleted successfully!');
             setYears((prev) => prev.filter((y) => y.id !== data.id));
+            listMethod.load(window.location.pathname);
             break;
           default:
             toast.success('Action completed successfully.');
+            listMethod.load(window.location.pathname);
         }
 
         lastMethod.current = null;
       }
     }
-  }, [fetcher.state, fetcher.data, fetcher.formData, revalidator]);
+  }, [fetcher.state, fetcher.data, fetcher.formData]);
+
+  // Sync years when listMethod loads fresh data
+  useEffect(() => {
+    if (listMethod.state === 'idle' && listMethod.data?.years) {
+      setYears(listMethod.data.years);
+    }
+  }, [listMethod.state, listMethod.data]);
 
   const handleOpenAddModal = () => {
     setIsAddYearModalOpen(true);

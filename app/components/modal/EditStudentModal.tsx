@@ -16,13 +16,14 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
-import { useFetcher } from 'react-router-dom';
+import type { FetcherWithComponents } from 'react-router';
 
 interface EditStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   student: any;
-  classId: string | undefined; // <-- classId prop
+  classId: string | undefined;
+  fetcher: FetcherWithComponents<any>; // Accept fetcher from parent
 }
 
 export default function EditStudentModal({
@@ -30,9 +31,8 @@ export default function EditStudentModal({
   setOpen,
   student,
   classId,
+  fetcher,
 }: EditStudentModalProps) {
-  const fetcher = useFetcher();
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -64,12 +64,6 @@ export default function EditStudentModal({
       });
     }
   }, [student, open]);
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      setOpen(false);
-    }
-  }, [fetcher.data]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

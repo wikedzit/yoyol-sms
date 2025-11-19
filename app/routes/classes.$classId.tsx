@@ -1,6 +1,6 @@
 // app/routes/classes/$classId.tsx
-import { useState, useEffect } from 'react';
-import { useLoaderData, useFetcher, useParams, Link } from 'react-router';
+import { useState, useEffect, useRef } from 'react';
+import { useLoaderData, useFetcher, useParams, Link, useRevalidator } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
   Table,
@@ -250,7 +250,9 @@ export default function ClassDetails({ params }: { params: any }) {
     assignedTeachers: any[];
   };
   const fetcher = useFetcher();
+  const revalidator = useRevalidator();
   const { classId } = useParams();
+  const processedResponseRef = useRef<any>(null);
 
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
@@ -280,29 +282,58 @@ export default function ClassDetails({ params }: { params: any }) {
     goToPage,
   } = usePagination(filteredStudents, 10);
 
-  const handleRemoveFromClass = (id: string) => {
-    const formData = new FormData();
-    formData.append('id', id);
-    formData.append('_method', 'REMOVE');
-    fetcher.submit(formData, { method: 'post' });
-  };
-
-  // Handle toast notifications
+  // Unified toast notification handler
   useEffect(() => {
-    if (fetcher.data?.success) {
-      const actionValue = fetcher.formData?.get('action');
-      const action = actionValue ? String(actionValue) : null;
+    // Skip if no data or if we've already processed this response
+    if (!fetcher.data || fetcher.data === processedResponseRef.current) return;
+    
+    // Only process when fetcher is in idle state (submission complete)
+    if (fetcher.state !== 'idle') return;
+
+    // Mark this response as processed
+    processedResponseRef.current = fetcher.data;
+
+    // Get action and method from formData
+    let action: string | null = null;
+    let method: string | null = null;
+    
+    try {
+      const formData: any = fetcher.formData;
+      action = (formData?.get?.('action') as string) || null;
+      method = (formData?.get?.('_method') as string) || null;
+    } catch {
+      // Ignore errors if formData is not available
+    }
+
+    if (fetcher.data.success) {
+      // Handle different actions
       if (action === 'assign_subjects') {
         toast.success('Subjects assigned successfully!');
+        // Modal closes itself in the component
       } else if (action === 'assign_teachers') {
         toast.success('Teachers assigned successfully!');
+        // Modal closes itself in the component
+      } else if (method === 'POST' || !method) {
+        // POST or no method means adding a student
+        toast.success('Student added successfully!');
+        setAddStudentModalOpen(false);
+      } else if (method === 'PUT') {
+        toast.success('Student updated successfully!');
+        setEditStudentModalOpen(false);
+      } else if (method === 'DELETE') {
+        toast.success('Student deleted successfully!');
+      } else if (method === 'REMOVE') {
+        toast.success('Student removed from class successfully!');
       }
+
+      // Revalidate route data to refresh the UI
+      revalidator.revalidate();
     }
 
-    if (fetcher.data?.error) {
+    if (fetcher.data.error) {
       toast.error(fetcher.data.error || 'An error occurred');
     }
-  }, [fetcher.data, fetcher.formData]);
+  }, [fetcher.data, fetcher.state, revalidator]);
 
   return (
     <div className="space-y-2 min-h-screen w-full overflow-y-auto p-2 sm:p-4">
@@ -511,6 +542,7 @@ export default function ClassDetails({ params }: { params: any }) {
           open={addStudentModalOpen}
           setOpen={setAddStudentModalOpen}
           classId={classId}
+          fetcher={fetcher}
         />
       )}
       {editStudentModalOpen && selectedStudent && (
@@ -519,6 +551,7 @@ export default function ClassDetails({ params }: { params: any }) {
           setOpen={setEditStudentModalOpen}
           student={selectedStudent}
           classId={classId}
+          fetcher={fetcher}
         />
       )}
       {assignSubjectsModalOpen && classInfo && (

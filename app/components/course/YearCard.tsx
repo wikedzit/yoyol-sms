@@ -3,21 +3,9 @@ import { Button } from '~/components/ui/button';
 import { ChevronDown, ChevronRight, Plus, Trash2, Pencil } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { SemesterTabs } from '~/components/course/SemesterTabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '~/components/ui/alert-dialog';
 import { DeleteButton } from '../DeleteButton';
 import AddSemesterModal from '~/components/modal/AddSemesterModal';
 import EditSemesterModal from '~/components/modal/EditSemesterModal';
-import { toast } from 'sonner';
 
 interface Semester {
   id: number;
@@ -83,7 +71,7 @@ export function YearCard({
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.success) {
       const data = fetcher.data;
-      fetcher.load('');
+      fetcher.load(window.location.pathname); // Refresh data
       const entity = fetcher.formData?.get('_entity') as string | null;
 
       // Only handle local state updates for immediate UI feedback
@@ -98,7 +86,9 @@ export function YearCard({
                 { ...data.semester, subjects: [] },
               ]);
             }
+            fetcher.load(window.location.pathname);
             break;
+
           case 'PUT':
             if (data.semester) {
               setSemesters((prev) =>
@@ -109,9 +99,11 @@ export function YearCard({
                 )
               );
             }
+            fetcher.load(window.location.pathname);
             break;
           case 'DELETE':
             setSemesters((prev) => prev.filter((s) => s.id !== data.id));
+            fetcher.load(window.location.pathname);
             break;
         }
         lastMethod.current = null;
@@ -163,7 +155,13 @@ export function YearCard({
               </button>
             )}
             <div onClick={(e) => e.stopPropagation()} className="inline-block">
-              <DeleteButton id={String(yearId)} name={yearName} />
+              <DeleteButton 
+                id={String(yearId)} 
+                name={yearName} 
+                fetcher={fetcher}
+                entityType="year"
+                entityName="Year"
+              />
             </div>
 
             {isExpanded ? (

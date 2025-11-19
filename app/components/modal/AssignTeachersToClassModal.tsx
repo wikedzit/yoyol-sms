@@ -68,7 +68,7 @@ export default function AssignTeachersToClassModal({
     formData.append('teacherIds', JSON.stringify(selectedTeachers));
 
     fetcher.submit(formData, { method: 'post' });
-    setOpen(false);
+    setOpen(false); // Close modal immediately after submission
   };
 
   return (
