@@ -311,7 +311,69 @@ export default function Grades() {
   };
 
   const handleExport = () => {
-    toast.success('Grades exported successfully');
+    try {
+      // Prepare CSV headers
+      const headers = [
+        'Student Name',
+        'Subject',
+        'Score',
+        'Grade',
+        'Remarks',
+        'Teacher',
+        'Year',
+        'Semester',
+      ];
+
+      // Prepare CSV rows
+      const rows = grades.map((grade) => {
+        // Find the year name from the semester's yearId
+        const yearName = grade.semester?.yearId
+          ? years.find((y) => y.id === grade.semester.yearId)?.name || ''
+          : '';
+
+        return [
+          grade.student
+            ? `${grade.student.firstName} ${grade.student.lastName}`
+            : '',
+          grade.subject ? grade.subject.subjectName : '',
+          grade.score.toString(),
+          grade.grade || '',
+          grade.remarks ? `"${grade.remarks.replace(/"/g, '""')}"` : '', // Escape quotes in remarks
+          grade.teacher
+            ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
+            : '',
+          yearName,
+          grade.semester?.name || '',
+        ];
+      });
+
+      // Combine headers and rows
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row) => row.join(',')),
+      ].join('\n');
+
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute(
+        'download',
+        `grades_export_${new Date().toISOString().split('T')[0]}.csv`
+      );
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Grades exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export grades');
+    }
   };
 
   const handleFilterChange = () => {
@@ -522,6 +584,7 @@ export default function Grades() {
                   <TableHead>Grade</TableHead>
                   <TableHead>Remarks</TableHead>
                   <TableHead>Teacher</TableHead>
+                  <TableHead>Year</TableHead>
                   <TableHead>Semester</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -529,65 +592,74 @@ export default function Grades() {
               <TableBody>
                 {grades.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       No grades found. Add a grade to get started.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  grades.map((grade) => (
-                    <TableRow key={grade.id}>
-                      <TableCell className="font-medium">
-                        {grade.student
-                          ? `${grade.student.firstName} ${grade.student.lastName}`
-                          : '—'}
-                      </TableCell>
+                  grades.map((grade) => {
+                    // Find the year name from the semester's yearId
+                    const yearName = grade.semester?.yearId
+                      ? years.find((y) => y.id === grade.semester.yearId)?.name || '—'
+                      : '—';
 
-                      <TableCell>
-                        {grade.subject ? grade.subject.subjectName : '—'}
-                      </TableCell>
+                    return (
+                      <TableRow key={grade.id}>
+                        <TableCell className="font-medium">
+                          {grade.student
+                            ? `${grade.student.firstName} ${grade.student.lastName}`
+                            : '—'}
+                        </TableCell>
 
-                      <TableCell>{grade.score}</TableCell>
+                        <TableCell>
+                          {grade.subject ? grade.subject.subjectName : '—'}
+                        </TableCell>
 
-                      <TableCell>
-                        <GradeBadge
-                          grade={grade.grade as 'A' | 'B' | 'C' | 'D' | 'F'}
-                        />
-                      </TableCell>
+                        <TableCell>{grade.score}</TableCell>
 
-                      <TableCell className="max-w-xs truncate">
-                        {grade.remarks || '—'}
-                      </TableCell>
-
-                      <TableCell>
-                        {grade.teacher
-                          ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-                          : '—'}
-                      </TableCell>
-
-                      <TableCell>{grade.semester?.name || '—'}</TableCell>
-
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(grade)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <DeleteButton
-                            id={grade.id}
-                            name={
-                              grade.student
-                                ? `${grade.student.firstName} ${grade.student.lastName}`
-                                : 'Grade'
-                            }
-                            fetcher={fetcher}
+                        <TableCell>
+                          <GradeBadge
+                            grade={grade.grade as 'A' | 'B' | 'C' | 'D' | 'F'}
                           />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+
+                        <TableCell className="max-w-xs truncate">
+                          {grade.remarks || '—'}
+                        </TableCell>
+
+                        <TableCell>
+                          {grade.teacher
+                            ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
+                            : '—'}
+                        </TableCell>
+
+                        <TableCell>{yearName}</TableCell>
+
+                        <TableCell>{grade.semester?.name || '—'}</TableCell>
+
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(grade)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <DeleteButton
+                              id={grade.id}
+                              name={
+                                grade.student
+                                  ? `${grade.student.firstName} ${grade.student.lastName}`
+                                  : 'Grade'
+                              }
+                              fetcher={fetcher}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -601,6 +673,7 @@ export default function Grades() {
         editData={editData}
         students={students}
         subjects={subjects}
+        years={years}
         semesters={semesters}
         teachers={teachers}
         fetcher={fetcher}

@@ -27,7 +27,8 @@ interface GradeFormProps {
   editData?: GradeWithRelations | null;
   students: Array<{ id: number; firstName: string; lastName: string }>;
   subjects: Array<{ id: number; subjectName: string }>;
-  semesters: Array<{ id: number; name: string }>;
+  years: Array<{ id: number; name: string }>;
+  semesters: Array<{ id: number; name: string; yearId: number }>;
   teachers: Array<{ id: number; firstName: string; lastName: string }>;
   fetcher: FetcherWithComponents<any>;
 }
@@ -38,6 +39,7 @@ export function GradeForm({
   editData,
   students,
   subjects,
+  years,
   semesters,
   teachers,
   fetcher,
@@ -48,6 +50,7 @@ export function GradeForm({
   const [subjectId, setSubjectId] = useState<string>(
     editData ? String(editData.subjectId) : ''
   );
+  const [yearId, setYearId] = useState<string>('');
   const [semesterId, setSemesterId] = useState<string>(
     editData ? String(editData.semesterId) : ''
   );
@@ -69,17 +72,24 @@ export function GradeForm({
         setTeacherId(editData.teacherId ? String(editData.teacherId) : '');
         setScore(String(editData.score));
         setRemarks(editData.remarks || '');
+        
+        // Set yearId from semester
+        const semester = semesters.find(s => s.id === editData.semesterId);
+        if (semester) {
+          setYearId(String(semester.yearId));
+        }
       } else {
         // Reset form for new grade
         setStudentId('');
         setSubjectId('');
+        setYearId('');
         setSemesterId('');
         setTeacherId('');
         setScore('');
         setRemarks('');
       }
     }
-  }, [open, editData]);
+  }, [open, editData, semesters]);
 
   // Close modal on successful submission
   useEffect(() => {
@@ -95,6 +105,11 @@ export function GradeForm({
     if (score >= 60) return 'D';
     return 'F';
   };
+
+  // Filter semesters based on selected year
+  const filteredSemesters = yearId
+    ? semesters.filter((s) => s.yearId === parseInt(yearId))
+    : semesters;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -180,6 +195,31 @@ export function GradeForm({
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Year *
+              </label>
+              <Select
+                value={yearId}
+                onValueChange={(value) => {
+                  setYearId(value);
+                  setSemesterId(''); // Reset semester when year changes
+                }}
+                required
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year.id} value={String(year.id)}>
+                      {year.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Semester *
               </label>
               <Select
@@ -187,12 +227,13 @@ export function GradeForm({
                 onValueChange={setSemesterId}
                 required
                 name="semesterId"
+                disabled={!yearId}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select semester" />
+                  <SelectValue placeholder={yearId ? "Select semester" : "Select year first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {semesters.map((semester) => (
+                  {filteredSemesters.map((semester) => (
                     <SelectItem key={semester.id} value={String(semester.id)}>
                       {semester.name}
                     </SelectItem>

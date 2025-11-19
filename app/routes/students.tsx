@@ -271,9 +271,8 @@ export default function Students() {
       }
 
       if (data.success) {
-        const action = fetcher.formData?.get('action');
-
-        if (action === 'assign_subjects') {
+        // Check for assign_subjects action from server response
+        if (data.action === 'assign_subjects') {
           toast.success('Subjects assigned successfully!');
           listFetcher.load(window.location.pathname);
           lastMethod.current = null;
@@ -291,7 +290,7 @@ export default function Students() {
             listFetcher.load(window.location.pathname);
             break;
           case 'DELETE':
-            toast.error('Student deleted successfully!');
+            toast.success('Student deleted successfully!');
             listFetcher.load(window.location.pathname);
             break;
           default:

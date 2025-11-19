@@ -290,6 +290,20 @@ export default function Teachers() {
     }
 
     if (data.success) {
+      // Check for specific actions first
+      if (data.action === 'assign_subjects') {
+        toast.success('Subjects assigned successfully!');
+        lastMethod.current = null;
+        return;
+      }
+
+      if (data.action === 'assign_classes') {
+        toast.success('Classes assigned successfully!');
+        lastMethod.current = null;
+        return;
+      }
+
+      // Handle CRUD operations
       switch (lastMethod.current) {
         case 'POST':
           toast.success('Teacher added successfully!');

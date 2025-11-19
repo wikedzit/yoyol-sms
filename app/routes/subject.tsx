@@ -272,6 +272,13 @@ export default function SubjectsPage() {
     }
   }, [fetcher.state, fetcher.data]);
 
+  // 🔄 Update subjects when listMethod fetches fresh data
+  useEffect(() => {
+    if (listMethod.state === 'idle' && listMethod.data?.subjects) {
+      setSubjects(listMethod.data.subjects);
+    }
+  }, [listMethod.state, listMethod.data]);
+
   // 🔍 Filter + search
   const filteredSubjects = subjects.filter((s) => {
     const matchesSearch =
