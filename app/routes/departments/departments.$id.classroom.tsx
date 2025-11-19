@@ -1,24 +1,12 @@
-import {
-  Plus,
-  Pencil,
-  Search,
-  Users,
-  LayoutGrid,
-  List,
-  Trash2,
-} from 'lucide-react';
+import { Plus, Pencil, Search, Users, LayoutGrid, List } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { useState, useEffect, useRef } from 'react';
-import {
-  Link,
-  useFetcher,
-  useLoaderData,
-  useParams,
-  useRevalidator,
-} from 'react-router';
+import { Link, useFetcher, useLoaderData, useParams } from 'react-router';
 import CreateClassModal from '~/components/modal/CreateClassModal';
 import EditClassModal from '~/components/modal/EditClassModal';
+import { toast } from 'sonner';
+import { DeleteButton } from '~/components/DeleteButton';
 
 export default function DepartmentClassrooms({
   classrooms = [],
@@ -30,7 +18,8 @@ export default function DepartmentClassrooms({
   }>();
   const { id } = useParams();
   const fetcher = useFetcher();
-  const revalidator = useRevalidator();
+  const lastMethod = useRef<string | null>(null);
+  const listMethod = useFetcher();
 
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'grid' | 'list'>('grid');
@@ -42,6 +31,14 @@ export default function DepartmentClassrooms({
     initialClassrooms || []
   );
 
+  // Update local state after successful fetcher submission
+  useEffect(() => {
+    if (fetcher.state === 'submitting' && fetcher.formData) {
+      const method = fetcher.formData.get('_method') as string | null;
+      lastMethod.current = method ?? fetcher.formMethod;
+    }
+  }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
+
   // Sync with loader data when it changes
   useEffect(() => {
     setLocalClassrooms(initialClassrooms || []);
@@ -49,30 +46,47 @@ export default function DepartmentClassrooms({
 
   // Handle CRUD operations on local state
   useEffect(() => {
-    if (fetcher.data?.success && fetcher.state === 'idle') {
-      if (fetcher.data.classroom) {
-        // CREATE or UPDATE
-        const classroom = fetcher.data.classroom;
-        setLocalClassrooms((prev) => {
-          const exists = prev.find((c) => c.id === classroom.id);
-          if (exists) {
-            // Update existing classroom
-            return prev.map((c) => (c.id === classroom.id ? classroom : c));
-          } else {
-            // Add new classroom
-            return [...prev, classroom];
-          }
-        });
+    if (!fetcher.data || fetcher.state !== 'idle') return;
+    const data = fetcher.data;
+
+    if (data.error) {
+      toast.error(data.error || 'Something went wrong!');
+      lastMethod.current = null;
+      return;
+    }
+
+    //update or create
+    if (data.success && data.classroom) {
+      const classroom = data.classroom;
+      const exists = localClassrooms.find((c) => c.id === classroom.id);
+
+      setLocalClassrooms((prev) => {
+        if (exists) {
+          return prev.map((c) => (c.id === classroom.id ? classroom : c));
+        } else {
+          return [...prev, classroom];
+        }
+      });
+
+      // Show toast based on operation type
+      if (exists) {
+        toast.success('Classroom updated successfully!');
       } else {
-        // DELETE - revalidate to get fresh data
-        revalidator.revalidate();
+        toast.success('Classroom added successfully!');
       }
+
+      // Refresh the list once after the operation
+      fetcher.load(window.location.pathname);
+      lastMethod.current = null;
+      return;
     }
-    if (fetcher.data?.error) {
-      console.error('Classroom operation error:', fetcher.data.error);
-      alert(`Error: ${fetcher.data.error}`);
+
+    if (data.success && !data.classroom) {
+      toast.success('Classroom deleted successfully!');
+      fetcher.load(window.location.pathname); // Refresh the list
+      lastMethod.current = null;
     }
-  }, [fetcher.data, fetcher.state, revalidator]);
+  }, [fetcher.data, fetcher.state, localClassrooms]);
 
   // Filter classrooms by search term only
   const filteredClassrooms = localClassrooms?.filter((c) => {
@@ -182,28 +196,13 @@ export default function DepartmentClassrooms({
                 >
                   <Pencil size={16} /> Edit
                 </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (
-                      confirm('Are you sure you want to delete this classroom?')
-                    ) {
-                      const formData = new FormData();
-                      formData.append('id', String(classroom.id));
-                      formData.append('_method', 'DELETE');
-                      formData.append('_entity', 'class');
-                      fetcher.submit(formData, {
-                        method: 'POST',
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:scale-110 transition"
-                >
-                  <Trash2 size={16} /> Delete
-                </Button>
+                <DeleteButton
+                  id={classroom.id}
+                  name={classroom.name}
+                  fetcher={fetcher}
+                  entityName="class"
+                  entityType="class"
+                />
               </div>
             </div>
           ))}
@@ -251,27 +250,13 @@ export default function DepartmentClassrooms({
                   <Pencil size={16} /> Edit
                 </Button>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (
-                      confirm('Are you sure you want to delete this classroom?')
-                    ) {
-                      const formData = new FormData();
-                      formData.append('id', String(classroom.id));
-                      formData.append('_method', 'DELETE');
-                      formData.append('_entity', 'class');
-                      fetcher.submit(formData, {
-                        method: 'POST',
-                      });
-                    }
-                  }}
-                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:scale-110 transition"
-                >
-                  <Trash2 size={16} /> Delete
-                </Button>
+                <DeleteButton
+                  id={classroom.id}
+                  name={classroom.name}
+                  fetcher={fetcher}
+                  entityName="class"
+                  entityType="class"
+                />
               </div>
             </div>
           ))}
