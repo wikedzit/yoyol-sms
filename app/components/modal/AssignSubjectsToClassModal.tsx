@@ -68,7 +68,7 @@ export default function AssignSubjectsToClassModal({
     formData.append('subjectIds', JSON.stringify(selectedSubjects));
 
     fetcher.submit(formData, { method: 'post' });
-    setOpen(false);
+    setOpen(false); // Close modal immediately after submission
   };
 
   return (

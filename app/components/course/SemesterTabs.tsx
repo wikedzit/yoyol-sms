@@ -91,6 +91,16 @@ export function SemesterTabs({
                   Subjects ({semester.subjects.length})
                 </h4>
                 <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAssignSubjects(semester)}
+                    className="bg-primary-gradient text-white"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Assign Subjects
+                  </Button>
+
                   {onEdit && (
                     <button
                       type="button"
@@ -112,15 +122,6 @@ export function SemesterTabs({
                       entityType="semester"
                     />
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAssignSubjects(semester)}
-                    className="bg-primary-gradient text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Assign Subjects
-                  </Button>
                 </div>
               </div>
 

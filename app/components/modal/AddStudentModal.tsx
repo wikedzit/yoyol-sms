@@ -16,20 +16,21 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
-import { useFetcher } from 'react-router-dom';
+import type { FetcherWithComponents } from 'react-router';
 
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  classId: string | { id: string } | undefined; // <-- accept classId
+  classId: string | { id: string } | undefined;
+  fetcher: FetcherWithComponents<any>; // Accept fetcher from parent
 }
 
 export default function AddStudentModal({
   open,
   setOpen,
   classId,
+  fetcher,
 }: AddStudentModalProps) {
-  const fetcher = useFetcher();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -48,10 +49,9 @@ export default function AddStudentModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Close modal on successful submission
+  // Reset form when modal is closed
   useEffect(() => {
-    if (fetcher.data?.success) {
-      setOpen(false);
+    if (!open) {
       setFormData({
         firstName: '',
         lastName: '',
@@ -66,7 +66,7 @@ export default function AddStudentModal({
         status: undefined,
       });
     }
-  }, [fetcher.data]);
+  }, [open]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
