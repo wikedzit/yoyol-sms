@@ -3,7 +3,6 @@ import {
   Users,
   BookOpen,
   DoorOpen,
-  Settings,
   ChevronRight,
   Building2,
   GitBranch,
@@ -85,17 +84,6 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             </Link>
           );
         })}
-
-        {/* Admin Info */}
-        <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent px-3 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground text-sm font-semibold">
-            AD
-          </div>
-          <div className="flex-1 text-sm">
-            <p className="font-medium text-sidebar-foreground">Admin User</p>
-            <p className="text-xs text-sidebar-foreground/60">admin@edu.com</p>
-          </div>
-        </div>
       </div>
     </div>
   );

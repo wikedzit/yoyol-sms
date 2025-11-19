@@ -319,121 +319,120 @@ export default function ClassesRoute() {
   }, [listFetcher.state, listFetcher.data]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 pb-8">
+      {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Classrooms
-          </h1>
+          <h1 className="text-xl sm:text-3xl font-bold">Classrooms</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Manage and organize your classrooms
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 justify-end">
-          {/* View toggle */}
+        <div className="flex items-center gap-3 flex-wrap justify-end">
+          {/* View Toggle */}
           <div className="flex items-center border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('grid')}
-              className={`p-2 ${
+              className={`p-2 transition ${
                 view === 'grid'
                   ? 'bg-primary-gradient text-white'
-                  : 'text-gray-500 cursor-pointer'
+                  : 'text-gray-500'
               }`}
             >
               <LayoutGrid size={18} />
             </button>
+
             <button
               onClick={() => setView('list')}
-              className={`p-2 ${
+              className={`p-2 transition ${
                 view === 'list'
                   ? 'bg-primary-gradient text-white'
-                  : 'text-gray-500 cursor-pointer'
+                  : 'text-gray-500'
               }`}
             >
               <List size={18} />
             </button>
           </div>
 
-          {/* Create button */}
+          {/* Create Button */}
           <Button
             onClick={() => setOpenCreate(true)}
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
+            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto"
           >
-            <span className="text-2xl leading-none">+</span>
-            <span className="font-medium text-sm sm:text-base">
-              Add Classroom
-            </span>
+            <span className="text-xl">+</span>
+            <span className="font-medium">Add Classroom</span>
           </Button>
         </div>
       </div>
 
-      {/* Classroom Display */}
+      {/* LIST OR GRID */}
       {classes.length === 0 ? (
         <p className="text-center text-gray-500 mt-10">No classrooms yet.</p>
       ) : view === 'grid' ? (
-        // ✅ Grid view responsive
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 border-none shadow-none">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
           {classes.map((c) => (
-            <div className="bg-white rounded-xl shadow-none p-4 flex flex-col gap-3 hover:shadow-md transition">
-              <Link to={`/classes/${c.id}`} key={c.id}>
+            <div
+              key={c.id}
+              className="bg-white rounded-xl p-4 shadow hover:shadow-lg transition flex flex-col gap-3"
+            >
+              <Link to={`/classes/${c.id}`}>
+                {/* Image */}
                 <img
-                  src="assets/card_image.png"
-                  alt="card Image"
-                  className="w-full h-32 object-cover rounded-md"
+                  src="/assets/card_image.png"
+                  className="w-full h-32 sm:h-36 object-cover rounded-lg"
                 />
-                <div>
-                  <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm">
-                    <h3 className="text-gray-900 font-medium">
-                      <strong>Name:</strong> {c.name}
-                    </h3>
-                    <p className="text-gray-900">
-                      <strong>Year:</strong> {c.year}
-                    </p>
+
+                {/* Top Section */}
+                <div className="mt-2 space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="font-bold">Name:</span>
+                    <span>{c.name}</span>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm mt-1">
-                    <p className="text-gray-900">
-                      <strong>Level:</strong> {c.EducationalLevel}
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Section:</strong> {c.section}
-                    </p>
+                  <div className="flex justify-between">
+                    <span className="font-bold">Year:</span>
+                    <span>{c.year}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="font-bold">Level:</span>
+                    <span>{c.EducationalLevel}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="font-bold">Section:</span>
+                    <span>{c.section}</span>
                   </div>
                 </div>
 
                 {/* Counts */}
-                <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-500 mt-2">
-                  <div className="flex items-center gap-2">
-                    <Users size={14} />
-                    <span>{c.studentCount || 0} students</span>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Users size={14} /> {c.studentCount} students
                   </div>
-                  <div className="flex items-center gap-2">
-                    <BookOpen size={14} />
-                    <span>{c.subjectCount || 0} subjects</span>
+                  <div className="flex items-center gap-1">
+                    <BookOpen size={14} /> {c.subjectCount} subjects
                   </div>
-                  <div className="flex items-center gap-2">
-                    <UsersIcon size={14} />
-                    <span>{c.teacherCount || 0} teachers</span>
+                  <div className="flex items-center gap-1">
+                    <UsersIcon size={14} /> {c.teacherCount} teachers
                   </div>
                 </div>
               </Link>
 
               {/* Actions */}
-              <div className="flex flex-wrap items-center justify-between mt-3 gap-2">
+              <div className="flex justify-between mt-3">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={() => {
                     setEditingClass(c);
                     setOpenEdit(true);
                   }}
-                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
+                  className="flex items-center gap-2 text-gray-600 hover:text-black hover:scale-105 transition"
                 >
-                  <Pencil size={16} />
-                  Edit
+                  <Pencil size={16} /> Edit
                 </Button>
+
                 <DeleteStudentButton
                   id={String(c.id)}
                   name={c.name}
@@ -444,74 +443,65 @@ export default function ClassesRoute() {
           ))}
         </div>
       ) : (
-        // ✅ List view responsive
+        /* LIST VIEW */
         <div className="space-y-3">
           {classes.map((c) => (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border-none rounded-lg hover:shadow-md transition bg-white">
-              <Link
-                to={`/classes/${c.id}`}
-                key={c.id}
-                className="flex items-center gap-20"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden">
-                    <img
-                      src="assets/card_image.png"
-                      alt="card Image"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg text-gray-900">
-                      {c.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      {c.EducationalLevel} - Section {c.section} - Year {c.year}
-                    </p>
-                  </div>
-                </div>
+            <div
+              key={c.id}
+              className="bg-white p-4 rounded-lg shadow hover:shadow-md transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+            >
+              <Link to={`/classes/${c.id}`} className="flex gap-4 items-start">
+                {/* Thumbnail */}
+                <img
+                  src="/assets/card_image.png"
+                  className="w-14 h-14 rounded-lg object-cover"
+                />
 
-                <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-500">
-                  <div className="flex items-center gap-2">
-                    <Users size={14} />
-                    <span>{c.studentCount || 0} students</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BookOpen size={14} />
-                    <span>{c.subjectCount || 0} subjects</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <UsersIcon size={14} />
-                    <span>{c.teacherCount || 0} teachers</span>
-                  </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-lg">
+                    {c.name}
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    {c.EducationalLevel} • Section {c.section} • Year {c.year}
+                  </p>
                 </div>
               </Link>
-              <div className="flex flex-wrap items-center gap-2">
+
+              <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+                <span className="flex items-center gap-1">
+                  <Users size={14} /> {c.studentCount} students
+                </span>
+                <span className="flex items-center gap-1">
+                  <BookOpen size={14} /> {c.subjectCount} subjects
+                </span>
+                <span className="flex items-center gap-1">
+                  <UsersIcon size={14} /> {c.teacherCount} teachers
+                </span>
+              </div>
+
+              <div className="flex gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={() => {
                     setEditingClass(c);
                     setOpenEdit(true);
                   }}
-                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:font-semibold transition cursor-pointer"
+                  className="flex items-center gap-2 text-gray-600 hover:text-black hover:scale-105 transition"
                 >
-                  <Pencil size={16} />
-                  Edit
+                  <Pencil size={16} /> Edit
                 </Button>
+
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={(e) => {
-                    e.preventDefault();
+                  onClick={() => {
                     const formData = new FormData();
                     formData.append('_method', 'DELETE');
                     formData.append('id', String(c.id));
-                    deletingId.current = c.id;
                     fetcher.submit(formData, { method: 'post' });
                   }}
-                  className="flex items-center gap-2 text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
+                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:scale-105 transition"
                 >
                   <Trash2 size={16} />
                 </Button>
@@ -540,7 +530,7 @@ export default function ClassesRoute() {
           setOpen={setAssignTeachersModalOpen}
           classData={selectedClass}
           availableTeachers={allTeachers}
-          assignedTeachers={selectedClass.teachers || []}
+          assignedTeachers={selectedClass.teachers ?? []}
           fetcher={fetcher}
         />
       )}

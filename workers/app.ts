@@ -19,7 +19,7 @@ const requestHandler = createRequestHandler(
 export default {
 	async fetch(request, env, ctx) {
 		// Initialize services using the factory
-		const services = new ServiceContainer(env.DB);
+		const services = new ServiceContainer(env.DB, env.AUTH_SESSION_SECRET);
 
 		return requestHandler(request, {
 			cloudflare: { env, ctx },

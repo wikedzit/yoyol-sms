@@ -176,6 +176,13 @@
       "when": 1762899686621,
       "tag": "0024_oval_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1763417503448,
+      "tag": "0025_tiresome_zeigeist",
+      "breakpoints": true
     }
   ]
 }
