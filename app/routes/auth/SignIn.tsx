@@ -1,8 +1,9 @@
-import { useNavigation, useFetcher, Form } from 'react-router';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AppleID, Facebook, Google } from '~/svg/socialLinks/icons';
+import { useFetcher, useNavigation } from 'react-router';
+import { authCookie } from 'workers/utils/cookies.server';
+import { redirect } from 'react-router';
 
 // 🧩 Zod validation schema
 const schema = z.object({
@@ -15,9 +16,29 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+export async function action({ request, context }: any) {
+  const form = await request.formData();
+  const email = form.get('email');
+  const password = form.get('password');
+
+  const token = await context.services.users.login(email, password);
+  if (!token) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid email or password' }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  return redirect('/', {
+    headers: {
+      'Set-Cookie': await authCookie.serialize(token),
+    },
+  });
+}
+
 export default function LoginPage() {
-  const navigation = useNavigation();
   const fetcher = useFetcher();
+  const navigation = useNavigation();
   const isSubmitting = navigation.state === 'submitting';
 
   const {
@@ -44,17 +65,11 @@ export default function LoginPage() {
     >
       <div className="px-5 md:px-10 py-10">
         <h2 className="text-3xl font-bold text-black mb-3">Login</h2>
-        <p className="mb-5 text-medium-gray max-w-[288px]">
-          Welcome back to your Student Management System! Login to view your
-          dashboard.
+        <p className="mb-5 text-medium-gray max-w-[288px] text-sm">
+          Welcome back! <br /> Login to view your dashboard.
         </p>
 
-        <Form
-          method="POST"
-          className="space-y-5"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          {/* Email */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <label htmlFor="email" className="block text-sm mb-1 font-medium">
               Email
@@ -78,7 +93,6 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Password */}
           <div>
             <label
               htmlFor="password"
@@ -90,7 +104,7 @@ export default function LoginPage() {
               id="password"
               type="password"
               {...register('password')}
-              autoComplete="new-password"
+              autoComplete="current-password"
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
                 errors.password
                   ? 'border-red-500 focus:ring-red-200'
@@ -105,57 +119,30 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-primary-gradient text-white py-2 rounded-md hover:opacity-90 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+            className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity  cursor-pointer"
           >
             {isSubmitting ? 'Logging in...' : 'Login'}
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center justify-center text-sm">
-            <span className="border-t w-1/2" />
-            <span className="mx-3 text-nowrap text-medium-gray text-sm">
-              Or Sign in with
-            </span>
-            <span className="border-t w-1/2" />
-          </div>
-
-          {/* Social Buttons */}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className="flex-1 border rounded-[8px] py-2 flex items-center justify-center gap-2 text-sm font-medium transition text-primary hover:bg-[var(--color-bg-light)] duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
+          {fetcher.data?.error && (
+            <p className="text-red-600 text-center text-sm mt-2">
+              {fetcher.data.error}
+            </p>
+          )}
+          {/* 
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Don't have an account?
+            <a
+              href="/signup"
+              className="text-purple-600 ml-1 underline hover:text-purple-700"
             >
-              <Google color="currentColor" />
-              <span className="hidden md:block mt-1">Google</span>
-            </button>
-            <button
-              type="button"
-              className="flex-1 border rounded-[8px] py-2 flex items-center justify-center gap-2 text-sm font-medium transition text-primary hover:bg-[var(--color-bg-light)] duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
-            >
-              <AppleID color="currentColor" />
-              <span className="hidden md:block mt-1">Apple ID</span>
-            </button>
-            <button
-              type="button"
-              className="flex-1 border rounded-[8px] py-2 flex items-center justify-center gap-2 text-sm font-medium transition text-primary hover:bg-[var(--color-bg-light)] duration-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--color-border-focus)]"
-            >
-              <Facebook color="currentColor" />
-              <span className="hidden md:block mt-1">Facebook</span>
-            </button>
-          </div>
-
-          {/* Footer */}
-          <p className="text-center text-sm text-gray-500">
-            Don’t have an account?
-            <a href="/signup.parent" className="text-purple-600 ml-1 underline">
               Create an account
             </a>
-          </p>
-        </Form>
+          </p> */}
+        </form>
       </div>
     </div>
   );

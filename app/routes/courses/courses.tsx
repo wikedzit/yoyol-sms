@@ -200,17 +200,21 @@ const CoursePage = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Courses</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            Courses
+          </h1>
+          <p className="text-muted-foreground text-sm md:text-base">
             Manage and view all academic programs
           </p>
         </div>
+
         <div>
           <Button
             onClick={handleOpenAddDialog}
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Course
@@ -218,47 +222,58 @@ const CoursePage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mt-6">
+      {/* GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mt-6">
         {courses.length === 0 ? (
-          <div className="col-span-3 text-center py-12">
+          <div className="col-span-full text-center py-12">
             <p className="text-muted-foreground">No courses found.</p>
           </div>
         ) : (
           courses.map((course) => (
             <Card
               key={course.id}
-              className="p-6 hover:shadow-lg transition-all cursor-pointer group border-none shadow-none flex flex-col justify-between gap-3"
+              className="p-4 md:p-6 hover:shadow-lg transition-all cursor-pointer group border-none shadow-sm flex flex-col justify-between gap-3"
               onClick={() => navigate(`${course.id}`)}
             >
-              <div className="">
-                <div className="flex items-center gap-3 space-y-1 mb-2">
-                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+              <div>
+                <div className="flex items-start justify-between">
+                  <h3 className="text-base md:text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                     {course.name}
                   </h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">{course.code}</p>
-                  <Badge>{course.status}</Badge>{' '}
+
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <p className="text-xs md:text-sm text-muted-foreground">
+                    {course.code}
+                  </p>
+                  <Badge className="text-xs">{course.status}</Badge>
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Department: {getDepartmentName(course.departmentId)}
               </p>
 
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {/* COURSE INFO */}
+              <div className="space-y-1 mt-1">
+                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
                   <span>{course.totalStudent || 0} Students</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+
+                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>{course.duration}</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2">
-                <Button variant="outline" size="icon" className="gap-2 w-1/2">
+              {/* ACTION BUTTONS */}
+              <div className="flex items-center justify-between gap-3 mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 flex items-center justify-center gap-2"
+                >
                   <Eye className="h-4 w-4" />
                   View
                 </Button>
@@ -267,7 +282,6 @@ const CoursePage = () => {
                   <Button
                     variant="plain"
                     size="icon"
-                    className="gap-2 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEditModalOpen(course);
@@ -276,10 +290,7 @@ const CoursePage = () => {
                     <Pencil className="h-4 w-4" />
                   </Button>
 
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-block"
-                  >
+                  <div onClick={(e) => e.stopPropagation()}>
                     <DeleteStudentButton
                       id={String(course.id)}
                       name={course.name}
@@ -293,7 +304,7 @@ const CoursePage = () => {
         )}
       </div>
 
-      {/* Add/Edit Course Modals */}
+      {/* MODALS */}
       {isAddCourseModalOpen && (
         <AddCourseModal
           open={isAddCourseModalOpen}

@@ -16,12 +16,14 @@ import SemesterService from './semesters';
 import SemesterSubjectService from './semester-subjects';
 import GradeService from './grades';
 import NoticeService from './notices';
+import LoginService from './auth.server';
 
 /**
  * Service Container that aggregates all individual services
  * Provides centralized access to all business logic services
  */
 export default class ServiceContainer {
+  public readonly users: LoginService;
   public readonly class: ClassService;
   public readonly student: StudentService;
   public readonly teacher: TeacherService;
@@ -40,9 +42,10 @@ export default class ServiceContainer {
   public readonly notice: NoticeService;
   private db: DrizzleD1Database;
 
-  constructor(database: D1Database) {
+  constructor(database: D1Database, jwtSecret: string) {
     // Initialize all services with the database connection
     this.db = drizzle(database);
+    this.users = new LoginService(this.db, jwtSecret);
     this.class = new ClassService(this.db);
     // Note: StudentService is not initialized here to avoid circular dependency issues
     this.student = new StudentService(this.db);
@@ -68,6 +71,7 @@ export default class ServiceContainer {
    */
   getServices() {
     return {
+      users: this.users,
       class: this.class,
       student: this.student,
       teacher: this.teacher,
@@ -96,6 +100,7 @@ export default class ServiceContainer {
     services: Record<string, boolean>;
   }> {
     const services = {
+      users: true, // LoginService doesn't have async initialization
       class: true, // ClassService doesn't have async initialization
       student: true, // StudentService doesn't have async initialization
       teacher: true, // TeacherService doesn't have async initialization
