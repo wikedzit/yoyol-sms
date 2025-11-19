@@ -207,12 +207,12 @@ const FacultiesPage = () => {
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="text"
-                placeholder="Search by faculty name, code, or dean..."
-                className="pl-10"
+                type="search"
+                placeholder="Search students..."
+                className="pl-10 bg-muted/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
