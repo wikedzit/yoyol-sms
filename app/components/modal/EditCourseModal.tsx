@@ -21,7 +21,7 @@ interface EditCourseModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   fetcher: any;
-  course: any; // course object to edit
+  course: any;
   departments?: any[];
 }
 
@@ -42,7 +42,6 @@ export default function EditCourseModal({
     departmentId: '',
   });
 
-  // Populate form with course data when modal opens
   useEffect(() => {
     if (course) {
       setFormData({
@@ -63,54 +62,60 @@ export default function EditCourseModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Close modal on successful submission
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full
+          sm:max-w-[90%]
+          md:max-w-[573px] md:w-[573px]
+          p-6 md:p-10
+          flex flex-col
+        "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="id" value={course?.id} />
-          <input type="hidden" name="departmentId" value={formData.departmentId} />
+          <input
+            type="hidden"
+            name="departmentId"
+            value={formData.departmentId}
+          />
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   Edit Course
                 </SheetTitle>
               </SheetHeader>
-              <SheetClose asChild className="cursor-pointer">
-                <X size={25} />
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
               </SheetClose>
             </div>
 
-            <p className="text-sm text-[#898989] mb-8">
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               Update the details of the course below.
             </p>
 
-            {/* Department Dropdown */}
+            {/* Department */}
             <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Department
               </label>
               <Select
                 value={formData.departmentId}
-                onValueChange={(value) => {
-                  setFormData({
-                    ...formData,
-                    departmentId: value,
-                  });
-                }}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, departmentId: value })
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Department" />
@@ -121,9 +126,9 @@ export default function EditCourseModal({
                       No departments available
                     </SelectItem>
                   ) : (
-                    departments.map((department: any) => (
-                      <SelectItem key={department.id} value={String(department.id)}>
-                        {department.name} ({department.code})
+                    departments.map((dept: any) => (
+                      <SelectItem key={dept.id} value={String(dept.id)}>
+                        {dept.name} ({dept.code})
                       </SelectItem>
                     ))
                   )}
@@ -131,11 +136,16 @@ export default function EditCourseModal({
               </Select>
             </div>
 
-            {/* Form Fields */}
+            {/* Other Fields */}
             {[
               { label: 'Name', field: 'name', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Duration', field: 'duration', type: 'text', placeholder: 'e.g., 4 Years' },
+              {
+                label: 'Duration',
+                field: 'duration',
+                type: 'text',
+                placeholder: 'e.g., 4 Years',
+              },
               {
                 label: 'Total Students',
                 field: 'totalStudent',
@@ -157,7 +167,8 @@ export default function EditCourseModal({
               </div>
             ))}
 
-            <div className="mb-4">
+            {/* Status */}
+            <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
@@ -179,7 +190,8 @@ export default function EditCourseModal({
               </Select>
             </div>
 
-            <div className="mb-4">
+            {/* Description */}
+            <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
@@ -188,24 +200,24 @@ export default function EditCourseModal({
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Enter course description"
-                className="w-full border rounded-md p-2"
+                className="w-full border rounded-md p-2 min-h-[80px]"
               />
             </div>
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting' ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -215,4 +227,3 @@ export default function EditCourseModal({
     </Sheet>
   );
 }
-

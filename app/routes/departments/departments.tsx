@@ -239,7 +239,7 @@ export default function DepartmentsPage() {
   };
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -259,7 +259,7 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
@@ -293,7 +293,7 @@ export default function DepartmentsPage() {
               </div>
             </div>
           </Card>
-          <Card className="p-6 border-none shadow-none">
+          {/* <Card className="p-6 border-none shadow-none">
             <div className="flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
@@ -310,7 +310,7 @@ export default function DepartmentsPage() {
                 </p>
               </div>
             </div>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Search & Table */}

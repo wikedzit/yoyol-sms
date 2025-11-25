@@ -28,7 +28,6 @@ export default function EditSemesterModal({
     name: '',
   });
 
-  // Pre-fill form data when modal opens
   useEffect(() => {
     if (semester) {
       setFormData({
@@ -46,13 +45,9 @@ export default function EditSemesterModal({
 
   const handleSemesterNumberChange = (value: string) => {
     const numValue = parseInt(value) || 1;
-    setFormData({
-      ...formData,
-      semesterNumber: numValue,
-    });
+    setFormData({ ...formData, semesterNumber: numValue });
   };
 
-  // ✅ Close modal on successful submission
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data?.semester) {
       setOpen(false);
@@ -65,27 +60,32 @@ export default function EditSemesterModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full
+          sm:max-w-[90%]
+          md:max-w-[573px] md:w-[573px]
+          p-6 md:p-10
+          flex flex-col
+        "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="_entity" value="semester" />
           <input type="hidden" name="id" value={semester.id} />
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   Edit Semester
                 </SheetTitle>
               </SheetHeader>
-              <SheetClose asChild className="cursor-pointer">
-                <X size={25} />
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
               </SheetClose>
             </div>
 
-            <p className="text-sm text-[#898989] mb-8">
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               Update the information for this semester below.
             </p>
 
@@ -123,21 +123,23 @@ export default function EditSemesterModal({
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
               disabled={fetcher.state === 'submitting'}
             >
-              {fetcher.state === 'submitting' ? 'Updating...' : 'Update Semester'}
+              {fetcher.state === 'submitting'
+                ? 'Updating...'
+                : 'Update Semester'}
             </Button>
           </div>
         </fetcher.Form>
@@ -145,4 +147,3 @@ export default function EditSemesterModal({
     </Sheet>
   );
 }
-

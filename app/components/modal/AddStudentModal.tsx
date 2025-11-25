@@ -22,7 +22,7 @@ interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   classId: string | { id: string } | undefined;
-  fetcher: FetcherWithComponents<any>; // Accept fetcher from parent
+  fetcher: FetcherWithComponents<any>;
 }
 
 export default function AddStudentModal({
@@ -36,7 +36,6 @@ export default function AddStudentModal({
     lastName: '',
     email: '',
     course: '',
-    // grade: '',
     phone: '',
     enrollmentDate: '',
     dob: '',
@@ -49,7 +48,7 @@ export default function AddStudentModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Reset form when modal is closed
+  // Reset form when modal closes
   useEffect(() => {
     if (!open) {
       setFormData({
@@ -57,7 +56,6 @@ export default function AddStudentModal({
         lastName: '',
         email: '',
         course: '',
-        // grade: '',
         phone: '',
         enrollmentDate: '',
         dob: '',
@@ -72,12 +70,16 @@ export default function AddStudentModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full              /* Mobile full-screen */
+          sm:max-w-[90%]                 /* Tablet */
+          md:max-w-[573px] md:w-[573px]  /* Desktop fixed width */
+          p-6 md:p-10
+          flex flex-col justify-between
+        "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
-          {/* <-- hidden input for classId */}
-
           <input
             type="hidden"
             name="classId"
@@ -89,122 +91,121 @@ export default function AddStudentModal({
           />
 
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   Add New Student
                 </SheetTitle>
               </SheetHeader>
-              <SheetClose asChild className="cursor-pointer">
-                <X size={25} />
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
               </SheetClose>
             </div>
 
-            <p className="text-sm text-[#898989] mb-8">
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               Fill in the details below to register a new student.
             </p>
 
-            {/* Form Fields */}
-            {[
-              'firstName',
-              'lastName',
-              'email',
-              'course',
-              // 'grade',
-              'phone',
-              'enrollmentDate',
-              'dob',
-              'address',
-            ].map((field) => (
-              <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {field === 'firstName'
-                    ? 'First Name'
-                    : field === 'lastName'
-                    ? 'Last Name'
-                    : field.charAt(0).toUpperCase() + field.slice(1)}
-                </label>
-                <Input
-                  type={
-                    field === 'email'
-                      ? 'email'
-                      : field === 'enrollmentDate'
-                      ? 'date'
-                      : 'text'
-                  }
-                  name={field}
-                  value={(formData as any)[field]}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            ))}
-            <div className="flex items-center justify-between">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender
-                </label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      gender: value,
-                    })
-                  }
-                  name="gender"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Form fields */}
+            <div className="space-y-4">
+              {[
+                'firstName',
+                'lastName',
+                'email',
+                'course',
+                'phone',
+                'enrollmentDate',
+                'dob',
+                'address',
+              ].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field === 'firstName'
+                      ? 'First Name'
+                      : field === 'lastName'
+                      ? 'Last Name'
+                      : field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <Input
+                    type={
+                      field === 'email'
+                        ? 'email'
+                        : ['enrollmentDate', 'dob'].includes(field)
+                        ? 'date'
+                        : 'text'
+                    }
+                    name={field}
+                    value={(formData as any)[field]}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              ))}
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
-                </label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      status: value,
-                    })
-                  }
-                  name="status"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Gender */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gender
+                  </label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, gender: value })
+                    }
+                    name="gender"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Status */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, status: value })
+                    }
+                    name="status"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
             </Button>

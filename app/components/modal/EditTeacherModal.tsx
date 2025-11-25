@@ -74,35 +74,41 @@ export default function EditTeacherModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col justify-between"
+        className="
+      w-full max-w-full 
+      sm:max-w-[420px] 
+      md:max-w-[500px] 
+      lg:!max-w-[573px] lg:!w-[573px]
+      p-6 md:p-10 flex flex-col justify-between
+    "
       >
         <fetcher.Form
           method="post"
-          action={formAction}
-          className="flex flex-col justify-between h-full"
+          action={id ? `/departments/${id}` : `/teachers`}
+          className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="PUT" />
-          <input type="hidden" name="id" value={teacher?.id} />
           <input type="hidden" name="_entity" value="teacher" />
+          <input type="hidden" name="id" value={teacher?.id} />
 
           {/* HEADER */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold">
                 Edit Teacher
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={25} />
+              <X size={24} />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-8">
+          <p className="text-sm text-[#898989] mb-6 md:mb-8">
             Update the teacher’s information below.
           </p>
 
-          {/* SCROLLABLE CONTENT */}
-          <div className="flex-1 overflow-y-auto pr-2">
+          {/* SCROLLABLE FORM CONTENT */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
             {[
               'firstName',
               'lastName',
@@ -139,64 +145,66 @@ export default function EditTeacherModal({
               </div>
             ))}
 
-            {/* Gender Select */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Gender
-              </label>
-              <Select
-                value={formData.gender}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, gender: value })
-                }
-                name="gender"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Gender & Status */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="w-full sm:w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Gender
+                </label>
+                <Select
+                  value={formData.gender}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, gender: value })
+                  }
+                  name="gender"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Status Select */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, status: value })
-                }
-                name="status"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-full sm:w-1/2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, status: value })
+                  }
+                  name="status"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* STICKY FOOTER */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'

@@ -9,15 +9,14 @@ import {
   SheetClose,
 } from '~/components/ui/sheet';
 import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
+import { Textarea } from '~/components/ui/textarea';
 import {
   Select,
-  SelectContent,
-  SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectContent,
+  SelectItem,
 } from '~/components/ui/select';
-import { Textarea } from '~/components/ui/textarea';
 import type { GradeWithRelations } from 'workers/services/grades';
 import type { FetcherWithComponents } from 'react-router';
 
@@ -62,7 +61,6 @@ export function GradeForm({
   );
   const [remarks, setRemarks] = useState<string>(editData?.remarks || '');
 
-  // Reset form when editData changes or dialog opens/closes
   useEffect(() => {
     if (open) {
       if (editData) {
@@ -72,14 +70,9 @@ export function GradeForm({
         setTeacherId(editData.teacherId ? String(editData.teacherId) : '');
         setScore(String(editData.score));
         setRemarks(editData.remarks || '');
-        
-        // Set yearId from semester
-        const semester = semesters.find(s => s.id === editData.semesterId);
-        if (semester) {
-          setYearId(String(semester.yearId));
-        }
+        const semester = semesters.find((s) => s.id === editData.semesterId);
+        if (semester) setYearId(String(semester.yearId));
       } else {
-        // Reset form for new grade
         setStudentId('');
         setSubjectId('');
         setYearId('');
@@ -91,11 +84,8 @@ export function GradeForm({
     }
   }, [open, editData, semesters]);
 
-  // Close modal on successful submission
   useEffect(() => {
-    if (fetcher.data?.success) {
-      onOpenChange(false);
-    }
+    if (fetcher.data?.success) onOpenChange(false);
   }, [fetcher.data, onOpenChange]);
 
   const getGradeFromScore = (score: number) => {
@@ -106,7 +96,6 @@ export function GradeForm({
     return 'F';
   };
 
-  // Filter semesters based on selected year
   const filteredSemesters = yearId
     ? semesters.filter((s) => s.yearId === parseInt(yearId))
     : semesters;
@@ -115,7 +104,13 @@ export function GradeForm({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full
+          sm:max-w-[90%]
+          md:max-w-[573px] md:w-[573px]
+          p-6 md:p-10
+          flex flex-col
+        "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           {editData && (
@@ -125,20 +120,19 @@ export function GradeForm({
             </>
           )}
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   {editData ? 'Edit Grade' : 'Add New Grade'}
                 </SheetTitle>
               </SheetHeader>
-              <SheetClose asChild className="cursor-pointer">
-                <X size={25} />
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
               </SheetClose>
             </div>
 
-            <p className="text-sm text-[#898989] mb-8">
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               {editData
                 ? 'Update the grade information below.'
                 : "Enter the student's grade details below."}
@@ -149,12 +143,7 @@ export function GradeForm({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Student *
               </label>
-              <Select
-                value={studentId}
-                onValueChange={setStudentId}
-                required
-                name="studentId"
-              >
+              <Select value={studentId} onValueChange={setStudentId} required>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select student" />
                 </SelectTrigger>
@@ -173,12 +162,7 @@ export function GradeForm({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Subject *
               </label>
-              <Select
-                value={subjectId}
-                onValueChange={setSubjectId}
-                required
-                name="subjectId"
-              >
+              <Select value={subjectId} onValueChange={setSubjectId} required>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
@@ -193,65 +177,66 @@ export function GradeForm({
               <input type="hidden" name="subjectId" value={subjectId} />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Year *
-              </label>
-              <Select
-                value={yearId}
-                onValueChange={(value) => {
-                  setYearId(value);
-                  setSemesterId(''); // Reset semester when year changes
-                }}
-                required
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year.id} value={String(year.id)}>
-                      {year.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Year *
+                </label>
+                <Select
+                  value={yearId}
+                  onValueChange={(value) => {
+                    setYearId(value);
+                    setSemesterId('');
+                  }}
+                  required
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select year" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year.id} value={String(year.id)}>
+                        {year.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Semester *
-              </label>
-              <Select
-                value={semesterId}
-                onValueChange={setSemesterId}
-                required
-                name="semesterId"
-                disabled={!yearId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={yearId ? "Select semester" : "Select year first"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredSemesters.map((semester) => (
-                    <SelectItem key={semester.id} value={String(semester.id)}>
-                      {semester.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <input type="hidden" name="semesterId" value={semesterId} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Semester *
+                </label>
+                <Select
+                  value={semesterId}
+                  onValueChange={setSemesterId}
+                  required
+                  disabled={!yearId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={
+                        yearId ? 'Select semester' : 'Select year first'
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredSemesters.map((semester) => (
+                      <SelectItem key={semester.id} value={String(semester.id)}>
+                        {semester.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" name="semesterId" value={semesterId} />
+              </div>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Teacher
               </label>
-              <Select
-                value={teacherId}
-                onValueChange={setTeacherId}
-                name="teacherId"
-              >
+              <Select value={teacherId} onValueChange={setTeacherId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select teacher" />
                 </SelectTrigger>
@@ -273,6 +258,7 @@ export function GradeForm({
                 Score *
               </label>
               <Input
+                name="score"
                 type="number"
                 min="0"
                 max="100"
@@ -280,7 +266,6 @@ export function GradeForm({
                 onChange={(e) => setScore(e.target.value)}
                 placeholder="Enter score (0-100)"
                 required
-                name="score"
               />
               {score && (
                 <p className="text-sm text-[#898989] mt-1">
@@ -294,30 +279,30 @@ export function GradeForm({
                 Remarks
               </label>
               <Textarea
-                placeholder="Enter any additional remarks..."
+                name="remarks"
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={3}
-                name="remarks"
+                placeholder="Enter any additional remarks..."
                 className="w-full border rounded-md p-2"
               />
             </div>
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={fetcher.state === 'submitting'}
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting'
                 ? 'Saving...'
