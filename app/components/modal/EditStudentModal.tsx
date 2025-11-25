@@ -23,7 +23,7 @@ interface EditStudentModalProps {
   setOpen: (open: boolean) => void;
   student: any;
   classId: string | undefined;
-  fetcher: FetcherWithComponents<any>; // Accept fetcher from parent
+  fetcher: FetcherWithComponents<any>;
 }
 
 export default function EditStudentModal({
@@ -38,12 +38,11 @@ export default function EditStudentModal({
     lastName: '',
     email: '',
     course: '',
-    // grade: '',
     phone: '',
     enrollmentDate: '',
     dob: '',
     address: '',
-    gender: 'Select gender',
+    gender: undefined,
     status: 'Active',
   });
 
@@ -54,12 +53,11 @@ export default function EditStudentModal({
         lastName: student.lastName || '',
         email: student.email || '',
         course: student.course || '',
-        // grade: student.grade || '',
         phone: student.phone || '',
         enrollmentDate: student.enrollmentDate || '',
         dob: student.dob || '',
         address: student.address || '',
-        gender: student.gender || 'Select gender',
+        gender: student.gender || undefined,
         status: student.status || 'Active',
       });
     }
@@ -73,128 +71,134 @@ export default function EditStudentModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col justify-between"
+        className="
+          w-full max-w-full              /* Mobile full-screen */
+          sm:max-w-[90%]                 /* Tablet */
+          md:max-w-[573px] md:w-[573px]  /* Desktop fixed width */
+          p-6 md:p-10
+          flex flex-col justify-between
+        "
       >
-        <fetcher.Form
-          method="post"
-          className="flex flex-col justify-between h-full"
-        >
+        <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="id" value={student?.id} />
-          <input
-            type="hidden"
-            name="classId"
-            value={
-              classId && typeof classId === 'object' && 'id' in classId
-                ? classId.id
-                : classId ?? ''
-            }
-          />
-          {/* <-- added */}
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          <input type="hidden" name="classId" value={classId ?? ''} />
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   Edit Student
                 </SheetTitle>
               </SheetHeader>
-              <SheetClose asChild className="cursor-pointer">
-                <X size={25} />
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
               </SheetClose>
             </div>
-            <p className="text-sm text-[#898989] mb-8">
+
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               Update the student information below.
             </p>
 
-            {[
-              'firstName',
-              'lastName',
-              'email',
-              'course',
-              // 'grade',
-              'phone',
-              'enrollmentDate',
-              'dob',
-              'address',
-            ].map((field) => (
-              <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {field.charAt(0).toUpperCase() + field.slice(1)}
-                </label>
-                <Input
-                  type={
-                    field === 'email'
-                      ? 'email'
-                      : field === 'enrollmentDate'
-                      ? 'date'
-                      : 'text'
-                  }
-                  name={field}
-                  value={(formData as any)[field]}
-                  onChange={handleChange}
-                  required={
-                    field === 'firstName' ||
-                    field === 'lastName' ||
-                    field === 'email'
-                  }
-                />
-              </div>
-            ))}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Gender
-              </label>
-              <Select
-                value={formData.gender}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, gender: value })
-                }
-                name="gender"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Form Fields */}
+            <div className="space-y-4">
+              {[
+                'firstName',
+                'lastName',
+                'email',
+                'course',
+                'phone',
+                'enrollmentDate',
+                'dob',
+                'address',
+              ].map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <Input
+                    type={
+                      field === 'email'
+                        ? 'email'
+                        : ['enrollmentDate', 'dob'].includes(field)
+                        ? 'date'
+                        : 'text'
+                    }
+                    name={field}
+                    value={(formData as any)[field]}
+                    onChange={handleChange}
+                    required={
+                      field === 'firstName' ||
+                      field === 'lastName' ||
+                      field === 'email'
+                    }
+                  />
+                </div>
+              ))}
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, status: value })
-                }
-                name="status"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Gender & Status */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gender
+                  </label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, gender: value })
+                    }
+                    name="gender"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, status: value })
+                    }
+                    name="status"
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+
+          {/* Sticky Footer */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'

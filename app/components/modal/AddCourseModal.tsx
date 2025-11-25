@@ -39,7 +39,6 @@ export default function AddCourseModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Close modal on successful submission
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
@@ -53,13 +52,19 @@ export default function AddCourseModal({
         departmentId: '',
       });
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full          /* Mobile full-screen */
+          sm:max-w-[90%]             /* Tablet */
+          md:max-w-[573px] md:w-[573px] /* Desktop fixed width */
+          p-6 md:p-10
+          flex flex-col
+        "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
@@ -69,20 +74,21 @@ export default function AddCourseModal({
             value={formData.departmentId}
           />
 
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   Add New Course
                 </SheetTitle>
               </SheetHeader>
-              <SheetClose asChild className="cursor-pointer">
-                <X size={25} />
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
               </SheetClose>
             </div>
 
-            <p className="text-sm text-[#898989] mb-8">
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               Fill in the details below to add a new course.
             </p>
 
@@ -93,12 +99,9 @@ export default function AddCourseModal({
               </label>
               <Select
                 value={formData.departmentId}
-                onValueChange={(value) => {
-                  setFormData({
-                    ...formData,
-                    departmentId: value,
-                  });
-                }}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, departmentId: value })
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select Department" />
@@ -109,12 +112,9 @@ export default function AddCourseModal({
                       No departments available
                     </SelectItem>
                   ) : (
-                    departments.map((department: any) => (
-                      <SelectItem
-                        key={department.id}
-                        value={String(department.id)}
-                      >
-                        {department.name} ({department.code})
+                    departments.map((dept: any) => (
+                      <SelectItem key={dept.id} value={String(dept.id)}>
+                        {dept.name} ({dept.code})
                       </SelectItem>
                     ))
                   )}
@@ -122,7 +122,7 @@ export default function AddCourseModal({
               </Select>
             </div>
 
-            {/* Other fields */}
+            {/* Other Fields */}
             {[
               { label: 'Name', field: 'name', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
@@ -154,7 +154,7 @@ export default function AddCourseModal({
             ))}
 
             {/* Status */}
-            <div className="mb-4">
+            <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
@@ -176,7 +176,7 @@ export default function AddCourseModal({
             </div>
 
             {/* Description */}
-            <div className="mb-4">
+            <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
@@ -191,18 +191,18 @@ export default function AddCourseModal({
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Course'}
             </Button>

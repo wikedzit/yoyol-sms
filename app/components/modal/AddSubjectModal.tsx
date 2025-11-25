@@ -30,7 +30,6 @@ export default function AddSubjectModal({
     departments: '',
     instructor: '',
     enrolledStudents: 0,
-    // description: '',
     status: 'Active',
     departmentId: id || '',
   });
@@ -40,22 +39,9 @@ export default function AddSubjectModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear error when user starts typing
     if (error) setError(null);
   };
 
-  // Debug log
-  useEffect(() => {
-    if (open) {
-      console.log('AddSubjectModal opened with:', {
-        id,
-        departments: departments?.length || 0,
-        departmentsList: departments,
-      });
-    }
-  }, [open, id, departments]);
-
-  // ✅ Set department name when modal opens with pre-selected department
   useEffect(() => {
     if (open && id && departments) {
       const selectedDept = departments.find(
@@ -71,7 +57,6 @@ export default function AddSubjectModal({
     }
   }, [open, id, departments]);
 
-  // ✅ Close modal & reset form on successful submission
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
@@ -82,12 +67,10 @@ export default function AddSubjectModal({
         departments: '',
         instructor: '',
         enrolledStudents: 0,
-        // description: '',
         status: 'Active',
         departmentId: id || '',
       });
     }
-    // ✅ Handle error from server
     if (fetcher.data?.error) {
       setError(fetcher.data.error);
     }
@@ -97,7 +80,13 @@ export default function AddSubjectModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full               /* Mobile full-screen */
+          sm:max-w-[90%]                  /* Tablet */
+          md:max-w-[573px] md:w-[573px]   /* Desktop fixed width */
+          p-6 md:p-10
+          flex flex-col
+        "
       >
         <fetcher.Form
           method="post"
@@ -118,33 +107,36 @@ export default function AddSubjectModal({
             value={formData.departments}
           />
 
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          {/* HEADER */}
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold">
                 Add New Subject
               </SheetTitle>
             </SheetHeader>
+
             <SheetClose asChild className="cursor-pointer">
               <X size={25} />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-8">
+          <p className="text-sm text-[#898989] mb-6 md:mb-8">
             Fill in the details below to add a new subject.
           </p>
 
-          {/* Error message */}
+          {/* ERROR MESSAGE */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
+          {/* DEPARTMENT SELECT */}
           <div className="mb-4 w-full">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Department
             </label>
+
             <Select
               value={formData.departmentId}
               onValueChange={(value) => {
@@ -161,6 +153,7 @@ export default function AddSubjectModal({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select department" />
               </SelectTrigger>
+
               <SelectContent>
                 {!departments || departments.length === 0 ? (
                   <SelectItem value="no-dept" disabled>
@@ -177,7 +170,7 @@ export default function AddSubjectModal({
             </Select>
           </div>
 
-          {/* Scrollable content */}
+          {/* SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto pr-2">
             {[
               { label: 'Subject Name', field: 'subjectName', type: 'text' },
@@ -193,6 +186,7 @@ export default function AddSubjectModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {label}
                 </label>
+
                 <Input
                   type={type}
                   name={field}
@@ -204,23 +198,12 @@ export default function AddSubjectModal({
               </div>
             ))}
 
-            {/* <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Enter subject description"
-                className="w-full border rounded-md p-2"
-              />
-            </div> */}
-
+            {/* STATUS */}
             <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
+
               <Select
                 value={formData.status}
                 onValueChange={(value) =>
@@ -230,6 +213,7 @@ export default function AddSubjectModal({
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="Active">Active</SelectItem>
                   <SelectItem value="Inactive">Inactive</SelectItem>
@@ -238,16 +222,17 @@ export default function AddSubjectModal({
             </div>
           </div>
 
-          {/* Sticky Footer */}
+          {/* FOOTER */}
           <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px]"
             >
               Cancel
             </Button>
+
             <Button
               type="submit"
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"

@@ -42,7 +42,6 @@ export default function AddFacultyModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Reset when success
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
@@ -60,15 +59,23 @@ export default function AddFacultyModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+          w-full max-w-full 
+          sm:max-w-[450px] 
+          md:max-w-[500px] 
+          lg:!w-[573px] lg:!max-w-[573px]
+          p-6 sm:p-8 md:p-10 
+          flex flex-col
+        "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
 
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="flex justify-between items-center mb-8">
+          <div className="flex-1 overflow-y-auto pr-1 sm:pr-2">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-2xl font-semibold">
+                <SheetTitle className="text-xl sm:text-2xl font-semibold">
                   Add New Faculty
                 </SheetTitle>
               </SheetHeader>
@@ -78,7 +85,7 @@ export default function AddFacultyModal({
               </SheetClose>
             </div>
 
-            <p className="text-sm text-[#898989] mb-8">
+            <p className="text-sm text-[#898989] mb-6 sm:mb-8">
               Fill in the details below to add a new faculty.
             </p>
 
@@ -140,16 +147,26 @@ export default function AddFacultyModal({
           </div>
 
           {/* Sticky footer */}
-          <div className="flex justify-end gap-3 pt-4 border-t mt-6 bg-white sticky bottom-0">
+          <div
+            className="
+              flex flex-col sm:flex-row justify-end 
+              gap-3 pt-4 border-t mt-6 
+              bg-white sticky bottom-0 pb-4
+            "
+          >
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
 
-            <Button type="submit" className="bg-primary-gradient text-white">
+            <Button
+              type="submit"
+              className="bg-primary-gradient text-white w-full sm:w-auto"
+            >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Faculty'}
             </Button>
           </div>

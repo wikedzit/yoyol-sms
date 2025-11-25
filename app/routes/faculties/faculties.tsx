@@ -199,7 +199,7 @@ const FacultiesPage = () => {
     <div className="min-h-screen">
       {/* Header */}
       <header>
-        <div className="container mx-auto mb-6">
+        <div className="mb-6">
           <div className="flex items-center gap-3 mb-6">
             <h1 className="text-3xl font-bold text-foreground">
               Faculty Management
@@ -233,7 +233,7 @@ const FacultiesPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto">
+      <main className="">
         {/* Statistics Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8 ">
           <Card className="border-none shadow-none">

@@ -310,7 +310,7 @@ export default function SubjectsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -420,7 +420,7 @@ export default function SubjectsPage() {
                     <TableHead className="font-semibold">
                       Assigned Teachers
                     </TableHead>
-                    <TableHead className="font-semibold">Classes</TableHead>
+                    {/* <TableHead className="font-semibold">Classes</TableHead> */}
                     <TableHead className="font-semibold">
                       Enrolled Students
                     </TableHead>
@@ -465,7 +465,7 @@ export default function SubjectsPage() {
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        {/* <TableCell>
                           <div className="flex items-center gap-2 flex-wrap">
                             {subject.classes?.length > 0 ? (
                               subject.classes.map((classItem: any) => (
@@ -483,7 +483,7 @@ export default function SubjectsPage() {
                               </span>
                             )}
                           </div>
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell>{subject.enrolledStudents || 0}</TableCell>
                         {/* <TableCell className="max-w-[200px] truncate">
                           {subject.description || '—'}

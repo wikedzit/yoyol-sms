@@ -60,34 +60,40 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="!w-[573px] !max-w-[573px] p-10 flex flex-col"
+        className="
+      w-full max-w-full 
+      sm:max-w-[420px] 
+      md:max-w-[500px] 
+      lg:!max-w-[573px] lg:!w-[573px]
+      p-6 md:p-10 flex flex-col
+    "
       >
         <fetcher.Form
           method="post"
-          action={formAction}
+          action={id ? `/departments/${id}` : `/teachers`}
           className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="POST" />
           <input type="hidden" name="_entity" value="teacher" />
 
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold">
                 Add New Teacher
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={25} />
+              <X size={24} />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-8">
+          <p className="text-sm text-[#898989] mb-6 md:mb-8">
             Fill in the details below to register a new teacher.
           </p>
 
           {/* Scrollable Form Content */}
-          <div className="flex-1 overflow-y-auto pr-2">
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
             {[
               'firstName',
               'lastName',
@@ -98,7 +104,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
               'qualification',
               'experience',
             ].map((field) => (
-              <div key={field} className="mb-4">
+              <div key={field}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {field === 'firstName'
                     ? 'First Name'
@@ -119,19 +125,16 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
                       ? 'Last Name'
                       : field.charAt(0).toUpperCase() + field.slice(1))
                   }
-                  required={[
-                    'firstName',
-                    'firstName',
-                    'lastName',
-                    'subject',
-                  ].includes(field)}
+                  required={['firstName', 'lastName', 'subject'].includes(
+                    field
+                  )}
                 />
               </div>
             ))}
 
             {/* Gender & Status Selects */}
-            <div className="flex items-center justify-between gap-4">
-              <div className="mb-4 w-full">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="mb-4 w-full sm:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Gender
                 </label>
@@ -153,7 +156,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
                 </Select>
               </div>
 
-              <div className="mb-4 w-full">
+              <div className="mb-4 w-full sm:w-1/2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status
                 </label>
@@ -177,18 +180,18 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white sticky bottom-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-16 rounded-[8px]"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto"
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Teacher'}
             </Button>
