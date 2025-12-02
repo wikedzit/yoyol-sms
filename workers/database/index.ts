@@ -15,3 +15,4 @@ export * from './semesters';
 export * from './semester-subjects';
 export * from './grades';
 export * from './notices';
+export * from './academic-levels';
