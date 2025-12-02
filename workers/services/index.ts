@@ -17,6 +17,7 @@ import SemesterSubjectService from './semester-subjects';
 import GradeService from './grades';
 import NoticeService from './notices';
 import LoginService from './auth.server';
+import AcademicLevelService from './academic-levels';
 
 /**
  * Service Container that aggregates all individual services
@@ -40,6 +41,7 @@ export default class ServiceContainer {
   public readonly semesterSubject: SemesterSubjectService;
   public readonly grade: GradeService;
   public readonly notice: NoticeService;
+  public readonly academicLevel: AcademicLevelService;
   private db: DrizzleD1Database;
 
   constructor(database: D1Database, jwtSecret: string) {
@@ -63,6 +65,7 @@ export default class ServiceContainer {
     this.semesterSubject = new SemesterSubjectService(this.db);
     this.grade = new GradeService(this.db);
     this.notice = new NoticeService(this.db);
+    this.academicLevel = new AcademicLevelService(this.db);
   }
 
   /**
@@ -88,6 +91,7 @@ export default class ServiceContainer {
       semesterSubject: this.semesterSubject,
       grade: this.grade,
       notice: this.notice,
+      academicLevel: this.academicLevel,
     };
   }
 
@@ -117,6 +121,7 @@ export default class ServiceContainer {
       semesterSubject: true, // SemesterSubjectService doesn't have async initialization
       grade: true, // GradeService doesn't have async initialization
       notice: true, // NoticeService doesn't have async initialization
+      academicLevel: true, // AcademicLevelService doesn't have async initialization
     };
 
     // Check if all services are available

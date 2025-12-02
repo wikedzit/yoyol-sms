@@ -15,15 +15,22 @@ const routes: RouteConfig = [
   ]),
 
   route('logout', './routes/logout.ts'),
-  //protected 
+  //protected
   layout('./layout/ProtectedLayout.tsx', [
     layout('./layout/DashboardLyout.tsx', [
       index('routes/home.tsx'),
-      route('faculties', './routes/faculties/faculties.tsx'),
-      route('faculties/:id', './routes/faculties/faculties.$id.tsx'),
+      ...prefix('levels', [
+        route('o-level', './routes/academicLevels/o-level.tsx'),
+        route('o-level/:streamId', './routes/academicLevels/StreamPage.tsx'),
+        route(
+          'o-level/:streamId/forms/:formId',
+          './routes/academicLevels/FormPage.tsx'
+        ),
+      ]),
+
+      route('students', './routes/students.tsx'),
       route('classes', './routes/classes.tsx'),
       route('classes/:classId', './routes/classes.$classId.tsx'),
-      route('students', './routes/students.tsx'),
       route('departments', './routes/departments/departments.tsx'),
       route('departments/:id', './routes/departments/departments.$id.tsx'),
       route(
