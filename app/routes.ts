@@ -20,11 +20,25 @@ const routes: RouteConfig = [
     layout('./layout/DashboardLyout.tsx', [
       index('routes/home.tsx'),
       ...prefix('levels', [
+        // O-Level routes
         route('o-level', './routes/academicLevels/o-level.tsx'),
-        route('o-level/:streamId', './routes/academicLevels/StreamPage.tsx'),
+        route('o-level/:streamId', './routes/academicLevels/StreamPage.tsx', {
+          id: 'o-level-stream',
+        }),
         route(
           'o-level/:streamId/forms/:formId',
-          './routes/academicLevels/FormPage.tsx'
+          './routes/academicLevels/FormPage.tsx',
+          { id: 'o-level-form' }
+        ),
+        // A-Level routes
+        route('a-level', './routes/academicLevels/a-level.tsx'),
+        route('a-level/:streamId', './routes/academicLevels/StreamPage.tsx', {
+          id: 'a-level-stream',
+        }),
+        route(
+          'a-level/:streamId/forms/:formId',
+          './routes/academicLevels/FormPage.tsx',
+          { id: 'a-level-form' }
         ),
       ]),
 

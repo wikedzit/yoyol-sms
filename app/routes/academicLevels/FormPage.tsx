@@ -28,8 +28,7 @@ import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import type { LevelType } from '~/type/shools';
 import CreateClassModal from '~/components/modal/CreateClassModal';
 import EditClassModal from '~/components/modal/EditClassModal';
-
-const LEVEL_TYPE: LevelType = 'o-level';
+import { getLevelConfig, isValidFormForLevel } from '~/config/academic-levels';
 
 // --- Loader: fetch form with its classes ---
 export async function loader({ context, params }: LoaderFunctionArgs) {
@@ -38,7 +37,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
   };
 
   const streamId = Number(params.streamId);
-  const formNumber = Number(params.formId); // This is actually the form number (1-4)
+  const formNumber = Number(params.formId); // This is actually the form number (1-6)
 
   if (!streamId || isNaN(streamId)) {
     throw new Response('Invalid stream ID', { status: 400 });
@@ -52,6 +51,20 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
   if (!stream) {
     throw new Response('Stream not found', { status: 404 });
   }
+
+  // Determine level type from stream
+  const levelType = stream.levelType as LevelType;
+
+  // Validate that the form number is valid for this level
+  if (!isValidFormForLevel(levelType, formNumber)) {
+    throw new Response(
+      `Form ${formNumber} is not valid for ${levelType.toUpperCase()}`,
+      { status: 400 }
+    );
+  }
+
+  // Get level config
+  const levelConfig = getLevelConfig(levelType);
 
   // Get form details by stream ID and form number
   let form = await services.academicLevel.getFormByStreamIdAndNumber(
@@ -84,7 +97,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     0
   );
 
-  return { stream, form, level, classes, totalStudents };
+  return { stream, form, level, classes, totalStudents, levelType, levelConfig };
 }
 
 // --- Action: handle form class CRUD operations ---
@@ -94,7 +107,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   };
 
   const streamId = Number(params.streamId);
-  const formNumber = Number(params.formId); // This is actually the form number (1-4)
+  const formNumber = Number(params.formId); // This is actually the form number (1-6)
   const formData = await request.formData();
   const method = (formData.get('_method') as string) || request.method;
 
@@ -204,6 +217,8 @@ export default function FormPage() {
     level,
     classes: initialClasses,
     totalStudents,
+    levelType,
+    levelConfig,
   } = useLoaderData<{
     stream: {
       id: number;
@@ -233,6 +248,12 @@ export default function FormPage() {
       studentCount: number;
     }>;
     totalStudents: number;
+    levelType: LevelType;
+    levelConfig: {
+      name: string;
+      description: string;
+      basePath: string;
+    };
   }>();
 
   const params = useParams();
@@ -365,14 +386,14 @@ export default function FormPage() {
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
         <Link
-          to="/levels/o-level"
+          to={levelConfig.basePath}
           className="hover:text-foreground transition-colors"
         >
-          O-Level
+          {levelConfig.name}
         </Link>
         <ChevronRight size={14} />
         <Link
-          to={`/levels/o-level/${params.streamId}`}
+          to={`${levelConfig.basePath}/${params.streamId}`}
           className="hover:text-foreground transition-colors"
         >
           {stream.name}
@@ -391,7 +412,7 @@ export default function FormPage() {
 
           {/* small badges under title */}
           <div className="flex items-center gap-2 mt-2">
-            <LevelBadge level={LEVEL_TYPE} size="md" />
+            <LevelBadge level={levelType} size="md" />
             <StreamBadge stream={stream.color} size="md" />
           </div>
         </div>
