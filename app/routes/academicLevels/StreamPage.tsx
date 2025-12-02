@@ -31,19 +31,10 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '~/components/ui/breadcrumb';
-
-const LEVEL_TYPE: LevelType = 'o-level';
-
-// Static forms for O-Level (Form 1-4)
-const STATIC_FORMS = [
-  { number: 1, name: 'Form 1' },
-  { number: 2, name: 'Form 2' },
-  { number: 3, name: 'Form 3' },
-  { number: 4, name: 'Form 4' },
-];
+import { getFormsForLevel, getLevelConfig } from '~/config/academic-levels';
 
 // --- Loader: fetch stream with class counts for each form ---
-export async function loader({ context, params }: LoaderFunctionArgs) {
+export async function loader({ context, params, request }: LoaderFunctionArgs) {
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };
@@ -59,12 +50,19 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     throw new Response('Stream not found', { status: 404 });
   }
 
+  // Determine level type from stream
+  const levelType = stream.levelType as LevelType;
+
   // Get level info
   const level = await services.academicLevel.getLevelById(stream.levelId);
 
+  // Get level config to determine which forms to show
+  const levelConfig = getLevelConfig(levelType);
+  const staticForms = levelConfig.forms;
+
   // Get class and student counts for each static form
   const formsWithCounts = await Promise.all(
-    STATIC_FORMS.map(async (form) => {
+    staticForms.map(async (form) => {
       // Get classes that belong to this stream and form number
       const classCount =
         await services.academicLevel.countClassesByStreamAndFormNumber(
@@ -84,12 +82,12 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     })
   );
 
-  return { stream, level, forms: formsWithCounts };
+  return { stream, level, forms: formsWithCounts, levelType, levelConfig };
 }
 
 // --- StreamPage Component ---
 export default function StreamPage() {
-  const { stream, level, forms } = useLoaderData<{
+  const { stream, level, forms, levelType, levelConfig } = useLoaderData<{
     stream: {
       id: number;
       name: string;
@@ -108,6 +106,12 @@ export default function StreamPage() {
       classCount: number;
       studentCount: number;
     }>;
+    levelType: LevelType;
+    levelConfig: {
+      name: string;
+      description: string;
+      basePath: string;
+    };
   }>();
 
   const params = useParams();
@@ -165,7 +169,7 @@ export default function StreamPage() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link to="/levels/o-level">O-Level</Link>
+              <Link to={levelConfig.basePath}>{levelConfig.name}</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -184,7 +188,7 @@ export default function StreamPage() {
           return (
             <Link
               key={form.number}
-              to={`/levels/o-level/${params.streamId}/forms/${form.number}`}
+              to={`${levelConfig.basePath}/${params.streamId}/forms/${form.number}`}
               className="group bg-card rounded-xl p-5 border border-border 
           hover:border-primary/30 shadow-card hover:shadow-card-hover 
           transition-all flex items-center justify-between cursor-pointer"

@@ -17,8 +17,10 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { AddStreamModal } from '~/components/modal/addStreamModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import type { LevelType } from '~/type/shools';
+import { LEVEL_CONFIG } from '~/config/academic-levels';
 
 const LEVEL_TYPE: LevelType = 'o-level';
+const LEVEL_INFO = LEVEL_CONFIG[LEVEL_TYPE];
 
 // --- Loader: fetch O-Level data with streams ---
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -32,9 +34,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
   if (!level) {
     // Create O-Level if it doesn't exist
     level = await services.academicLevel.createLevel({
-      name: 'O-Level',
+      name: LEVEL_INFO.name,
       type: LEVEL_TYPE,
-      description: 'Ordinary Level Secondary Education (Form 1-4)',
+      description: LEVEL_INFO.description,
     });
   }
 
@@ -278,8 +280,8 @@ export default function OLevelPage() {
     <div className="min-h-screen space-y-6 pb-8">
       {/* Header */}
       <PageHeader
-        title="O-Level"
-        description={level?.description || 'Manage O-Level streams and classes'}
+        title={LEVEL_INFO.name}
+        description={level?.description || LEVEL_INFO.description}
         badge={<LevelBadge level="o-level" size="lg" />}
         actions={
           <Button
