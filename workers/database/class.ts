@@ -1,6 +1,5 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
-import { departments } from './departments';
 
 /**
  * LEGACY: University-style classes table
@@ -22,8 +21,8 @@ export const classes = sqliteTable('classes', {
   EducationalLevel: text('level').notNull(),
   section: text('section').default('General'),
   year: integer('year').notNull(),
-  // Foreign Key to Departments table
-  departmentId: integer('department_id').references(() => departments.id),
+  // Legacy field - kept for backwards compatibility
+  departmentId: integer('department_id'),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

@@ -119,63 +119,6 @@ export default class ClassService {
     }
   }
 
-  // Get all classes by department ID
-  async getClassesByDepartmentId(departmentId: number): Promise<SelectClass[]> {
-    try {
-      const result = await this.db
-        .select()
-        .from(classes)
-        .where(eq(classes.departmentId, departmentId))
-        .execute();
-      return result || [];
-    } catch (error) {
-      console.error('Error fetching classes by department ID:', error);
-      return [];
-    }
-  }
-
-  // Get all classes by department ID with student count
-  async getClassesByDepartmentIdWithStudentCount(
-    departmentId: number
-  ): Promise<(SelectClass & { studentCount: number })[]> {
-    try {
-      const result = await this.db
-        .select({
-          id: classes.id,
-          name: classes.name,
-          EducationalLevel: classes.EducationalLevel,
-          section: classes.section,
-          year: classes.year,
-          departmentId: classes.departmentId,
-          createdAt: classes.createdAt,
-          updatedAt: classes.updatedAt,
-          studentCount: sql<number>`COUNT(${students.id})`.as('studentCount'),
-        })
-        .from(classes)
-        .leftJoin(students, eq(students.classId, classes.id))
-        .where(eq(classes.departmentId, departmentId))
-        .groupBy(
-          classes.id,
-          classes.name,
-          classes.EducationalLevel,
-          classes.section,
-          classes.year,
-          classes.departmentId,
-          classes.createdAt,
-          classes.updatedAt
-        )
-        .orderBy(desc(classes.createdAt));
-
-      return result;
-    } catch (error) {
-      console.error(
-        'Error fetching classes by department ID with student counts:',
-        error
-      );
-      return [];
-    }
-  }
-
   /**
    * Get all classes with optional filters
    */
