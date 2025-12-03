@@ -17,7 +17,7 @@ import {
   SelectItem,
 } from '~/components/ui/select';
 
-export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
+export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -54,8 +54,6 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
     }
   }, [fetcher.data]);
 
-  const formAction = id ? `/departments/${id}` : `/teachers`; // submit to parent route with action handler
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
@@ -70,7 +68,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher, id }: any) {
       >
         <fetcher.Form
           method="post"
-          action={id ? `/departments/${id}` : `/teachers`}
+          action="/teachers"
           className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="POST" />

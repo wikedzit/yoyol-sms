@@ -23,7 +23,6 @@ export default function EditTeacherModal({
   setOpen,
   teacher,
   fetcher,
-  id,
 }: any) {
   const [formData, setFormData] = useState({
     teacherID: '',
@@ -69,7 +68,6 @@ export default function EditTeacherModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const formAction = id ? `/departments/${id}` : `/teachers`; // submit to parent route with action handler
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
@@ -84,7 +82,7 @@ export default function EditTeacherModal({
       >
         <fetcher.Form
           method="post"
-          action={id ? `/departments/${id}` : `/teachers`}
+          action="/teachers"
           className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="PUT" />

@@ -137,7 +137,8 @@ export default function AddStudentToClassModal({
               <StreamBadge stream={classInfo.streamColor} size="sm" />
             </div>
             <p className="text-sm text-muted-foreground">
-              {classInfo.formName} • {classInfo.streamName} • {classInfo.levelName}
+              {classInfo.formName} • {classInfo.streamName} •{' '}
+              {classInfo.levelName}
             </p>
           </div>
 
@@ -176,7 +177,7 @@ export default function AddStudentToClassModal({
                   Gender <span className="text-red-500">*</span>
                 </label>
                 <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -190,7 +191,7 @@ export default function AddStudentToClassModal({
                   Status
                 </label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -202,29 +203,31 @@ export default function AddStudentToClassModal({
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                Email
-              </label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@email.com"
-                className="h-10"
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="student@email.com"
+                  className="h-10"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                Phone
-              </label>
-              <Input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+255 xxx xxx xxx"
-                className="h-10"
-              />
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Phone
+                </label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+255 xxx xxx xxx"
+                  className="h-10"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -280,4 +283,3 @@ export default function AddStudentToClassModal({
     </Sheet>
   );
 }
-

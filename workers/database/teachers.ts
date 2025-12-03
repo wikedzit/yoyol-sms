@@ -1,6 +1,5 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
-import { departments } from './departments';
 
 export const teachers = sqliteTable('teachers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -15,8 +14,8 @@ export const teachers = sqliteTable('teachers', {
   experience: integer('experience'),
   status: text('status').notNull().default('Active'),
 
-  // Foreign Key to Departments table
-  departmentId: integer('department_id').references(() => departments.id),
+  // Legacy field - kept for backwards compatibility
+  departmentId: integer('department_id'),
 
   createdAt: integer('created_at')
     .notNull()

@@ -1,7 +1,6 @@
 import { eq, like, asc, desc } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { teachers, type SelectTeacher } from 'workers/database';
-import { departments } from '../database/departments';
 
 import { z } from 'zod';
 
@@ -16,12 +15,10 @@ const CreateTeacherSchema = z.object({
   qualification: z.string().optional(),
   gender: z.string().min(1, 'Gender is required').max(10),
   experience: z.preprocess((val) => {
-    if (val === '' || val === null || val === undefined) return undefined; // ignore empty
+    if (val === '' || val === null || val === undefined) return undefined;
     const num = Number(val);
     return isNaN(num) ? undefined : num;
   }, z.number().min(0).optional()),
-  // New field for departmentId
-  departmentId: z.number().optional(),
   status: z.enum(['Active', 'Inactive']).default('Active'),
 });
 
@@ -76,55 +73,6 @@ export default class TeacherService {
     } catch (error) {
       console.error('Error fetching teacher:', error);
       return null;
-    }
-  }
-
-  // Get Teachers by Department ID
-  async getTeachersByDepartmentId(
-    departmentId: number
-  ): Promise<SelectTeacher[]> {
-    try {
-      const result = await this.db
-        .select()
-        .from(teachers)
-        .where(eq(teachers.departmentId, departmentId))
-        .execute();
-      return result || [];
-    } catch (error) {
-      console.error('Error fetching teachers by department ID:', error);
-      return [];
-    }
-  }
-
-  // Get Teachers by Faculty ID (through departments)
-  async getTeachersByFacultyId(facultyId: number): Promise<SelectTeacher[]> {
-    try {
-      const result = await this.db
-        .select({
-          id: teachers.id,
-          firstName: teachers.firstName,
-          lastName: teachers.lastName,
-          subject: teachers.subject,
-          email: teachers.email,
-          phone: teachers.phone,
-          address: teachers.address,
-          qualification: teachers.qualification,
-          gender: teachers.gender,
-          experience: teachers.experience,
-          status: teachers.status,
-          departmentId: teachers.departmentId,
-          createdAt: teachers.createdAt,
-          updatedAt: teachers.updatedAt,
-        })
-        .from(teachers)
-        .innerJoin(departments, eq(teachers.departmentId, departments.id))
-        .where(eq(departments.facultyId, facultyId))
-        .execute();
-
-      return result;
-    } catch (error) {
-      console.error('Error fetching teachers by faculty ID:', error);
-      return [];
     }
   }
 
