@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Calendar,
-  GraduationCap,
   Users,
   LayoutGrid,
   List,
   Pencil,
-  Trash,
   Trash2,
+  BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 import {
   useFetcher,
@@ -17,103 +16,76 @@ import {
 } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { Link } from 'react-router-dom';
-import CreateClassModal from '~/components/modal/CreateClassModal';
-import EditClassModal from '~/components/modal/EditClassModal';
 import { toast } from 'sonner';
-import type SubjectService from 'workers/services/subjects';
-import type ClassService from 'workers/services/class';
-import type ClassSubjectService from 'workers/services/class-subjects';
-import type TeacherClassService from 'workers/services/teacher-classes';
-import type TeacherService from 'workers/services/teachers';
-import { BookOpen, Users as UsersIcon } from 'lucide-react';
-import AssignTeachersToClassModal from '~/components/modal/AssignTeachersToClassModal';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
+import { LevelBadge } from '~/components/ui/LevelBadge';
+import { StreamBadge } from '~/components/ui/StreamBadge';
+import type { LevelType } from '~/type/shools';
+import CreateSchoolClassModal from '~/components/modal/CreateSchoolClassModal';
+import EditSchoolClassModal from '~/components/modal/EditSchoolClassModal';
 
-// 🧠 Loader – fetch classes with student, subject, and teacher counts
-export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as {
-    class: ClassService;
-    subject: SubjectService;
-    classSubject: ClassSubjectService;
-    teacherClass: TeacherClassService;
-    teacher: TeacherService;
-  };
-
-  const classes = await services.class.getAllWithStudentCount({
-    offset: 0,
-    sortBy: 'name',
-    sortOrder: 'asc',
-    search: '',
-    limit: 100,
-  });
-
-  // Get all teachers for assignment modal
-  const allTeachers = await services.teacher.getAllTeachers({
-    limit: 100,
-    offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'asc',
-  });
-
-  // Get subject count and teachers for each class
-  const classesWithCounts = await Promise.all(
-    classes.map(async (classItem) => {
-      const subjects = await services.classSubject.getSubjectsByClass(
-        classItem.id
-      );
-      const teachers = await services.teacherClass.getTeachersByClass(
-        classItem.id
-      );
-      return {
-        ...classItem,
-        subjectCount: subjects.length,
-        teacherCount: teachers.length,
-        teachers: teachers, // Store teachers for modal use
-      };
-    })
-  );
-
-  return { classes: classesWithCounts, allTeachers };
+// Type for enriched form class data
+interface EnrichedFormClass {
+  id: number;
+  name: string;
+  formId: number;
+  streamId: number;
+  levelId: number;
+  studentCount: number;
+  formName: string;
+  formNumber: number;
+  streamName: string;
+  streamColor: 'science' | 'arts' | 'business';
+  levelName: string;
+  levelType: LevelType;
 }
 
-// ⚙️ Action – handle create, update, delete, and teacher assignments
+// 🧠 Loader – fetch all form classes with enriched data
+export async function loader({ context }: LoaderFunctionArgs) {
+  const services = context.services as {
+    academicLevel: AcademicLevelService;
+  };
+
+  // Get all form classes with their related level, stream, form info
+  const classes = await services.academicLevel.getAllFormClassesWithDetails();
+
+  // Get streams for creating new classes
+  const streams = await services.academicLevel.getAllStreams();
+
+  // Get levels for the filter
+  const levels = await services.academicLevel.getLevels();
+
+  return { classes, streams, levels };
+}
+
+// ⚙️ Action – handle create, update, delete for form classes
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
-    class: ClassService;
-    teacherClass: TeacherClassService;
+    academicLevel: AcademicLevelService;
   };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
-  const action = form.get('action') as string | null;
 
   try {
-    // --- ASSIGN TEACHERS TO CLASS ---
-    if (action === 'assign_teachers') {
-      const classId = Number(form.get('classId'));
-      const teacherIds = JSON.parse(String(form.get('teacherIds') || '[]'));
-
-      if (!classId) {
-        return new Response(JSON.stringify({ error: 'Class ID is required' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      await services.teacherClass.replaceClassTeachers(classId, teacherIds);
-      return { success: true, action: 'assign_teachers' };
-    }
+    // CREATE CLASS
     if (method === 'POST') {
       const name = form.get('name') ? String(form.get('name')) : '';
-      const EducationalLevel = form.get('EducationalLevel')
-        ? String(form.get('EducationalLevel'))
-        : '';
-      const section = form.get('section') ? String(form.get('section')) : '';
-      const yearStr = form.get('year') ? String(form.get('year')) : '';
+      const streamId = form.get('streamId')
+        ? Number(form.get('streamId'))
+        : null;
+      const levelId = form.get('levelId') ? Number(form.get('levelId')) : null;
+      const formNumber = form.get('formNumber')
+        ? Number(form.get('formNumber'))
+        : null;
+      const studentCount = form.get('studentCount')
+        ? Number(form.get('studentCount'))
+        : 0;
 
-      if (!EducationalLevel || !section || !yearStr) {
+      if (!name || !streamId || !levelId || !formNumber) {
         return new Response(
           JSON.stringify({
-            error: 'EducationalLevel, section, and year are required',
+            error: 'Name, stream, level, and form number are required',
           }),
           {
             status: 400,
@@ -122,57 +94,77 @@ export async function action({ request, context }: ActionFunctionArgs) {
         );
       }
 
-      const year = parseInt(yearStr);
-      if (isNaN(year)) {
-        return new Response(
-          JSON.stringify({ error: 'Year must be a valid number' }),
-          {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+      // Find or create the form based on streamId and formNumber
+      let formRecord = await services.academicLevel.getFormByStreamIdAndNumber(
+        streamId,
+        formNumber
+      );
+
+      if (!formRecord) {
+        // Create the form if it doesn't exist
+        formRecord = await services.academicLevel.createForm({
+          name: `Form ${formNumber}`,
+          number: formNumber,
+          streamId,
+          levelId,
+        });
+
+        if (!formRecord) {
+          return new Response(
+            JSON.stringify({ error: 'Failed to create form' }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
+        }
       }
 
-      const created = await services.class.create({
+      const created = await services.academicLevel.createFormClass({
         name,
-        EducationalLevel,
-        section,
-        year,
+        formId: formRecord.id,
+        streamId,
+        levelId,
+        studentCount,
       });
-      return { success: true, class: created };
+
+      return { success: true, formClass: created };
     }
 
+    // UPDATE CLASS
     if (method === 'PUT') {
       const id = form.get('id');
-      const name = form.get('name');
-      const EducationalLevel = form.get('EducationalLevel');
-      const section = form.get('section');
-      const year = form.get('year');
+      const name = form.get('name') ? String(form.get('name')) : undefined;
+      const studentCount = form.get('studentCount')
+        ? Number(form.get('studentCount'))
+        : undefined;
 
-      if (!id || !name || !EducationalLevel || !section || !year) {
-        return new Response(JSON.stringify({ error: 'Invalid payload' }), {
+      if (!id) {
+        return new Response(JSON.stringify({ error: 'Class ID is required' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
       }
-      const updated = await services.class.update(parseInt(String(id)), {
-        name: String(name),
-        EducationalLevel: String(EducationalLevel),
-        section: String(section),
-        year: year ? parseInt(String(year)) : undefined,
+
+      const updated = await services.academicLevel.updateFormClass(Number(id), {
+        name,
+        studentCount,
       });
-      return { success: true, class: updated };
+
+      return { success: true, formClass: updated };
     }
 
+    // DELETE CLASS
     if (method === 'DELETE') {
       const id = form.get('id');
-      if (!id)
+      if (!id) {
         return new Response(JSON.stringify({ error: 'Missing id' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
-      await services.class.delete(parseInt(String(id)));
-      return { success: true };
+      }
+      await services.academicLevel.deleteFormClass(Number(id));
+      return { success: true, id: Number(id) };
     }
 
     return new Response(JSON.stringify({ error: 'Unknown method' }), {
@@ -192,44 +184,47 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function ClassesRoute() {
-  const { classes: initialClasses, allTeachers } = useLoaderData() as {
-    classes: Array<{
+  const {
+    classes: initialClasses,
+    streams,
+    levels,
+  } = useLoaderData() as {
+    classes: EnrichedFormClass[];
+    streams: Array<{
       id: number;
       name: string;
-      EducationalLevel: string;
-      section: string;
-      year: number;
-      studentCount: number;
-      subjectCount: number;
-      teacherCount: number;
-      teachers?: Array<{
-        id: number;
-        firstName: string;
-        lastName: string;
-        email?: string;
-      }>;
+      levelId: number;
+      levelType: string;
+      color: 'science' | 'arts' | 'business';
     }>;
-    allTeachers: Array<{
+    levels: Array<{
       id: number;
-      firstName: string;
-      lastName: string;
-      email: string;
-      status: string;
+      name: string;
+      type: string;
+      description?: string;
     }>;
   };
+
   const fetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
   const listFetcher = useFetcher();
+
   const [classes, setClasses] = useState(initialClasses ?? []);
   const [openCreate, setOpenCreate] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
-  const [editingClass, setEditingClass] = useState<any | null>(null);
+  const [editingClass, setEditingClass] = useState<EnrichedFormClass | null>(
+    null
+  );
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [assignTeachersModalOpen, setAssignTeachersModalOpen] = useState(false);
-  const [selectedClass, setSelectedClass] = useState<any | null>(null);
+  const [levelFilter, setLevelFilter] = useState<'all' | LevelType>('all');
 
-  const deletingId = useRef<number | null>(null);
+  // Filter classes based on level filter
+  const filteredClasses =
+    levelFilter === 'all'
+      ? classes
+      : classes.filter((c) => c.levelType === levelFilter);
 
+  // Track last method for toast messages
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
       const method =
@@ -242,66 +237,29 @@ export default function ClassesRoute() {
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
-      listFetcher.load(window.location.pathname); // refresh list after any action
+      listFetcher.load(window.location.pathname);
 
       if (data.error) {
         toast.error(data.error || 'An unexpected error occurred.');
-        deletingId.current = null;
-        lastMethod.current = null;
-        return;
-      }
-
-      const actionValue = (fetcher.formData as FormData | undefined)?.get(
-        'action'
-      );
-      const action = actionValue ? String(actionValue) : null;
-
-      if (action === 'assign_teachers') {
-        toast.success('Teachers assigned successfully!');
-        // Reload to refresh teacher counts
-        listFetcher.load(window.location.pathname);
         lastMethod.current = null;
         return;
       }
 
       switch (lastMethod.current) {
         case 'POST':
-          if (data.class)
-            setClasses((prev) => [
-              {
-                ...data.class,
-                subjectCount: 0,
-                studentCount: 0,
-                teacherCount: 0,
-              },
-              ...prev,
-            ]);
-          toast.success('Classroom added successfully!');
+          toast.success('Class added successfully!');
           listFetcher.load(window.location.pathname);
           break;
         case 'PUT':
-          if (data.class)
-            setClasses((prev) =>
-              prev.map((c) =>
-                c.id === data.class.id
-                  ? {
-                      ...data.class,
-                      subjectCount: c.subjectCount || 0,
-                      studentCount: c.studentCount || 0,
-                      teacherCount: c.teacherCount || 0,
-                    }
-                  : c
-              )
-            );
-          toast.success('Classroom updated successfully!');
+          toast.success('Class updated successfully!');
           listFetcher.load(window.location.pathname);
           break;
         case 'DELETE':
-          toast.error('Faculty deleted successfully!');
-          setClasses((prev) => prev.filter((c) => c.id !== data.id));
-          listFetcher.load(window.location.pathname);
+          toast.success('Class deleted successfully!');
+          if (data.id) {
+            setClasses((prev) => prev.filter((c) => c.id !== data.id));
+          }
           break;
-
         default:
           toast.success('Action completed successfully.');
           listFetcher.load(window.location.pathname);
@@ -311,21 +269,26 @@ export default function ClassesRoute() {
     }
   }, [fetcher.state, fetcher.data]);
 
-  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
+  // Sync list on reload
   useEffect(() => {
     if (listFetcher.state === 'idle' && listFetcher.data) {
       setClasses(listFetcher.data.classes);
     }
   }, [listFetcher.state, listFetcher.data]);
 
+  // Get link to class detail page - goes to /classes/:classId
+  const getClassDetailLink = (cls: EnrichedFormClass) => {
+    return `/classes/${cls.id}`;
+  };
+
   return (
     <div className="space-y-6 pb-8">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Classrooms</h1>
+          <h1 className="text-xl sm:text-3xl font-bold">Classes</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage and organize your classrooms
+            Manage classes across all levels and streams
           </p>
         </div>
 
@@ -361,60 +324,113 @@ export default function ClassesRoute() {
             className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto"
           >
             <span className="text-xl">+</span>
-            <span className="font-medium">Add Classroom</span>
+            <span className="font-medium">Add Class</span>
           </Button>
         </div>
       </div>
 
+      {/* LEVEL FILTER TABS */}
+      <div className="flex items-center gap-2 border-b pb-4">
+        <button
+          onClick={() => setLevelFilter('all')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+            levelFilter === 'all'
+              ? 'bg-primary-gradient text-white'
+              : ' text-gray-600 cursor-pointer '
+          }`}
+        >
+          All Levels ({classes.length})
+        </button>
+        <button
+          onClick={() => setLevelFilter('o-level')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+            levelFilter === 'o-level'
+              ? 'bg-primary-gradient text-white'
+              : 'bg-o-level/10 text-o-level cursor-pointer '
+          }`}
+        >
+          <GraduationCap size={16} />
+          O-Level ({classes.filter((c) => c.levelType === 'o-level').length})
+        </button>
+        <button
+          onClick={() => setLevelFilter('a-level')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+            levelFilter === 'a-level'
+              ? 'bg-primary-gradient text-white'
+              : 'bg-a-level/10 text-a-level cursor-pointer '
+          }`}
+        >
+          <GraduationCap size={16} />
+          A-Level ({classes.filter((c) => c.levelType === 'a-level').length})
+        </button>
+      </div>
+
       {/* LIST OR GRID */}
-      {classes.length === 0 ? (
-        <p className="text-center text-gray-500 mt-10">No classrooms yet.</p>
+      {filteredClasses.length === 0 ? (
+        <div className="text-center py-12">
+          <GraduationCap className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900">
+            No classes yet
+          </h3>
+          <p className="mt-2 text-sm text-gray-500">
+            {levelFilter === 'all'
+              ? 'Get started by creating a new class or set up your academic levels first.'
+              : `No ${levelFilter.toUpperCase()} classes found. Create one or check your ${levelFilter.toUpperCase()} structure.`}
+          </p>
+          <div className="mt-6 flex justify-center gap-4">
+            <Button
+              onClick={() => setOpenCreate(true)}
+              className="bg-primary-gradient text-white"
+            >
+              Add Class
+            </Button>
+            <Link to="/levels/o-level">
+              <Button variant="outline">Set Up O-Level</Button>
+            </Link>
+            <Link to="/levels/a-level">
+              <Button variant="outline">Set Up A-Level</Button>
+            </Link>
+          </div>
+        </div>
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {classes.map((c) => (
+          {filteredClasses.map((c) => (
             <div
               key={c.id}
               className="bg-white rounded-xl p-4 shadow hover:shadow-lg transition flex flex-col gap-3"
             >
-              <Link to={`/classes/${c.id}`}>
+              <Link to={getClassDetailLink(c)}>
                 {/* Image */}
                 <img
                   src="/assets/card_image.png"
                   className="w-full h-32 sm:h-36 object-cover rounded-lg"
+                  alt={c.name}
                 />
 
-                {/* Top Section */}
+                {/* Info Section */}
                 <div className="mt-2 space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="font-bold">Name:</span>
+                    <span className="font-bold">Class:</span>
                     <span>{c.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-bold">Year:</span>
-                    <span>{c.year}</span>
+                    <span className="font-bold">Form:</span>
+                    <span>{c.formName}</span>
                   </div>
-
+                  <div className="flex justify-between">
+                    <span className="font-bold">Stream:</span>
+                    <span>{c.streamName}</span>
+                  </div>
                   <div className="flex justify-between">
                     <span className="font-bold">Level:</span>
-                    <span>{c.EducationalLevel}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="font-bold">Section:</span>
-                    <span>{c.section}</span>
+                    <span>{c.levelName}</span>
                   </div>
                 </div>
 
-                {/* Counts */}
+                {/* Student Count */}
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
                   <div className="flex items-center gap-1">
                     <Users size={14} /> {c.studentCount} students
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <BookOpen size={14} /> {c.subjectCount} subjects
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <UsersIcon size={14} /> {c.teacherCount} teachers
                   </div>
                 </div>
               </Link>
@@ -445,24 +461,31 @@ export default function ClassesRoute() {
       ) : (
         /* LIST VIEW */
         <div className="space-y-3">
-          {classes.map((c) => (
+          {filteredClasses.map((c) => (
             <div
               key={c.id}
               className="bg-white p-4 rounded-lg shadow hover:shadow-md transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
             >
-              <Link to={`/classes/${c.id}`} className="flex gap-4 items-start">
+              <Link
+                to={getClassDetailLink(c)}
+                className="flex gap-4 items-start flex-1"
+              >
                 {/* Thumbnail */}
                 <img
                   src="/assets/card_image.png"
                   className="w-14 h-14 rounded-lg object-cover"
+                  alt={c.name}
                 />
 
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">
-                    {c.name}
-                  </h3>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-semibold text-gray-900 text-lg">
+                      {c.name}
+                    </h3>
+                    <LevelBadge level={c.levelType} size="sm" />
+                  </div>
                   <p className="text-gray-500 text-sm">
-                    {c.EducationalLevel} • Section {c.section} • Year {c.year}
+                    {c.formName} • {c.streamName} • {c.levelName}
                   </p>
                 </div>
               </Link>
@@ -470,12 +493,6 @@ export default function ClassesRoute() {
               <div className="flex flex-wrap gap-4 text-xs text-gray-600">
                 <span className="flex items-center gap-1">
                   <Users size={14} /> {c.studentCount} students
-                </span>
-                <span className="flex items-center gap-1">
-                  <BookOpen size={14} /> {c.subjectCount} subjects
-                </span>
-                <span className="flex items-center gap-1">
-                  <UsersIcon size={14} /> {c.teacherCount} teachers
                 </span>
               </div>
 
@@ -492,19 +509,11 @@ export default function ClassesRoute() {
                   <Pencil size={16} /> Edit
                 </Button>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const formData = new FormData();
-                    formData.append('_method', 'DELETE');
-                    formData.append('id', String(c.id));
-                    fetcher.submit(formData, { method: 'post' });
-                  }}
-                  className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:scale-105 transition"
-                >
-                  <Trash2 size={16} />
-                </Button>
+                <DeleteStudentButton
+                  id={String(c.id)}
+                  name={c.name}
+                  fetcher={fetcher}
+                />
               </div>
             </div>
           ))}
@@ -512,26 +521,20 @@ export default function ClassesRoute() {
       )}
 
       {/* Modals */}
-      <CreateClassModal
+      <CreateSchoolClassModal
         open={openCreate}
         setOpen={setOpenCreate}
         fetcher={fetcher}
-      />
-      <EditClassModal
-        open={openEdit}
-        setOpen={setOpenEdit}
-        fetcher={fetcher}
-        editingClass={editingClass}
+        streams={streams}
+        levels={levels}
       />
 
-      {assignTeachersModalOpen && selectedClass && (
-        <AssignTeachersToClassModal
-          open={assignTeachersModalOpen}
-          setOpen={setAssignTeachersModalOpen}
-          classData={selectedClass}
-          availableTeachers={allTeachers}
-          assignedTeachers={selectedClass.teachers ?? []}
+      {editingClass && (
+        <EditSchoolClassModal
+          open={openEdit}
+          setOpen={setOpenEdit}
           fetcher={fetcher}
+          editingClass={editingClass}
         />
       )}
     </div>

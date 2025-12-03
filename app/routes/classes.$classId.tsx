@@ -1,6 +1,12 @@
 // app/routes/classes/$classId.tsx
 import { useState, useEffect, useRef } from 'react';
-import { useLoaderData, useFetcher, useParams, Link, useRevalidator } from 'react-router';
+import {
+  useLoaderData,
+  useFetcher,
+  useParams,
+  Link,
+  useRevalidator,
+} from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
   Table,
@@ -13,7 +19,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Pencil, Trash, ArrowBigLeftDash } from 'lucide-react';
+import { Plus, Search, Pencil, ArrowBigLeftDash } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -22,7 +28,7 @@ import {
   SelectItem,
 } from '~/components/ui/select';
 
-import AddStudentModal from '~/components/modal/AddStudentModal';
+import AddStudentToClassModal from '~/components/modal/AddStudentToClassModal';
 import EditStudentModal from '~/components/modal/EditStudentModal';
 import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
 import {
@@ -31,40 +37,55 @@ import {
 } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
-import type ClassSubjectService from 'workers/services/class-subjects';
-import type TeacherClassService from 'workers/services/teacher-classes';
-import type TeacherService from 'workers/services/teachers';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import { usePagination } from '~/hooks/usePagination';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
-import AssignSubjectsToClassModal from '~/components/modal/AssignSubjectsToClassModal';
-import AssignTeachersToClassModal from '~/components/modal/AssignTeachersToClassModal';
-import { BookOpen, Users as UsersIcon } from 'lucide-react';
+import AssignSubjectsToFormClassModal from '~/components/modal/AssignSubjectsToFormClassModal';
+import { BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
+import { LevelBadge } from '~/components/ui/LevelBadge';
+import { StreamBadge } from '~/components/ui/StreamBadge';
+import type { LevelType } from '~/type/shools';
+
+// Type for enriched form class data
+interface EnrichedFormClass {
+  id: number;
+  name: string;
+  formId: number;
+  streamId: number;
+  levelId: number;
+  studentCount: number;
+  formName: string;
+  formNumber: number;
+  streamName: string;
+  streamColor: 'science' | 'arts' | 'business';
+  levelName: string;
+  levelType: LevelType;
+}
 
 // --- Loader ---
 export async function loader({ params, context }: LoaderFunctionArgs) {
   const { classId } = params;
   const services = context.services as {
     student: StudentService;
-    class: any;
+    academicLevel: AcademicLevelService;
     subject: SubjectService;
-    classSubject: ClassSubjectService;
-    teacherClass: TeacherClassService;
-    teacher: TeacherService;
   };
-  const students = await services.student.getAll({
-    limit: 100,
-    offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'asc',
-  });
-  // Filter students belonging to this class
-  const filtered = students.filter((s) => s.classId === Number(classId));
-  //capture the class details
-  const classInfo = await services.class.getById(Number(classId));
 
-  // Get all subjects
+  // Get the form class with details (school format)
+  const classInfo = await services.academicLevel.getFormClassByIdWithDetails(
+    Number(classId)
+  );
+
+  if (!classInfo) {
+    throw new Response('Class not found', { status: 404 });
+  }
+
+  // Get students for this form class
+  const students = await services.student.getByFormClassId(Number(classId));
+
+  // Get all subjects for assignment
   const allSubjects = await services.subject.getAllSubjects({
     limit: 100,
     offset: 0,
@@ -72,31 +93,10 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all teachers
-  const allTeachers = await services.teacher.getAllTeachers({
-    limit: 100,
-    offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'asc',
-  });
-
-  // Get subjects assigned to this class
-  const assignedSubjects = await services.classSubject.getSubjectsByClass(
-    Number(classId)
-  );
-
-  // Get teachers assigned to this class
-  const assignedTeachers = await services.teacherClass.getTeachersByClass(
-    Number(classId)
-  );
-
   return {
-    students: filtered,
-    class: classInfo,
+    students,
+    classInfo,
     allSubjects,
-    assignedSubjects,
-    allTeachers,
-    assignedTeachers,
   };
 }
 
@@ -105,116 +105,98 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   const { classId } = params;
   const services = context.services as {
     student: StudentService;
-    classSubject: ClassSubjectService;
-    teacherClass: TeacherClassService;
+    academicLevel: AcademicLevelService;
   };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
   const action = form.get('action') as string | null;
 
   try {
-    // --- ASSIGN SUBJECTS TO CLASS ---
-    if (action === 'assign_subjects') {
-      const formClassId = Number(form.get('classId'));
-      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
-
-      if (!formClassId) {
-        return new Response(JSON.stringify({ error: 'Class ID is required' }), {
-          status: 400,
-        });
-      }
-
-      // Replace all subject assignments for this class
-      await services.classSubject.replaceClassSubjects(formClassId, subjectIds);
-
-      return new Response(
-        JSON.stringify({ success: true, action: 'assign_subjects' }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // --- ASSIGN TEACHERS TO CLASS ---
-    if (action === 'assign_teachers') {
-      const formClassId = Number(form.get('classId'));
-      const teacherIds = JSON.parse(String(form.get('teacherIds') || '[]'));
-
-      if (!formClassId) {
-        return new Response(JSON.stringify({ error: 'Class ID is required' }), {
-          status: 400,
-        });
-      }
-
-      // Replace all teacher assignments for this class
-      await services.teacherClass.replaceClassTeachers(formClassId, teacherIds);
-
-      return new Response(
-        JSON.stringify({ success: true, action: 'assign_teachers' }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
+    // CREATE STUDENT
     if (method === 'POST') {
-      // Ensure classId is always a valid number or undefined
-      const rawClassId = form.get('classId') ?? classId;
-      const parsedClassId =
-        rawClassId !== undefined && rawClassId !== null && rawClassId !== ''
-          ? Number(rawClassId)
-          : undefined;
-
-      // CREATE student in this class
       const studentData = {
         firstName: String(form.get('firstName') || ''),
         lastName: String(form.get('lastName') || ''),
-        gender: String(form.get('gender') || 'Other'),
+        gender: String(form.get('gender') || 'Male'),
         status:
           (String(form.get('status')) as 'Active' | 'Pending' | 'Inactive') ||
           'Active',
-        classId: parsedClassId,
+        formClassId: Number(classId), // Use formClassId for school structure
         dob: form.get('dob') ? String(form.get('dob')) : undefined,
         email: form.get('email') ? String(form.get('email')) : undefined,
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        course: form.get('course') ? String(form.get('course')) : undefined,
-        grade: form.get('grade') ? String(form.get('grade')) : undefined,
         enrollmentDate: form.get('enrollmentDate')
           ? String(form.get('enrollmentDate'))
           : undefined,
       };
       const created = await services.student.create(studentData);
+
+      // Update the formClass student count
+      if (created) {
+        const currentClass = await services.academicLevel.getFormClassById(
+          Number(classId)
+        );
+        if (currentClass) {
+          await services.academicLevel.updateFormClass(Number(classId), {
+            studentCount: (currentClass.studentCount || 0) + 1,
+          });
+        }
+      }
+
       return new Response(JSON.stringify({ success: true, student: created }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    // UPDATE STUDENT
     if (method === 'PUT') {
-      // UPDATE student
       const id = form.get('id') as string;
       const data = Object.fromEntries(form.entries());
+      // Ensure formClassId is maintained
       const updated = await services.student.update(id, {
         ...data,
-        classId: Number(classId),
+        formClassId: Number(classId),
       });
       return new Response(JSON.stringify({ success: true, student: updated }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    // DELETE STUDENT
     if (method === 'DELETE') {
       const id = form.get('id') as string;
       await services.student.delete(id);
+
+      // Update the formClass student count
+      const currentClass = await services.academicLevel.getFormClassById(
+        Number(classId)
+      );
+      if (currentClass && currentClass.studentCount > 0) {
+        await services.academicLevel.updateFormClass(Number(classId), {
+          studentCount: currentClass.studentCount - 1,
+        });
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    // REMOVE STUDENT FROM CLASS
     if (method === 'REMOVE') {
-      // Remove from class without deleting
       const id = form.get('id') as string;
-      // set classId to undefined to clear the association (matches z.number().optional() type)
-      await services.student.update(id, { classId: undefined });
+      await services.student.update(id, { formClassId: undefined });
+
+      // Update the formClass student count
+      const currentClass = await services.academicLevel.getFormClassById(
+        Number(classId)
+      );
+      if (currentClass && currentClass.studentCount > 0) {
+        await services.academicLevel.updateFormClass(Number(classId), {
+          studentCount: currentClass.studentCount - 1,
+        });
+      }
+
       return new Response(JSON.stringify({ success: true }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -233,21 +215,15 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 }
 
 // --- Component ---
-export default function ClassDetails({ params }: { params: any }) {
+export default function ClassDetails() {
   const {
     students: initialStudents,
-    class: classInfo,
+    classInfo,
     allSubjects,
-    assignedSubjects,
-    allTeachers,
-    assignedTeachers,
   } = useLoaderData() as {
     students: any[];
-    class: any;
+    classInfo: EnrichedFormClass;
     allSubjects: any[];
-    assignedSubjects: any[];
-    allTeachers: any[];
-    assignedTeachers: any[];
   };
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
@@ -260,7 +236,6 @@ export default function ClassDetails({ params }: { params: any }) {
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
-  const [assignTeachersModalOpen, setAssignTeachersModalOpen] = useState(false);
 
   // filtering logic
   const filteredStudents = initialStudents?.filter((student) => {
@@ -269,8 +244,7 @@ export default function ClassDetails({ params }: { params: any }) {
       student.lastName.toLowerCase().includes(search.toLowerCase()) ||
       (student.email &&
         student.email.toLowerCase().includes(search.toLowerCase()));
-    const matchesFilter =
-      filter === 'all' || student.course === filter || student.grade === filter;
+    const matchesFilter = filter === 'all' || student.status === filter;
     return matchesSearch && matchesFilter;
   });
 
@@ -284,19 +258,14 @@ export default function ClassDetails({ params }: { params: any }) {
 
   // Unified toast notification handler
   useEffect(() => {
-    // Skip if no data or if we've already processed this response
     if (!fetcher.data || fetcher.data === processedResponseRef.current) return;
-    
-    // Only process when fetcher is in idle state (submission complete)
     if (fetcher.state !== 'idle') return;
 
-    // Mark this response as processed
     processedResponseRef.current = fetcher.data;
 
-    // Get action and method from formData
     let action: string | null = null;
     let method: string | null = null;
-    
+
     try {
       const formData: any = fetcher.formData;
       action = (formData?.get?.('action') as string) || null;
@@ -306,15 +275,9 @@ export default function ClassDetails({ params }: { params: any }) {
     }
 
     if (fetcher.data.success) {
-      // Handle different actions
       if (action === 'assign_subjects') {
         toast.success('Subjects assigned successfully!');
-        // Modal closes itself in the component
-      } else if (action === 'assign_teachers') {
-        toast.success('Teachers assigned successfully!');
-        // Modal closes itself in the component
       } else if (method === 'POST' || !method) {
-        // POST or no method means adding a student
         toast.success('Student added successfully!');
         setAddStudentModalOpen(false);
       } else if (method === 'PUT') {
@@ -326,7 +289,6 @@ export default function ClassDetails({ params }: { params: any }) {
         toast.success('Student removed from class successfully!');
       }
 
-      // Revalidate route data to refresh the UI
       revalidator.revalidate();
     }
 
@@ -336,49 +298,43 @@ export default function ClassDetails({ params }: { params: any }) {
   }, [fetcher.data, fetcher.state, revalidator]);
 
   return (
-    <div className="space-y-2 min-h-screen w-full overflow-y-auto p-2 sm:p-4">
+    <div className="space-y-2 h-min-screen">
       {/* Back Button */}
       <Link
-        to={classId ? `/classes` : ''}
-        className="flex items-center gap-2 bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-fit text-sm sm:text-base"
+        to="/classes"
+        className="flex items-center gap-2 bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-fit text-sm sm:text-base mb-4"
       >
         <ArrowBigLeftDash className="h-4 w-4 sm:h-5 sm:w-5" />
-        <span>
-          {classId ? 'Back to Classes' : 'Back to Department Classes'}
-        </span>
+        <span>Back to Classes</span>
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            {classInfo?.name}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage students, subjects, and teachers in this class
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {classInfo?.name}
+            </h1>
+            <LevelBadge level={classInfo?.levelType} size="md" />
+            <StreamBadge stream={classInfo?.streamColor} size="md" />
+          </div>
+          <p className="text-muted-foreground mt-1">
+            {classInfo?.formName} • {classInfo?.streamName} •{' '}
+            {classInfo?.levelName}
           </p>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button
+        <div className="flex gap-2">
+          {/* TODO: will deal with it leter */}
+          {/* <Button
             variant="outline"
-            className="bg-primary-gradient text-white py-2 px-3 sm:px-4 rounded-[8px] text-sm sm:text-base hover:text-white"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer hover:text-white"
             onClick={() => setAssignSubjectsModalOpen(true)}
           >
             <BookOpen className="h-4 w-4 mr-2" />
             Assign Subjects
-          </Button>
+          </Button> */}
           <Button
-            variant="outline"
-            className="bg-primary-gradient text-white py-2 px-3 sm:px-4 rounded-[8px] text-sm sm:text-base hover:text-white"
-            onClick={() => setAssignTeachersModalOpen(true)}
-          >
-            <UsersIcon className="h-4 w-4 mr-2" />
-            Assign Teachers
-          </Button>
-          <Button
-            className="bg-primary-gradient text-white py-2 px-3 sm:px-4 rounded-[8px] text-sm sm:text-base"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
             onClick={() => setAddStudentModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -387,144 +343,114 @@ export default function ClassDetails({ params }: { params: any }) {
         </div>
       </div>
 
-      {/* Assigned Subjects */}
-      {assignedSubjects.length > 0 && (
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold">Assigned Subjects</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {assignedSubjects.map((subject: any) => (
-                <Badge key={subject.id} variant="secondary" className="text-sm">
-                  {subject.subjectName} ({subject.code})
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Assigned Teachers */}
-      {assignedTeachers.length > 0 && (
-        <Card>
-          <CardHeader>
-            <h3 className="text-lg font-semibold">Assigned Teachers</h3>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {assignedTeachers.map((teacher: any) => (
-                <Badge key={teacher.id} variant="outline" className="text-sm">
-                  {teacher.firstName} {teacher.lastName}
-                  {teacher.email && (
-                    <span className="text-muted-foreground ml-1 text-xs sm:text-sm">
-                      ({teacher.email})
-                    </span>
-                  )}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Search & Filter */}
       <Card className="border-none shadow-none">
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <div className="relative w-full">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search students..."
-                className="pl-10 bg-muted/50 w-full"
+                className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by course/grade" />
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="A">Grade A</SelectItem>
-                <SelectItem value="B+">Grade B+</SelectItem>
-                <SelectItem value="B">Grade B</SelectItem>
+                <SelectItem value="all">All Students</SelectItem>
+                <SelectItem value="Active">Active</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Inactive">Inactive</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardHeader>
 
-        {/* Students Table (responsive) */}
-        <CardContent className="overflow-x-auto">
-          <div className="min-w-[700px] sm:min-w-full">
+        {/* Table */}
+        <CardContent>
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>SN</TableHead>
-                  <TableHead>First name</TableHead>
-                  <TableHead>Last name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Enrolled</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                <TableRow className="bg-gray-100">
+                  <TableHead className="font-semibold">SN</TableHead>
+                  <TableHead className="font-semibold">First name</TableHead>
+                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Phone</TableHead>
+                  <TableHead className="font-semibold">Enrolled</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
-                {paginatedStudents?.map((student, index) => (
-                  <TableRow key={student.id}>
-                    <TableCell>{startIndex + index + 1}</TableCell>
-                    <TableCell>{student.firstName}</TableCell>
-                    <TableCell>{student.lastName}</TableCell>
-                    <TableCell className="truncate max-w-[150px] sm:max-w-none text-muted-foreground">
-                      {student.email}
-                    </TableCell>
-                    <TableCell>{student.course}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-none">
-                        {student.grade}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{student.enrollmentDate}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          student.status === 'Active'
-                            ? 'default'
-                            : student.status === 'Pending'
-                            ? 'secondary'
-                            : 'outline'
-                        }
-                        className="border-none"
-                      >
-                        {student.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="flex justify-end gap-2">
-                      <StudentProfilesModal student={student} />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedStudent(student);
-                          setEditStudentModalOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <DeleteStudentButton
-                        id={student.id}
-                        name={`${student.firstName} ${student.lastName}`}
-                        fetcher={fetcher}
-                      />
+                {paginatedStudents?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-8">
+                      <p className="text-muted-foreground">
+                        No students found. Add your first student to this class.
+                      </p>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  paginatedStudents?.map((student, index) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">
+                        {startIndex + index + 1}
+                      </TableCell>
+                      <TableCell>{student.firstName}</TableCell>
+                      <TableCell>{student.lastName}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {student.email || '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {student.phone || '-'}
+                      </TableCell>
+                      <TableCell>{student.enrollmentDate || '-'}</TableCell>
+                      <TableCell className="border-none">
+                        <Badge
+                          variant={
+                            student.status === 'Active'
+                              ? 'default'
+                              : student.status === 'Pending'
+                              ? 'secondary'
+                              : 'outline'
+                          }
+                          className="border-none"
+                        >
+                          {student.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <StudentProfilesModal student={student} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            setEditStudentModalOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <DeleteStudentButton
+                          id={student.id}
+                          name={`${student.firstName} ${student.lastName}`}
+                          fetcher={fetcher}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -538,10 +464,10 @@ export default function ClassDetails({ params }: { params: any }) {
 
       {/* Modals */}
       {addStudentModalOpen && (
-        <AddStudentModal
+        <AddStudentToClassModal
           open={addStudentModalOpen}
           setOpen={setAddStudentModalOpen}
-          classId={classId}
+          classInfo={classInfo}
           fetcher={fetcher}
         />
       )}
@@ -555,22 +481,11 @@ export default function ClassDetails({ params }: { params: any }) {
         />
       )}
       {assignSubjectsModalOpen && classInfo && (
-        <AssignSubjectsToClassModal
+        <AssignSubjectsToFormClassModal
           open={assignSubjectsModalOpen}
           setOpen={setAssignSubjectsModalOpen}
-          classData={classInfo}
+          classInfo={classInfo}
           availableSubjects={allSubjects}
-          assignedSubjects={assignedSubjects}
-          fetcher={fetcher}
-        />
-      )}
-      {assignTeachersModalOpen && classInfo && (
-        <AssignTeachersToClassModal
-          open={assignTeachersModalOpen}
-          setOpen={setAssignTeachersModalOpen}
-          classData={classInfo}
-          availableTeachers={allTeachers}
-          assignedTeachers={assignedTeachers}
           fetcher={fetcher}
         />
       )}

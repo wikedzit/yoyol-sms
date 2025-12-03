@@ -2,7 +2,20 @@ import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { departments } from './departments';
 
-// Define the "classes" table schema
+/**
+ * LEGACY: University-style classes table
+ *
+ * This schema is from the original university-level structure.
+ * For the new school-based structure (O-Level/A-Level), use:
+ * - `academicLevels` - O-Level, A-Level
+ * - `academicStreams` - Science, Arts, Business
+ * - `academicForms` - Form 1-6
+ * - `formClasses` - Actual classroom sections (3A, 3B, etc.)
+ *
+ * See: workers/database/academic-levels.ts
+ *
+ * @deprecated Use formClasses from academic-levels.ts for new school features
+ */
 export const classes = sqliteTable('classes', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
