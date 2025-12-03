@@ -603,5 +603,178 @@ export default class AcademicLevelService {
       return 0;
     }
   }
+
+  // ==================== ENRICHED QUERIES FOR CLASSES PAGE ====================
+
+  /**
+   * Get all form classes with enriched data (stream, form, level info)
+   * Used by the unified /classes page
+   */
+  async getAllFormClassesWithDetails(options?: {
+    levelType?: 'o-level' | 'a-level';
+    search?: string;
+  }): Promise<
+    Array<{
+      id: number;
+      name: string;
+      formId: number;
+      streamId: number;
+      levelId: number;
+      studentCount: number;
+      formName: string;
+      formNumber: number;
+      streamName: string;
+      streamColor: 'science' | 'arts' | 'business';
+      levelName: string;
+      levelType: 'o-level' | 'a-level';
+    }>
+  > {
+    try {
+      // Get all streams (optionally filtered by level type)
+      let streams: SelectAcademicStream[];
+      if (options?.levelType) {
+        streams = await this.getStreamsByLevelType(options.levelType);
+      } else {
+        streams = await this.getAllStreams();
+      }
+
+      // Get all levels for lookup
+      const levels = await this.getLevels();
+      const levelMap = new Map(levels.map((l) => [l.id, l]));
+
+      // Get all forms for lookup
+      const forms = await this.getAllForms();
+      const formMap = new Map(forms.map((f) => [f.id, f]));
+
+      // Get all form classes
+      const allClasses = await this.getAllFormClasses();
+
+      // Enrich classes with related data
+      const enrichedClasses = allClasses
+        .map((cls) => {
+          const form = formMap.get(cls.formId);
+          const stream = streams.find((s) => s.id === cls.streamId);
+          const level = stream ? levelMap.get(stream.levelId) : null;
+
+          if (!form || !stream || !level) return null;
+
+          // Apply level type filter if specified
+          if (options?.levelType && level.type !== options.levelType) {
+            return null;
+          }
+
+          // Apply search filter if specified
+          if (options?.search) {
+            const searchLower = options.search.toLowerCase();
+            const matchesSearch =
+              cls.name.toLowerCase().includes(searchLower) ||
+              form.name.toLowerCase().includes(searchLower) ||
+              stream.name.toLowerCase().includes(searchLower);
+            if (!matchesSearch) return null;
+          }
+
+          return {
+            id: cls.id,
+            name: cls.name,
+            formId: cls.formId,
+            streamId: cls.streamId,
+            levelId: cls.levelId,
+            studentCount: cls.studentCount,
+            formName: form.name,
+            formNumber: form.number,
+            streamName: stream.name,
+            streamColor: stream.color as 'science' | 'arts' | 'business',
+            levelName: level.name,
+            levelType: level.type as 'o-level' | 'a-level',
+          };
+        })
+        .filter((cls): cls is NonNullable<typeof cls> => cls !== null);
+
+      // Sort by level type (O-Level first), then form number, then class name
+      return enrichedClasses.sort((a, b) => {
+        if (a.levelType !== b.levelType) {
+          return a.levelType === 'o-level' ? -1 : 1;
+        }
+        if (a.formNumber !== b.formNumber) {
+          return a.formNumber - b.formNumber;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    } catch (error) {
+      console.error('Error fetching enriched form classes:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get form classes filtered by level ID
+   */
+  async getFormClassesByLevelId(levelId: number): Promise<SelectFormClass[]> {
+    try {
+      return await this.db
+        .select()
+        .from(formClasses)
+        .where(eq(formClasses.levelId, levelId))
+        .orderBy(asc(formClasses.name));
+    } catch (error) {
+      console.error('Error fetching form classes by level:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get a single form class by ID with enriched data (stream, form, level info)
+   * Used by the class detail page
+   */
+  async getFormClassByIdWithDetails(classId: number): Promise<{
+    id: number;
+    name: string;
+    formId: number;
+    streamId: number;
+    levelId: number;
+    studentCount: number;
+    formName: string;
+    formNumber: number;
+    streamName: string;
+    streamColor: 'science' | 'arts' | 'business';
+    levelName: string;
+    levelType: 'o-level' | 'a-level';
+  } | null> {
+    try {
+      // Get the form class
+      const formClass = await this.getFormClassById(classId);
+      if (!formClass) return null;
+
+      // Get the form
+      const form = await this.getFormById(formClass.formId);
+      if (!form) return null;
+
+      // Get the stream
+      const stream = await this.getStreamById(formClass.streamId);
+      if (!stream) return null;
+
+      // Get the level
+      const level = await this.getLevelById(formClass.levelId);
+      if (!level) return null;
+
+      return {
+        id: formClass.id,
+        name: formClass.name,
+        formId: formClass.formId,
+        streamId: formClass.streamId,
+        levelId: formClass.levelId,
+        studentCount: formClass.studentCount,
+        formName: form.name,
+        formNumber: form.number,
+        streamName: stream.name,
+        streamColor: stream.color as 'science' | 'arts' | 'business',
+        levelName: level.name,
+        levelType: level.type as 'o-level' | 'a-level',
+      };
+    } catch (error) {
+      console.error('Error fetching form class with details:', error);
+      return null;
+    }
+  }
 }
 

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm/sql/sql';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { classes } from './class';
+import { formClasses } from './academic-levels';
 import { relations } from 'drizzle-orm';
 
 export const students = sqliteTable('students', {
@@ -27,8 +28,19 @@ export const students = sqliteTable('students', {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 
-  //this is a foreign key Relationship field — link student to a class
+  /**
+   * @deprecated Use formClassId for school-based structure
+   * Legacy foreign key to old classes table (university structure)
+   */
   classId: integer('class_id').references(() => classes.id, {
+    onDelete: 'cascade',
+  }),
+
+  /**
+   * Foreign key to formClasses table (school structure: O-Level/A-Level)
+   * Links student to a specific class like "3A", "5B" within a form/stream/level
+   */
+  formClassId: integer('form_class_id').references(() => formClasses.id, {
     onDelete: 'cascade',
   }),
 });
@@ -36,9 +48,15 @@ export const students = sqliteTable('students', {
 //The studentsRelations helper allows you to do joined queries later, for example:
 // 🔗 Define relation helper (optional but useful for joins)
 export const studentsRelations = relations(students, ({ one }) => ({
+  // Legacy relation to old classes
   class: one(classes, {
     fields: [students.classId],
     references: [classes.id],
+  }),
+  // New relation to formClasses (school structure)
+  formClass: one(formClasses, {
+    fields: [students.formClassId],
+    references: [formClasses.id],
   }),
 }));
 

@@ -28,7 +28,13 @@ const CreateStudentSchema = z.object({
   course: z.string().optional(),
   grade: z.string().optional(),
   enrollmentDate: z.string().optional(), // YYYY-MM-DD
+  // Legacy: old university-style class reference
   classId: z.preprocess(
+    (v) => (v ? Number(v) : undefined),
+    z.number().optional()
+  ),
+  // New: school-style formClass reference (O-Level/A-Level structure)
+  formClassId: z.preprocess(
     (v) => (v ? Number(v) : undefined),
     z.number().optional()
   ),
@@ -162,6 +168,38 @@ export default class StudentService {
     } catch (error) {
       console.error('Error deleting student:', error);
       return false;
+    }
+  }
+
+  /**
+   * Get students by formClassId (school structure: O-Level/A-Level)
+   */
+  async getByFormClassId(formClassId: number): Promise<SelectStudent[]> {
+    try {
+      return await this.db
+        .select()
+        .from(students)
+        .where(eq(students.formClassId, formClassId))
+        .orderBy(asc(students.firstName), asc(students.lastName));
+    } catch (error) {
+      console.error('Error fetching students by formClassId:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Count students in a formClass
+   */
+  async countByFormClassId(formClassId: number): Promise<number> {
+    try {
+      const result = await this.db
+        .select()
+        .from(students)
+        .where(eq(students.formClassId, formClassId));
+      return result.length;
+    } catch (error) {
+      console.error('Error counting students by formClassId:', error);
+      return 0;
     }
   }
 }

@@ -53,7 +53,19 @@ export type UpdateClassInput = z.infer<typeof UpdateClassSchema>;
 export type GetClassesInput = z.infer<typeof GetClassesSchema>;
 
 /**
- * Simple service class for managing classes
+ * LEGACY: University-style class service
+ *
+ * This service manages the old `classes` table from the university-level structure.
+ * For the new school-based structure (O-Level/A-Level), use AcademicLevelService
+ * which manages:
+ * - Academic Levels (O-Level, A-Level)
+ * - Streams (Science, Arts, Business)
+ * - Forms (Form 1-6)
+ * - Form Classes (3A, 3B, etc.)
+ *
+ * See: workers/services/academic-levels.ts
+ *
+ * @deprecated Use AcademicLevelService for new school features
  */
 export default class ClassService {
   private db: DrizzleD1Database;
