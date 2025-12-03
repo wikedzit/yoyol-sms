@@ -24,40 +24,32 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Plus, Download, Edit, Trash2 } from 'lucide-react';
+import { Plus, Download, Edit } from 'lucide-react';
 import { toast } from 'sonner';
 import { GradeBadge } from '~/components/grade/GradeBadge';
 import { GradeForm } from '~/components/grade/GradeFormModal';
 import type GradeService from 'workers/services/grades';
 import type { GradeWithRelations } from 'workers/services/grades';
-import type FacultyService from 'workers/services/faculties';
-import type DepartmentService from 'workers/services/departments';
-import type YearService from 'workers/services/years';
-import type SemesterService from 'workers/services/semesters';
 import type SubjectService from 'workers/services/subjects';
 import type StudentService from 'workers/services/student';
 import type TeacherService from 'workers/services/teachers';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import { DeleteButton } from '~/components/DeleteButton';
 
 // Loader: fetch grades and all related data
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const services = context.services as {
     grade: GradeService;
-    faculty: FacultyService;
-    department: DepartmentService;
-    year: YearService;
-    semester: SemesterService;
     subject: SubjectService;
     student: StudentService;
     teacher: TeacherService;
+    academicLevel: AcademicLevelService;
   };
 
   // Get filter params from URL
   const url = new URL(request.url);
-  const facultyId = url.searchParams.get('facultyId');
-  const departmentId = url.searchParams.get('departmentId');
-  const yearId = url.searchParams.get('yearId');
-  const semesterId = url.searchParams.get('semesterId');
+  const streamId = url.searchParams.get('streamId');
+  const formId = url.searchParams.get('formId');
   const subjectId = url.searchParams.get('subjectId');
   const studentId = url.searchParams.get('studentId');
   const teacherId = url.searchParams.get('teacherId');
@@ -68,49 +60,17 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'desc',
-    facultyId: facultyId ? parseInt(facultyId) : undefined,
-    departmentId: departmentId ? parseInt(departmentId) : undefined,
-    yearId: yearId ? parseInt(yearId) : undefined,
-    semesterId: semesterId ? parseInt(semesterId) : undefined,
+    streamId: streamId ? parseInt(streamId) : undefined,
+    formId: formId ? parseInt(formId) : undefined,
     subjectId: subjectId ? parseInt(subjectId) : undefined,
     studentId: studentId ? parseInt(studentId) : undefined,
     teacherId: teacherId ? parseInt(teacherId) : undefined,
   });
 
   // Fetch all filter options
-  const [
-    faculties,
-    departments,
-    years,
-    semesters,
-    subjects,
-    students,
-    teachers,
-  ] = await Promise.all([
-    services.faculty.getFaculties({
-      limit: 100,
-      offset: 0,
-      sortBy: 'createdAt',
-      sortOrder: 'asc',
-    }),
-    services.department.getDepartments({
-      limit: 100,
-      offset: 0,
-      sortBy: 'createdAt',
-      sortOrder: 'asc',
-    }),
-    services.year.getYears({
-      limit: 100,
-      offset: 0,
-      sortBy: 'yearNumber',
-      sortOrder: 'asc',
-    }),
-    services.semester.getSemesters({
-      limit: 100,
-      offset: 0,
-      sortBy: 'semesterNumber',
-      sortOrder: 'asc',
-    }),
+  const [streams, forms, subjects, students, teachers] = await Promise.all([
+    services.academicLevel.getAllStreams(),
+    services.academicLevel.getAllForms(),
     services.subject.getAllSubjects({
       limit: 100,
       sortBy: 'subjectName',
@@ -131,10 +91,8 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
   return {
     grades: grades.filter((g): g is GradeWithRelations => g !== null),
-    faculties,
-    departments,
-    years,
-    semesters,
+    streams,
+    forms,
     subjects,
     students,
     teachers,
@@ -153,7 +111,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const data = {
         studentId: parseInt(String(form.get('studentId') ?? '')),
         subjectId: parseInt(String(form.get('subjectId') ?? '')),
-        semesterId: parseInt(String(form.get('semesterId') ?? '')),
+        streamId: parseInt(String(form.get('streamId') ?? '')),
+        formId: parseInt(String(form.get('formId') ?? '')),
         teacherId: form.get('teacherId')
           ? parseInt(String(form.get('teacherId')))
           : undefined,
@@ -178,8 +137,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
         subjectId: form.get('subjectId')
           ? parseInt(String(form.get('subjectId')))
           : undefined,
-        semesterId: form.get('semesterId')
-          ? parseInt(String(form.get('semesterId')))
+        streamId: form.get('streamId')
+          ? parseInt(String(form.get('streamId')))
+          : undefined,
+        formId: form.get('formId')
+          ? parseInt(String(form.get('formId')))
           : undefined,
         teacherId: form.get('teacherId')
           ? parseInt(String(form.get('teacherId')))
@@ -217,10 +179,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function Grades() {
   const {
     grades: initialGrades,
-    faculties,
-    departments,
-    years,
-    semesters,
+    streams,
+    forms,
     subjects,
     students,
     teachers,
@@ -234,11 +194,8 @@ export default function Grades() {
   const [grades, setGrades] = useState<GradeWithRelations[]>(initialGrades);
 
   // Filter states
-
-  const [selectedFaculty, setSelectedFaculty] = useState<string>('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<string>('');
-  const [selectedSemester, setSelectedSemester] = useState<string>('');
+  const [selectedStream, setSelectedStream] = useState<string>('');
+  const [selectedForm, setSelectedForm] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedStudent, setSelectedStudent] = useState<string>('');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
@@ -251,7 +208,6 @@ export default function Grades() {
     }
   }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
 
-  // react on finished action
   // react on finished action
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) return;
@@ -301,15 +257,6 @@ export default function Grades() {
     setFormOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this grade?')) {
-      const formData = new FormData();
-      formData.append('_method', 'DELETE');
-      formData.append('id', String(id));
-      fetcher.submit(formData, { method: 'post' });
-    }
-  };
-
   const handleExport = () => {
     try {
       // Prepare CSV headers
@@ -320,17 +267,12 @@ export default function Grades() {
         'Grade',
         'Remarks',
         'Teacher',
-        'Year',
-        'Semester',
+        'Stream',
+        'Form',
       ];
 
       // Prepare CSV rows
       const rows = grades.map((grade) => {
-        // Find the year name from the semester's yearId
-        const yearName = grade.semester?.yearId
-          ? years.find((y) => y.id === grade.semester.yearId)?.name || ''
-          : '';
-
         return [
           grade.student
             ? `${grade.student.firstName} ${grade.student.lastName}`
@@ -342,8 +284,8 @@ export default function Grades() {
           grade.teacher
             ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
             : '',
-          yearName,
-          grade.semester?.name || '',
+          grade.stream?.name || '',
+          grade.form?.name || '',
         ];
       });
 
@@ -379,10 +321,8 @@ export default function Grades() {
   const handleFilterChange = () => {
     // Build URL with filters
     const params = new URLSearchParams();
-    if (selectedFaculty) params.set('facultyId', selectedFaculty);
-    if (selectedDepartment) params.set('departmentId', selectedDepartment);
-    if (selectedYear) params.set('yearId', selectedYear);
-    if (selectedSemester) params.set('semesterId', selectedSemester);
+    if (selectedStream) params.set('streamId', selectedStream);
+    if (selectedForm) params.set('formId', selectedForm);
     if (selectedSubject) params.set('subjectId', selectedSubject);
     if (selectedStudent) params.set('studentId', selectedStudent);
     if (selectedTeacher) params.set('teacherId', selectedTeacher);
@@ -391,25 +331,10 @@ export default function Grades() {
     window.location.search = params.toString();
   };
 
-  // Filter departments by faculty
-  const filteredDepartments = selectedFaculty
-    ? departments.filter(
-        (d) => d.facultyId !== null && d.facultyId === parseInt(selectedFaculty)
-      )
-    : departments;
-
-  // Filter years by course (if needed, you might need to add course filtering)
-  // For now, show all years
-
-  // Filter semesters by year
-  const filteredSemesters = selectedYear
-    ? semesters.filter((s) => s.yearId === parseInt(selectedYear))
-    : semesters;
-
-  // Filter subjects by department
-  const filteredSubjects = selectedDepartment
-    ? subjects.filter((s) => s.departmentId === parseInt(selectedDepartment))
-    : subjects;
+  // Filter forms by stream
+  const filteredForms = selectedStream
+    ? forms.filter((f) => f.streamId === parseInt(selectedStream))
+    : forms;
 
   return (
     <div className="space-y-6">
@@ -419,7 +344,7 @@ export default function Grades() {
           Grades Management
         </h1>
         <p className="text-muted-foreground mt-2">
-          View, add, and manage students' grades by class, subject, or teacher.
+          View, add, and manage students' grades by stream, form, or subject.
         </p>
       </div>
 
@@ -427,75 +352,39 @@ export default function Grades() {
       <Card className="border-none shadow-none">
         <CardHeader>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <Select
-                value={selectedFaculty}
+                value={selectedStream}
                 onValueChange={(value) => {
-                  setSelectedFaculty(value);
-                  setSelectedDepartment(''); // Reset dependent filters
-                  setSelectedYear('');
-                  setSelectedSemester('');
-                  setSelectedSubject('');
+                  setSelectedStream(value);
+                  setSelectedForm(''); // Reset form when stream changes
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Faculty" />
+                  <SelectValue placeholder="Stream" />
                 </SelectTrigger>
                 <SelectContent>
-                  {faculties.map((faculty) => (
-                    <SelectItem key={faculty.id} value={String(faculty.id)}>
-                      {faculty.name}
+                  {streams.map((stream) => (
+                    <SelectItem key={stream.id} value={String(stream.id)}>
+                      {stream.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select
-                value={selectedDepartment}
-                onValueChange={(value) => {
-                  setSelectedDepartment(value);
-                  setSelectedSubject(''); // Reset dependent filters
-                }}
+                value={selectedForm}
+                onValueChange={setSelectedForm}
+                disabled={!selectedStream}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Department" />
+                  <SelectValue
+                    placeholder={selectedStream ? 'Form' : 'Select stream first'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredDepartments.map((dept) => (
-                    <SelectItem key={dept.id} value={String(dept.id)}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedYear}
-                onValueChange={(value) => {
-                  setSelectedYear(value);
-                  setSelectedSemester(''); // Reset dependent filters
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year.id} value={String(year.id)}>
-                      {year.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={selectedSemester}
-                onValueChange={setSelectedSemester}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Semester" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredSemesters.map((semester) => (
-                    <SelectItem key={semester.id} value={String(semester.id)}>
-                      {semester.name}
+                  {filteredForms.map((form) => (
+                    <SelectItem key={form.id} value={String(form.id)}>
+                      {form.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -508,9 +397,24 @@ export default function Grades() {
                   <SelectValue placeholder="Subject" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredSubjects?.map((subject) => (
+                  {subjects?.map((subject) => (
                     <SelectItem key={subject.id} value={String(subject.id)}>
                       {subject.subjectName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={selectedStudent}
+                onValueChange={setSelectedStudent}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Student" />
+                </SelectTrigger>
+                <SelectContent>
+                  {students.map((student) => (
+                    <SelectItem key={student.id} value={String(student.id)}>
+                      {student.firstName} {student.lastName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -584,8 +488,8 @@ export default function Grades() {
                   <TableHead>Grade</TableHead>
                   <TableHead>Remarks</TableHead>
                   <TableHead>Teacher</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Semester</TableHead>
+                  <TableHead>Stream</TableHead>
+                  <TableHead>Form</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -598,11 +502,6 @@ export default function Grades() {
                   </TableRow>
                 ) : (
                   grades.map((grade) => {
-                    // Find the year name from the semester's yearId
-                    const yearName = grade.semester?.yearId
-                      ? years.find((y) => y.id === grade.semester.yearId)?.name || '—'
-                      : '—';
-
                     return (
                       <TableRow key={grade.id}>
                         <TableCell className="font-medium">
@@ -633,9 +532,9 @@ export default function Grades() {
                             : '—'}
                         </TableCell>
 
-                        <TableCell>{yearName}</TableCell>
+                        <TableCell>{grade.stream?.name || '—'}</TableCell>
 
-                        <TableCell>{grade.semester?.name || '—'}</TableCell>
+                        <TableCell>{grade.form?.name || '—'}</TableCell>
 
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
@@ -673,8 +572,8 @@ export default function Grades() {
         editData={editData}
         students={students}
         subjects={subjects}
-        years={years}
-        semesters={semesters}
+        streams={streams}
+        forms={forms}
         teachers={teachers}
         fetcher={fetcher}
       />

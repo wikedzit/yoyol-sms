@@ -26,8 +26,8 @@ interface GradeFormProps {
   editData?: GradeWithRelations | null;
   students: Array<{ id: number; firstName: string; lastName: string }>;
   subjects: Array<{ id: number; subjectName: string }>;
-  years: Array<{ id: number; name: string }>;
-  semesters: Array<{ id: number; name: string; yearId: number }>;
+  streams: Array<{ id: number; name: string; levelType: string }>;
+  forms: Array<{ id: number; name: string; number: number; streamId: number }>;
   teachers: Array<{ id: number; firstName: string; lastName: string }>;
   fetcher: FetcherWithComponents<any>;
 }
@@ -38,8 +38,8 @@ export function GradeForm({
   editData,
   students,
   subjects,
-  years,
-  semesters,
+  streams,
+  forms,
   teachers,
   fetcher,
 }: GradeFormProps) {
@@ -49,9 +49,11 @@ export function GradeForm({
   const [subjectId, setSubjectId] = useState<string>(
     editData ? String(editData.subjectId) : ''
   );
-  const [yearId, setYearId] = useState<string>('');
-  const [semesterId, setSemesterId] = useState<string>(
-    editData ? String(editData.semesterId) : ''
+  const [streamId, setStreamId] = useState<string>(
+    editData ? String(editData.streamId) : ''
+  );
+  const [formId, setFormId] = useState<string>(
+    editData ? String(editData.formId) : ''
   );
   const [teacherId, setTeacherId] = useState<string>(
     editData?.teacherId ? String(editData.teacherId) : ''
@@ -66,23 +68,22 @@ export function GradeForm({
       if (editData) {
         setStudentId(String(editData.studentId));
         setSubjectId(String(editData.subjectId));
-        setSemesterId(String(editData.semesterId));
+        setStreamId(String(editData.streamId));
+        setFormId(String(editData.formId));
         setTeacherId(editData.teacherId ? String(editData.teacherId) : '');
         setScore(String(editData.score));
         setRemarks(editData.remarks || '');
-        const semester = semesters.find((s) => s.id === editData.semesterId);
-        if (semester) setYearId(String(semester.yearId));
       } else {
         setStudentId('');
         setSubjectId('');
-        setYearId('');
-        setSemesterId('');
+        setStreamId('');
+        setFormId('');
         setTeacherId('');
         setScore('');
         setRemarks('');
       }
     }
-  }, [open, editData, semesters]);
+  }, [open, editData]);
 
   useEffect(() => {
     if (fetcher.data?.success) onOpenChange(false);
@@ -96,9 +97,10 @@ export function GradeForm({
     return 'F';
   };
 
-  const filteredSemesters = yearId
-    ? semesters.filter((s) => s.yearId === parseInt(yearId))
-    : semesters;
+  // Filter forms by selected stream
+  const filteredForms = streamId
+    ? forms.filter((f) => f.streamId === parseInt(streamId))
+    : forms;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -177,58 +179,59 @@ export function GradeForm({
               <input type="hidden" name="subjectId" value={subjectId} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Year *
+                  Stream *
                 </label>
                 <Select
-                  value={yearId}
+                  value={streamId}
                   onValueChange={(value) => {
-                    setYearId(value);
-                    setSemesterId('');
+                    setStreamId(value);
+                    setFormId(''); // Reset form when stream changes
                   }}
                   required
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select year" />
+                    <SelectValue placeholder="Select stream" />
                   </SelectTrigger>
                   <SelectContent>
-                    {years.map((year) => (
-                      <SelectItem key={year.id} value={String(year.id)}>
-                        {year.name}
+                    {streams.map((stream) => (
+                      <SelectItem key={stream.id} value={String(stream.id)}>
+                        {stream.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="streamId" value={streamId} />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Semester *
+                  Form *
                 </label>
                 <Select
-                  value={semesterId}
-                  onValueChange={setSemesterId}
+                  value={formId}
+                  onValueChange={setFormId}
                   required
-                  disabled={!yearId}
+                  disabled={!streamId}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue
                       placeholder={
-                        yearId ? 'Select semester' : 'Select year first'
+                        streamId ? 'Select form' : 'Select stream first'
                       }
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {filteredSemesters.map((semester) => (
-                      <SelectItem key={semester.id} value={String(semester.id)}>
-                        {semester.name}
+                    {filteredForms.map((form) => (
+                      <SelectItem key={form.id} value={String(form.id)}>
+                        {form.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <input type="hidden" name="semesterId" value={semesterId} />
+                <input type="hidden" name="formId" value={formId} />
               </div>
             </div>
 

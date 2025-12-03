@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { students } from './students';
 import { subject } from './subjects';
-import { semesters } from './semesters';
+import { academicStreams, academicForms } from './academic-levels';
 import { teachers } from './teachers';
 
 export const grades = sqliteTable('grades', {
@@ -14,9 +14,12 @@ export const grades = sqliteTable('grades', {
   subjectId: integer('subject_id')
     .notNull()
     .references(() => subject.id, { onDelete: 'cascade' }),
-  semesterId: integer('semester_id')
+  streamId: integer('stream_id')
     .notNull()
-    .references(() => semesters.id, { onDelete: 'cascade' }),
+    .references(() => academicStreams.id, { onDelete: 'cascade' }),
+  formId: integer('form_id')
+    .notNull()
+    .references(() => academicForms.id, { onDelete: 'cascade' }),
   teacherId: integer('teacher_id').references(() => teachers.id, {
     onDelete: 'set null',
   }),
@@ -34,4 +37,3 @@ export const grades = sqliteTable('grades', {
 
 export type InsertGrade = typeof grades.$inferInsert;
 export type SelectGrade = typeof grades.$inferSelect;
-
