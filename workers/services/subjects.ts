@@ -8,13 +8,13 @@ export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
   code: z.string().min(2).max(10),
-  departments: z.string().min(2).max(100),
+  stream: z.string().min(2).max(100), // Stream name (Science, Arts, Business)
   instructor: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
   enrolledStudents: z.number().min(0).optional(),
   status: z.enum(['Active', 'Inactive']).default('Active'),
-  // New field for departmentId
-  departmentId: z.number().optional(),
+  // Foreign key to academic streams (required)
+  streamId: z.number().min(1),
 });
 
 const updateSubjectSchema = subjectSchema.partial();
@@ -49,8 +49,8 @@ export default class SubjectService {
         .insert(subject)
         .values({
           ...validatedData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         })
         .returning()
         .execute();
@@ -100,20 +100,18 @@ export default class SubjectService {
     }
   }
 
-  // Get Subjects by Department ID
-  async getSubjectsByDepartmentId(
-    departmentId: number
-  ): Promise<SelectSubject[]> {
+  // Get Subjects by Stream ID
+  async getSubjectsByStreamId(streamId: number): Promise<SelectSubject[]> {
     try {
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.departmentId, departmentId))
+        .where(eq(subject.streamId, streamId))
         .execute();
 
       return result;
     } catch (error) {
-      console.error('Error fetching subjects by department ID:', error);
+      console.error('Error fetching subjects by stream ID:', error);
       return [];
     }
   }
@@ -159,9 +157,9 @@ export default class SubjectService {
   ): Promise<SelectSubject | null> {
     try {
       const validatedData = updateSubjectSchema.parse(data);
-      const updateResult: Partial<SelectSubject> = {
+      const updateResult = {
         ...validatedData,
-        updatedAt: new Date().toISOString(),
+        updatedAt: Date.now(),
       };
       const result = await this.db
         .update(subject)

@@ -29,14 +29,13 @@ import { toast } from 'sonner';
 
 export default function DepartmentSubjects({
   subjects,
-  departments,
+  streams,
 }: {
   subjects: any[];
-  departments: any[];
+  streams: any[];
 }) {
-  const loaderData = useLoaderData() as { subjects: any[]; departments: any[] };
-  const { subjects: initialSubjects, departments: loaderDepartments } =
-    loaderData;
+  const loaderData = useLoaderData() as { subjects: any[]; streams: any[] };
+  const { subjects: initialSubjects, streams: loaderStreams } = loaderData;
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
@@ -48,15 +47,15 @@ export default function DepartmentSubjects({
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Use departments from props first, fallback to loader data
-  const departmentsList = departments || loaderDepartments;
+  // Use streams from props first, fallback to loader data
+  const streamsList = streams || loaderStreams;
 
   // --- Filtering Logic ---
   const filteredSubjects = initialSubjects?.filter((subject) => {
     const matchesSearch =
       subject.subjectName.toLowerCase().includes(search.toLowerCase()) ||
       subject.code.toLowerCase().includes(search.toLowerCase()) ||
-      subject.departments.toLowerCase().includes(search.toLowerCase()) ||
+      (subject.stream || '').toLowerCase().includes(search.toLowerCase()) ||
       subject.instructor.toLowerCase().includes(search.toLowerCase());
     const matchesFilter =
       statusFilter === 'all' || subject.status === statusFilter;
@@ -134,9 +133,8 @@ export default function DepartmentSubjects({
   return (
     <>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between my-4">
-        {/* TODO: show the selected department name just this name */}
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Department Subjects
+          Subjects
         </h1>
         <Button
           className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
@@ -176,12 +174,11 @@ export default function DepartmentSubjects({
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">Code</TableHead>
                   <TableHead className="font-semibold">Subject Name</TableHead>
-                  <TableHead className="font-semibold">Department</TableHead>
+                  <TableHead className="font-semibold">Stream</TableHead>
                   <TableHead className="font-semibold">Instructor</TableHead>
                   <TableHead className="font-semibold">
                     Enrolled Students
                   </TableHead>
-                  {/* <TableHead className="font-semibold">Description</TableHead> */}
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right font-semibold">
                     Actions
@@ -192,7 +189,7 @@ export default function DepartmentSubjects({
                 {paginatedStudentsList?.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="h-24 text-center text-muted-foreground"
                     >
                       No subjects found.
@@ -203,10 +200,9 @@ export default function DepartmentSubjects({
                     <TableRow key={subject.id}>
                       <TableCell>{subject.code}</TableCell>
                       <TableCell>{subject.subjectName}</TableCell>
-                      <TableCell>{subject.departments}</TableCell>
+                      <TableCell>{subject.stream}</TableCell>
                       <TableCell>{subject.instructor}</TableCell>
                       <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                      {/* <TableCell>{subject.description || '—'}</TableCell> */}
                       <TableCell>
                         <Badge
                           variant={
@@ -257,7 +253,7 @@ export default function DepartmentSubjects({
           setOpen={setIsAddModalOpen}
           fetcher={fetcher}
           id={id}
-          departments={departmentsList}
+          streams={streamsList}
         />
       )}
 
@@ -267,6 +263,7 @@ export default function DepartmentSubjects({
           setOpen={setIsEditModalOpen}
           fetcher={fetcher}
           subject={selectedSubject}
+          streams={streamsList}
           id={id}
         />
       )}

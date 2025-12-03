@@ -361,7 +361,7 @@ export default function Students() {
                   <TableHead className="font-semibold">First name</TableHead>
                   <TableHead className="font-semibold">Last name</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Course</TableHead>
+                  {/* <TableHead className="font-semibold">Course</TableHead> */}
                   {/* <TableHead className="font-semibold">Grade</TableHead> */}
                   <TableHead className="font-semibold">
                     Assigned Subjects
@@ -385,7 +385,7 @@ export default function Students() {
                     <TableCell className="text-muted-foreground">
                       {student.email}
                     </TableCell>
-                    <TableCell>{student.course}</TableCell>
+                    {/* <TableCell>{student.course}</TableCell> */}
                     {/* <TableCell>
                     <Badge variant="outline" className="border-none">
                       {student.grade}
