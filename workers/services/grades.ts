@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, inArray, sql } from 'drizzle-orm';
+import { eq, desc, asc, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   grades,
@@ -8,13 +8,8 @@ import {
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { students } from '../database/students';
 import { subject } from '../database/subjects';
-import { semesters } from '../database/semesters';
+import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
 import { teachers } from '../database/teachers';
-import { classes } from '../database/class';
-import { departments } from '../database/departments';
-import { faculties } from '../database/faculties';
-import { courses } from '../database/courses';
-import { years } from '../database/years';
 
 // Helper function to calculate grade from score
 const getGradeFromScore = (score: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
@@ -29,7 +24,8 @@ const getGradeFromScore = (score: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
 const CreateGradeSchema = z.object({
   studentId: z.number().min(1, 'Student is required'),
   subjectId: z.number().min(1, 'Subject is required'),
-  semesterId: z.number().min(1, 'Semester is required'),
+  streamId: z.number().min(1, 'Stream is required'),
+  formId: z.number().min(1, 'Form is required'),
   teacherId: z.number().optional(),
   score: z
     .number()
@@ -50,11 +46,10 @@ const GetGradesSchema = z
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
     studentId: z.number().optional(),
     subjectId: z.number().optional(),
-    semesterId: z.number().optional(),
+    streamId: z.number().optional(),
+    formId: z.number().optional(),
     teacherId: z.number().optional(),
-    facultyId: z.number().optional(),
-    departmentId: z.number().optional(),
-    yearId: z.number().optional(),
+    levelId: z.number().optional(),
   })
   .optional();
 
@@ -75,33 +70,28 @@ export type GradeWithRelations = SelectGrade & {
     id: number;
     subjectName: string;
     code: string;
-    departmentId: number;
   };
-  semester: {
+  stream: {
     id: number;
     name: string;
-    semesterNumber: number;
-    yearId: number;
+    levelId: number;
+    levelType: string;
+    color: string;
+  };
+  form: {
+    id: number;
+    name: string;
+    number: number;
   };
   teacher: {
     id: number;
     firstName: string;
     lastName: string;
   } | null;
-  year?: {
+  level?: {
     id: number;
     name: string;
-    yearNumber: number;
-    courseId: number;
-  };
-  department?: {
-    id: number;
-    name: string;
-    facultyId: number | null;
-  };
-  faculty?: {
-    id: number;
-    name: string;
+    type: string;
   };
 };
 
@@ -172,41 +162,39 @@ export default class GradeService {
         sortOrder,
         studentId,
         subjectId,
-        semesterId,
+        streamId,
+        formId,
         teacherId,
-        facultyId,
-        departmentId,
-        yearId,
+        levelId,
       } = GetGradesSchema.parse(options) ?? {};
 
       // Build where conditions
       const conditions = [];
       if (studentId) conditions.push(eq(grades.studentId, studentId));
       if (subjectId) conditions.push(eq(grades.subjectId, subjectId));
-      if (semesterId) conditions.push(eq(grades.semesterId, semesterId));
+      if (streamId) conditions.push(eq(grades.streamId, streamId));
+      if (formId) conditions.push(eq(grades.formId, formId));
       if (teacherId) conditions.push(eq(grades.teacherId, teacherId));
 
-      // Handle complex filters (faculty, department, year)
+      // Handle level filter (filter by stream's level)
       let gradeIds: number[] | null = null;
-      if (facultyId || departmentId || yearId) {
-        // Get filtered grade IDs based on relationships
-        const allGrades = await this.db.select().from(grades).all();
-        const filteredGrades = await Promise.all(
-          allGrades.map(async (g) => {
-            const enriched = await this.enrichGradeWithRelations(g);
-            if (!enriched) return null;
+      if (levelId) {
+        // Get all streams for this level
+        const levelStreams = await this.db
+          .select({ id: academicStreams.id })
+          .from(academicStreams)
+          .where(eq(academicStreams.levelId, levelId));
+        
+        const streamIds = levelStreams.map(s => s.id);
+        if (streamIds.length === 0) return [];
 
-            if (facultyId && enriched.faculty?.id !== facultyId) return null;
-            if (departmentId && enriched.department?.id !== departmentId)
-              return null;
-            if (yearId && enriched.year?.id !== yearId) return null;
-
-            return g.id;
-          })
-        );
-        gradeIds = filteredGrades.filter(
-          (id): id is number => id !== null
-        ) as number[];
+        // Get grades with these streams
+        const levelGrades = await this.db
+          .select({ id: grades.id })
+          .from(grades)
+          .where(inArray(grades.streamId, streamIds));
+        
+        gradeIds = levelGrades.map(g => g.id);
         if (gradeIds.length === 0) return [];
       }
 
@@ -236,9 +224,11 @@ export default class GradeService {
         .offset(offset ?? 0);
 
       // Enrich with relations
-      return Promise.all(
+      const enrichedResults = await Promise.all(
         results.map((grade) => this.enrichGradeWithRelations(grade))
       );
+
+      return enrichedResults.filter((g): g is GradeWithRelations => g !== null);
     } catch (error) {
       console.error('Error fetching grades:', error);
       return [];
@@ -272,7 +262,6 @@ export default class GradeService {
           id: subject.id,
           subjectName: subject.subjectName,
           code: subject.code,
-          departmentId: subject.departmentId,
         })
         .from(subject)
         .where(eq(subject.id, grade.subjectId))
@@ -280,19 +269,33 @@ export default class GradeService {
 
       if (!subjectData) return null;
 
-      // Fetch semester
-      const semesterData = await this.db
+      // Fetch stream
+      const streamData = await this.db
         .select({
-          id: semesters.id,
-          name: semesters.name,
-          semesterNumber: semesters.semesterNumber,
-          yearId: semesters.yearId,
+          id: academicStreams.id,
+          name: academicStreams.name,
+          levelId: academicStreams.levelId,
+          levelType: academicStreams.levelType,
+          color: academicStreams.color,
         })
-        .from(semesters)
-        .where(eq(semesters.id, grade.semesterId))
+        .from(academicStreams)
+        .where(eq(academicStreams.id, grade.streamId))
         .get();
 
-      if (!semesterData) return null;
+      if (!streamData) return null;
+
+      // Fetch form
+      const formData = await this.db
+        .select({
+          id: academicForms.id,
+          name: academicForms.name,
+          number: academicForms.number,
+        })
+        .from(academicForms)
+        .where(eq(academicForms.id, grade.formId))
+        .get();
+
+      if (!formData) return null;
 
       // Fetch teacher (optional)
       let teacherData = null;
@@ -308,39 +311,25 @@ export default class GradeService {
           .get();
       }
 
-      // Fetch year
-      const yearData = await this.db
-        .select()
-        .from(years)
-        .where(eq(years.id, semesterData.yearId))
+      // Fetch level
+      const levelData = await this.db
+        .select({
+          id: academicLevels.id,
+          name: academicLevels.name,
+          type: academicLevels.type,
+        })
+        .from(academicLevels)
+        .where(eq(academicLevels.id, streamData.levelId))
         .get();
-
-      // Fetch department
-      const departmentData = await this.db
-        .select()
-        .from(departments)
-        .where(eq(departments.id, subjectData.departmentId))
-        .get();
-
-      // Fetch faculty
-      let facultyData = null;
-      if (departmentData?.facultyId) {
-        facultyData = await this.db
-          .select()
-          .from(faculties)
-          .where(eq(faculties.id, departmentData.facultyId))
-          .get();
-      }
 
       return {
         ...grade,
         student,
         subject: subjectData,
-        semester: semesterData,
+        stream: streamData,
+        form: formData,
         teacher: teacherData,
-        year: yearData || undefined,
-        department: departmentData || undefined,
-        faculty: facultyData || undefined,
+        level: levelData || undefined,
       };
     } catch (error) {
       console.error('Error enriching grade with relations:', error);
@@ -397,4 +386,3 @@ export default class GradeService {
     }
   }
 }
-
