@@ -1,15 +1,14 @@
-import { GraduationCap, Users, Building2, BookOpen, Award } from 'lucide-react';
+import { GraduationCap, Users, Layers, ClipboardList, Award } from 'lucide-react';
 import { useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router-dom';
-import { DepartmentInsights } from '~/Dahsboard/DepartmentInsights';
+import { StreamInsights } from '~/Dahsboard/StreamInsights';
 import { NoticesEvents } from '~/Dahsboard/NoticesEvents';
 import { PerformanceChart } from '~/Dahsboard/PerformanceChart';
 import StatCard from '~/Dahsboard/StatCard';
 import { StudentActivity } from '~/Dahsboard/StudentActivity';
 import type StudentService from 'workers/services/student';
 import type TeacherService from 'workers/services/teachers';
-import type DepartmentService from 'workers/services/departments';
-import type CourseService from 'workers/services/courses';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import type GradeService from 'workers/services/grades';
 import type NoticeService from 'workers/services/notices';
 
@@ -18,14 +17,13 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     student: StudentService;
     teacher: TeacherService;
-    department: DepartmentService;
-    course: CourseService;
+    academicLevel: AcademicLevelService;
     grade: GradeService;
     notice: NoticeService;
   };
 
   // Fetch all data in parallel
-  const [students, teachers, departments, courses, allGrades, notices] =
+  const [students, teachers, streams, forms, allGrades, notices] =
     await Promise.all([
       services.student.getAll({
         limit: 100,
@@ -39,18 +37,8 @@ export async function loader({ context }: LoaderFunctionArgs) {
         sortBy: 'createdAt',
         sortOrder: 'desc',
       }),
-      services.department.getDepartments({
-        limit: 100,
-        offset: 0,
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-      }),
-      services.course.getCourses({
-        limit: 100,
-        offset: 0,
-        sortBy: 'createdAt',
-        sortOrder: 'desc',
-      }),
+      services.academicLevel.getAllStreams(),
+      services.academicLevel.getAllForms(),
       services.grade.getAll({
         limit: 100,
         offset: 0,
@@ -63,8 +51,8 @@ export async function loader({ context }: LoaderFunctionArgs) {
   // Calculate statistics
   const totalStudents = students.length;
   const totalTeachers = teachers.length;
-  const totalDepartments = departments.length;
-  const totalCourses = courses.length;
+  const totalStreams = streams.length;
+  const totalForms = forms.length;
 
   // Calculate average GPA (convert score 0-100 to GPA 0-4.0 scale)
   const validGrades = allGrades.filter((g) => g.score != null && g.score >= 0);
@@ -79,8 +67,8 @@ export async function loader({ context }: LoaderFunctionArgs) {
   // Calculate performance chart data (grade distribution by month)
   const performanceData = calculatePerformanceData(allGrades);
 
-  // Calculate department insights (students per department)
-  const departmentInsights = calculateDepartmentInsights(departments, students);
+  // Calculate stream insights (students per stream)
+  const streamInsights = await calculateStreamInsights(services.academicLevel, streams);
 
   // Get recent student activity
   const recentStudents = students
@@ -130,13 +118,13 @@ export async function loader({ context }: LoaderFunctionArgs) {
           })
         )
       : null;
-  const lastDepartmentUpdate =
-    departments.length > 0
-      ? Math.max(...departments.map((d) => d.createdAt || 0))
+  const lastStreamUpdate =
+    streams.length > 0
+      ? Math.max(...streams.map((s) => s.createdAt || 0))
       : null;
-  const lastCourseUpdate =
-    courses.length > 0
-      ? Math.max(...courses.map((c) => c.createdAt || 0))
+  const lastFormUpdate =
+    forms.length > 0
+      ? Math.max(...forms.map((f) => f.createdAt || 0))
       : null;
   const lastGradeUpdate =
     allGrades.length > 0
@@ -147,19 +135,19 @@ export async function loader({ context }: LoaderFunctionArgs) {
     stats: {
       totalStudents,
       totalTeachers,
-      totalDepartments,
-      totalCourses,
+      totalStreams,
+      totalForms,
       averageGPA,
     },
     statuses: {
       students: formatTimeAgo(lastStudentUpdate),
       teachers: formatTimeAgo(lastTeacherUpdate),
-      departments: formatTimeAgo(lastDepartmentUpdate),
-      courses: formatTimeAgo(lastCourseUpdate),
+      streams: formatTimeAgo(lastStreamUpdate),
+      forms: formatTimeAgo(lastFormUpdate),
       gpa: formatTimeAgo(lastGradeUpdate),
     },
     performanceData,
-    departmentInsights,
+    streamInsights,
     recentStudents,
     activityStats: {
       newThisWeek,
@@ -218,28 +206,46 @@ function calculatePerformanceData(grades: any[]) {
   return data;
 }
 
-// Helper function to calculate department insights
-function calculateDepartmentInsights(departments: any[], students: any[]) {
-  const totalStudentsCount = students.length;
-
-  return departments
-    .map((dept) => {
-      // Count students in this department (assuming students have departmentId or we need to join)
-      // For now, we'll use a simple calculation based on department totalStudent field
-      const studentCount = dept.totalStudent || 0;
-      const percentage =
-        totalStudentsCount > 0
-          ? Math.round((studentCount / totalStudentsCount) * 100)
-          : 0;
-
+// Helper function to calculate stream insights
+async function calculateStreamInsights(
+  academicService: AcademicLevelService,
+  streams: any[]
+) {
+  // Get form classes for each stream to count students
+  const streamInsights = await Promise.all(
+    streams.map(async (stream) => {
+      const formClasses = await academicService.getFormClassesByStreamId(
+        stream.id
+      );
+      const studentCount = formClasses.reduce(
+        (sum, cls) => sum + (cls.studentCount || 0),
+        0
+      );
       return {
-        name: dept.name,
+        name: stream.name,
         students: studentCount,
-        percentage,
+        color: stream.color as 'science' | 'arts' | 'business',
+        levelType: stream.levelType as 'o-level' | 'a-level',
       };
     })
-    .sort((a, b) => b.students - a.students)
-    .slice(0, 5); // Top 5 departments
+  );
+
+  // Calculate total students across all streams
+  const totalStudentsCount = streamInsights.reduce(
+    (sum, s) => sum + s.students,
+    0
+  );
+
+  // Add percentage and sort
+  return streamInsights
+    .map((stream) => ({
+      ...stream,
+      percentage:
+        totalStudentsCount > 0
+          ? Math.round((stream.students / totalStudentsCount) * 100)
+          : 0,
+    }))
+    .sort((a, b) => b.students - a.students);
 }
 
 const Dashboard = () => {
@@ -247,7 +253,7 @@ const Dashboard = () => {
     stats,
     statuses,
     performanceData,
-    departmentInsights,
+    streamInsights,
     recentStudents,
     activityStats,
     notices,
@@ -276,16 +282,16 @@ const Dashboard = () => {
           status={statuses.teachers}
         />
         <StatCard
-          title="Departments"
-          value={stats.totalDepartments.toLocaleString()}
-          icon={Building2}
-          status={statuses.departments}
+          title="Streams"
+          value={stats.totalStreams.toLocaleString()}
+          icon={Layers}
+          status={statuses.streams}
         />
         <StatCard
-          title="Total Courses"
-          value={stats.totalCourses.toLocaleString()}
-          icon={BookOpen}
-          status={statuses.courses}
+          title="Forms"
+          value={stats.totalForms.toLocaleString()}
+          icon={ClipboardList}
+          status={statuses.forms}
         />
         <StatCard
           title="Average GPA"
@@ -300,7 +306,7 @@ const Dashboard = () => {
           <PerformanceChart data={performanceData} />
         </div>
         <div>
-          <DepartmentInsights data={departmentInsights} />
+          <StreamInsights data={streamInsights} />
         </div>
       </div>
 

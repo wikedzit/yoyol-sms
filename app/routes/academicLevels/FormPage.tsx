@@ -97,7 +97,15 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     0
   );
 
-  return { stream, form, level, classes, totalStudents, levelType, levelConfig };
+  return {
+    stream,
+    form,
+    level,
+    classes,
+    totalStudents,
+    levelType,
+    levelConfig,
+  };
 }
 
 // --- Action: handle form class CRUD operations ---
@@ -409,12 +417,6 @@ export default function FormPage() {
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
             Manage and organize classes for {stream.name} – Form {form.number}
           </p>
-
-          {/* small badges under title */}
-          <div className="flex items-center gap-2 mt-2">
-            <LevelBadge level={levelType} size="md" />
-            <StreamBadge stream={stream.color} size="md" />
-          </div>
         </div>
 
         {/* Right Actions */}
