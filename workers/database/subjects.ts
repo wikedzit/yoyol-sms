@@ -1,20 +1,20 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { departments } from './departments';
+import { academicStreams } from './academic-levels';
 
 export const subject = sqliteTable('subjects', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   subjectName: text('subjectName').notNull(),
   code: text('code').notNull().unique(),
-  departments: text('departments').notNull(),
+  stream: text('stream').notNull(), // Stream name (Science, Arts, Business)
   instructor: text('instructor').notNull(),
   description: text('description'),
   enrolledStudents: integer('enrolledStudents').default(0),
   status: text('status').default('Active'),
-  // Foreign Key to Departments table
-  departmentId: integer('department_id')
+  // Foreign Key to Academic Streams table
+  streamId: integer('stream_id')
     .notNull()
-    .references(() => departments.id),
+    .references(() => academicStreams.id),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

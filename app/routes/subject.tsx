@@ -12,13 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Plus, Search, Pencil, Trash2, BookOpen, User } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
-// Service import
+// Service imports
 import type SubjectService from 'workers/services/subjects';
-import type DepartmentService from 'workers/services/departments';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import type TeacherService from 'workers/services/teachers';
 import type TeacherSubjectService from 'workers/services/teacher-subjects';
 import type ClassSubjectService from 'workers/services/class-subjects';
@@ -35,13 +35,12 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
-import { list } from 'isbot';
 
 //Loader — fetch subjects with their teachers and classes from DB
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     subject: SubjectService;
-    department: DepartmentService;
+    academicLevel: AcademicLevelService;
     teacher: TeacherService;
     teacherSubject: TeacherSubjectService;
     classSubject: ClassSubjectService;
@@ -52,12 +51,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortBy: 'createdAt',
     sortOrder: 'asc',
   });
-  const departments = await services.department.getDepartments({
-    limit: 100,
-    offset: 0,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
+
+  // Get all streams for the dropdown
+  const streams = await services.academicLevel.getAllStreams();
 
   // Get all teachers for assignment modal
   const teachers = await services.teacher.getAllTeachers({
@@ -85,7 +81,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
   return {
     subjects: subjectsWithTeachersAndClasses,
-    departments,
+    streams,
     allTeachers: teachers,
   };
 }
@@ -139,17 +135,25 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
     // CREATE
     if (method === 'POST') {
+      const streamIdRaw = form.get('streamId');
+      const streamId = Number(streamIdRaw);
+      
+      // Validate required fields
+      if (!streamIdRaw || isNaN(streamId) || streamId < 1) {
+        return { error: 'Please select a stream for this subject.' };
+      }
+      
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
-        departments: String(form.get('departments') ?? ''),
+        stream: String(form.get('stream') ?? ''),
         instructor: String(form.get('instructor') ?? ''),
         enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
         status: String(form.get('status') ?? '') as 'Active' | 'Inactive',
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
-        departmentId: Number(form.get('departmentId')),
+        streamId,
       };
       const created = await services.subject.createSubject(data);
       if (!created) {
@@ -167,7 +171,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
-        departments: String(form.get('departments') ?? ''),
+        stream: String(form.get('stream') ?? ''),
         instructor: String(form.get('instructor') ?? ''),
         description: form.get('description')
           ? String(form.get('description'))
@@ -198,11 +202,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function SubjectsPage() {
   const {
     subjects: initialSubjects,
-    departments,
+    streams,
     allTeachers,
   } = useLoaderData<{
     subjects: any[];
-    departments: any[];
+    streams: any[];
     allTeachers: any[];
   }>();
   const fetcher = useFetcher();
@@ -263,7 +267,6 @@ export default function SubjectsPage() {
             setSubjects((prev) => prev.filter((s) => s.id !== data.id));
             listMethod.load(window.location.pathname);
             break;
-            listMethod.load(window.location.pathname);
           default:
             toast.success('Action completed successfully.');
         }
@@ -388,7 +391,7 @@ export default function SubjectsPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search students..."
+                placeholder="Search subjects..."
                 className="pl-10 bg-muted/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -416,15 +419,13 @@ export default function SubjectsPage() {
                     <TableHead className="font-semibold">
                       Subject Name
                     </TableHead>
-                    <TableHead className="font-semibold">Department</TableHead>
+                    <TableHead className="font-semibold">Stream</TableHead>
                     <TableHead className="font-semibold">
                       Assigned Teachers
                     </TableHead>
-                    {/* <TableHead className="font-semibold">Classes</TableHead> */}
                     <TableHead className="font-semibold">
                       Enrolled Students
                     </TableHead>
-                    {/* <TableHead className="font-semibold">Description</TableHead> */}
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">
                       Actions
@@ -434,7 +435,7 @@ export default function SubjectsPage() {
                 <TableBody>
                   {paginatedSubjectsList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="h-24 text-center">
+                      <TableCell colSpan={7} className="h-24 text-center">
                         <p className="text-muted-foreground">
                           No subjects found.
                         </p>
@@ -445,7 +446,7 @@ export default function SubjectsPage() {
                       <TableRow key={subject.id}>
                         <TableCell>{subject.code}</TableCell>
                         <TableCell>{subject.subjectName}</TableCell>
-                        <TableCell>{subject.departments}</TableCell>
+                        <TableCell>{subject.stream}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 flex-wrap">
                             {subject.teachers?.length > 0 ? (
@@ -465,29 +466,7 @@ export default function SubjectsPage() {
                             )}
                           </div>
                         </TableCell>
-                        {/* <TableCell>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {subject.classes?.length > 0 ? (
-                              subject.classes.map((classItem: any) => (
-                                <Badge
-                                  key={classItem.id}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {classItem.name}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                No classes
-                              </span>
-                            )}
-                          </div>
-                        </TableCell> */}
                         <TableCell>{subject.enrolledStudents || 0}</TableCell>
-                        {/* <TableCell className="max-w-[200px] truncate">
-                          {subject.description || '—'}
-                        </TableCell> */}
                         <TableCell>
                           <Badge
                             variant={
@@ -545,7 +524,7 @@ export default function SubjectsPage() {
           open={isAddModalOpen}
           setOpen={setIsAddModalOpen}
           fetcher={fetcher}
-          departments={departments}
+          streams={streams}
         />
       )}
 
@@ -555,6 +534,7 @@ export default function SubjectsPage() {
           setOpen={setIsEditModalOpen}
           fetcher={fetcher}
           subject={selectedSubject}
+          streams={streams}
         />
       )}
 

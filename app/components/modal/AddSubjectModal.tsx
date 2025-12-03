@@ -21,17 +21,17 @@ export default function AddSubjectModal({
   open,
   setOpen,
   fetcher,
-  departments,
+  streams,
   id,
 }: any) {
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
-    departments: '',
+    stream: '',
     instructor: '',
     enrolledStudents: 0,
     status: 'Active',
-    departmentId: id || '',
+    streamId: id || '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -43,19 +43,19 @@ export default function AddSubjectModal({
   };
 
   useEffect(() => {
-    if (open && id && departments) {
-      const selectedDept = departments.find(
-        (d: any) => String(d.id) === String(id)
+    if (open && id && streams) {
+      const selectedStream = streams.find(
+        (s: any) => String(s.id) === String(id)
       );
-      if (selectedDept) {
+      if (selectedStream) {
         setFormData((prev) => ({
           ...prev,
-          departmentId: String(id),
-          departments: selectedDept.name,
+          streamId: String(id),
+          stream: selectedStream.name,
         }));
       }
     }
-  }, [open, id, departments]);
+  }, [open, id, streams]);
 
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -64,11 +64,11 @@ export default function AddSubjectModal({
       setFormData({
         subjectName: '',
         code: '',
-        departments: '',
+        stream: '',
         instructor: '',
         enrolledStudents: 0,
         status: 'Active',
-        departmentId: id || '',
+        streamId: id || '',
       });
     }
     if (fetcher.data?.error) {
@@ -90,22 +90,14 @@ export default function AddSubjectModal({
       >
         <fetcher.Form
           method="post"
-          action={id ? `/departments/${id}` : '/subjects'}
+          action="/subjects"
           className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="POST" />
           <input type="hidden" name="_entity" value="subject" />
           <input type="hidden" name="status" value={formData.status} />
-          <input
-            type="hidden"
-            name="departmentId"
-            value={formData.departmentId}
-          />
-          <input
-            type="hidden"
-            name="departments"
-            value={formData.departments}
-          />
+          <input type="hidden" name="streamId" value={formData.streamId} />
+          <input type="hidden" name="stream" value={formData.stream} />
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -131,38 +123,38 @@ export default function AddSubjectModal({
             </div>
           )}
 
-          {/* DEPARTMENT SELECT */}
+          {/* STREAM SELECT */}
           <div className="mb-4 w-full">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Department
+              Stream
             </label>
 
             <Select
-              value={formData.departmentId}
+              value={formData.streamId}
               onValueChange={(value) => {
-                const selectedDept = departments?.find(
-                  (d: any) => String(d.id) === String(value)
+                const selectedStream = streams?.find(
+                  (s: any) => String(s.id) === String(value)
                 );
                 setFormData({
                   ...formData,
-                  departmentId: value,
-                  departments: selectedDept?.name || '',
+                  streamId: value,
+                  stream: selectedStream?.name || '',
                 });
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select department" />
+                <SelectValue placeholder="Select stream" />
               </SelectTrigger>
 
               <SelectContent>
-                {!departments || departments.length === 0 ? (
-                  <SelectItem value="no-dept" disabled>
-                    No departments available
+                {!streams || streams.length === 0 ? (
+                  <SelectItem value="no-stream" disabled>
+                    No streams available
                   </SelectItem>
                 ) : (
-                  departments.map((dept: any) => (
-                    <SelectItem key={dept.id} value={String(dept.id)}>
-                      {dept.name} ({dept.code})
+                  streams.map((stream: any) => (
+                    <SelectItem key={stream.id} value={String(stream.id)}>
+                      {stream.name} ({stream.levelType})
                     </SelectItem>
                   ))
                 )}

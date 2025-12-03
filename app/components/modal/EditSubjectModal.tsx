@@ -9,18 +9,27 @@ import {
   SheetClose,
 } from '~/components/ui/sheet';
 import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
 
 export default function EditSubjectModal({
   open,
   setOpen,
   fetcher,
   subject,
+  streams,
   id,
 }: any) {
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
-    departments: '',
+    stream: '',
+    streamId: '',
     instructor: '',
     description: '',
   });
@@ -32,7 +41,8 @@ export default function EditSubjectModal({
       setFormData({
         subjectName: subject.subjectName || '',
         code: subject.code || '',
-        departments: subject.departments || '',
+        stream: subject.stream || '',
+        streamId: subject.streamId ? String(subject.streamId) : '',
         instructor: subject.instructor || '',
         description: subject.description || '',
       });
@@ -75,12 +85,14 @@ export default function EditSubjectModal({
       >
         <fetcher.Form
           method="post"
-          action={id ? `/departments/${id}` : '/subjects'}
+          action="/subjects"
           className="flex flex-col h-full"
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="_entity" value="subject" />
           <input type="hidden" name="id" value={subject.id} />
+          <input type="hidden" name="streamId" value={formData.streamId} />
+          <input type="hidden" name="stream" value={formData.stream} />
 
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -107,10 +119,42 @@ export default function EditSubjectModal({
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
+            {/* Stream Select */}
+            {streams && streams.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Stream
+                </label>
+                <Select
+                  value={formData.streamId}
+                  onValueChange={(value) => {
+                    const selectedStream = streams?.find(
+                      (s: any) => String(s.id) === String(value)
+                    );
+                    setFormData({
+                      ...formData,
+                      streamId: value,
+                      stream: selectedStream?.name || '',
+                    });
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select stream" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {streams.map((stream: any) => (
+                      <SelectItem key={stream.id} value={String(stream.id)}>
+                        {stream.name} ({stream.levelType})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {[
               { label: 'Subject Name', field: 'subjectName', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Department', field: 'departments', type: 'text' },
               { label: 'Instructor', field: 'instructor', type: 'text' },
             ].map(({ label, field, type }) => (
               <div key={field}>
