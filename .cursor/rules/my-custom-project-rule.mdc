@@ -1,4 +1,0 @@
----
-alwaysApply: true
----
-This project follows modern full-stack TypeScript conventions. The backend is built on Cloudflare Workers using the native Fetch API, with Cloudflare D1 as the database layer managed through Drizzle ORM. The frontend uses React Router v7 with Tailwind CSS for responsive design, Zod for schema validation, and React Hook Form for form handling. Code must be modular, readable, and follow consistent naming patterns (camelCase for variables, PascalCase for components, and snake_case for database fields). Always use async/await for asynchronous operations, strong typing via TypeScript interfaces, and environment variables for secrets. Favor reusable, composable components and a clean folder structure (components/, routes/, lib/, services/, types/, utils/). Validate all data, document logic with concise comments, and follow best practices for performance, security, and accessibility.

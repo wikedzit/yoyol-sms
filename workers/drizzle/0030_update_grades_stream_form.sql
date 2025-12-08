@@ -34,3 +34,4 @@ CREATE INDEX IF NOT EXISTS idx_grades_stream_id ON grades(stream_id);
 CREATE INDEX IF NOT EXISTS idx_grades_form_id ON grades(form_id);
 CREATE INDEX IF NOT EXISTS idx_grades_teacher_id ON grades(teacher_id);
 
+
