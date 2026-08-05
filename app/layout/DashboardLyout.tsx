@@ -18,7 +18,7 @@ import {
 export async function loader({ request, context }: any) {
   const cookieHeader = request.headers.get('Cookie');
   const token = await authCookie.parse(cookieHeader || '');
-
+9
   if (!token) {
     return redirect('/auth/login');
   }

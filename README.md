@@ -71,7 +71,25 @@ Open the local URL (usually `http://localhost:5173`) and sign in with the seed c
 | `pnpm db:migrate-prod` | Apply D1 migrations (remote) |
 | `pnpm build` | Production build |
 | `pnpm deploy` | Build + deploy to Cloudflare |
-| `pnpm typecheck` | Generate types + TypeScript check |
+| `pnpm typecheck` |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ Generate types + TypeScript check |
 
 ## Database notes
 
