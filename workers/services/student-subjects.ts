@@ -1,5 +1,5 @@
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, getTableColumns } from 'drizzle-orm';
 import { studentSubjects, subject, type SelectSubject } from 'workers/database';
 
 export default class StudentSubjectService {
@@ -90,19 +90,7 @@ export default class StudentSubjectService {
   async getSubjectsByStudent(studentId: number): Promise<SelectSubject[]> {
     try {
       const results = await this.db
-        .select({
-          id: subject.id,
-          subjectName: subject.subjectName,
-          code: subject.code,
-          departments: subject.departments,
-          instructor: subject.instructor,
-          description: subject.description,
-          enrolledStudents: subject.enrolledStudents,
-          status: subject.status,
-          departmentId: subject.departmentId,
-          createdAt: subject.createdAt,
-          updatedAt: subject.updatedAt,
-        })
+        .select(getTableColumns(subject))
         .from(studentSubjects)
         .innerJoin(subject, eq(studentSubjects.subjectId, subject.id))
         .where(eq(studentSubjects.studentId, studentId))
