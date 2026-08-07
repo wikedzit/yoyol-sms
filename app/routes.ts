@@ -42,6 +42,11 @@ const routes: RouteConfig = [
         ),
       ]),
 
+      ...prefix('schools', [
+        route('profile', './routes/schools/profile.tsx'),
+        route('academic-year', './routes/schools/academic-year.tsx'),
+      ]),
+
       route('students', './routes/students.tsx'),
       route('classes', './routes/classes.tsx'),
       route('classes/:classId', './routes/classes.$classId.tsx'),

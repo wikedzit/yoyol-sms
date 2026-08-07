@@ -26,8 +26,17 @@ const mainNavigation = [
     ],
   },
 
-  { name: 'Classrooms', href: '/classes', icon: DoorOpen },
-  { name: 'Subjects', href: '/subjects', icon: FileText },
+  {
+    name: 'Schools Setup',
+    icon: Building2,
+    children: [
+      { name: 'School Profile', href: '/schools/profile' },
+      { name: 'Academic Year', href: '/schools/academic-year' },
+      { name: 'Subjects', href: '/subjects', icon: FileText },
+      { name: 'Classrooms', href: '/classes', icon: DoorOpen },
+    ],
+  },
+
   { name: 'Students List', href: '/students', icon: GraduationCap },
   { name: 'Teachers', href: '/teachers', icon: Users },
   { name: 'Grades', href: '/grades', icon: GraduationCap },
