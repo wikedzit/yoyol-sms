@@ -1,4 +1,4 @@
-CREATE TABLE `notices` (
+CREATE TABLE IF NOT EXISTS `notices` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`description` text NOT NULL,

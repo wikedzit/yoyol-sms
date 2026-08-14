@@ -1,4 +1,4 @@
-CREATE TABLE `semesters` (
+CREATE TABLE IF NOT EXISTS `semesters` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`semester_number` integer NOT NULL,
 	`name` text NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE `semesters` (
 	FOREIGN KEY (`year_id`) REFERENCES `years`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `semester_subjects` (
+CREATE TABLE IF NOT EXISTS `semester_subjects` (
 	`semester_id` integer NOT NULL,
 	`subject_id` integer NOT NULL,
 	`assigned_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
