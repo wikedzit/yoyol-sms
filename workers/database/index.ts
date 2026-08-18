@@ -10,3 +10,4 @@ export * from './student-subjects';
 export * from './grades';
 export * from './notices';
 export * from './academic-levels';
+export * from './academic-years';
