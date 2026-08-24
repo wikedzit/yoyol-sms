@@ -1,2 +1,6 @@
 allowBuilds:
   esbuild: true
+  workerd: true
+minimumReleaseAgeExclude:
+  - baseline-browser-mapping@2.11.12
+  - tsx@4.23.12
