@@ -276,7 +276,7 @@ export default function AcademicYearPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Active Year
                 </p>
-                <p className="text-2xl font-bold text-foreground">
+               <p className="text-2xl font-bold text-foreground">
                   {activeYear ? activeYear.name : 'None set'}
                 </p>
               </div>
