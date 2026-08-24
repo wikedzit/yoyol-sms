@@ -24,13 +24,15 @@ import ManageTermsModal from '~/components/modal/ManageTermsModal';
 
 import type AcademicYearService from 'workers/services/academic-years';
 
+// --- Loader ---
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as { academicYear: AcademicYearService };
-  const years = await services.academicYear.getAllYearsWithTerms();
   const currentTerm = await services.academicYear.getCurrentTerm();
+  const years = await services.academicYear.getAllYearsWithTerms();
   return { years, currentTerm };
 }
 
+// --- Action ---
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { academicYear: AcademicYearService };
   const form = await request.formData();
@@ -38,6 +40,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const actionType = form.get('action') as string | null;
 
   try {
+    // ---- ACADEMIC YEAR ----
     if (actionType === 'year_create') {
       const data = {
         name: String(form.get('name') ?? ''),
@@ -87,6 +90,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, action: 'year_delete', id };
     }
 
+    // ---- TERMS ----
     if (actionType === 'term_create') {
       const data = {
         academicYearId: Number(form.get('academicYearId')),
@@ -141,6 +145,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 
+// --- Page ---
 export default function AcademicYearPage() {
   const { years: initialYears, currentTerm: initialCurrentTerm } = useLoaderData<{
     years: any[];
@@ -157,17 +162,22 @@ export default function AcademicYearPage() {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<any>(null);
 
+  // Track which action is in flight so we know how to react on completion.
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
       lastAction.current = (fetcher.formData.get('action') as string) || null;
     }
   }, [fetcher.state, fetcher.formData]);
 
+  // React to top-level (year) mutations. Term mutations are handled inside
+  // ManageTermsModal itself, since it owns the terms list for one year.
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
 
       if (data.error) {
+        // Only surface as a page-level toast for year actions; term errors
+        // are shown inline inside ManageTermsModal.
         if (lastAction.current?.startsWith('year_')) {
           toast.error(data.error);
         }
@@ -193,6 +203,7 @@ export default function AcademicYearPage() {
             setYears((prev) => prev.filter((y) => y.id !== data.id));
             break;
           default:
+            // term_* actions: keep the years list in sync silently.
             if (data.action?.startsWith('term_')) {
               listMethod.load(window.location.pathname);
             }
@@ -202,6 +213,7 @@ export default function AcademicYearPage() {
     }
   }, [fetcher.state, fetcher.data]);
 
+  // Refresh local state whenever we reload the list.
   useEffect(() => {
     if (listMethod.state === 'idle' && listMethod.data?.years) {
       setYears(listMethod.data.years);
@@ -228,14 +240,6 @@ export default function AcademicYearPage() {
     setIsTermsOpen(true);
   };
 
-  const handleSetActive = (year: any) => {
-    const fd = new FormData();
-    fd.set('_method', 'POST');
-    fd.set('action', 'year_set_active');
-    fd.set('id', String(year.id));
-    fetcher.submit(fd, { method: 'post', action: '/schools/academic-year' });
-  };
-
   const { currentPage, totalPages, paginatedItems: paginatedYears, goToPage } =
     usePagination(years, 10);
 
@@ -250,7 +254,7 @@ export default function AcademicYearPage() {
       <div className="space-y-6">
         <PageHeader
           title="Academic Year"
-          description="Add your academic years, terms, and active periods"
+          description="Configure academic years, terms, and active periods"
           actions={
             <Button
               onClick={() => setIsAddOpen(true)}
@@ -288,7 +292,11 @@ export default function AcademicYearPage() {
                   Current Term
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {currentTerm ? currentTerm.name : 'None set'}
+                  {currentTerm?.status === 'in_term'
+                    ? currentTerm.term.name
+                    : currentTerm?.status === 'break'
+                      ? 'Holiday Break'
+                      : 'None set'}
                 </p>
               </div>
             </div>
@@ -350,16 +358,6 @@ export default function AcademicYearPage() {
                         <TableCell>{year.terms?.length || 0}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {year.status !== 'active' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                title="Set as active year"
-                                onClick={() => handleSetActive(year)}
-                              >
-                                Set Active
-                              </Button>
-                            )}
                             <Button
                               variant="ghost"
                               size="icon"
