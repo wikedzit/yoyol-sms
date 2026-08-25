@@ -1,4 +1,4 @@
-import { eq, and, ne, lte, gte } from 'drizzle-orm';
+import { eq, and, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   academicYears,
@@ -79,6 +79,31 @@ export type UpdateAcademicYearInput = z.infer<typeof UpdateAcademicYearSchema>;
 export type CreateTermInput = z.infer<typeof CreateTermSchema>;
 export type UpdateTermInput = z.infer<typeof UpdateTermSchema>;
 
+// --- Date-matching helpers (dates are stored as 'YYYY-MM-DD', which sorts
+// and compares correctly as plain strings, so no Date parsing is needed) ---
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function findYearForDate(
+  years: SelectAcademicYear[],
+  date: string
+): SelectAcademicYear | null {
+  return years.find((y) => y.startDate <= date && date <= y.endDate) || null;
+}
+
+function findTermForDate(termList: SelectTerm[], date: string): SelectTerm | null {
+  return termList.find((t) => t.startDate <= date && date <= t.endDate) || null;
+}
+
+// The result of asking "what's the current term right now?" — distinguishes
+// a real holiday gap between terms from there being no data at all yet.
+export type CurrentTermStatus =
+  | { term: SelectTerm; status: 'in_term' }
+  | { term: null; status: 'break' }
+  | { term: null; status: 'unset' };
+
 export default class AcademicYearService {
   private db: DrizzleD1Database;
 
@@ -139,14 +164,29 @@ export default class AcademicYearService {
     }
   }
 
+  /**
+   * Returns the active academic year. Before returning, checks whether
+   * today's date actually falls inside a different year's date range, and
+   * if so, silently switches to that year (auto-archiving the old one) —
+   * so nobody has to click "Set Active" by hand once dates are entered.
+   *
+   * If today falls in a gap between two years (e.g. the old year ended and
+   * the new one hasn't officially started yet), the previously active year
+   * is left active rather than clearing it, so the rest of the system
+   * always has an active year to work with.
+   */
   async getActiveYear(): Promise<SelectAcademicYear | null> {
     try {
-      const result = await this.db
-        .select()
-        .from(academicYears)
-        .where(eq(academicYears.status, 'active'))
-        .get();
-      return result || null;
+      const years = await this.getAllYears();
+      const today = todayISO();
+      const todaysYear = findYearForDate(years, today);
+      const storedActive = years.find((y) => y.status === 'active') || null;
+
+      if (todaysYear && todaysYear.id !== storedActive?.id) {
+        return await this.setActiveYear(todaysYear.id);
+      }
+
+      return storedActive;
     } catch (error) {
       console.error('Error fetching active academic year:', error);
       return null;
@@ -294,37 +334,45 @@ export default class AcademicYearService {
   }
 
   /**
-   * Returns the current term: the one manually flagged current, or if none
-   * is flagged, the term of the active year whose date range contains today.
+   * Returns the current term, self-healing as it goes: if today's date
+   * actually falls inside a different term than whichever one is flagged
+   * current, it silently switches to the correct one. If today falls in a
+   * gap between two terms (a holiday break), any stale "current" flag is
+   * cleared and status: 'break' is returned instead of guessing.
    */
-  async getCurrentTerm(): Promise<SelectTerm | null> {
+  async getCurrentTerm(): Promise<CurrentTermStatus> {
     try {
-      const flagged = await this.db
-        .select()
-        .from(terms)
-        .where(eq(terms.isCurrent, true))
-        .get();
-      if (flagged) return flagged;
-
       const activeYear = await this.getActiveYear();
-      if (!activeYear) return null;
+      if (!activeYear) return { term: null, status: 'unset' };
 
-      const today = new Date().toISOString().slice(0, 10);
-      const byDate = await this.db
-        .select()
-        .from(terms)
-        .where(
-          and(
-            eq(terms.academicYearId, activeYear.id),
-            lte(terms.startDate, today),
-            gte(terms.endDate, today)
-          )
-        )
-        .get();
-      return byDate || null;
+      const yearTerms = await this.getTermsByYearId(activeYear.id);
+      if (yearTerms.length === 0) return { term: null, status: 'unset' };
+
+      const today = todayISO();
+      const todaysTerm = findTermForDate(yearTerms, today);
+      const storedCurrent = yearTerms.find((t) => t.isCurrent) || null;
+
+      if (todaysTerm) {
+        if (todaysTerm.id !== storedCurrent?.id) {
+          const updated = await this.setCurrentTerm(todaysTerm.id);
+          if (updated && !('error' in updated)) {
+            return { term: updated, status: 'in_term' };
+          }
+        }
+        return { term: todaysTerm, status: 'in_term' };
+      }
+
+      // Today doesn't fall inside any term for the active year — a break.
+      if (storedCurrent) {
+        await this.db
+          .update(terms)
+          .set({ isCurrent: false, updatedAt: Date.now() })
+          .where(eq(terms.isCurrent, true));
+      }
+      return { term: null, status: 'break' };
     } catch (error) {
       console.error('Error resolving current term:', error);
-      return null;
+      return { term: null, status: 'unset' };
     }
   }
 

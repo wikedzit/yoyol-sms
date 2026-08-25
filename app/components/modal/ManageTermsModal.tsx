@@ -1,4 +1,4 @@
-import { X, Plus, Pencil, Trash2, Check, Star } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
@@ -123,14 +123,6 @@ export default function ManageTermsModal({
     fetcher.submit(fd, { method: 'post', action: '/schools/academic-year' });
   };
 
-  const setCurrent = (id: number) => {
-    const fd = new FormData();
-    fd.set('_method', 'POST');
-    fd.set('action', 'term_set_current');
-    fd.set('id', String(id));
-    fetcher.submit(fd, { method: 'post', action: '/schools/academic-year' });
-  };
-
   const deleteTerm = (id: number) => {
     const fd = new FormData();
     fd.set('_method', 'DELETE');
@@ -168,8 +160,9 @@ export default function ManageTermsModal({
         {!isActiveYear && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-sm text-blue-700">
-              This year isn&apos;t active, so its terms can&apos;t be marked as the
-              current term. You can still add, edit, and remove terms.
+              This year isn&apos;t active yet. Once its start date arrives, it
+              will become the active year automatically, and its terms will
+              take over as the current term based on their own dates.
             </p>
           </div>
         )}
@@ -246,22 +239,6 @@ export default function ManageTermsModal({
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      {!term.isCurrent && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          title={
-                            isActiveYear
-                              ? 'Mark as current term'
-                              : 'Only terms in the active year can be marked current'
-                          }
-                          disabled={!isActiveYear}
-                          onClick={() => setCurrent(term.id)}
-                        >
-                          <Star className="h-4 w-4" />
-                        </Button>
-                      )}
                       <Button
                         type="button"
                         variant="ghost"
