@@ -13,6 +13,7 @@ import NoticeService from './notices';
 import LoginService from './auth.server';
 import AcademicLevelService from './academic-levels';
 import SchoolService from './school';
+import AcademicYearService from './academic-years';
 
 /**
  * Service Container that aggregates all individual services
@@ -32,6 +33,7 @@ export default class ServiceContainer {
   public readonly notice: NoticeService;
   public readonly academicLevel: AcademicLevelService;
   public readonly school: SchoolService;
+  public readonly academicYear: AcademicYearService;
   private db: DrizzleD1Database;
 
   constructor(database: D1Database, jwtSecret: string) {
@@ -50,6 +52,7 @@ export default class ServiceContainer {
     this.notice = new NoticeService(this.db);
     this.academicLevel = new AcademicLevelService(this.db);
     this.school = new SchoolService(this.db);
+    this.academicYear = new AcademicYearService(this.db);
   }
 
   /**
@@ -71,6 +74,7 @@ export default class ServiceContainer {
       notice: this.notice,
       academicLevel: this.academicLevel,
       school: this.school,
+      academicYear: this.academicYear,
     };
   }
 
@@ -96,6 +100,7 @@ export default class ServiceContainer {
       notice: true,
       academicLevel: true,
       school: true,
+      academicYear: true,
     };
 
     // Check if all services are available

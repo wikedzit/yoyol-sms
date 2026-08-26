@@ -39,7 +39,7 @@ export async function action({ request, context }: any) {
 }
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showpassword, setshowpassword] = useState(false);
   const fetcher = useFetcher();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === 'submitting';
