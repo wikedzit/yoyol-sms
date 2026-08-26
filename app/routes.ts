@@ -40,12 +40,15 @@ const routes: RouteConfig = [
           './routes/academicLevels/FormPage.tsx',
           { id: 'a-level-form' }
         ),
+      
       ]),
 
-      ...prefix('schools', [
-        route('profile', './routes/schools/profile.tsx'),
-        route('academic-year', './routes/schools/academic-year.tsx'),
-      ]),
+...prefix('schools', [
+  route('profile', './routes/schools/profile.tsx'),
+  route('new', './routes/schools/new.tsx'),
+  route(':schoolId', './routes/schools/detail.tsx', { id: 'school-profile' }),
+  route('academic-year', './routes/schools/academic-year.tsx'),
+]),
 
       route('students', './routes/students.tsx'),
       route('classes', './routes/classes.tsx'),

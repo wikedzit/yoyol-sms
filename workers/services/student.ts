@@ -38,6 +38,11 @@ const CreateStudentSchema = z.object({
     (v) => (v ? Number(v) : undefined),
     z.number().optional()
   ),
+  // Which school this student belongs to — REQUIRED for new students
+  schoolId: z.preprocess(
+    (v) => (v ? Number(v) : undefined),
+    z.number({ required_error: 'Please select a school' })
+  ),
   status: z.enum(['Active', 'Pending', 'Inactive']).default('Active'),
 });
 
@@ -199,6 +204,51 @@ export default class StudentService {
       return result.length;
     } catch (error) {
       console.error('Error counting students by formClassId:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Count ALL students in the database (all schools combined)
+   */
+  async countAll(): Promise<number> {
+    try {
+      const result = await this.db.select().from(students);
+      return result.length;
+    } catch (error) {
+      console.error('Error counting students:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Wanafunzi wa shule maalum (kwa School Detail page)
+   */
+  async getBySchoolId(schoolId: number): Promise<SelectStudent[]> {
+    try {
+      return await this.db
+        .select()
+        .from(students)
+        .where(eq(students.schoolId, schoolId))
+        .orderBy(asc(students.firstName), asc(students.lastName));
+    } catch (error) {
+      console.error('Error fetching students by schoolId:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Idadi ya wanafunzi wa shule maalum (kwa Stats card kwenye School Detail)
+   */
+  async countBySchoolId(schoolId: number): Promise<number> {
+    try {
+      const result = await this.db
+        .select()
+        .from(students)
+        .where(eq(students.schoolId, schoolId));
+      return result.length;
+    } catch (error) {
+      console.error('Error counting students by schoolId:', error);
       return 0;
     }
   }

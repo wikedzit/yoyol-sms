@@ -30,7 +30,7 @@ const mainNavigation = [
     name: 'Schools Setup',
     icon: Building2,
     children: [
-      { name: 'School Profile', href: '/schools/profile' },
+     { name: 'School Profile', href: '/schools/profile' },
       { name: 'Academic Year', href: '/schools/academic-year' },
       { name: 'Subjects', href: '/subjects', icon: FileText },
       { name: 'Classrooms', href: '/classes', icon: DoorOpen },

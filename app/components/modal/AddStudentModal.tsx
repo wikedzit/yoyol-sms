@@ -18,11 +18,17 @@ import {
 } from '~/components/ui/select';
 import type { FetcherWithComponents } from 'react-router';
 
+interface SchoolOption {
+  id: number;
+  name: string;
+}
+
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   classId: string | { id: string } | undefined;
   fetcher: FetcherWithComponents<any>;
+  schools?: SchoolOption[];
 }
 
 export default function AddStudentModal({
@@ -30,18 +36,19 @@ export default function AddStudentModal({
   setOpen,
   classId,
   fetcher,
+  schools = [],
 }: AddStudentModalProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    // course: '',
     phone: '',
     enrollmentDate: '',
     dob: '',
     address: '',
     gender: undefined,
     status: undefined,
+    schoolId: undefined,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,13 +62,13 @@ export default function AddStudentModal({
         firstName: '',
         lastName: '',
         email: '',
-        // course: '',
         phone: '',
         enrollmentDate: '',
         dob: '',
         address: '',
         gender: undefined,
         status: undefined,
+        schoolId: undefined,
       });
     }
   }, [open]);
@@ -110,11 +117,41 @@ export default function AddStudentModal({
 
             {/* Form fields */}
             <div className="space-y-4">
+              {/* School (dynamic, dropdown ya shule) - LAZIMA */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  School <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={formData.schoolId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, schoolId: value })
+                  }
+                  name="schoolId"
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {schools.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    No schools available. Please add a school first.
+                  </p>
+                )}
+              </div>
+
               {[
                 'firstName',
                 'lastName',
                 'email',
-                // 'course',
                 'phone',
                 'enrollmentDate',
                 'dob',

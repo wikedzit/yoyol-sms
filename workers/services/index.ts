@@ -12,6 +12,7 @@ import GradeService from './grades';
 import NoticeService from './notices';
 import LoginService from './auth.server';
 import AcademicLevelService from './academic-levels';
+import SchoolService from './school';
 import AcademicYearService from './academic-years';
 
 /**
@@ -31,6 +32,7 @@ export default class ServiceContainer {
   public readonly grade: GradeService;
   public readonly notice: NoticeService;
   public readonly academicLevel: AcademicLevelService;
+  public readonly school: SchoolService;
   public readonly academicYear: AcademicYearService;
   private db: DrizzleD1Database;
 
@@ -49,6 +51,7 @@ export default class ServiceContainer {
     this.grade = new GradeService(this.db);
     this.notice = new NoticeService(this.db);
     this.academicLevel = new AcademicLevelService(this.db);
+    this.school = new SchoolService(this.db);
     this.academicYear = new AcademicYearService(this.db);
   }
 
@@ -70,6 +73,7 @@ export default class ServiceContainer {
       grade: this.grade,
       notice: this.notice,
       academicLevel: this.academicLevel,
+      school: this.school,
       academicYear: this.academicYear,
     };
   }
@@ -95,6 +99,7 @@ export default class ServiceContainer {
       grade: true,
       notice: true,
       academicLevel: true,
+      school: true,
       academicYear: true,
     };
 
