@@ -1,0 +1,1 @@
+ALTER TABLE `students` ADD `school_id` integer REFERENCES school(id);

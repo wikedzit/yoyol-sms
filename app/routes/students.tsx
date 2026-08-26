@@ -30,16 +30,18 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router-dom';
 import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type StudentSubjectService from 'workers/services/student-subjects';
+import type SchoolService from 'workers/services/school';
 import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 
-// 🧠 Loader – fetch students with their assigned subjects
+// 🧠 Loader – fetch students with their assigned subjects + schools list
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     student: StudentService;
     subject: SubjectService;
     studentSubjects: StudentSubjectService;
+    school: SchoolService;
   };
 
   const students = await services.student?.getAll({
@@ -57,6 +59,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
+  // Get all schools for the "Add Student" school dropdown
+  const schools = await services.school?.getAll();
+
   // Get subjects for each student
   const studentsWithSubjects = await Promise.all(
     students.map(async (student) => {
@@ -72,6 +77,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   return {
     students: studentsWithSubjects,
     allSubjects: subjects,
+    schools,
   };
 }
 
@@ -103,7 +109,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
     // --- CREATE STUDENT ---
     if (method === 'POST') {
-      // Convert FormDataEntryValue | null to the expected string/union types.
       const data = {
         firstName: String(form.get('firstName') ?? ''),
         lastName: String(form.get('lastName') ?? ''),
@@ -129,6 +134,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
           ? String(form.get('enrollmentDate'))
           : undefined,
         classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        schoolId: form.get('schoolId')
+          ? String(form.get('schoolId'))
+          : undefined,
         status: String(form.get('status') ?? 'Active') as
           | 'Active'
           | 'Pending'
@@ -136,6 +144,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
 
       const created = await services.student.create(data);
+
+      if (!created) {
+        return new Response(
+          JSON.stringify({
+            error:
+              'Failed to add student. Please make sure a school is selected.',
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
       return new Response(JSON.stringify({ success: true, student: created }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -180,6 +199,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
           : undefined,
 
         classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        schoolId: form.get('schoolId')
+          ? String(form.get('schoolId'))
+          : undefined,
         status: String(form.get('status') ?? 'Active') as
           | 'Active'
           | 'Pending'
@@ -218,10 +240,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
     );
   }
 }
+
 export default function Students() {
-  const { students: initialStudents, allSubjects } = useLoaderData() as {
+  const {
+    students: initialStudents,
+    allSubjects,
+    schools,
+  } = useLoaderData() as {
     students: any[];
     allSubjects: any[];
+    schools: any[];
   };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
@@ -361,8 +389,6 @@ export default function Students() {
                   <TableHead className="font-semibold">First name</TableHead>
                   <TableHead className="font-semibold">Last name</TableHead>
                   <TableHead className="font-semibold">Email</TableHead>
-                  {/* <TableHead className="font-semibold">Course</TableHead> */}
-                  {/* <TableHead className="font-semibold">Grade</TableHead> */}
                   <TableHead className="font-semibold">
                     Assigned Subjects
                   </TableHead>
@@ -385,12 +411,6 @@ export default function Students() {
                     <TableCell className="text-muted-foreground">
                       {student.email}
                     </TableCell>
-                    {/* <TableCell>{student.course}</TableCell> */}
-                    {/* <TableCell>
-                    <Badge variant="outline" className="border-none">
-                      {student.grade}
-                    </Badge>
-                  </TableCell> */}
                     <TableCell>
                       <div className="flex items-center gap-2 flex-wrap">
                         {student.subjects?.length > 0 ? (
@@ -475,6 +495,7 @@ export default function Students() {
           open={addStudentModalOpen}
           setOpen={setAddStudentModalOpen}
           fetcher={fetcher}
+          schools={schools}
         />
       )}
 

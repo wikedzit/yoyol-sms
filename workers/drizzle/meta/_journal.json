@@ -218,6 +218,20 @@
       "when": 1764740938877,
       "tag": "0030_useful_clint_barton",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1787133142081,
+      "tag": "0031_opposite_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1787564924900,
+      "tag": "0032_regular_wonder_man",
+      "breakpoints": true
     }
   ]
 }

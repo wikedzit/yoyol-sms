@@ -12,6 +12,7 @@ import GradeService from './grades';
 import NoticeService from './notices';
 import LoginService from './auth.server';
 import AcademicLevelService from './academic-levels';
+import SchoolService from './school';
 
 /**
  * Service Container that aggregates all individual services
@@ -30,6 +31,7 @@ export default class ServiceContainer {
   public readonly grade: GradeService;
   public readonly notice: NoticeService;
   public readonly academicLevel: AcademicLevelService;
+  public readonly school: SchoolService;
   private db: DrizzleD1Database;
 
   constructor(database: D1Database, jwtSecret: string) {
@@ -47,6 +49,7 @@ export default class ServiceContainer {
     this.grade = new GradeService(this.db);
     this.notice = new NoticeService(this.db);
     this.academicLevel = new AcademicLevelService(this.db);
+    this.school = new SchoolService(this.db);
   }
 
   /**
@@ -67,6 +70,7 @@ export default class ServiceContainer {
       grade: this.grade,
       notice: this.notice,
       academicLevel: this.academicLevel,
+      school: this.school,
     };
   }
 
@@ -91,6 +95,7 @@ export default class ServiceContainer {
       grade: true,
       notice: true,
       academicLevel: true,
+      school: true,
     };
 
     // Check if all services are available
