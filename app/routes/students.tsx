@@ -64,15 +64,19 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
   // Get subjects for each student
   const studentsWithSubjects = await Promise.all(
-    students.map(async (student) => {
-      const assignedSubjects =
-        await services.studentSubjects?.getSubjectsByStudent(student.id);
-      return {
-        ...student,
-        subjects: assignedSubjects || [],
-      };
-    })
-  );
+  students.map(async (student) => {
+    const assignedSubjects =
+      await services.studentSubjects?.getSubjectsByStudent(student.id);
+    const school = schools?.find(
+      (school) => String(school.id) === String(student.schoolId)
+    );
+    return {
+      ...student,
+      subjects: assignedSubjects || [],
+      schoolName: school?.name || 'Not assigned',
+    };
+  })
+);
 
   return {
     students: studentsWithSubjects,
