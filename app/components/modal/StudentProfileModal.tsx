@@ -1,3 +1,4 @@
+import { useState } from 'react'; 
 import {
   Dialog,
   DialogContent,
@@ -9,14 +10,40 @@ import {
 import { Button } from '~/components/ui/button';
 import { Eye } from 'lucide-react';
 
-export function StudentProfilesModal({ student }: { student: any }) {
+
+interface StudentProfilesModalProps {
+  student: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}
+
+export function StudentProfilesModal({
+  student,
+  open,
+  onOpenChange,
+  showTrigger = true, 
+}: StudentProfilesModalProps) {
+  // new
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // new
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+  const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
+
+  // 
+  if (!student) return null;
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
-          <Eye className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {showTrigger && ( 
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <Eye className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -51,10 +78,6 @@ export function StudentProfilesModal({ student }: { student: any }) {
             <p>
               <strong>Course:</strong> {student.course}
             </p>
-            {/* for later */}
-            {/* <p>
-              <strong>Grade:</strong> {student.grade}
-            </p> */}
             <p>
               <strong>Email:</strong> {student.email}
             </p>
