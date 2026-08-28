@@ -87,6 +87,9 @@ export function StudentProfilesModal({
             <p>
               <strong>Address:</strong> {student.address}
             </p>
+            <p>
+                <strong>School:</strong> {student.schoolName}
+            </p>
           </div>
         </div>
       </DialogContent>
