@@ -107,6 +107,20 @@ export default class StudentService {
     }
   }
 
+  async getByEmail(email: string): Promise<SelectStudent | null> {
+    try {
+      const result = await this.db
+        .select()
+        .from(students)
+        .where(eq(students.email, email))
+        .get();
+      return result || null;
+    } catch (error) {
+      console.error('Error fetching student by email:', error);
+      return null;
+    }
+  }
+
   async getAll(options: GetStudentsInput): Promise<SelectStudent[]> {
     try {
       const { limit, offset, sortBy, sortOrder, search } =

@@ -76,6 +76,20 @@ export default class TeacherService {
     }
   }
 
+  async getTeacherByEmail(email: string): Promise<SelectTeacher | null> {
+    try {
+      const result = await this.db
+        .select()
+        .from(teachers)
+        .where(eq(teachers.email, email))
+        .get();
+      return result || null;
+    } catch (error) {
+      console.error('Error fetching teacher by email:', error);
+      return null;
+    }
+  }
+
   async getAllTeachers(options?: GetTeachersInput): Promise<SelectTeacher[]> {
     try {
       const {

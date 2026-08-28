@@ -51,6 +51,7 @@ const routes: RouteConfig = [
 ]),
 
       route('students', './routes/students.tsx'),
+      route('profile', './routes/profile.tsx'),
       route('classes', './routes/classes.tsx'),
       route('classes/:classId', './routes/classes.$classId.tsx'),
       route('subjects', './routes/subject.tsx'),
