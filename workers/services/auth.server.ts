@@ -82,6 +82,36 @@ export default class LoginService {
 
     return payload;
   }
+
+  // UPDATE NAME (used for account holders with no linked teacher/student
+  // record — e.g. Admin, Finance — whose only name lives on `users`)
+  async updateName(id: number, firstName: string, lastName: string) {
+    const result = await this.db
+      .update(users)
+      .set({ firstName, lastName, updatedAt: Date.now() })
+      .where(eq(users.id, id))
+      .returning()
+      .get();
+
+    return result || null;
+  }
+
+  // CHANGE PASSWORD
+  async changePassword(id: number, currentPassword: string, newPassword: string) {
+    const user = await this.db.select().from(users).where(eq(users.id, id)).get();
+    if (!user) return { error: 'User not found' };
+
+    const match = await verifyPassword(currentPassword, user.passwordHash);
+    if (!match) return { error: 'Current password is incorrect' };
+
+    const passwordHash = await hashPassword(newPassword);
+    await this.db
+      .update(users)
+      .set({ passwordHash, updatedAt: Date.now() })
+      .where(eq(users.id, id));
+
+    return { success: true };
+  }
 }
 function sign(
   arg0: { id: number; role: string | null },

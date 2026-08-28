@@ -6,6 +6,8 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: text('role').default('admin'), // optional: 'admin', 'teacher', 'student', etc.
+  firstName: text('first_name'),
+  lastName: text('last_name'),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
