@@ -38,6 +38,7 @@ export default function AddStudentModal({
   fetcher,
   schools = [],
 }: AddStudentModalProps) {
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -54,6 +55,23 @@ export default function AddStudentModal({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+  if (fetcher.state === 'idle' && fetcher.data?.success) {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      enrollmentDate: '',
+      dob: '',
+      address: '',
+      gender: undefined,
+      status: undefined,
+      schoolId: undefined,
+    });
+  }
+}, [fetcher.state, fetcher.data]);
 
   // Reset form when modal closes
   useEffect(() => {
