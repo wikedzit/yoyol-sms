@@ -51,7 +51,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all subjects for assignment modal
   const subjects = await services.subject?.getAllSubjects({
     limit: 100,
     offset: 0,
@@ -59,20 +58,22 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all schools for the "Add Student" school dropdown
   const schools = await services.school?.getAll();
 
-  // Get subjects for each student
   const studentsWithSubjects = await Promise.all(
-    students.map(async (student) => {
-      const assignedSubjects =
-        await services.studentSubjects?.getSubjectsByStudent(student.id);
-      return {
-        ...student,
-        subjects: assignedSubjects || [],
-      };
-    })
-  );
+  students.map(async (student) => {
+    const assignedSubjects =
+      await services.studentSubjects?.getSubjectsByStudent(student.id);
+    const school = schools?.find(
+      (school) => String(school.id) === String(student.schoolId)
+    );
+    return {
+      ...student,
+      subjects: assignedSubjects || [],
+      schoolName: school?.name || 'Not assigned',
+    };
+  })
+);
 
   return {
     students: studentsWithSubjects,
@@ -92,7 +93,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const action = form.get('action') as string | null;
 
   try {
-    // --- ASSIGN SUBJECTS TO STUDENT ---
     if (action === 'assign_subjects') {
       const studentId = Number(form.get('studentId'));
       const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
@@ -107,7 +107,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
       return { success: true, action: 'assign_subjects' };
     }
-    // --- CREATE STUDENT ---
+
     if (method === 'POST') {
       const data = {
         firstName: String(form.get('firstName') ?? ''),
@@ -160,7 +160,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       });
     }
 
-    // --- UPDATE STUDENT ---
     if (method === 'PUT') {
       const id = form.get('id');
       if (!id) {
@@ -197,7 +196,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrollmentDate: form.get('enrollmentDate')
           ? String(form.get('enrollmentDate'))
           : undefined,
-
         classId: form.get('classId') ? String(form.get('classId')) : undefined,
         schoolId: form.get('schoolId')
           ? String(form.get('schoolId'))
@@ -212,7 +210,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, student: updated };
     }
 
-    // --- DELETE STUDENT ---
     if (method === 'DELETE') {
       const id = form.get('id');
       if (!id) {
@@ -261,6 +258,10 @@ export default function Students() {
   const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
+
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [newStudent, setNewStudent] = useState<any>(null);
+
   const filteredStudents = initialStudents?.filter((student) => {
     const matchesSearch =
       student.firstName.toLowerCase().includes(search.toLowerCase()) ||
@@ -271,7 +272,6 @@ export default function Students() {
     return matchesSearch && matchesFilter;
   });
 
-  //pagination logic
   const {
     currentPage,
     totalPages,
@@ -281,7 +281,6 @@ export default function Students() {
   } = usePagination(filteredStudents, 10);
 
   useEffect(() => {
-    // 🧠 Keep track of last submitted method
     if (fetcher.state === 'submitting' && fetcher.formData) {
       const method = fetcher.formData.get('_method') as string | null;
       lastMethod.current = method ?? fetcher.formMethod;
@@ -289,7 +288,6 @@ export default function Students() {
   }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
 
   useEffect(() => {
-    // 🧩 Only run after successful completion
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
 
@@ -299,7 +297,6 @@ export default function Students() {
       }
 
       if (data.success) {
-        // Check for assign_subjects action from server response
         if (data.action === 'assign_subjects') {
           toast.success('Subjects assigned successfully!');
           listFetcher.load(window.location.pathname);
@@ -307,11 +304,14 @@ export default function Students() {
           return;
         }
 
-        // 🔄 Only reload *after* success — and only once per action
         switch (lastMethod.current) {
           case 'POST':
             toast.success('Student added successfully!');
             listFetcher.load(window.location.pathname);
+            // new
+             setNewStudent(data.student);
+             setAddStudentModalOpen(false);
+             setProfileModalOpen(true);
             break;
           case 'PUT':
             toast.success('Student updated successfully!');
@@ -325,7 +325,6 @@ export default function Students() {
             toast.success('Action completed successfully.');
         }
 
-        // 🧹 Reset last method to prevent double reload
         lastMethod.current = null;
       }
     }
@@ -520,6 +519,14 @@ export default function Students() {
           fetcher={fetcher}
         />
       )}
+
+      
+       <StudentProfilesModal
+        student={newStudent}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+        showTrigger={false}
+      />
     </div>
   );
 }

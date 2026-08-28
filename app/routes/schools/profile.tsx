@@ -58,14 +58,14 @@ export default function SchoolsListPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
                     <Building2 className="h-5 w-5 text-primary" />
                   </div>
-                  {/* <div>
+                  <div>
                     <h3 className="font-semibold text-foreground">{s.name}</h3>
                     {s.registrationNumber && (
                       <p className="text-xs text-muted-foreground">
                         {s.registrationNumber}
                       </p>
                     )}
-                  </div> */}
+                  </div>
                 </div>
 
                 {s.address && (

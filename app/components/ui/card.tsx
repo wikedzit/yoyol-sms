@@ -1,13 +1,17 @@
 import * as React from "react"
 
 import { cn } from "~/lib/utils"
+// bg-white p-6 rounded-2xl shadow-lg
+//                     hover:shadow-2xl hover:-translate-y-1
+//                     transition-all duration-300 border-b-6 border-purple-600  hover:bg-blue-100">
+//                         <Icon className="w-8 h-8 text-purple-600 mb-4" />
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm hover:color-purple",
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm hover:bg-color-purple",
         className
       )}
       {...props}

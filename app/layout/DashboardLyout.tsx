@@ -151,7 +151,7 @@ const DashboardLayout = () => {
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem asChild>
-                    <Link to="." className="cursor-pointer">
+                    <Link to="/profile" className="cursor-pointer">
                       Profile
                     </Link>
                   </DropdownMenuItem>
