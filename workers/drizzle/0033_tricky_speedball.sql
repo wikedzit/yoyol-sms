@@ -1,4 +1,4 @@
-CREATE TABLE `academic_years` (
+CREATE TABLE IF NOT EXISTS `academic_years` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`start_date` text NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE `academic_years` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `academic_years_name_unique` ON `academic_years` (`name`);--> statement-breakpoint
-CREATE TABLE `terms` (
+CREATE TABLE IF NOT EXISTS `terms` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`academic_year_id` integer NOT NULL,
 	`name` text NOT NULL,
