@@ -358,15 +358,16 @@ export default function AcademicYearPage() {
                         <TableCell>{year.terms?.length || 0}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
+                            <Button className  ="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
+  
+
                               size="icon"
                               title="Manage terms"
                               onClick={() => handleManageTerms(year)}
                             >
                               <ListTree className="h-4 w-4" />
                             </Button>
-                            <Button
+                     <Button  className="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
                               variant="ghost"
                               size="icon"
                               title="Edit"
