@@ -258,7 +258,7 @@ export default function AcademicYearPage() {
           actions={
             <Button
               onClick={() => setIsAddOpen(true)}
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               <Plus className="h-4 w-4" /> Add Academic Year
             </Button>

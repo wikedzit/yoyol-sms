@@ -38,7 +38,7 @@ export default function AddStudentModal({
   fetcher,
   schools = [],
 }: AddStudentModalProps) {
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -57,21 +57,21 @@ export default function AddStudentModal({
   };
 
   useEffect(() => {
-  if (fetcher.state === 'idle' && fetcher.data?.success) {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      enrollmentDate: '',
-      dob: '',
-      address: '',
-      gender: undefined,
-      status: undefined,
-      schoolId: undefined,
-    });
-  }
-}, [fetcher.state, fetcher.data]);
+    if (fetcher.state === 'idle' && fetcher.data?.success) {
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        enrollmentDate: '',
+        dob: '',
+        address: '',
+        gender: undefined,
+        status: undefined,
+        schoolId: undefined,
+      });
+    }
+  }, [fetcher.state, fetcher.data]);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -180,16 +180,16 @@ export default function AddStudentModal({
                     {field === 'firstName'
                       ? 'First Name'
                       : field === 'lastName'
-                      ? 'Last Name'
-                      : field.charAt(0).toUpperCase() + field.slice(1)}
+                        ? 'Last Name'
+                        : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <Input
                     type={
                       field === 'email'
                         ? 'email'
                         : ['enrollmentDate', 'dob'].includes(field)
-                        ? 'date'
-                        : 'text'
+                          ? 'date'
+                          : 'text'
                     }
                     name={field}
                     value={(formData as any)[field]}
@@ -254,13 +254,13 @@ export default function AddStudentModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
             </Button>
@@ -270,3 +270,4 @@ export default function AddStudentModal({
     </Sheet>
   );
 }
+  

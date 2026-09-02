@@ -97,7 +97,7 @@ export default function NewSchoolPage() {
               <p className="text-sm text-destructive">{actionData.error}</p>
             )}
 
-            <Button type="submit" disabled={isSaving} className="bg-primary-gradient text-white flex items-center gap-2">
+            <Button type="submit" disabled={isSaving} className="bg-primary-gradient text-white flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer">
               <Save size={16} />
               {isSaving ? 'Saving...' : 'Save School'}
             </Button>

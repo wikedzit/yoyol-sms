@@ -137,7 +137,7 @@ export default function SchoolProfilePage() {
               <Button
                 onClick={() => setIsEditing(true)}
                 variant="outline"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
               >
                 <Pencil size={16} />
                 Edit Profile
@@ -251,7 +251,7 @@ export default function SchoolProfilePage() {
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="bg-primary-gradient text-white flex items-center gap-2"
+                  className="bg-primary-gradient text-white flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
                 >
                   <Save size={16} />
                   {isSaving ? 'Saving...' : 'Save Profile'}
@@ -259,6 +259,7 @@ export default function SchoolProfilePage() {
                 <Button
                   type="button"
                   variant="ghost"
+                   className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                   onClick={() => setIsEditing(false)}
                   disabled={isSaving}
                 >

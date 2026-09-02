@@ -13,7 +13,7 @@ export function TeacherProfileModal({ teacher }: { teacher: any }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost"   className ="hover:scale-110 hover:text-white-600 transition cursor-pointer" size="sm">
           <Eye className="h-4 w-4" />
         </Button>
       </DialogTrigger>
