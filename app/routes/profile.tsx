@@ -272,7 +272,8 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" onClick={() => setIsEditOpen(true)} className="cursor-pointer">
+              <Button variant="outline" onClick={() => setIsEditOpen(true)}
+               className =" hover:scale-110 hover:text-white-600 transition cursor-pointer">
                 Edit Profile
               </Button>
             </div>
@@ -415,7 +416,7 @@ export default function ProfilePage() {
                   </div>
                   <Button
                     type="submit"
-                    className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+                    className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
                   >
                     {passwordFetcher.state === 'submitting' ? 'Updating...' : 'Update Password'}
                   </Button>

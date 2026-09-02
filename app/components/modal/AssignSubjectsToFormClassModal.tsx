@@ -159,6 +159,7 @@ export default function AssignSubjectsToFormClassModal({
             <Button
               type="button"
               variant="ghost"
+              className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
               size="sm"
               onClick={handleSelectAll}
             >
@@ -210,13 +211,13 @@ export default function AssignSubjectsToFormClassModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-10 px-6 w-full sm:w-auto"
+              className="h-10 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white h-10 px-6 w-full sm:w-auto"
+              className="bg-primary-gradient text-white h-10 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
               disabled={fetcher.state === 'submitting'}
             >
               {fetcher.state === 'submitting'

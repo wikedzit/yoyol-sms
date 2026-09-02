@@ -134,13 +134,13 @@ export default function CreateClassModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-11 px-6 w-full sm:w-auto"
+              className="h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white h-11 px-6 w-full sm:w-auto"
+              className="bg-primary-gradient text-white h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
               disabled={fetcher.state === 'submitting' || !name.trim()}
             >
               {fetcher.state === 'submitting' ? 'Creating...' : 'Create Class'}

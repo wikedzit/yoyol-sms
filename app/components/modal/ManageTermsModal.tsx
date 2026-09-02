@@ -208,6 +208,7 @@ export default function ManageTermsModal({
                     </div>
                     <div className="flex justify-end gap-2">
                       <Button
+                      className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         type="button"
                         variant="outline"
                         size="sm"
@@ -215,7 +216,9 @@ export default function ManageTermsModal({
                       >
                         Cancel
                       </Button>
-                      <Button type="button" size="sm" onClick={() => submitEdit(term.id)}>
+                      <Button type="button" size="sm"
+                      className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                      onClick={() => submitEdit(term.id)}>
                         <Check className="h-4 w-4" /> Save
                       </Button>
                     </div>
@@ -242,6 +245,7 @@ export default function ManageTermsModal({
                       <Button
                         type="button"
                         variant="ghost"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         size="icon"
                         onClick={() => startEdit(term)}
                       >
@@ -250,6 +254,7 @@ export default function ManageTermsModal({
                       <Button
                         type="button"
                         variant="ghost"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         size="icon"
                         onClick={() => deleteTerm(term.id)}
                       >
@@ -284,21 +289,25 @@ export default function ManageTermsModal({
                 <Button
                   type="button"
                   variant="outline"
+                  className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                   size="sm"
                   onClick={() => setShowAddForm(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="button" size="sm" onClick={submitCreate}>
+                <Button type="button" 
+                className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                size="sm" onClick={submitCreate}>
                   {fetcher.state === 'submitting' ? 'Adding...' : 'Add Term'}
                 </Button>
               </div>
             </div>
           ) : (
             <Button
+          
               type="button"
               variant="outline"
-              className="w-full"
+              className=" hover:scale-110 hover:text-white-600 transition cursor-pointerw-full"
               onClick={() => setShowAddForm(true)}
             >
               <Plus className="h-4 w-4" /> Add Term

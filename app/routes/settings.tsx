@@ -53,7 +53,7 @@ export default function Settings() {
               <Label htmlFor="phone">Phone Number</Label>
               <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" />
             </div>
-            <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]">
+            <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
               Save Changes
             </Button>
           </CardContent>
@@ -119,7 +119,7 @@ export default function Settings() {
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
               <Input id="confirmPassword" type="password" />
             </div>
-            <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]">
+            <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
               Update Password
             </Button>
           </CardContent>

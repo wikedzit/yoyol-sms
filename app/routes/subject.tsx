@@ -326,8 +326,7 @@ export default function SubjectsPage() {
           </div>
           <Button
             onClick={handleOpenAddDialog}
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
-          >
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
             <Plus className="h-4 w-4" /> Add Subject
           </Button>
         </div>
@@ -480,6 +479,7 @@ export default function SubjectsPage() {
                         </TableCell>
                         <TableCell className="text-right flex justify-end gap-2">
                           <Button
+                          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                             variant="ghost"
                             size="icon"
                             title="Assign Teachers"
@@ -490,7 +490,8 @@ export default function SubjectsPage() {
                           >
                             <User className="h-4 w-4" />
                           </Button>
-                          <Button
+                          <Button 
+                           className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                             variant="ghost"
                             size="icon"
                             onClick={() => handleEditModalOpen(subject)}

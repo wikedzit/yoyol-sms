@@ -20,7 +20,7 @@ export default function SchoolsListPage() {
         title="Schools"
         description="Manage all registered schools"
         actions={
-          <Button asChild className="bg-primary-gradient text-white flex items-center gap-2">
+          <Button asChild className ="bg-primary-gradient text-white flex item-cneter gap-r hover:scale-110 hover:text-white-600 transition cursor-pointer">
             <Link to="/schools/new">
               <Plus size={18} />
               <span className="font-medium">Add School</span>
@@ -41,10 +41,10 @@ export default function SchoolsListPage() {
                 Get started by adding your first school
               </p>
             </div>
-            <Button asChild className="bg-primary-gradient text-white mt-2">
+            <Button asChild className="bg-primary-gradient text-white mt-2  hover:scale-110 hover:text-white-600 transition cursor-pointer">
               <Link to="/schools/new">
                 <Plus size={16} className="mr-2" />
-                Add First School
+                Add First school
               </Link>
             </Button>
           </div>

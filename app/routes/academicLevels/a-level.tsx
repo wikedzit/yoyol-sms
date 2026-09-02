@@ -259,7 +259,7 @@ export default function ALevelPage() {
         actions={
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2"
+            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
           >
             <Plus size={18} />
             <span className="font-medium">Add Stream</span>
@@ -317,7 +317,7 @@ export default function ALevelPage() {
             </div>
             <Button
               onClick={() => setIsAddModalOpen(true)}
-              className="bg-primary-gradient text-white mt-2"
+              className="bg-primary-gradient text-white mt-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               <Plus size={16} className="mr-2" />
               Add First Stream
@@ -361,6 +361,7 @@ export default function ALevelPage() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="hover:scale-110 hover:text-red-600 transition cursor-pointer"
                     onClick={(e) => {
                       e.preventDefault();
                       handleEditStream(stream);
