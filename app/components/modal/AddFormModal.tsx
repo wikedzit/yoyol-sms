@@ -114,14 +114,14 @@ export function AddFormModal({
             <Button
               variant="outline"
               onClick={onClose}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
               disabled={!number || availableForms.length === 0}
-              className="bg-primary-gradient text-white py-2 px-10 rounded-[8px] w-full sm:w-auto"
+              className="bg-primary-gradient text-white py-2 px-10 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               {form ? 'Save Changes' : 'Add Form'}
             </Button>

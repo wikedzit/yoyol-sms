@@ -440,6 +440,7 @@ export default function Grades() {
               <Button
                 onClick={handleFilterChange}
                 variant="outline"
+                className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                 size="sm"
                 className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
               >
@@ -461,7 +462,9 @@ export default function Grades() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExport}>
+              <Button variant="outline"
+              className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
               </Button>
@@ -470,7 +473,7 @@ export default function Grades() {
                   setEditData(null);
                   setFormOpen(true);
                 }}
-                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Add Grade
@@ -541,6 +544,7 @@ export default function Grades() {
                           <div className="flex justify-end gap-2">
                             <Button
                               variant="ghost"
+                              className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                               size="icon"
                               onClick={() => handleEdit(grade)}
                             >

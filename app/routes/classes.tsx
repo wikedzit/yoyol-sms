@@ -297,9 +297,8 @@ export default function ClassesRoute() {
           <div className="flex items-center border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('grid')}
-              className={`p-2 transition ${
-                view === 'grid'
-                  ? 'bg-primary-gradient text-white'
+              className={`p-2 transition onClick   hover:scale-110 hover:text-white-600 transition cursor-pointer"={() => setView('grid')}
+                         ? 'bg-primary-gradient text-white'
                   : 'text-gray-500'
               }`}
             >
@@ -308,7 +307,7 @@ export default function ClassesRoute() {
 
             <button
               onClick={() => setView('list')}
-              className={`p-2 transition ${
+              className={`p-2 transition  hover:scale-110 hover:text-white-600 transition cursor-pointer"${
                 view === 'list'
                   ? 'bg-primary-gradient text-white'
                   : 'text-gray-500'
@@ -321,7 +320,7 @@ export default function ClassesRoute() {
           {/* Create Button */}
           <Button
             onClick={() => setOpenCreate(true)}
-            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto"
+            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
           >
             <span className="text-xl">+</span>
             <span className="font-medium">Add Class</span>
@@ -332,18 +331,21 @@ export default function ClassesRoute() {
       {/* LEVEL FILTER TABS */}
       <div className="flex items-center gap-2 border-b pb-4">
         <button
+        
           onClick={() => setLevelFilter('all')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition hover:scale-110 hover:text-white-600 transition cursor-pointer" ${
             levelFilter === 'all'
               ? 'bg-primary-gradient text-white'
               : ' text-gray-600 cursor-pointer '
+              
           }`}
+          
         >
           All Levels ({classes.length})
         </button>
         <button
           onClick={() => setLevelFilter('o-level')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2   hover:scale-110 hover:text-white-600 transition cursor-pointer"${
             levelFilter === 'o-level'
               ? 'bg-primary-gradient text-white'
               : 'bg-o-level/10 text-o-level cursor-pointer '
@@ -354,7 +356,7 @@ export default function ClassesRoute() {
         </button>
         <button
           onClick={() => setLevelFilter('a-level')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"${
             levelFilter === 'a-level'
               ? 'bg-primary-gradient text-white'
               : 'bg-a-level/10 text-a-level cursor-pointer '
@@ -380,15 +382,15 @@ export default function ClassesRoute() {
           <div className="mt-6 flex justify-center gap-4">
             <Button
               onClick={() => setOpenCreate(true)}
-              className="bg-primary-gradient text-white"
+              className="bg-primary-gradient text-white  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Add Class
             </Button>
             <Link to="/levels/o-level">
-              <Button variant="outline">Set Up O-Level</Button>
+              <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">Set Up O-Level</Button>
             </Link>
             <Link to="/levels/a-level">
-              <Button variant="outline">Set Up A-Level</Button>
+              <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">Set Up A-Level</Button>
             </Link>
           </div>
         </div>
@@ -440,6 +442,7 @@ export default function ClassesRoute() {
                 <Button
                   variant="ghost"
                   size="sm"
+                
                   onClick={() => {
                     setEditingClass(c);
                     setOpenEdit(true);
@@ -500,6 +503,7 @@ export default function ClassesRoute() {
                 <Button
                   variant="ghost"
                   size="sm"
+        
                   onClick={() => {
                     setEditingClass(c);
                     setOpenEdit(true);
