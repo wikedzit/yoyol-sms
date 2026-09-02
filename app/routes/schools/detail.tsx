@@ -1,39 +1,76 @@
 import { useEffect, useState } from 'react';
-import {type ActionFunctionArgs,type LoaderFunctionArgs, Link,useFetcher,useLoaderData,} from 'react-router';
-import {Award,Building2,Mail,MapPin,Pencil,Phone,Quote,Save,} from 'lucide-react';
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  Link,
+  useFetcher,
+  useLoaderData,
+} from 'react-router';
+import {
+  Award,
+  Building2,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Quote,
+  Save,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
-import {Card,CardContent,CardDescription,CardHeader,CardTitle,} from '~/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '~/components/ui/card';
 import type SchoolService from 'workers/services/school';
 import type StudentService from 'workers/services/student';
 
-export async function loader({ context, params }: LoaderFunctionArgs) {
-  const services = context.services as {school: SchoolService;student: StudentService;};
+export async function loader({
+  context,params,
+}: LoaderFunctionArgs) {
+  const services = context.services as {
+    school: SchoolService;student: StudentService;
+  };
   const schoolId = Number(params.schoolId);
   const profile = await services.school.getById(schoolId);
   if (!profile) {
-    throw new Response('School not found', { status: 404 });
+    throw new Response('School not found', {
+      status: 404,});
   }
-  const totalStudents = await services.student.countBySchoolId(schoolId);
-  return {profile,totalStudents};
+  const totalStudents =
+    await services.student.countBySchoolId(schoolId);
+
+  return {
+    profile,totalStudents,
+  };
 }
 
-export async function action({ request,context,params,
+export async function action({
+  request,
+  context,
+  params,
 }: ActionFunctionArgs) {
   const services = context.services as {
-    school: SchoolService;
-    student: StudentService;};
+    school: SchoolService;student: StudentService; };
   const schoolId = Number(params.schoolId);
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
   if (method !== 'POST') {
     return new Response(
-      JSON.stringify({ error: 'Invalid request method' }),
+      JSON.stringify({
+        error: 'Invalid request method',
+      }),
       {
-        status: 400,headers: {'Content-Type': 'application/json', },
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        },
       }
     );
   }
@@ -44,57 +81,92 @@ export async function action({ request,context,params,
     phone: String(form.get('phone') || ''),
     email: String(form.get('email') || ''),
     motto: String(form.get('motto') || ''),
-    registrationNumber: String(form.get('registrationNumber') || ''),
+    registrationNumber: String(
+      form.get('registrationNumber') || ''
+    ),
     logoUrl: String(form.get('logoUrl') || ''),
+    primaryColor: String(
+      form.get('primaryColor') || '#2563eb'
+    ),
+    secondaryColor: String(
+      form.get('secondaryColor') || '#0f172a'
+    ),
   };
-
-  const updated = await services.school.update(schoolId, data);
+  const updated = await services.school.update(
+    schoolId, data);
   if (!updated) {
     return new Response(
       JSON.stringify({
-        error: 'Failed to save school profile',}),
-      {status: 400,headers: {'Content-Type': 'application/json',},}
+        error: 'Failed to save school profile',
+      }),{
+        status: 400, headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
   }
+
   return {
-    success: true,profile: updated,
+    success: true,
+    profile: updated,
   };
 }
 
 export default function SchoolProfilePage() {
-  const { profile, totalStudents } = useLoaderData<typeof loader>();
+  const { profile, totalStudents } =
+    useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [isEditing, setIsEditing] = useState(false);
+  const [primaryColor, setPrimaryColor] = useState(
+    profile.primaryColor ?? '#2563eb');
+  const [secondaryColor, setSecondaryColor] = useState(
+    profile.secondaryColor ?? '#0f172a');
 
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) {
       return;
     }
-
     if (fetcher.data.success) {
       toast.success(
         'Your school profile has been updated successfully!'
       );
-
       setIsEditing(false);
+      setPrimaryColor(
+        fetcher.data.profile.primaryColor ??
+          '#2563eb'
+      );
+      setSecondaryColor(
+        fetcher.data.profile.secondaryColor ??
+          '#0f172a'
+      );
+    }
+
+    if (
+      'error' in fetcher.data &&
+      fetcher.data.error
+    ) {
+      toast.error(fetcher.data.error);
     }
   }, [fetcher.state, fetcher.data]);
 
   const isSaving = fetcher.state === 'submitting';
-
-  const displayProfile =
-    fetcher.data && 'profile' in fetcher.data
-      ? fetcher.data.profile
-      : profile;
+  const displayProfile = fetcher.data &&
+    'profile' in fetcher.data ? fetcher.data.profile: profile;
+  const currentPrimaryColor = displayProfile.primaryColor ?? '#2563eb';
+  const currentSecondaryColor = displayProfile.secondaryColor ?? '#0f172a';
 
   return (
     <div className="space-y-6">
+
+      {/* Back to Schools */}
       <Link
         to="/schools/profile"
-        className="inline-flex items-center rounded-md bg-primary-gradient px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple hover:text-white">
+        className="inline-flex items-center rounded-md bg-primary-gradient px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-purple hover:text-white"
+      >
         Back to Schools
       </Link>
 
+      {/* Header */}
       <PageHeader
         title={displayProfile.name}
         description="Manage this school's identity and contact details"
@@ -106,10 +178,19 @@ export default function SchoolProfilePage() {
               </p>
 
               <Button
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  setPrimaryColor(
+                    currentPrimaryColor
+                  );
+                  setSecondaryColor(
+                    currentSecondaryColor
+                  );
+                  setIsEditing(true);
+                }}
                 className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
               >
-                <Pencil size={16} /> Edit Profile
+                <Pencil size={16} />
+                Edit Profile
               </Button>
             </div>
           ) : undefined
@@ -122,20 +203,31 @@ export default function SchoolProfilePage() {
             <Building2 className="h-5 w-5" />
             School Details
           </CardTitle>
-
           <CardDescription>
-            This information appears on reports, notices, and other
-            official documents.
+            This information appears on reports,
+            notices, and other official documents.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
+
           {isEditing ? (
-            <fetcher.Form method="post" className="space-y-4">
+
+            /* =========================
+               EDIT MODE
+            ========================== */
+
+            <fetcher.Form
+              method="post"
+              className="space-y-6"
+            >
               <div className="grid gap-4 sm:grid-cols-2">
-                {/* School name */}
+
+                {/* School Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">School Name *</Label>
+                  <Label htmlFor="name">
+                    School Name *
+                  </Label>
 
                   <Input
                     id="name"
@@ -145,77 +237,225 @@ export default function SchoolProfilePage() {
                   />
                 </div>
 
-                {/* Registration number */}
+                {/* Registration Number */}
                 <div className="space-y-2">
                   <Label htmlFor="registrationNumber">
                     Registration Number
                   </Label>
-
                   <Input
                     id="registrationNumber"
                     name="registrationNumber"
                     defaultValue={
-                      displayProfile.registrationNumber ?? ''
+                      displayProfile.registrationNumber ??
+                      ''
                     }
                   />
                 </div>
 
                 {/* Address */}
                 <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="address">Address</Label>
-
+                  <Label htmlFor="address">
+                    Address
+                  </Label>
                   <Input
                     id="address"
                     name="address"
-                    defaultValue={displayProfile.address ?? ''}
+                    defaultValue={
+                      displayProfile.address ?? ''
+                    }
                   />
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-
+                  <Label htmlFor="phone">
+                    Phone
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
-                    defaultValue={displayProfile.phone ?? ''}
+                    defaultValue={
+                      displayProfile.phone ?? ''
+                    }
                   />
                 </div>
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-
+                  <Label htmlFor="email">
+                    Email
+                  </Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    defaultValue={displayProfile.email ?? ''}
+                    defaultValue={
+                      displayProfile.email ?? ''
+                    }
                   />
                 </div>
 
                 {/* Motto */}
                 <div className="space-y-2">
-                  <Label htmlFor="motto">Motto</Label>
+                  <Label htmlFor="motto">
+                    Motto
+                  </Label>
                   <Input
                     id="motto"
                     name="motto"
-                    defaultValue={displayProfile.motto ?? ''}
+                    defaultValue={
+                      displayProfile.motto ?? ''
+                    }
                   />
                 </div>
 
                 {/* Logo URL */}
                 <div className="space-y-2">
-                  <Label htmlFor="logoUrl">Logo URL</Label>
+                  <Label htmlFor="logoUrl">
+                    Logo URL
+                  </Label>
                   <Input
                     id="logoUrl"
                     name="logoUrl"
-                    defaultValue={displayProfile.logoUrl ?? ''}
+                    defaultValue={
+                      displayProfile.logoUrl ?? ''
+                    }
                   />
                 </div>
               </div>
 
-              {/* Form actions */}
+              {/* =========================
+                  SCHOOL COLORS
+              ========================== */}
+
+              <div className="grid gap-6 sm:grid-cols-2">
+
+                {/* Primary Color */}
+                <div className="space-y-3">
+                  <Label htmlFor="primaryColor">
+                    Primary Color
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="primaryColor"
+                      name="primaryColor"
+                      type="color"
+                      value={primaryColor}
+                      onChange={(event) =>
+                        setPrimaryColor(
+                          event.target.value
+                        )
+                      }
+                      className="h-12 w-20 cursor-pointer p-1"
+                    />
+                    <Input
+                      value={primaryColor}
+                      onChange={(event) =>
+                        setPrimaryColor(
+                          event.target.value
+                        )
+                      }
+                      className="font-mono uppercase"
+                      maxLength={7}
+                    />
+                  </div>
+
+                  {/* Preview */}
+                  <div
+                    className="h-12 w-full rounded-md border shadow-sm"
+                    style={{
+                      backgroundColor: primaryColor,
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Main colour used throughout the
+                    school interface.
+                  </p>
+                </div>
+
+                {/* Secondary Color */}
+                <div className="space-y-3">
+                  <Label htmlFor="secondaryColor">
+                    Secondary Color
+                  </Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      id="secondaryColor"
+                      name="secondaryColor"
+                      type="color"
+                      value={secondaryColor}
+                      onChange={(event) =>
+                        setSecondaryColor(
+                          event.target.value
+                        )
+                      }
+                      className="h-12 w-20 cursor-pointer p-1"
+                    />
+                    <Input
+                      value={secondaryColor}
+                      onChange={(event) =>
+                        setSecondaryColor(
+                          event.target.value
+                        )
+                      }
+                      className="font-mono uppercase"
+                      maxLength={7}
+                    />
+                  </div>
+
+                  {/* Preview */}
+                  <div
+                    className="h-12 w-full rounded-md border shadow-sm"
+                    style={{
+                      backgroundColor:
+                        secondaryColor,
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Secondary colour used for accents
+                    and supporting elements.
+                  </p>
+                </div>
+              </div>
+
+              {/* =========================
+                  COLOR COMBINATION PREVIEW
+              ========================== */}
+
+              <div className="space-y-3">
+                <Label>School Colour Preview</Label>
+                <div className="overflow-hidden rounded-lg border shadow-sm">
+                  <div
+                    className="flex items-center justify-between px-5 py-4 text-white"
+                    style={{
+                      backgroundColor: primaryColor,
+                    }}
+                  >
+                    <span className="font-semibold">
+                      {displayProfile.name}
+                    </span>
+                    <span className="text-sm opacity-90">
+                      Primary
+                    </span>
+                  </div>
+                  <div
+                    className="flex items-center justify-between px-5 py-3 text-white"
+                    style={{
+                      backgroundColor:
+                        secondaryColor,
+                    }}
+                  >
+                    <span className="text-sm">
+                      School Interface
+                    </span>
+                    <span className="text-sm opacity-90">
+                      Secondary
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Actions */}
               <div className="flex items-center gap-2">
                 <Button
                   type="submit"
@@ -223,12 +463,16 @@ export default function SchoolProfilePage() {
                   className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
                 >
                   <Save size={16} />
-                  {isSaving ? 'Saving...' : 'Save Profile'}
+                  {isSaving
+                    ? 'Saving...'
+                    : 'Save Profile'}
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setIsEditing(false)}
+                  onClick={() =>
+                    setIsEditing(false)
+                  }
                   disabled={isSaving}
                 >
                   Cancel
@@ -237,32 +481,32 @@ export default function SchoolProfilePage() {
             </fetcher.Form>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2">
-              {/* School name */}
+
+              {/* School Name */}
               <div>
                 <p className="text-sm text-muted-foreground">
                   School Name
                 </p>
-
                 <p className="text-lg font-semibold">
                   {displayProfile.name}
                 </p>
               </div>
 
-              {/* Registration number */}
+              {/* Registration Number */}
               {displayProfile.registrationNumber && (
                 <div className="flex items-start gap-2">
                   <Award
                     size={16}
                     className="mt-1 text-muted-foreground"
                   />
-
                   <div>
                     <p className="text-sm text-muted-foreground">
                       Registration Number
                     </p>
-
                     <p className="font-medium">
-                      {displayProfile.registrationNumber}
+                      {
+                        displayProfile.registrationNumber
+                      }
                     </p>
                   </div>
                 </div>
@@ -275,12 +519,10 @@ export default function SchoolProfilePage() {
                     size={16}
                     className="mt-1 text-muted-foreground"
                   />
-
                   <div>
                     <p className="text-sm text-muted-foreground">
                       Address
                     </p>
-
                     <p className="font-medium">
                       {displayProfile.address}
                     </p>
@@ -295,12 +537,10 @@ export default function SchoolProfilePage() {
                     size={16}
                     className="mt-1 text-muted-foreground"
                   />
-
                   <div>
                     <p className="text-sm text-muted-foreground">
                       Phone
                     </p>
-
                     <p className="font-medium">
                       {displayProfile.phone}
                     </p>
@@ -315,12 +555,10 @@ export default function SchoolProfilePage() {
                     size={16}
                     className="mt-1 text-muted-foreground"
                   />
-
                   <div>
                     <p className="text-sm text-muted-foreground">
                       Email
                     </p>
-
                     <p className="font-medium">
                       {displayProfile.email}
                     </p>
@@ -347,6 +585,92 @@ export default function SchoolProfilePage() {
                   </div>
                 </div>
               )}
+
+              {/* =========================
+                  PRIMARY COLOR
+              ========================== */}
+
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-12 w-12 shrink-0 rounded-md border shadow-sm"
+                  style={{
+                    backgroundColor:
+                      currentPrimaryColor,
+                  }}
+                />
+
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Primary Color
+                  </p>
+
+                  <p className="font-mono font-medium uppercase">
+                    {currentPrimaryColor}
+                  </p>
+                </div>
+              </div>
+
+              {/* =========================
+                  SECONDARY COLOR
+              ========================== */}
+
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-12 w-12 shrink-0 rounded-md border shadow-sm"
+                  style={{
+                    backgroundColor:
+                      currentSecondaryColor,
+                  }}
+                />
+
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Secondary Color
+                  </p>
+                  <p className="font-mono font-medium uppercase">
+                    {currentSecondaryColor}
+                  </p>
+                </div>
+              </div>
+
+
+              <div className="sm:col-span-2">
+                <p className="mb-3 text-sm text-muted-foreground">
+                  School Colour Preview
+                </p>
+                <div className="overflow-hidden rounded-lg border shadow-sm">
+                  <div
+                    className="flex items-center justify-between px-5 py-4 text-white"
+                    style={{
+                      backgroundColor:
+                        currentPrimaryColor,
+                    }}
+                  >
+                    <span className="font-semibold">
+                      {displayProfile.name}
+                    </span>
+
+                    <span className="text-sm opacity-90">
+                      Primary
+                    </span>
+                  </div>
+
+                  <div
+                    className="flex items-center justify-between px-5 py-3 text-white"
+                    style={{
+                      backgroundColor:
+                        currentSecondaryColor,
+                    }}
+                  >
+                    <span className="text-sm">
+                      School Interface
+                    </span>
+                    <span className="text-sm opacity-90">
+                      Secondary
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
@@ -354,5 +678,3 @@ export default function SchoolProfilePage() {
     </div>
   );
 }
-
-
