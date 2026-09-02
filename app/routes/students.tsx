@@ -308,8 +308,17 @@ export default function Students() {
           case 'POST':
             toast.success('Student added successfully!');
             listFetcher.load(window.location.pathname);
-            // new
-             setNewStudent(data.student);
+            
+       const selectedSchool = schools.find(
+    (school: any) =>
+      String(school.id) === String(data.student.schoolId)
+  );
+
+  setNewStudent({
+    ...data.student,
+    schoolName: selectedSchool?.name || 'Not assigned',
+  });
+             
              setAddStudentModalOpen(false);
              setProfileModalOpen(true);
             break;
