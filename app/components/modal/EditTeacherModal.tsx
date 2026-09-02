@@ -146,7 +146,7 @@ export default function EditTeacherModal({
             {/* Gender & Status */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1" >
                   Gender
                 </label>
                 <Select
@@ -196,13 +196,13 @@ export default function EditTeacherModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto"
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'

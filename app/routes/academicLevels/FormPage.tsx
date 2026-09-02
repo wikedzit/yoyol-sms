@@ -425,7 +425,7 @@ export default function FormPage() {
           <div className="flex items-center border rounded-lg overflow-hidden">
             <button
               onClick={() => setView('grid')}
-              className={`p-2 transition ${
+              className={`p-2 transition  hover:scale-110 hover:text-white-600 transition cursor-pointer ${
                 view === 'grid'
                   ? 'bg-primary-gradient text-white'
                   : 'text-gray-500'
@@ -436,7 +436,7 @@ export default function FormPage() {
 
             <button
               onClick={() => setView('list')}
-              className={`p-2 transition ${
+              className={`p-2 transition  hover:scale-110 hover:text-white-600 transition cursor-pointer" ${
                 view === 'list'
                   ? 'bg-primary-gradient text-white'
                   : 'text-gray-500'
@@ -449,7 +449,7 @@ export default function FormPage() {
           {/* Add Button */}
           <Button
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto"
+            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
           >
             <span className="text-xl">+</span>
             <span className="font-medium">Add Class</span>

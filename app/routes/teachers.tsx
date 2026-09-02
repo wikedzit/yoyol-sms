@@ -337,7 +337,7 @@ export default function Teachers() {
           </p>
         </div>
         <Button
-          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+         className = " bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -455,6 +455,7 @@ export default function Teachers() {
                     <TableCell className="text-right flex justify-end gap-2">
                       <TeacherProfileModal teacher={teacher} />
                       <Button
+                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Subjects"
@@ -466,6 +467,7 @@ export default function Teachers() {
                         <BookOpen className="h-4 w-4" />
                       </Button>
                       <Button
+                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Classes"
@@ -477,6 +479,7 @@ export default function Teachers() {
                         <GraduationCap className="h-4 w-4" />
                       </Button>
                       <Button
+                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         onClick={() => {

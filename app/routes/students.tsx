@@ -308,8 +308,17 @@ export default function Students() {
           case 'POST':
             toast.success('Student added successfully!');
             listFetcher.load(window.location.pathname);
-            // new
-             setNewStudent(data.student);
+            
+       const selectedSchool = schools.find(
+    (school: any) =>
+      String(school.id) === String(data.student.schoolId)
+  );
+
+  setNewStudent({
+    ...data.student,
+    schoolName: selectedSchool?.name || 'Not assigned',
+  });
+             
              setAddStudentModalOpen(false);
              setProfileModalOpen(true);
             break;
@@ -341,7 +350,7 @@ export default function Students() {
           </p>
         </div>
         <Button
-          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
           onClick={() => setAddStudentModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -450,7 +459,7 @@ export default function Students() {
                         variant="ghost"
                         size="sm"
                         title="Assign Subjects"
-                        className="cursor-pointer"
+                        className="    hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         onClick={() => {
                           setSelectedStudent(student);
                           setAssignSubjectsModalOpen(true);
@@ -461,7 +470,7 @@ export default function Students() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="cursor-pointer"
+                        className="   hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         onClick={() => {
                           setSelectedStudent(student);
                           setEditStudentModalOpen(true);

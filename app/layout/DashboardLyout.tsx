@@ -88,6 +88,7 @@ const DashboardLayout = () => {
               <Button
                 variant="ghost"
                 size="icon"
+                 className="h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <X className="h-6 w-6" />
@@ -115,7 +116,7 @@ const DashboardLayout = () => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="lg:hidden"
+                  className="lg:hidden h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 >
                   {mobileMenuOpen ? (

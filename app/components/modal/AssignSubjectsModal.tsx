@@ -121,13 +121,13 @@ export default function AssignSubjectsModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" className="hover:scale-110 hover:text-white-600 transition cursor-pointer" onClick={() => setOpen(false)}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={fetcher.state === 'submitting'}
-            className="bg-primary-gradient"
+            className="bg-primary-gradient hover:scale-110 hover:text-white-600 transition cursor-pointer"
           >
             {fetcher.state === 'submitting' ? 'Assigning...' : 'Assign Subjects'}
           </Button>

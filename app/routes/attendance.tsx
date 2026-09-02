@@ -73,7 +73,7 @@ export default function Attendance() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">
             <Calendar className="h-4 w-4 mr-2" />
             Select Date
           </Button>

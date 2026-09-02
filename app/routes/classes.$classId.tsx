@@ -334,7 +334,7 @@ export default function ClassDetails() {
             Assign Subjects
           </Button> */}
           <Button
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             onClick={() => setAddStudentModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -434,7 +434,7 @@ export default function ClassDetails() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="cursor-pointer"
+                          className=" hover:scale-110 hover:text-white-600 transition cursor-pointer"
                           onClick={() => {
                             setSelectedStudent(student);
                             setEditStudentModalOpen(true);
