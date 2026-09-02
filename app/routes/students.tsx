@@ -62,7 +62,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
   const studentsWithSubjects = await Promise.all(
   students.map(async (student) => {
-    const assignedSubjects =
+    const assignedSubjects =  
       await services.studentSubjects?.getSubjectsByStudent(student.id);
     const school = schools?.find(
       (school) => String(school.id) === String(student.schoolId)

@@ -55,7 +55,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all subjects for assignment modal
   const subjects = await services.subject?.getAllSubjects({
     limit: 100,
     offset: 0,
@@ -63,7 +62,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all classes for assignment modal
   const allClasses = await services.class.getAll({
     limit: 100,
     offset: 0,
@@ -71,7 +69,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get subjects and classes for each teacher
   const teachersWithSubjectsAndClasses = await Promise.all(
     teachers.map(async (teacher) => {
       const assignedSubjects =
@@ -107,7 +104,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const action = form.get('action') as string | null;
 
   try {
-    // --- ASSIGN SUBJECTS TO TEACHER ---
     if (action === 'assign_subjects') {
       const teacherId = Number(form.get('teacherId'));
       const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
@@ -123,7 +119,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, action: 'assign_subjects' };
     }
 
-    // --- ASSIGN CLASSES TO TEACHER ---
     if (action === 'assign_classes') {
       const teacherId = Number(form.get('teacherId'));
       const classIds = JSON.parse(String(form.get('classIds') || '[]'));
@@ -135,7 +130,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       await services.teacherClass?.replaceTeacherClasses(teacherId, classIds);
       return { success: true, action: 'assign_classes' };
     }
-    // --- CREATE TEACHER ---
+
     if (method === 'POST') {
       const data = {
         firstName: String(form.get('firstName') ?? ''),
@@ -160,7 +155,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       });
     }
 
-    // --- UPDATE TEACHER ---
     if (method === 'PUT') {
       const id = form.get('id');
       if (!id) {
@@ -194,7 +188,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, teacher: updated };
     }
 
-    // --- DELETE TEACHER ---
     if (method === 'DELETE') {
       const id = form.get('id');
       if (!id) {
@@ -245,6 +238,10 @@ export default function Teachers() {
   const [assignClassesModalOpen, setAssignClassesModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
+  // added state to hold the newly added teacher for the profile modal
+  const [newTeacher, setNewTeacher] = useState<any>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
   const filteredStudents = initialTeachers?.filter((teacher) => {
     const matchesSearch =
       teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
@@ -255,7 +252,6 @@ export default function Teachers() {
     return matchesSearch && matchesFilter;
   });
 
-  //pagination logic
   const {
     currentPage,
     totalPages,
@@ -264,7 +260,6 @@ export default function Teachers() {
     goToPage,
   } = usePagination(filteredStudents, 10);
 
-  //truck last method used in fetcher
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
       const method =
@@ -272,15 +267,12 @@ export default function Teachers() {
       lastMethod.current = method ?? (fetcher.formMethod || null);
     }
   }, [fetcher.formData, fetcher.state, fetcher.formMethod]);
-  //use useEffect to show sonner form shardcn as a toast on successful add, edit, delete
-
-  // react on finished action
+   // updated to use the new controlled modal approach for TeacherProfileModal
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) return;
     const data = fetcher.data;
-    fetcher.load(window.location.pathname);
 
-    // Refresh list
+    // Refresh list in background
     listFetcher.load(window.location.pathname);
 
     if (data.error) {
@@ -290,7 +282,6 @@ export default function Teachers() {
     }
 
     if (data.success) {
-      // Check for specific actions first
       if (data.action === 'assign_subjects') {
         toast.success('Subjects assigned successfully!');
         lastMethod.current = null;
@@ -303,13 +294,14 @@ export default function Teachers() {
         return;
       }
 
-      // Handle CRUD operations
       switch (lastMethod.current) {
         case 'POST':
-          toast.success('Teacher added successfully!');
-          // Optimistic: add returned teacher
+          // added logic to set the new teacher and open the profile modal after adding a teacher
           if (data.teacher) {
-            setTeachers((prev) => [...prev, data.teacher]);
+            setNewTeacher(data.teacher);
+            setAddModalOpen(false);
+            setProfileModalOpen(true);
+            toast.success('Teacher added successfully!');
           }
           break;
 
@@ -556,6 +548,13 @@ export default function Teachers() {
           fetcher={fetcher}
         />
       )}
+      
+      <TeacherProfileModal
+        teacher={newTeacher}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+        showTrigger={false}
+      />
     </div>
   );
 }
