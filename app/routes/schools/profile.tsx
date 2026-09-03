@@ -84,10 +84,6 @@ export default function SchoolProfilePage() {
       <PageHeader
         title="About Our School"
         actions={
-          <Button asChild className ="bg-primary-gradient text-white flex item-cneter gap-r hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            <Link to="/schools/new">
-              <Plus size={18} />
-              <span className="font-medium">Add School</span>
           <>
             <Link to={`/schools/${school.id}`}>
               <Button className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white-600 hover:scale-110 cursor-pointer transition-all duration-300">
@@ -184,13 +180,6 @@ export default function SchoolProfilePage() {
                 <p className="text-2xl font-bold">{totalStudents}</p>
               </div>
             </div>
-            <Button asChild className="bg-primary-gradient text-white mt-2  hover:scale-110 hover:text-white-600 transition cursor-pointer">
-              <Link to="/schools/new">
-                <Plus size={16} className="mr-2" />
-                Add First school
-              </Link>
-            </Button>
-          </div>
           </CardContent>
         </Card>
 
