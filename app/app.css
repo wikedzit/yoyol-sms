@@ -68,15 +68,11 @@
   --shadow-2xl: 0px 20px 24px -4px #10182814;
 }
 
+  /* added to ensure the background and text colors are applied globally */
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
-
+  @apply bg-background text-foreground;
   font-family: var(--font-bricolage);
-
-  @media (prefers-color-scheme: light) {
-    color-scheme: light;
-  }
 }
 
 @theme inline {
@@ -107,7 +103,9 @@ body {
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-chart-5: var();
+
+  /* added sidebar colors to the theme variables for consistency and easier management */
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -270,8 +268,11 @@ body {
     transition: all 0.2s ease-in-out;
   }
 
+
+
   .sidebar-item-hover:hover {
-    background-color: #f9fafb;
+    background-color: var(--sidebar-accent, oklch(0.97 0 0));
+    color: var(--sidebar-accent-foreground, oklch(0.205 0 0));
     transform: translateX(2px);
   }
 }
@@ -399,4 +400,27 @@ body {
 .hide-scrollbar {
   -ms-overflow-style: none; /* IE 10+ */
   scrollbar-width: none;
+}
+
+/* ============================================================================
+   GLOBAL DARK MODE TABLE OVERRIDE
+   Overrides hardcoded light utility classes (bg-gray-50, bg-white, etc.) on table 
+   headers when the html/root element has the .dark class active.
+   ============================================================================ */
+.dark thead,
+.dark thead tr,
+.dark thead th {
+  background-color: var(--muted) !important;
+  color: var(--muted-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark table,
+.dark tbody tr,
+.dark td {
+  border-color: var(--border) !important;
+}
+
+.dark tbody tr:hover {
+  background-color: var(--sidebar-accent) !important;
 }
