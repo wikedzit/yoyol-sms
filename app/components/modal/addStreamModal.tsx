@@ -188,14 +188,14 @@ export function AddStreamModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
 
             <Button
               type="submit"
-              className="bg-primary-gradient text-white w-full sm:w-auto"
+              className="bg-primary-gradient text-white w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
               disabled={fetcher.state === 'submitting' || !formData.name}
             >
               {fetcher.state === 'submitting'

@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { useTheme } from 'next-themes';
 
 interface PerformanceChartProps {
   data: Array<{
@@ -23,16 +24,22 @@ interface PerformanceChartProps {
 // Color scheme for grades
 const gradeColors = {
   excellent: '#10b981', // Green for Grade A
-  good: '#3b82f6', // Blue for Grade B
-  average: '#f59e0b', // Orange/Amber for Grade C
-  poor: '#ef4444', // Red for Grade D-F
+  good: '#3b82f6',      // Blue for Grade B
+  average: '#f59e0b',   // Orange/Amber for Grade C
+  poor: '#ef4444',      // Red for Grade D-F
 };
 
 export function PerformanceChart({ data }: PerformanceChartProps) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+  const tooltipTextColor = isDark ? '#f8fafc' : '#0f172a';
+
   return (
-    <Card>
+    <Card className="bg-card text-card-foreground border-border">
       <CardHeader>
-        <CardTitle>Student Performance Overview</CardTitle>
+        <CardTitle className="text-foreground">Student Performance Overview</CardTitle>
         <p className="text-sm text-muted-foreground">
           Grade distribution trends over the year
         </p>
@@ -44,25 +51,46 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
             margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+
             <XAxis
               dataKey="month"
-              stroke="hsl(var(--muted-foreground))"
+              stroke={textColor}
+              tick={{ fill: textColor, fontSize: 12 }}
               interval={0}
             />
+
             <YAxis
-              stroke="hsl(var(--muted-foreground))"
+              stroke={textColor}
+              tick={{ fill: textColor, fontSize: 12 }}
               domain={[0, 100]}
               ticks={[0, 25, 50, 75, 100]}
             />
+
+            {/* 
+              Fixed Tooltip: 
+              Removed itemStyle override so each bar's unique color dot, grade name, 
+              and percentage value show up clearly when hovering over any month.
+            */}
             <Tooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: 'var(--radius)',
+                color: tooltipTextColor,
               }}
-              formatter={(value: number) => `${value}%`}
+              labelStyle={{ 
+                color: tooltipTextColor, 
+                fontWeight: '600',
+                marginBottom: '4px' 
+              }}
+              formatter={(value: number, name: string) => [
+                `${value}%`, 
+                name
+              ]}
             />
-            <Legend />
+
+            <Legend wrapperStyle={{ color: textColor }} />
+
             <Bar
               dataKey="excellent"
               fill={gradeColors.excellent}

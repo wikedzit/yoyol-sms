@@ -187,7 +187,7 @@ export default function SchoolProfilePage() {
                   );
                   setIsEditing(true);
                 }}
-                className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
+                className="flex items-center gap-2 hover:scale-110 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white-600 cursor-pointer"
               >
                 <Pencil size={16} />
                 Edit Profile
@@ -460,7 +460,7 @@ export default function SchoolProfilePage() {
                 <Button
                   type="submit"
                   disabled={isSaving}
-                  className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
+                  className="flex items-center hover:scale-110 gap-2 bg-primary-gradient text-white transition transition-colors hover:bg-purple hover:text-white-600 cursor-pointer"
                 >
                   <Save size={16} />
                   {isSaving
@@ -470,9 +470,8 @@ export default function SchoolProfilePage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() =>
-                    setIsEditing(false)
-                  }
+                   className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                  onClick={() => setIsEditing(false)}
                   disabled={isSaving}
                 >
                   Cancel

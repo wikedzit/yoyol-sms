@@ -144,6 +144,7 @@ export function DataTable<T extends { id: string }>({
               <Button
                 variant="ghost"
                 size="sm"
+                className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
@@ -155,6 +156,7 @@ export function DataTable<T extends { id: string }>({
               <Button
                 variant="ghost"
                 size="sm"
+                className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                 onClick={() =>
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }

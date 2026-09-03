@@ -103,6 +103,12 @@ export default function SchoolProfilePage() {
               Edit School
             </Button>
           </Link>
+          <Button asChild className ="bg-primary-gradient text-white flex item-cneter gap-r hover:scale-110 hover:text-white-600 transition cursor-pointer">
+            <Link to="/schools/new">
+              <Plus size={18} />
+              <span className="font-medium">Add Campus</span>
+            </Link>
+          </Button>
         }
       />
 

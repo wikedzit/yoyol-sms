@@ -1,3 +1,4 @@
+// app/components/modal/TeacherProfileModal.tsx
 import {
   Dialog,
   DialogContent,
@@ -8,25 +9,59 @@ import {
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
 import { Eye } from 'lucide-react';
+import { useState } from 'react';
 
-export function TeacherProfileModal({ teacher }: { teacher: any }) {
+interface TeacherProfileModalProps {
+  teacher: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
+}
+
+export function TeacherProfileModal({
+  teacher,
+  open,
+  onOpenChange,
+  showTrigger = true,
+}: TeacherProfileModalProps) {
+  
+  // added internal state to manage the modal's open state when not controlled
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+  const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
+
+  if (!teacher) return null;
+
   return (
+<<<<<<< HEAD
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="sm">
+            <Eye className="h-4 w-4" />
+          </Button>
+        </DialogTrigger>
+      )}
+=======
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost"   className ="hover:scale-110 hover:text-white-600 transition cursor-pointer" size="sm">
           <Eye className="h-4 w-4" />
         </Button>
       </DialogTrigger>
+>>>>>>> f2897e71c5d327449d77f075788c3e177697ba27
 
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogDescription>
-            Teacher {teacher.firstName} {teacher.lastName} Profile Details
-          </DialogDescription>
+          <DialogTitle>
+            {teacher.firstName} {teacher.lastName}
+          </DialogTitle>
+          <DialogDescription>Teacher Profile Details</DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 space-y-3">
-          {/* Profile photo */}
           <div className="flex items-center gap-3">
             <img
               src={
@@ -40,7 +75,6 @@ export function TeacherProfileModal({ teacher }: { teacher: any }) {
             />
           </div>
 
-          {/* Info grid */}
           <div className="grid grid-cols-2 gap-2 text-sm mt-4">
             <p>
               <strong>Name:</strong> {teacher.firstName} {teacher.lastName}
@@ -64,7 +98,7 @@ export function TeacherProfileModal({ teacher }: { teacher: any }) {
               <strong>Address:</strong> {teacher.address}
             </p>
             <p>
-              <strong>subject:</strong> {teacher.subject}
+              <strong>Subject:</strong> {teacher.subject}
             </p>
             <p>
               <strong>Status:</strong>{' '}
