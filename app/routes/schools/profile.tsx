@@ -9,6 +9,7 @@ import {
   Hash,
   Palette,
   Pencil,
+  Plus,
 } from 'lucide-react';
 import type { LoaderFunctionArgs } from 'react-router';
 import { Link, useLoaderData } from 'react-router';
@@ -95,20 +96,25 @@ export default function SchoolProfilePage() {
       <PageHeader
         title="About Our School"
         actions={
-          <Link to={`/schools/${school.id}`}>
-            <Button
-              className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
-            >
-              <Pencil className="h-4 w-4" />
-              Edit School
-            </Button>
-          </Link>
-          <Button asChild className ="bg-primary-gradient text-white flex item-cneter gap-r hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            <Link to="/schools/new">
-              <Plus size={18} />
-              <span className="font-medium">Add Campus</span>
+          <>
+            <Link to={`/schools/${school.id}`}>
+              <Button
+                className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit School
+              </Button>
             </Link>
-          </Button>
+            <Button
+              asChild
+              className="flex items-center gap-2 bg-primary-gradient text-white hover:scale-110 hover:text-white-600 transition cursor-pointer"
+            >
+              <Link to="/schools/new">
+                <Plus size={18} />
+                <span className="font-medium">Add Campus</span>
+              </Link>
+            </Button>
+          </>
         }
       />
 
