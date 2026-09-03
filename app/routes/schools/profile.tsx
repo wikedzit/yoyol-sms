@@ -10,25 +10,23 @@ import {
   Palette,
   Pencil,
   Plus,
-} from 'lucide-react';
-import type { LoaderFunctionArgs } from 'react-router';
-import { Link, useLoaderData } from 'react-router';
-import { PageHeader } from '~/components/ui/PageHeader';
+} from "lucide-react";
+import type { LoaderFunctionArgs } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import { PageHeader } from "~/components/ui/PageHeader";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '~/components/ui/card';
-import type TeacherService from 'workers/services/teachers';
-import type StudentService from 'workers/services/student';
-import type SchoolService from 'workers/services/school';
-import { Button } from '~/components/ui/button';
+} from "~/components/ui/card";
+import type TeacherService from "workers/services/teachers";
+import type StudentService from "workers/services/student";
+import type SchoolService from "workers/services/school";
+import { Button } from "~/components/ui/button";
 
-export async function loader({
-  context,
-}: LoaderFunctionArgs) {
+export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     school: SchoolService;
     teacher: TeacherService;
@@ -36,44 +34,34 @@ export async function loader({
   };
   const schools = await services.school.getAll();
   const school = schools[0] ?? null;
-  const [totalTeachers, totalStudents] =
-    await Promise.all([
-      services.teacher.countAll(),
-      services.student.countAll(),
-    ]);
+  const [totalTeachers, totalStudents] = await Promise.all([
+    services.teacher.countAll(),
+    services.student.countAll(),
+  ]);
 
   return {
     school,
     totalTeachers,
     totalStudents,
-    totalRegistered:
-      totalTeachers + totalStudents,
+    totalRegistered: totalTeachers + totalStudents,
   };
 }
 export default function SchoolProfilePage() {
-  const {
-    school,
-    totalTeachers,
-    totalStudents,
-    totalRegistered,
-  } = useLoaderData<typeof loader>();
+  const { school, totalTeachers, totalStudents, totalRegistered } =
+    useLoaderData<typeof loader>();
 
   if (!school) {
     return (
       <div className="min-h-screen space-y-6 pb-8">
-        <PageHeader
-          title="School Profile"
-        />
+        <PageHeader title="School Profile" />
         <Card>
           <CardContent className="flex min-h-[320px] flex-col items-center justify-center text-center">
             <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
               <Building2 className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h2 className="text-xl font-semibold">
-              School Profile Not Found
-            </h2>
+            <h2 className="text-xl font-semibold">School Profile Not Found</h2>
             <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-             WE DON'T HAVE A REGISTERED SCHOOL YET
+              WE DON'T HAVE A REGISTERED SCHOOL YET
             </p>
           </CardContent>
         </Card>
@@ -82,14 +70,14 @@ export default function SchoolProfilePage() {
   }
 
   const schoolName = school.name;
-  const schoolMotto = school.motto || 'No motto provided';
-  const schoolAddress = school.address || 'Not provided';
-  const schoolPhone = school.phone || 'Not provided';
-  const schoolEmail = school.email || 'Not provided';
-  const registrationNumber = school.registrationNumber || 'Not provided';
-  const logoUrl = school.logoUrl || '/assets/auth-page/yoyol-logo.png';
-  const primaryColor = school.primaryColor || '#2563eb';
-  const secondaryColor = school.secondaryColor || '#0f172a';
+  const schoolMotto = school.motto || "No motto provided";
+  const schoolAddress = school.address || "Not provided";
+  const schoolPhone = school.phone || "Not provided";
+  const schoolEmail = school.email || "Not provided";
+  const registrationNumber = school.registrationNumber || "Not provided";
+  const logoUrl = school.logoUrl || "/assets/auth-page/yoyol-logo.png";
+  const primaryColor = school.primaryColor || "#2563eb";
+  const secondaryColor = school.secondaryColor || "#0f172a";
 
   return (
     <div className="min-h-screen space-y-6 pb-8">
@@ -98,16 +86,14 @@ export default function SchoolProfilePage() {
         actions={
           <>
             <Link to={`/schools/${school.id}`}>
-              <Button
-                className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white"
-              >
+              <Button className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white-600 hover:scale-110 cursor-pointer transition-all duration-300">
                 <Pencil className="h-4 w-4" />
                 Edit School
               </Button>
             </Link>
             <Button
               asChild
-              className="flex items-center gap-2 bg-primary-gradient text-white hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="flex items-center gap-2 bg-primary-gradient text-white hover:scale-110 hover:text-white-600 cursor-pointer transition-all duration-300"
             >
               <Link to="/schools/new">
                 <Plus size={18} />
@@ -139,9 +125,7 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   School-NAME
                 </p>
-                <p className="truncate text-2xl font-bold">
-                  {schoolName}
-                </p>
+                <p className="truncate text-2xl font-bold">{schoolName}</p>
               </div>
             </div>
           </CardContent>
@@ -167,9 +151,7 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Teachers
                 </p>
-                <p className="text-2xl font-bold">
-                  {totalTeachers}
-                </p>
+                <p className="text-2xl font-bold">{totalTeachers}</p>
               </div>
             </div>
           </CardContent>
@@ -195,9 +177,7 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Students
                 </p>
-                <p className="text-2xl font-bold">
-                  {totalStudents}
-                </p>
+                <p className="text-2xl font-bold">{totalStudents}</p>
               </div>
             </div>
           </CardContent>
@@ -223,18 +203,14 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Total Registered
                 </p>
-                <p className="text-2xl font-bold">
-                  {totalRegistered}
-                </p>
+                <p className="text-2xl font-bold">{totalRegistered}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-
       <div className="grid gap-6 lg:grid-cols-3">
-
         {/* SCHOOL IDENTITY */}
 
         <Card className="lg:col-span-2">
@@ -248,21 +224,16 @@ export default function SchoolProfilePage() {
               />
               {schoolName}
             </CardTitle>
-            <CardDescription>
-              {schoolMotto}
-            </CardDescription>
+            <CardDescription>{schoolMotto}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 sm:grid-cols-2">
-
               {/* SCHOOL NAME */}
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   School Name
                 </p>
-                <p className="text-2xl font-semibold">
-                  {school.name}
-                </p>
+                <p className="text-2xl font-semibold">{school.name}</p>
               </div>
 
               {/* MOTTO */}
@@ -270,9 +241,7 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Motto
                 </p>
-                <p className="text-2xl">
-                  {school.motto || 'Not provided'}
-                </p>
+                <p className="text-2xl">{school.motto || "Not provided"}</p>
               </div>
 
               {/* REGISTRATION NUMBER */}
@@ -280,9 +249,7 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Registration Number
                 </p>
-                <p className="text-2xl">
-                  {registrationNumber}
-                </p>
+                <p className="text-2xl">{registrationNumber}</p>
               </div>
 
               {/* SCHOOL ID */}
@@ -290,26 +257,18 @@ export default function SchoolProfilePage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   School ID
                 </p>
-                <p className="text-2xl">
-                  {school.id}
-                </p>
+                <p className="text-2xl">{school.id}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-
         <Card>
           <CardHeader>
-            <CardTitle>
-              Official School Logo
-            </CardTitle>
-            <CardDescription>
-              OUR OFFICIAL LOGO
-            </CardDescription>
+            <CardTitle>Official School Logo</CardTitle>
+            <CardDescription>OUR OFFICIAL LOGO</CardDescription>
           </CardHeader>
           <CardContent>
-
             <div
               className="flex h-[180px] items-center justify-center rounded-lg border p-6"
               style={{
@@ -321,17 +280,17 @@ export default function SchoolProfilePage() {
                 alt={`${schoolName} logo`}
                 className="max-h-[140px] max-w-full object-contain"
                 onError={(event) => {
-                  event.currentTarget.src =
-                    '/assets/auth-page/yoyol-logo.png';
+                  event.currentTarget.src = "/assets/auth-page/yoyol-logo.png";
                 }}
               />
             </div>
           </CardContent>
         </Card>
 
-
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle>HOW TO REACH US</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>HOW TO REACH US</CardTitle>
+          </CardHeader>
 
           <CardContent>
             <div className="grid gap-6 sm:grid-cols-2">
@@ -343,15 +302,12 @@ export default function SchoolProfilePage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    Address
-                  </p>
+                  <p className="text-sm font-medium">Address</p>
                   <p className="text-sm text-muted-foreground">
                     {schoolAddress}
                   </p>
                 </div>
               </div>
-
 
               <div className="flex items-start gap-3">
                 <Phone
@@ -361,15 +317,10 @@ export default function SchoolProfilePage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">
-                    Phone
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {schoolPhone}
-                  </p>
+                  <p className="text-sm font-medium">Phone</p>
+                  <p className="text-sm text-muted-foreground">{schoolPhone}</p>
                 </div>
               </div>
-
 
               <div className="flex items-start gap-3">
                 <Mail
@@ -385,7 +336,6 @@ export default function SchoolProfilePage() {
                   </p>
                 </div>
               </div>
-
 
               <div className="flex items-start gap-3">
                 <Hash
@@ -405,11 +355,12 @@ export default function SchoolProfilePage() {
           </CardContent>
         </Card>
 
-
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />Theme Colours </CardTitle>
+              <Palette className="h-5 w-5" />
+              Theme Colours{" "}
+            </CardTitle>
             <CardDescription>
               Colours configured for this school.
             </CardDescription>
@@ -418,9 +369,7 @@ export default function SchoolProfilePage() {
           <CardContent className="space-y-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium">
-                  Primary
-                </p>
+                <p className="text-sm font-medium">Primary</p>
                 <p className="font-mono text-xs uppercase text-muted-foreground">
                   {primaryColor}
                 </p>
@@ -450,7 +399,6 @@ export default function SchoolProfilePage() {
             </div>
 
             <div className="overflow-hidden rounded-lg border">
-
               <div
                 className="px-4 py-3 text-sm font-semibold text-white"
                 style={{
@@ -473,7 +421,6 @@ export default function SchoolProfilePage() {
         </Card>
       </div>
 
-
       <Card className="border-none shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -481,14 +428,12 @@ export default function SchoolProfilePage() {
             Registration Summary
           </CardTitle>
           <CardDescription>
-            Live registration totals retrieved from
-            the database.
+            Live registration totals retrieved from the database.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-
             {/* TEACHERS */}
             <div className="rounded-lg border p-5">
               <div className="flex items-center gap-3">
@@ -509,9 +454,7 @@ export default function SchoolProfilePage() {
                   <p className="text-sm text-muted-foreground">
                     Registered Teachers
                   </p>
-                  <p className="text-3xl font-bold">
-                    {totalTeachers}
-                  </p>
+                  <p className="text-3xl font-bold">{totalTeachers}</p>
                 </div>
               </div>
             </div>
@@ -536,9 +479,7 @@ export default function SchoolProfilePage() {
                   <p className="text-sm text-muted-foreground">
                     Registered Students
                   </p>
-                  <p className="text-3xl font-bold">
-                    {totalStudents}
-                  </p>
+                  <p className="text-3xl font-bold">{totalStudents}</p>
                 </div>
               </div>
             </div>
@@ -568,9 +509,7 @@ export default function SchoolProfilePage() {
                   <p className="text-sm text-muted-foreground">
                     Total Registered
                   </p>
-                  <p className="text-3xl font-bold">
-                    {totalRegistered}
-                  </p>
+                  <p className="text-3xl font-bold">{totalRegistered}</p>
                 </div>
               </div>
             </div>
