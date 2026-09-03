@@ -9,6 +9,7 @@ import {
   GitBranch,
   FileText,
   GraduationCap,
+  LogOut,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '~/lib/utils';
@@ -40,6 +41,9 @@ const mainNavigation = [
   { name: 'Students List', href: '/students', icon: GraduationCap },
   { name: 'Teachers', href: '/teachers', icon: Users },
   { name: 'Grades', href: '/grades', icon: GraduationCap },
+   { name: 'logout', href: '/logout', icon: LogOut },
+  
+  
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
