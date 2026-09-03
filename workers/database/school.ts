@@ -11,6 +11,8 @@ export const school = sqliteTable('school', {
   motto: text('motto'),
   registrationNumber: text('registration_number'),
   logoUrl: text('logo_url'),
+  primaryColor: text('primary_color').default('#2563eb'),
+  secondaryColor: text('secondary_color').default('#0f172a'),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

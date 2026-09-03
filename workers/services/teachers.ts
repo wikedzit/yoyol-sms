@@ -62,6 +62,19 @@ export default class TeacherService {
     }
   }
 
+  async countAll(): Promise<number> {
+    try {
+      const result = await this.db
+        .select()
+        .from(teachers);
+
+      return result.length;
+    } catch (error) {
+      console.error('Error counting teachers:', error);
+      return 0;
+    }
+  }
+
   async getTeacherById(id: number): Promise<SelectTeacher | null> {
     try {
       const result = await this.db
