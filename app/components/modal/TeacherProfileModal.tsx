@@ -35,23 +35,18 @@ export function TeacherProfileModal({
   if (!teacher) return null;
 
   return (
-<<<<<<< HEAD
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {showTrigger && (
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+          >
             <Eye className="h-4 w-4" />
           </Button>
         </DialogTrigger>
       )}
-=======
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost"   className ="hover:scale-110 hover:text-white-600 transition cursor-pointer" size="sm">
-          <Eye className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
->>>>>>> f2897e71c5d327449d77f075788c3e177697ba27
 
       <DialogContent className="max-w-md">
         <DialogHeader>
