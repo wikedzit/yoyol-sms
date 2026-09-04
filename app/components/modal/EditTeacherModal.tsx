@@ -38,7 +38,7 @@ export default function EditTeacherModal({
     status: '',
   });
 
-  // ✅ Populate form with existing teacher data when modal opens
+  // Populate form with existing teacher data when modal opens
   useEffect(() => {
     if (teacher) {
       setFormData({
@@ -57,15 +57,23 @@ export default function EditTeacherModal({
     }
   }, [teacher, open]);
 
-  // ✅ Close modal on successful update
+  // Close modal on successful update
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, setOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const formatLabel = (field: string) => {
+    if (field === 'firstName') return 'First Name';
+    if (field === 'lastName') return 'Last Name';
+    return field
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (str) => str.toUpperCase());
   };
 
   return (
@@ -73,12 +81,13 @@ export default function EditTeacherModal({
       <SheetContent
         side="right"
         className="
-      w-full max-w-full 
-      sm:max-w-[420px] 
-      md:max-w-[500px] 
-      lg:!max-w-[573px] lg:!w-[573px]
-      p-6 md:p-10 flex flex-col justify-between
-    "
+          w-full max-w-full 
+          sm:max-w-[420px] 
+          md:max-w-[500px] 
+          lg:!max-w-[573px] lg:!w-[573px]
+          p-6 md:p-10 flex flex-col justify-between
+          bg-card text-card-foreground border-border
+        "
       >
         <fetcher.Form
           method="post"
@@ -87,21 +96,23 @@ export default function EditTeacherModal({
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="_entity" value="teacher" />
-          <input type="hidden" name="id" value={teacher?.id} />
+          <input type="hidden" name="id" value={teacher?.id || ''} />
+          <input type="hidden" name="gender" value={formData.gender} />
+          <input type="hidden" name="status" value={formData.status} />
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
                 Edit Teacher
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={24} />
+              <X size={24} className="text-muted-foreground hover:text-foreground transition-colors" />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-6 md:mb-8">
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
             Update the teacher’s information below.
           </p>
 
@@ -118,12 +129,8 @@ export default function EditTeacherModal({
               'experience',
             ].map((field) => (
               <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {field === 'firstName'
-                    ? 'First Name'
-                    : field === 'lastName'
-                    ? 'Last Name'
-                    : field.charAt(0).toUpperCase() + field.slice(1)}
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {formatLabel(field)}
                 </label>
                 <Input
                   type={
@@ -136,9 +143,7 @@ export default function EditTeacherModal({
                   name={field}
                   value={(formData as any)[field]}
                   onChange={handleChange}
-                  required={['firstName', 'lastName', 'subject'].includes(
-                    field
-                  )}
+                  required={['firstName', 'lastName', 'subject'].includes(field)}
                 />
               </div>
             ))}
@@ -146,7 +151,7 @@ export default function EditTeacherModal({
             {/* Gender & Status */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1" >
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Gender
                 </label>
                 <Select
@@ -154,7 +159,6 @@ export default function EditTeacherModal({
                   onValueChange={(value) =>
                     setFormData({ ...formData, gender: value })
                   }
-                  name="gender"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select gender" />
@@ -168,7 +172,7 @@ export default function EditTeacherModal({
               </div>
 
               <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Status
                 </label>
                 <Select
@@ -176,7 +180,6 @@ export default function EditTeacherModal({
                   onValueChange={(value) =>
                     setFormData({ ...formData, status: value })
                   }
-                  name="status"
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
@@ -191,18 +194,18 @@ export default function EditTeacherModal({
           </div>
 
           {/* STICKY FOOTER */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'

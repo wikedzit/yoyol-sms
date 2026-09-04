@@ -1,4 +1,6 @@
-import { X } from 'lucide-react';
+import { X, School } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import {
@@ -8,72 +10,84 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
-import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
 
 interface CreateClassModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  fetcher: any;
-  formNumber?: number;
-  id?: string;
+  fetcher: FetcherWithComponents<any>;
+  forms?: Array<{ id: number; name: string }>;
+  streams?: Array<{ id: number; name: string }>;
+  levels?: Array<{ id: number; name: string }>;
 }
 
 export default function CreateClassModal({
   open,
   setOpen,
   fetcher,
-  formNumber,
-  id,
+  forms = [],
+  streams = [],
+  levels = [],
 }: CreateClassModalProps) {
-  const [name, setName] = useState('');
-  const [studentCount, setStudentCount] = useState(0);
+  const [className, setClassName] = useState('');
+  const [formId, setFormId] = useState('');
+  const [streamId, setStreamId] = useState('');
+  const [levelId, setLevelId] = useState('');
+
+  const isSubmitting = fetcher.state === 'submitting';
+
+  const resetForm = () => {
+    setClassName('');
+    setFormId('');
+    setStreamId('');
+    setLevelId('');
+  };
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.state === 'idle') {
       setOpen(false);
-      setName('');
-      setStudentCount(0);
-    }
-    if (fetcher.data?.error) {
-      console.error('Error creating class:', fetcher.data.error);
+      resetForm();
     }
   }, [fetcher.data, fetcher.state, setOpen]);
 
-  // Reset form when modal opens
   useEffect(() => {
     if (open) {
-      setName('');
-      setStudentCount(0);
+      resetForm();
     }
   }, [open]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const submitData = new FormData();
-    submitData.append('_method', 'POST');
-    submitData.append('name', name);
-    submitData.append('studentCount', String(studentCount));
-    fetcher.submit(submitData, { method: 'post' });
-  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
         className="
-          w-full max-w-full
-          sm:max-w-[90%]
-          md:max-w-[480px] md:w-[480px]
-          p-6 md:p-8
-          flex flex-col
+          w-full max-w-full 
+          sm:max-w-[420px] 
+          md:max-w-[500px] 
+          lg:!max-w-[573px] lg:!w-[573px]
+          p-6 md:p-10 flex flex-col
+          bg-card text-card-foreground border-border
         "
       >
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-6">
+        <fetcher.Form
+          method="post"
+          className="flex flex-col h-full"
+        >
+          <input type="hidden" name="_method" value="POST" />
+          <input type="hidden" name="action" value="create_class" />
+
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
-                Add New Class
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
+                <School className="h-6 w-6 text-primary" />
+                Create New Class
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
@@ -81,72 +95,102 @@ export default function CreateClassModal({
             </SheetClose>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-6">
-            Create a new class for this form. Classes are typically named like{' '}
-            {formNumber ? `${formNumber}A, ${formNumber}B, ${formNumber}C` : '1A, 1B, 1C'}.
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+            Configure form, level, and stream parameters to create a new class.
           </p>
 
-          {/* FORM INPUTS */}
-          <div className="flex-1 space-y-5">
+          {/* Scrollable Form Content */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Class Name
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Class Name <span className="text-destructive">*</span>
               </label>
               <Input
                 name="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={
-                  formNumber
-                    ? `e.g., ${formNumber}A, ${formNumber}B, ${formNumber}C`
-                    : 'e.g., 1A, 1B, 2C'
-                }
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                placeholder="e.g. Form 1 Science A"
                 required
-                className="h-11"
               />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Enter a unique name for this class
-              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="w-full sm:w-1/2">
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Level <span className="text-destructive">*</span>
+                </label>
+                <Select value={levelId} onValueChange={setLevelId} name="levelId">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels.map((lvl) => (
+                      <SelectItem key={lvl.id} value={String(lvl.id)}>
+                        {lvl.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="w-full sm:w-1/2">
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Form <span className="text-destructive">*</span>
+                </label>
+                <Select value={formId} onValueChange={setFormId} name="formId">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select form" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {forms.map((f) => (
+                      <SelectItem key={f.id} value={String(f.id)}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Student Count
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Stream <span className="text-destructive">*</span>
               </label>
-              <Input
-                name="studentCount"
-                type="number"
-                min={0}
-                value={studentCount}
-                onChange={(e) => setStudentCount(parseInt(e.target.value) || 0)}
-                placeholder="0"
-                className="h-11"
-              />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                Number of students enrolled in this class
-              </p>
+              <Select value={streamId} onValueChange={setStreamId} name="streamId">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stream" />
+                </SelectTrigger>
+                <SelectContent>
+                  {streams.map((st) => (
+                    <SelectItem key={st.id} value={String(st.id)}>
+                      {st.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* FOOTER */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-6 mt-6">
+          {/* Sticky Action Footer */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              disabled={isSubmitting}
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
-              disabled={fetcher.state === 'submitting' || !name.trim()}
+              disabled={isSubmitting || !className.trim()}
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              {fetcher.state === 'submitting' ? 'Creating...' : 'Create Class'}
+              {isSubmitting ? 'Creating...' : 'Create Class'}
             </Button>
           </div>
-        </form>
+        </fetcher.Form>
       </SheetContent>
     </Sheet>
   );

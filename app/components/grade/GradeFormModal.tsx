@@ -36,32 +36,20 @@ export function GradeForm({
   open,
   onOpenChange,
   editData,
-  students,
-  subjects,
-  streams,
-  forms,
-  teachers,
+  students = [],
+  subjects = [],
+  streams = [],
+  forms = [],
+  teachers = [],
   fetcher,
 }: GradeFormProps) {
-  const [studentId, setStudentId] = useState<string>(
-    editData ? String(editData.studentId) : ''
-  );
-  const [subjectId, setSubjectId] = useState<string>(
-    editData ? String(editData.subjectId) : ''
-  );
-  const [streamId, setStreamId] = useState<string>(
-    editData ? String(editData.streamId) : ''
-  );
-  const [formId, setFormId] = useState<string>(
-    editData ? String(editData.formId) : ''
-  );
-  const [teacherId, setTeacherId] = useState<string>(
-    editData?.teacherId ? String(editData.teacherId) : ''
-  );
-  const [score, setScore] = useState<string>(
-    editData ? String(editData.score) : ''
-  );
-  const [remarks, setRemarks] = useState<string>(editData?.remarks || '');
+  const [studentId, setStudentId] = useState<string>('');
+  const [subjectId, setSubjectId] = useState<string>('');
+  const [streamId, setStreamId] = useState<string>('');
+  const [formId, setFormId] = useState<string>('');
+  const [teacherId, setTeacherId] = useState<string>('');
+  const [score, setScore] = useState<string>('');
+  const [remarks, setRemarks] = useState<string>('');
 
   useEffect(() => {
     if (open) {
@@ -85,21 +73,31 @@ export function GradeForm({
     }
   }, [open, editData]);
 
+  // Reset form and close sheet on successful action execution
   useEffect(() => {
-    if (fetcher.data?.success) onOpenChange(false);
+    if (fetcher.data?.success) {
+      onOpenChange(false);
+      setStudentId('');
+      setSubjectId('');
+      setStreamId('');
+      setFormId('');
+      setTeacherId('');
+      setScore('');
+      setRemarks('');
+    }
   }, [fetcher.data, onOpenChange]);
 
-  const getGradeFromScore = (score: number) => {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
+  const getGradeFromScore = (scoreVal: number) => {
+    if (scoreVal >= 90) return 'A';
+    if (scoreVal >= 80) return 'B';
+    if (scoreVal >= 70) return 'C';
+    if (scoreVal >= 60) return 'D';
     return 'F';
   };
 
-  // Filter forms by selected stream
+  // Filter forms by chosen stream ID
   const filteredForms = streamId
-    ? forms.filter((f) => f.streamId === parseInt(streamId))
+    ? forms.filter((f) => f.streamId === parseInt(streamId, 10))
     : forms;
 
   return (
@@ -107,11 +105,12 @@ export function GradeForm({
       <SheetContent
         side="right"
         className="
-          w-full max-w-full
-          sm:max-w-[90%]
-          md:max-w-[573px] md:w-[573px]
-          p-6 md:p-10
-          flex flex-col
+          w-full max-w-full 
+          sm:max-w-[420px] 
+          md:max-w-[500px] 
+          lg:!max-w-[573px] lg:!w-[573px]
+          p-6 md:p-10 flex flex-col
+          bg-card text-card-foreground border-border
         "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
@@ -122,27 +121,29 @@ export function GradeForm({
             </>
           )}
 
-          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
-              <SheetHeader className="p-0">
-                <SheetTitle className="text-xl md:text-2xl font-semibold">
-                  {editData ? 'Edit Grade' : 'Add New Grade'}
-                </SheetTitle>
-              </SheetHeader>
-              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
-                <X size={24} />
-              </SheetClose>
-            </div>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <SheetHeader className="p-0">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+                {editData ? 'Edit Grade' : 'Add New Grade'}
+              </SheetTitle>
+            </SheetHeader>
+            <SheetClose asChild className="cursor-pointer">
+              <X size={24} className="text-muted-foreground hover:text-foreground" />
+            </SheetClose>
+          </div>
 
-            <p className="text-sm text-[#898989] mb-6 md:mb-8">
-              {editData
-                ? 'Update the grade information below.'
-                : "Enter the student's grade details below."}
-            </p>
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+            {editData
+              ? 'Update the grade information below.'
+              : "Enter the student's grade details below."}
+          </p>
 
-            {/* Form Fields */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* Scrollable Form Content */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
+            {/* Student Select */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Student *
               </label>
               <Select value={studentId} onValueChange={setStudentId} required>
@@ -160,8 +161,9 @@ export function GradeForm({
               <input type="hidden" name="studentId" value={studentId} />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            {/* Subject Select */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Subject *
               </label>
               <Select value={subjectId} onValueChange={setSubjectId} required>
@@ -179,16 +181,17 @@ export function GradeForm({
               <input type="hidden" name="subjectId" value={subjectId} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            {/* Stream & Form Class Selects */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="w-full sm:w-1/2">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Stream *
                 </label>
                 <Select
                   value={streamId}
                   onValueChange={(value) => {
                     setStreamId(value);
-                    setFormId(''); // Reset form when stream changes
+                    setFormId('');
                   }}
                   required
                 >
@@ -206,8 +209,8 @@ export function GradeForm({
                 <input type="hidden" name="streamId" value={streamId} />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="w-full sm:w-1/2">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Form *
                 </label>
                 <Select
@@ -235,8 +238,9 @@ export function GradeForm({
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            {/* Teacher Select */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Teacher
               </label>
               <Select value={teacherId} onValueChange={setTeacherId}>
@@ -256,8 +260,9 @@ export function GradeForm({
               )}
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            {/* Score Input */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Score *
               </label>
               <Input
@@ -271,14 +276,15 @@ export function GradeForm({
                 required
               />
               {score && (
-                <p className="text-sm text-[#898989] mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Calculated Grade: {getGradeFromScore(Number(score))}
                 </p>
               )}
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            {/* Remarks Textarea */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Remarks
               </label>
               <Textarea
@@ -287,25 +293,25 @@ export function GradeForm({
                 onChange={(e) => setRemarks(e.target.value)}
                 rows={3}
                 placeholder="Enter any additional remarks..."
-                className="w-full border rounded-md p-2"
+                className="w-full"
               />
             </div>
           </div>
 
-          {/* Sticky Footer */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
+          {/* Sticky Footer - Theme Adaptive */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={fetcher.state === 'submitting'}
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting'
                 ? 'Saving...'

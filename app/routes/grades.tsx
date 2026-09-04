@@ -350,7 +350,7 @@ export default function Grades() {
 
       {/* TODO: will deal with this later */}
       {/* Filters and Actions */}
-      {/* <Card className="border-none shadow-none">
+       <Card className="border-none shadow-none">
         <CardHeader>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -449,7 +449,7 @@ export default function Grades() {
             </div>
           </div>
         </CardHeader>
-      </Card> */}
+      </Card>
 
       {/* Grades Table */}
       <Card className="border-none shadow-none">

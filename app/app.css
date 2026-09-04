@@ -10,32 +10,20 @@
   --color-dark-gray: #101828;
   --color-gray: #4b5563;
   --color-medium-gray: #6b7280;
-  /* for input focus ring */
   --color-light-purple: #d6bbfb;
-  /* for hover the butoon */
   --color-purple: #7f56d9;
   --color-bg-light: #f9fafb;
-  /* border when clicked/focused */
   --color-border-focus: #d0d5dd;
-
   --color-border-light: #e8ecf3;
-  --color-border-light: #e8ecf3;
-
   --color-bg-light-white: #fcfcfc;
-
   --color-border-color: #eaecf0;
-
   --color-border-layout: #ededed;
-
   --color-bg-footer: #f9f9f9;
-
   --color-send-user: #170f49;
   --color-send-2: #6f6c8f;
-
   --color-pro: #fcfcfc;
   --color-pro-top: #e6d3fe;
 
-  --color-gray: #a0aec0;
   --color-gray-50: #f9fafb;
   --color-gray-100: #f2f4f7;
   --color-gray-200: #898989;
@@ -46,15 +34,14 @@
   --color-black-2020: #202020;
 
   --color-bg-line: #eaecf0;
-
   --color-light-blue: #9eaab1;
 
   --primary-gradient: linear-gradient(92.99deg, #5a30f1 -30.05%, #a259ff 100%);
 
   --gradient-radial: radial-gradient(
-    226.72%_226.72%_at_50%_-126.72%,
-    #5A30F1_0%,
-    #FFFFFF_81.72%
+    226.72% 226.72% at 50% -126.72%,
+    #5A30F1 0%,
+    #FFFFFF 81.72%
   );
 
   --gradient-purple-light: linear-gradient(
@@ -64,11 +51,9 @@
   );
 
   --shadow-xl: 0px 8px 8px -4px #10182808;
-
   --shadow-2xl: 0px 20px 24px -4px #10182814;
 }
 
-  /* added to ensure the background and text colors are applied globally */
 html,
 body {
   @apply bg-background text-foreground;
@@ -104,8 +89,6 @@ body {
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* added sidebar colors to the theme variables for consistency and easier management */
-
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -119,46 +102,52 @@ body {
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  
+  /* Light Theme - Clean Slate with Purple Primary Accents */
+  --background: oklch(0.985 0.002 247.839);
+  --foreground: oklch(0.145 0.02 264.376);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.145 0.02 264.376);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.145 0.02 264.376);
+  
+  --primary: oklch(0.52 0.25 272.5);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
+  
+  --secondary: oklch(0.95 0.015 272.5);
+  --secondary-foreground: oklch(0.35 0.18 272.5);
 
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.96 0.005 247.839);
+  --muted-foreground: oklch(0.48 0.02 264.376);
+  --accent: oklch(0.94 0.025 272.5);
+  --accent-foreground: oklch(0.40 0.20 272.5);
+  
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
+  --border: oklch(0.91 0.005 247.839);
+  --input: oklch(0.91 0.005 247.839);
+  --ring: oklch(0.52 0.25 272.5);
+  
+  --chart-1: oklch(0.52 0.25 272.5);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  
+  --sidebar: oklch(0.99 0 0);
+  --sidebar-foreground: oklch(0.2 0.02 264.376);
+  --sidebar-primary: oklch(0.52 0.25 272.5);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-accent: oklch(0.94 0.025 272.5);
+  --sidebar-accent-foreground: oklch(0.40 0.20 272.5);
+  --sidebar-border: oklch(0.91 0.005 247.839);
+  --sidebar-ring: oklch(0.52 0.25 272.5);
+
   --background-pro: linear-gradient(
     92.99deg,
     rgba(90, 48, 241, 0.2) -30.05%,
     rgba(162, 89, 255, 0.2) 100%
   );
-
   --primary-gradient: linear-gradient(92.99deg, #5a30f1 -30.05%, #a259ff 100%);
-
   --gradient-radial: radial-gradient(
     226.72% 226.72% at 50% -126.72%,
     #5a30f1 0%,
@@ -169,59 +158,61 @@ body {
     rgba(90, 48, 241, 0.2) -30.05%,
     rgba(162, 89, 255, 0.2) 100%
   );
-
   --gradient-primary: linear-gradient(92.99deg, #5a30f1 -30.05%, #a259ff 100%);
-
   --gradient-text: linear-gradient(180deg, #5a30f1 0%, #a259ff 100%);
   --gradient-button: linear-gradient(
     92.99deg,
     rgba(90, 48, 241, 0.2) -30.05%,
     rgba(162, 89, 255, 0.2) 100%
   );
-
   --gradient-border-1: linear-gradient(180deg, #5a30f1 0%, #a259ff 100%);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
+  /* High-Contrast Sleek Midnight Dark Theme (#0b0f19 base -> #131b2e card) */
+  --background: oklch(0.13 0.028 264.376);
+  --foreground: oklch(0.985 0.002 247.839);
+  --card: oklch(0.19 0.032 264.376);
+  --card-foreground: oklch(0.985 0.002 247.839);
+  --popover: oklch(0.19 0.032 264.376);
+  --popover-foreground: oklch(0.985 0.002 247.839);
+  
+  /* Primary buttons & active elements stay vibrant and visible */
+  --primary: oklch(0.58 0.25 272.5);
+  --primary-foreground: oklch(1 0 0);
+  
+  --secondary: oklch(0.24 0.04 272.5);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+
+  --muted: oklch(0.22 0.03 264.376);
+  --muted-foreground: oklch(0.75 0.02 264.376);
+  
+  --accent: oklch(0.25 0.05 272.5);
   --accent-foreground: oklch(0.985 0 0);
+  
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
+  --border: oklch(0.28 0.025 264.376);
+  --input: oklch(0.28 0.025 264.376);
+  --ring: oklch(0.58 0.25 272.5);
+  
+  --chart-1: oklch(0.58 0.25 272.5);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  
+  --sidebar: oklch(0.15 0.03 264.376);
+  --sidebar-foreground: oklch(0.985 0.002 247.839);
+  --sidebar-primary: oklch(0.58 0.25 272.5);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.25 0.05 272.5);
   --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --primary-gradient: linear-gradient(92.99deg, #3a1d91 -30.05%, #6a3fbf 100%);
-  --background-gradient: linear-gradient(
-    92.99deg,
-    #5a30f1 -30.05%,
-    #a259ff 100%
-  );
+  --sidebar-border: oklch(0.24 0.02 264.376);
+  --sidebar-ring: oklch(0.58 0.25 272.5);
 
-  --gradient-primary: linear-gradient(92.99deg, #3a1d91 -30.05%, #6a3fbf 100%);
+  --primary-gradient: linear-gradient(92.99deg, #5a30f1 -30.05%, #a259ff 100%);
+  --background-gradient: linear-gradient(92.99deg, #5a30f1 -30.05%, #a259ff 100%);
+  --gradient-primary: linear-gradient(92.99deg, #5a30f1 -30.05%, #a259ff 100%);
   --gradient-border: linear-gradient(180deg, #5a30f1 0%, #a259ff 100%);
   --gradient-text: linear-gradient(180deg, #5a30f1 0%, #a259ff 100%);
   --gradient-button: linear-gradient(
@@ -229,20 +220,33 @@ body {
     rgba(90, 48, 241, 0.2) -30.05%,
     rgba(162, 89, 255, 0.2) 100%
   );
-
   --background-pro: linear-gradient(
     92.99deg,
     rgba(90, 48, 241, 0.2) -30.05%,
     rgba(162, 89, 255, 0.2) 100%
   );
-
   border-image-source: linear-gradient(180deg, #5a30f1 0%, #a259ff 100%);
-
   --background-button: linear-gradient(
     92.99deg,
     rgba(90, 48, 241, 0.2) -30.05%,
     rgba(162, 89, 255, 0.2) 100%
   );
+}
+
+/* Hard light override utility for Login / Auth pages */
+.light-mode-forced {
+  background-color: oklch(0.985 0.002 247.839) !important;
+  color: oklch(0.145 0.02 264.376) !important;
+}
+
+.light-mode-forced input {
+  background-color: #ffffff !important;
+  color: #101828 !important;
+  border-color: #d0d5dd !important;
+}
+
+.light-mode-forced input::placeholder {
+  color: #667085 !important;
 }
 
 @layer base {
@@ -259,20 +263,18 @@ body {
     background-image: var(--primary-gradient);
   }
 
-  /* Sidebar specific styles */
   .sidebar-item-active {
     background-image: var(--primary-gradient);
+    color: #ffffff !important;
   }
 
   .sidebar-item-hover {
     transition: all 0.2s ease-in-out;
   }
 
-
-
   .sidebar-item-hover:hover {
-    background-color: var(--sidebar-accent, oklch(0.97 0 0));
-    color: var(--sidebar-accent-foreground, oklch(0.205 0 0));
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
     transform: translateX(2px);
   }
 }
@@ -290,7 +292,6 @@ body {
 }
 
 @layer base {
-  input[type='date']::-webkit-calendar-picker-indicator,
   input[type='date']::-webkit-calendar-picker-indicator {
     opacity: 0;
   }
@@ -301,24 +302,20 @@ body {
 }
 
 @layer utilities {
-  /* Use CSS variable for primary gradient */
   .bg-gradient-primary {
     background-image: var(--gradient-primary);
   }
 
-  /* Use CSS variable for button gradient */
   .bg-gradient-button {
     background-image: var(--gradient-button);
   }
 
-  /* Text gradient */
   .text-gradient {
     background: linear-gradient(180deg, #5a30f1 0%, #a259ff 100%);
-
+    -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
 
-  /* Border gradient */
   .border-gradient {
     border-width: 1px;
     border-style: solid;
@@ -326,7 +323,6 @@ body {
     border-image-slice: 1;
   }
 
-  /* Radial gradient background (optional) */
   .bg-gradient-radial {
     background-image: var(--gradient-radial);
   }
@@ -336,7 +332,7 @@ body {
   }
 
   .shadow-custom {
-    box-shadow: 0px 2px 30px 0px #cccccc66;
+    box-shadow: 0px 4px 20px 0px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -357,7 +353,6 @@ body {
   stroke-width: 2;
 }
 
-/* Create gradient effect using multiple shadows */
 .icon-purple-gradient::after {
   content: '';
   position: absolute;
@@ -374,8 +369,7 @@ body {
 .border-primary-gradient {
   position: relative;
   border: 1px solid transparent;
-  background: linear-gradient(var(--color-bg, white), var(--color-bg, white))
-      padding-box,
+  background: linear-gradient(var(--card), var(--card)) padding-box,
     var(--primary-gradient) border-box;
 }
 
@@ -398,15 +392,33 @@ body {
 }
 
 .hide-scrollbar {
-  -ms-overflow-style: none; /* IE 10+ */
+  -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* ============================================================================
-   GLOBAL DARK MODE TABLE OVERRIDE
-   Overrides hardcoded light utility classes (bg-gray-50, bg-white, etc.) on table 
-   headers when the html/root element has the .dark class active.
-   ============================================================================ */
+/* Modal/Dialog Footers & Content Theme Overrides */
+.dark dialog,
+.dark [role="dialog"] {
+  background-color: var(--card) !important;
+  color: var(--card-foreground) !important;
+  border-color: var(--border) !important;
+}
+
+.dark [role="dialog"] footer,
+.dark .dialog-footer {
+  background-color: var(--muted) !important;
+  border-top-color: var(--border) !important;
+}
+
+/* Global Dark Mode Table & Form Overrides */
+.dark input:not(.light-mode-forced input), 
+.dark select:not(.light-mode-forced select), 
+.dark textarea:not(.light-mode-forced textarea) {
+  background-color: var(--background);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
 .dark thead,
 .dark thead tr,
 .dark thead th {
