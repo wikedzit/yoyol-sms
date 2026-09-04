@@ -15,6 +15,7 @@ import {
   type SelectFormClass,
 } from '../database/academic-levels';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod Schemas for Validation ---
 
@@ -71,9 +72,15 @@ export type UpdateFormClassInput = z.infer<typeof UpdateFormClassSchema>;
 // --- Academic Level Service Class ---
 export default class AcademicLevelService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
+  }
+
+  private currentOwner(): number {
+    return requireOwnerUserId(this.ownerUserId);
   }
 
   // ==================== LEVEL OPERATIONS ====================
@@ -85,6 +92,7 @@ export default class AcademicLevelService {
         .insert(academicLevels)
         .values({
           ...validated,
+          ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -101,7 +109,12 @@ export default class AcademicLevelService {
       const result = await this.db
         .select()
         .from(academicLevels)
-        .where(eq(academicLevels.id, id))
+        .where(
+          and(
+            eq(academicLevels.id, id),
+            eq(academicLevels.ownerUserId, this.currentOwner()),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -115,7 +128,12 @@ export default class AcademicLevelService {
       const result = await this.db
         .select()
         .from(academicLevels)
-        .where(eq(academicLevels.type, type))
+        .where(
+          and(
+            eq(academicLevels.type, type),
+            eq(academicLevels.ownerUserId, this.currentOwner()),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -129,6 +147,7 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicLevels)
+        .where(eq(academicLevels.ownerUserId, this.currentOwner()))
         .orderBy(asc(academicLevels.name));
     } catch (error) {
       console.error('Error fetching levels:', error);
@@ -148,7 +167,12 @@ export default class AcademicLevelService {
           ...validated,
           updatedAt: Date.now(),
         })
-        .where(eq(academicLevels.id, id))
+        .where(
+          and(
+            eq(academicLevels.id, id),
+            eq(academicLevels.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning();
       return result[0] || null;
     } catch (error) {
@@ -161,7 +185,12 @@ export default class AcademicLevelService {
     try {
       const result = await this.db
         .delete(academicLevels)
-        .where(eq(academicLevels.id, id))
+        .where(
+          and(
+            eq(academicLevels.id, id),
+            eq(academicLevels.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning({ id: academicLevels.id });
       return result.length > 0;
     } catch (error) {
@@ -179,6 +208,7 @@ export default class AcademicLevelService {
         .insert(academicStreams)
         .values({
           ...validated,
+          ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -195,7 +225,12 @@ export default class AcademicLevelService {
       const result = await this.db
         .select()
         .from(academicStreams)
-        .where(eq(academicStreams.id, id))
+        .where(
+          and(
+            eq(academicStreams.id, id),
+            eq(academicStreams.ownerUserId, this.currentOwner()),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -209,7 +244,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicStreams)
-        .where(eq(academicStreams.levelId, levelId))
+        .where(
+          and(
+            eq(academicStreams.levelId, levelId),
+            eq(academicStreams.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(academicStreams.name));
     } catch (error) {
       console.error('Error fetching streams by level:', error);
@@ -222,7 +262,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicStreams)
-        .where(eq(academicStreams.levelType, levelType))
+        .where(
+          and(
+            eq(academicStreams.levelType, levelType),
+            eq(academicStreams.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(academicStreams.name));
     } catch (error) {
       console.error('Error fetching streams by level type:', error);
@@ -235,6 +280,7 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicStreams)
+        .where(eq(academicStreams.ownerUserId, this.currentOwner()))
         .orderBy(asc(academicStreams.name));
     } catch (error) {
       console.error('Error fetching all streams:', error);
@@ -254,7 +300,12 @@ export default class AcademicLevelService {
           ...validated,
           updatedAt: Date.now(),
         })
-        .where(eq(academicStreams.id, id))
+        .where(
+          and(
+            eq(academicStreams.id, id),
+            eq(academicStreams.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning();
       return result[0] || null;
     } catch (error) {
@@ -267,7 +318,12 @@ export default class AcademicLevelService {
     try {
       const result = await this.db
         .delete(academicStreams)
-        .where(eq(academicStreams.id, id))
+        .where(
+          and(
+            eq(academicStreams.id, id),
+            eq(academicStreams.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning({ id: academicStreams.id });
       return result.length > 0;
     } catch (error) {
@@ -285,6 +341,7 @@ export default class AcademicLevelService {
         .insert(academicForms)
         .values({
           ...validated,
+          ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -301,7 +358,12 @@ export default class AcademicLevelService {
       const result = await this.db
         .select()
         .from(academicForms)
-        .where(eq(academicForms.id, id))
+        .where(
+          and(
+            eq(academicForms.id, id),
+            eq(academicForms.ownerUserId, this.currentOwner()),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -315,7 +377,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicForms)
-        .where(eq(academicForms.streamId, streamId))
+        .where(
+          and(
+            eq(academicForms.streamId, streamId),
+            eq(academicForms.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(academicForms.number));
     } catch (error) {
       console.error('Error fetching forms by stream:', error);
@@ -328,7 +395,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicForms)
-        .where(eq(academicForms.levelId, levelId))
+        .where(
+          and(
+            eq(academicForms.levelId, levelId),
+            eq(academicForms.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(academicForms.number));
     } catch (error) {
       console.error('Error fetching forms by level:', error);
@@ -347,7 +419,8 @@ export default class AcademicLevelService {
         .where(
           and(
             eq(academicForms.streamId, streamId),
-            eq(academicForms.number, formNumber)
+            eq(academicForms.number, formNumber),
+            eq(academicForms.ownerUserId, this.currentOwner()),
           )
         )
         .get();
@@ -363,6 +436,7 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(academicForms)
+        .where(eq(academicForms.ownerUserId, this.currentOwner()))
         .orderBy(asc(academicForms.number));
     } catch (error) {
       console.error('Error fetching all forms:', error);
@@ -382,7 +456,12 @@ export default class AcademicLevelService {
           ...validated,
           updatedAt: Date.now(),
         })
-        .where(eq(academicForms.id, id))
+        .where(
+          and(
+            eq(academicForms.id, id),
+            eq(academicForms.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning();
       return result[0] || null;
     } catch (error) {
@@ -395,7 +474,12 @@ export default class AcademicLevelService {
     try {
       const result = await this.db
         .delete(academicForms)
-        .where(eq(academicForms.id, id))
+        .where(
+          and(
+            eq(academicForms.id, id),
+            eq(academicForms.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning({ id: academicForms.id });
       return result.length > 0;
     } catch (error) {
@@ -413,6 +497,7 @@ export default class AcademicLevelService {
         .insert(formClasses)
         .values({
           ...validated,
+          ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -429,7 +514,12 @@ export default class AcademicLevelService {
       const result = await this.db
         .select()
         .from(formClasses)
-        .where(eq(formClasses.id, id))
+        .where(
+          and(
+            eq(formClasses.id, id),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -443,7 +533,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(formClasses)
-        .where(eq(formClasses.formId, formId))
+        .where(
+          and(
+            eq(formClasses.formId, formId),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(formClasses.name));
     } catch (error) {
       console.error('Error fetching form classes by form:', error);
@@ -456,7 +551,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(formClasses)
-        .where(eq(formClasses.streamId, streamId))
+        .where(
+          and(
+            eq(formClasses.streamId, streamId),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(formClasses.name));
     } catch (error) {
       console.error('Error fetching form classes by stream:', error);
@@ -469,6 +569,7 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(formClasses)
+        .where(eq(formClasses.ownerUserId, this.currentOwner()))
         .orderBy(asc(formClasses.name));
     } catch (error) {
       console.error('Error fetching all form classes:', error);
@@ -488,7 +589,12 @@ export default class AcademicLevelService {
           ...validated,
           updatedAt: Date.now(),
         })
-        .where(eq(formClasses.id, id))
+        .where(
+          and(
+            eq(formClasses.id, id),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning();
       return result[0] || null;
     } catch (error) {
@@ -501,7 +607,12 @@ export default class AcademicLevelService {
     try {
       const result = await this.db
         .delete(formClasses)
-        .where(eq(formClasses.id, id))
+        .where(
+          and(
+            eq(formClasses.id, id),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
         .returning({ id: formClasses.id });
       return result.length > 0;
     } catch (error) {
@@ -714,7 +825,12 @@ export default class AcademicLevelService {
       return await this.db
         .select()
         .from(formClasses)
-        .where(eq(formClasses.levelId, levelId))
+        .where(
+          and(
+            eq(formClasses.levelId, levelId),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
         .orderBy(asc(formClasses.name));
     } catch (error) {
       console.error('Error fetching form classes by level:', error);

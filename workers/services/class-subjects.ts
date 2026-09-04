@@ -7,9 +7,47 @@ import {
   type SelectClass,
   type SelectSubject,
 } from 'workers/database';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export default class ClassSubjectService {
-  constructor(private db: DrizzleD1Database) {}
+  constructor(
+    private db: DrizzleD1Database,
+    private ownerUserId: number | null,
+  ) {}
+
+  private currentOwner(): number {
+    return requireOwnerUserId(this.ownerUserId);
+  }
+
+  private async classBelongsToOwner(classId: number): Promise<boolean> {
+    const row = await this.db
+      .select({ id: classes.id })
+      .from(classes)
+      .where(
+        and(
+          eq(classes.id, classId),
+          eq(classes.ownerUserId, this.currentOwner()),
+        ),
+      )
+      .get();
+
+    return Boolean(row);
+  }
+
+  private async subjectBelongsToOwner(subjectId: number): Promise<boolean> {
+    const row = await this.db
+      .select({ id: subject.id })
+      .from(subject)
+      .where(
+        and(
+          eq(subject.id, subjectId),
+          eq(subject.ownerUserId, this.currentOwner()),
+        ),
+      )
+      .get();
+
+    return Boolean(row);
+  }
 
   /**
    * Assign a subject to a class
@@ -19,6 +57,11 @@ export default class ClassSubjectService {
     subjectId: number
   ): Promise<boolean> {
     try {
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+      if (!classIsOwned || !subjectIsOwned) {
+        return false;
+      }
       // Check if assignment already exists
       const existing = await this.db
         .select()
@@ -41,7 +84,7 @@ export default class ClassSubjectService {
         .values({
           classId,
           subjectId,
-          assignedAt: new Date().toISOString(),
+          assignedAt: Date.now(),
         })
         .execute();
 
@@ -60,6 +103,10 @@ export default class ClassSubjectService {
     subjectId: number
   ): Promise<boolean> {
     try {
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      if (!classIsOwned) {
+        return false;
+      }
       await this.db
         .delete(classSubjects)
         .where(
@@ -86,7 +133,12 @@ export default class ClassSubjectService {
         .select(getTableColumns(subject))
         .from(classSubjects)
         .innerJoin(subject, eq(classSubjects.subjectId, subject.id))
-        .where(eq(classSubjects.classId, classId))
+        .where(
+          and(
+            eq(classSubjects.classId, classId),
+            eq(subject.ownerUserId, this.currentOwner()),
+          ),
+        )
         .execute();
 
       return results;
@@ -102,19 +154,15 @@ export default class ClassSubjectService {
   async getClassesBySubject(subjectId: number): Promise<SelectClass[]> {
     try {
       const results = await this.db
-        .select({
-          id: classes.id,
-          name: classes.name,
-          EducationalLevel: classes.EducationalLevel,
-          section: classes.section,
-          year: classes.year,
-          departmentId: classes.departmentId,
-          createdAt: classes.createdAt,
-          updatedAt: classes.updatedAt,
-        })
+        .select(getTableColumns(classes))
         .from(classSubjects)
         .innerJoin(classes, eq(classSubjects.classId, classes.id))
-        .where(eq(classSubjects.subjectId, subjectId))
+        .where(
+          and(
+            eq(classSubjects.subjectId, subjectId),
+            eq(classes.ownerUserId, this.currentOwner()),
+          ),
+        )
         .execute();
 
       return results;
@@ -132,13 +180,24 @@ export default class ClassSubjectService {
     subjectIds: number[]
   ): Promise<boolean> {
     try {
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      if (!classIsOwned) {
+        return false;
+      }
+
+      for (const subjectId of subjectIds) {
+        const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+        if (!subjectIsOwned) {
+          return false;
+        }
+      }
       // Remove duplicates
       const uniqueSubjectIds = [...new Set(subjectIds)];
       
       const values = uniqueSubjectIds.map((subjectId) => ({
         classId,
         subjectId,
-        assignedAt: new Date().toISOString(),
+        assignedAt: Date.now(),
       }));
 
       if (values.length > 0) {
@@ -159,6 +218,17 @@ export default class ClassSubjectService {
     subjectIds: number[]
   ): Promise<boolean> {
     try {
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      if (!classIsOwned) {
+        return false;
+      }
+
+      for (const subjectId of subjectIds) {
+        const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+        if (!subjectIsOwned) {
+          return false;
+        }
+      }
       // Delete all existing assignments
       await this.db
         .delete(classSubjects)
@@ -170,7 +240,7 @@ export default class ClassSubjectService {
         const values = subjectIds.map((subjectId) => ({
           classId,
           subjectId,
-          assignedAt: new Date().toISOString(),
+          assignedAt: Date.now(),
         }));
 
         await this.db.insert(classSubjects).values(values).execute();
@@ -191,7 +261,11 @@ export default class ClassSubjectService {
   > {
     try {
       // First get all classes
-      const allClasses = await this.db.select().from(classes).execute();
+      const allClasses = await this.db
+        .select()
+        .from(classes)
+        .where(eq(classes.ownerUserId, this.currentOwner()))
+        .execute();
 
       // Then get subject counts for each class
       const classesWithCounts = await Promise.all(
@@ -219,7 +293,11 @@ export default class ClassSubjectService {
   > {
     try {
       // First get all subjects
-      const allSubjects = await this.db.select().from(subject).execute();
+      const allSubjects = await this.db
+        .select()
+        .from(subject)
+        .where(eq(subject.ownerUserId, this.currentOwner()))
+        .execute();
 
       // Then get class counts for each subject
       const subjectsWithCounts = await Promise.all(

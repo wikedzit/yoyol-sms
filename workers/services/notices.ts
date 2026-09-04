@@ -6,6 +6,7 @@ import {
   type SelectNotice,
 } from '../database/notices';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod Schemas for Validation ---
 const CreateNoticeSchema = z.object({
@@ -40,22 +41,25 @@ export type GetNoticesInput = z.infer<typeof GetNoticesSchema>;
 // --- Notice Service Class ---
 export default class NoticeService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
   }
 
-  // ✅ Create
   async createNotice(
     data: CreateNoticeInput
   ): Promise<SelectNotice | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = CreateNoticeSchema.parse(data);
 
       const result = await this.db
         .insert(notices)
         .values({
           ...validated,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -68,13 +72,18 @@ export default class NoticeService {
     }
   }
 
-  // ✅ Get by ID
   async getNoticeById(id: string): Promise<SelectNotice | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(notices)
-        .where(eq(notices.id, parseInt(id)))
+        .where(
+          and(
+            eq(notices.id, parseInt(id)),
+            eq(notices.ownerUserId, ownerUserId),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -83,9 +92,9 @@ export default class NoticeService {
     }
   }
 
-  // ✅ Get all (with search, pagination, sorting)
   async getNotices(options?: GetNoticesInput): Promise<SelectNotice[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const { limit, offset, sortBy, sortOrder, search, status: statusFilter } =
         GetNoticesSchema.parse(options) ?? {};
 
@@ -98,8 +107,7 @@ export default class NoticeService {
           ? notices.createdAt
           : notices.updatedAt;
 
-      // Build where conditions
-      const conditions = [];
+      const conditions = [eq(notices.ownerUserId, ownerUserId)];
       if (search) {
         conditions.push(like(notices.title, `%${search}%`));
       }
@@ -107,13 +115,10 @@ export default class NoticeService {
         conditions.push(eq(notices.status, statusFilter));
       }
 
-      let query = this.db.select().from(notices);
-
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
-
-      return await query
+      return await this.db
+        .select()
+        .from(notices)
+        .where(and(...conditions))
         .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
         .limit(limit ?? 50)
         .offset(offset ?? 0);
@@ -123,13 +128,18 @@ export default class NoticeService {
     }
   }
 
-  // ✅ Get active notices only
   async getActiveNotices(limit?: number): Promise<SelectNotice[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       return await this.db
         .select()
         .from(notices)
-        .where(eq(notices.status, 'Active'))
+        .where(
+          and(
+            eq(notices.status, 'Active'),
+            eq(notices.ownerUserId, ownerUserId),
+          ),
+        )
         .orderBy(desc(notices.createdAt))
         .limit(limit ?? 10);
     } catch (error) {
@@ -138,12 +148,12 @@ export default class NoticeService {
     }
   }
 
-  // ✅ Update
   async updateNotice(
     id: string,
     data: UpdateNoticeInput
   ): Promise<SelectNotice | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = UpdateNoticeSchema.parse(data);
       const updateValues: Partial<InsertNotice> = {
         ...validated,
@@ -153,7 +163,12 @@ export default class NoticeService {
       const result = await this.db
         .update(notices)
         .set(updateValues)
-        .where(eq(notices.id, parseInt(id)))
+        .where(
+          and(
+            eq(notices.id, parseInt(id)),
+            eq(notices.ownerUserId, ownerUserId),
+          ),
+        )
         .returning();
 
       return result[0] || null;
@@ -163,12 +178,17 @@ export default class NoticeService {
     }
   }
 
-  // ✅ Delete
   async deleteNotice(id: string): Promise<boolean> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .delete(notices)
-        .where(eq(notices.id, parseInt(id)))
+        .where(
+          and(
+            eq(notices.id, parseInt(id)),
+            eq(notices.ownerUserId, ownerUserId),
+          ),
+        )
         .returning({ id: notices.id });
       return result.length > 0;
     } catch (error) {

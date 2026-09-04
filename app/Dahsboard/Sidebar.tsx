@@ -1,4 +1,4 @@
-import { SidebarContent } from './SidebarContent';
+import { SidebarContent } from "./SidebarContent";
 
 // ============================================================================
 // Added theme classes (bg-card, text-card-foreground, border-border)

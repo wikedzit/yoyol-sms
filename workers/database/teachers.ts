@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { users } from './users';
 
 export const teachers = sqliteTable('teachers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -16,6 +17,10 @@ export const teachers = sqliteTable('teachers', {
 
   // Legacy field - kept for backwards compatibility
   departmentId: integer('department_id'),
+
+  ownerUserId: integer('owner_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
 
   createdAt: integer('created_at')
     .notNull()

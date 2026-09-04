@@ -1,10 +1,10 @@
-import { ChevronDown, LogOut, Menu, X } from 'lucide-react';
-import { useState } from 'react';
-import { Link, Outlet, redirect, useLoaderData } from 'react-router';
-import { authCookie } from 'workers/utils/cookies.server';
-import { Button } from '~/components/ui/button';
-import AppSidebar from '~/Dahsboard/Sidebar';
-import jwt from '@tsndr/cloudflare-worker-jwt';
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { Link, Outlet, redirect, useLoaderData } from "react-router";
+import { authCookie } from "workers/utils/cookies.server";
+import { Button } from "~/components/ui/button";
+import AppSidebar from "~/Dahsboard/Sidebar";
+import jwt from "@tsndr/cloudflare-worker-jwt";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,24 +12,25 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu';
-import { ThemeToggle } from '~/components/ui/theme-toggle';
-import { useTheme } from 'next-themes';
+} from "~/components/ui/dropdown-menu";
+import { ThemeToggle } from "~/components/ui/theme-toggle";
+import { useTheme } from "next-themes";
+import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
 
 export async function loader({ request, context }: any) {
-  const cookieHeader = request.headers.get('Cookie');
-  const token = await authCookie.parse(cookieHeader || '');
+  const cookieHeader = request.headers.get("Cookie");
+  const token = await authCookie.parse(cookieHeader || "");
 
   if (!token) {
-    return redirect('/auth/login');
+    return redirect("/auth/login");
   }
 
   const isValid = await jwt.verify(
     token,
-    context.cloudflare.env.AUTH_SESSION_SECRET
+    context.cloudflare.env.AUTH_SESSION_SECRET,
   );
   if (!isValid) {
-    return redirect('/auth/login');
+    return redirect("/auth/login");
   }
 
   const payload = jwt.decode(token);
@@ -38,14 +39,10 @@ export async function loader({ request, context }: any) {
   return { user: { email: user.email, role: user.role } };
 }
 
-const handleLogout = async () => {
-  await fetch('/logout', { method: 'POST' });
-  window.location.href = '/auth/login';
-};
-
 const DashboardLayout = () => {
   const { user } = useLoaderData<{ user: { email: string; role: string } }>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
   return (
@@ -53,10 +50,10 @@ const DashboardLayout = () => {
       <div
         className="h-screen bg-background"
         style={{
-          backgroundImage: 'url(/assets/awesome-bg.jpg)',
-          backgroundAttachment: 'fixed',
-          backgroundSize: 'cover',
-          backgroundPosition: 'left top',
+          backgroundImage: "url(/assets/awesome-bg.jpg)",
+          backgroundAttachment: "fixed",
+          backgroundSize: "cover",
+          backgroundPosition: "left top",
         }}
       >
         <div className="flex h-full backdrop-blur-[2px]">
@@ -77,7 +74,7 @@ const DashboardLayout = () => {
           {/* Mobile Sidebar */}
           <div
             className={`fixed inset-y-0 left-0 z-50 w-64 bg-card shadow-lg transform transition-transform duration-300 ease-in-out lg:hidden border-r border-border
-            ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
           >
             <div className="p-4 flex items-center justify-between border-b border-border">
               <img
@@ -88,7 +85,7 @@ const DashboardLayout = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                 className="h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                className="h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <X className="h-6 w-6" />
@@ -104,7 +101,7 @@ const DashboardLayout = () => {
 
           <div
             className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ease-in-out ${
-              mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+              mobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
             }`}
             onClick={() => setMobileMenuOpen(false)}
           />
@@ -136,7 +133,7 @@ const DashboardLayout = () => {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition cursor-pointer outline-none">
                     <div className="h-7 w-7 flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
-                      {user?.email?.charAt(0).toUpperCase() ?? 'U'}
+                      {user?.email?.charAt(0).toUpperCase() ?? "U"}
                     </div>
                     <div className="hidden md:block text-left">
                       <div className="text-sm font-medium text-foreground truncate max-w-[150px]">
@@ -175,7 +172,7 @@ const DashboardLayout = () => {
                     className="flex items-center justify-between cursor-pointer focus:bg-accent focus:text-accent-foreground select-none"
                     onSelect={(e) => {
                       e.preventDefault();
-                      setTheme(theme === 'dark' ? 'light' : 'dark');
+                      setTheme(theme === "dark" ? "light" : "dark");
                     }}
                   >
                     <span className="text-sm font-medium">Theme</span>
@@ -186,13 +183,18 @@ const DashboardLayout = () => {
 
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive cursor-pointer"
-                    onSelect={handleLogout}
+                    onSelect={() => setIsLogoutConfirmOpen(true)}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <LogoutConfirmDialog
+                open={isLogoutConfirmOpen}
+                onOpenChange={setIsLogoutConfirmOpen}
+              />
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-background/50">

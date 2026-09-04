@@ -1,11 +1,13 @@
-import { eq, desc, asc, like } from 'drizzle-orm';
+import { and, eq, desc, asc, like } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   students,
   type InsertStudent,
   type SelectStudent,
 } from '../database/students';
+import { school } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod schemas for validation ---
 const CreateStudentSchema = z.object({
@@ -68,19 +70,38 @@ export type GetStudentsInput = z.infer<typeof GetStudentsSchema>;
 // --- Student service class ---
 export default class StudentService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
   }
 
   async create(data: CreateStudentInput): Promise<SelectStudent | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = CreateStudentSchema.parse(data);
+
+      const ownedSchool = await this.db
+        .select({ id: school.id })
+        .from(school)
+        .where(
+          and(
+            eq(school.id, validated.schoolId),
+            eq(school.ownerUserId, ownerUserId),
+          ),
+        )
+        .get();
+
+      if (!ownedSchool) {
+        return null;
+      }
 
       const result = await this.db
         .insert(students)
         .values({
           ...validated,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -95,10 +116,13 @@ export default class StudentService {
 
   async getById(id: string): Promise<SelectStudent | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(students)
-        .where(eq(students.id, id))
+        .where(
+          and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -109,10 +133,13 @@ export default class StudentService {
 
   async getByEmail(email: string): Promise<SelectStudent | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(students)
-        .where(eq(students.email, email))
+        .where(
+          and(eq(students.email, email), eq(students.ownerUserId, ownerUserId)),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -123,6 +150,7 @@ export default class StudentService {
 
   async getAll(options: GetStudentsInput): Promise<SelectStudent[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const { limit, offset, sortBy, sortOrder, search } =
         GetStudentsSchema.parse(options) ?? {};
 
@@ -135,15 +163,15 @@ export default class StudentService {
           ? students.createdAt
           : students.updatedAt;
 
-      const query = this.db.select().from(students);
-
+      const filters = [eq(students.ownerUserId, ownerUserId)];
       if (search) {
-        query.where(
-          like(students.firstName, `%${search}%`) // you could add OR lastName, email, etc.
-        );
+        filters.push(like(students.firstName, `%${search}%`));
       }
 
-      return await query
+      return await this.db
+        .select()
+        .from(students)
+        .where(and(...filters))
         .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
         .limit(limit ?? 10)
         .offset(offset ?? 0);
@@ -158,6 +186,7 @@ export default class StudentService {
     data: UpdateStudentInput
   ): Promise<SelectStudent | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = UpdateStudentSchema.parse(data);
       const updateValues: Partial<InsertStudent> = {
         ...validated,
@@ -167,7 +196,9 @@ export default class StudentService {
       const result = await this.db
         .update(students)
         .set(updateValues)
-        .where(eq(students.id, id))
+        .where(
+          and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
+        )
         .returning();
 
       return result[0] || null;
@@ -179,9 +210,12 @@ export default class StudentService {
 
   async delete(id: string): Promise<boolean> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .delete(students)
-        .where(eq(students.id, id))
+        .where(
+          and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
+        )
         .returning({ id: students.id });
       return result.length > 0;
     } catch (error) {
@@ -195,10 +229,16 @@ export default class StudentService {
    */
   async getByFormClassId(formClassId: number): Promise<SelectStudent[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       return await this.db
         .select()
         .from(students)
-        .where(eq(students.formClassId, formClassId))
+        .where(
+          and(
+            eq(students.formClassId, formClassId),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        )
         .orderBy(asc(students.firstName), asc(students.lastName));
     } catch (error) {
       console.error('Error fetching students by formClassId:', error);
@@ -211,10 +251,16 @@ export default class StudentService {
    */
   async countByFormClassId(formClassId: number): Promise<number> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(students)
-        .where(eq(students.formClassId, formClassId));
+        .where(
+          and(
+            eq(students.formClassId, formClassId),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        );
       return result.length;
     } catch (error) {
       console.error('Error counting students by formClassId:', error);
@@ -223,11 +269,15 @@ export default class StudentService {
   }
 
   /**
-   * Count ALL students in the database (all schools combined)
+   * Count students owned by the signed-in user
    */
   async countAll(): Promise<number> {
     try {
-      const result = await this.db.select().from(students);
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const result = await this.db
+        .select()
+        .from(students)
+        .where(eq(students.ownerUserId, ownerUserId));
       return result.length;
     } catch (error) {
       console.error('Error counting students:', error);
@@ -240,10 +290,16 @@ export default class StudentService {
    */
   async getBySchoolId(schoolId: number): Promise<SelectStudent[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       return await this.db
         .select()
         .from(students)
-        .where(eq(students.schoolId, schoolId))
+        .where(
+          and(
+            eq(students.schoolId, schoolId),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        )
         .orderBy(asc(students.firstName), asc(students.lastName));
     } catch (error) {
       console.error('Error fetching students by schoolId:', error);
@@ -256,10 +312,16 @@ export default class StudentService {
    */
   async countBySchoolId(schoolId: number): Promise<number> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(students)
-        .where(eq(students.schoolId, schoolId));
+        .where(
+          and(
+            eq(students.schoolId, schoolId),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        );
       return result.length;
     } catch (error) {
       console.error('Error counting students by schoolId:', error);

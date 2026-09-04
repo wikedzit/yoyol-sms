@@ -10,7 +10,7 @@ import {
   FileText,
   GraduationCap,
   LogOut,
-} from 'lucide-react';
+} from "lucide-react";
 
 /* 
   ============================================================================
@@ -18,39 +18,37 @@ import {
   to match React Router v7 / React Router framework setups.
   ============================================================================
 */
-import { Link, useLocation } from 'react-router';
-import { cn } from '~/lib/utils';
-import { useState } from 'react';
+import { Link, useLocation } from "react-router";
+import { cn } from "~/lib/utils";
+import { useState } from "react";
+import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
 
 const mainNavigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
 
   {
-    name: 'Academic levels',
+    name: "Academic levels",
     icon: Building2,
     children: [
-      { name: 'O-Level', href: '/levels/o-level' },
-      { name: 'A-Level', href: '/levels/a-level' },
+      { name: "O-Level", href: "/levels/o-level" },
+      { name: "A-Level", href: "/levels/a-level" },
     ],
   },
 
   {
-    name: 'Schools Setup',
+    name: "Schools Setup",
     icon: Building2,
     children: [
-      { name: 'School Profile', href: '/schools/profile' },
-      { name: 'Academic Year', href: '/schools/academic-year' },
-      { name: 'Subjects', href: '/subjects', icon: FileText },
-      { name: 'Classrooms', href: '/classes', icon: DoorOpen },
+      { name: "School Profile", href: "/schools/profile" },
+      { name: "Academic Year", href: "/schools/academic-year" },
+      { name: "Subjects", href: "/subjects", icon: FileText },
+      { name: "Classrooms", href: "/classes", icon: DoorOpen },
     ],
   },
 
-  { name: 'Students List', href: '/students', icon: GraduationCap },
-  { name: 'Teachers', href: '/teachers', icon: Users },
-  { name: 'Grades', href: '/grades', icon: GraduationCap },
-   { name: 'logout', href: '/logout', icon: LogOut },
-  
-  
+  { name: "Students List", href: "/students", icon: GraduationCap },
+  { name: "Teachers", href: "/teachers", icon: Users },
+  { name: "Grades", href: "/grades", icon: GraduationCap },
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
@@ -82,8 +80,24 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               location={location}
               onNavigate={onNavigate}
             />
-          )
+          ),
         )}
+
+        <LogoutConfirmDialog
+          trigger={
+            <button
+              type="button"
+              onClick={onNavigate}
+              className={cn(
+                "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out cursor-pointer",
+                "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              )}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="truncate">Logout</span>
+            </button>
+          }
+        />
       </nav>
     </div>
   );
@@ -107,15 +121,17 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
         ============================================================================
       */
       className={cn(
-        'w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out',
+        "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out",
         isActive
-          ? 'bg-primary text-primary-foreground shadow-xs'
-          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          ? "bg-primary text-primary-foreground shadow-xs"
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
       <item.icon className="h-5 w-5" />
       <span className="truncate">{item.name}</span>
-      {isActive && <ChevronRight className="ml-auto h-4 w-4 text-primary-foreground" />}
+      {isActive && (
+        <ChevronRight className="ml-auto h-4 w-4 text-primary-foreground" />
+      )}
     </Link>
   );
 };
@@ -128,7 +144,7 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
 
   // Is any child active?
   const isChildActive = item.children.some(
-    (child: any) => location.pathname === child.href
+    (child: any) => location.pathname === child.href,
   );
 
   return (
@@ -143,10 +159,10 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
           ============================================================================
         */
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition duration-200 cursor-pointer',
+          "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition duration-200 cursor-pointer",
           isChildActive
-            ? 'bg-primary text-primary-foreground shadow-xs'
-            : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            ? "bg-primary text-primary-foreground shadow-xs"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         )}
       >
         <item.icon className="h-5 w-5" />
@@ -154,8 +170,8 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
 
         <ChevronDown
           className={cn(
-            'ml-auto h-4 w-4 transition-transform',
-            open && 'rotate-180'
+            "ml-auto h-4 w-4 transition-transform",
+            open && "rotate-180",
           )}
         />
       </button>
@@ -176,10 +192,10 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                   ============================================================================
                 */
                 className={cn(
-                  'block px-3 py-2 text-sm rounded-md transition duration-150',
+                  "block px-3 py-2 text-sm rounded-md transition duration-150",
                   isActive
-                    ? 'bg-primary text-primary-foreground font-medium'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
                 {child.name}

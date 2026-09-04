@@ -1,7 +1,7 @@
-import { redirect } from 'react-router';
-import { authCookie } from 'workers/utils/cookies.server';
-import jwt from '@tsndr/cloudflare-worker-jwt';
-import { useLoaderData, Outlet } from 'react-router';
+import { redirect } from "react-router";
+import { authCookie } from "workers/utils/cookies.server";
+import jwt from "@tsndr/cloudflare-worker-jwt";
+import { useLoaderData, Outlet } from "react-router";
 
 interface UserPayload {
   id: number;
@@ -22,24 +22,24 @@ interface LoaderData {
  */
 export async function loader({ request, context }: any) {
   try {
-    const cookieHeader = request.headers.get('Cookie');
-    const token = await authCookie.parse(cookieHeader || '');
+    const cookieHeader = request.headers.get("Cookie");
+    const token = await authCookie.parse(cookieHeader || "");
 
     // No token found - redirect to login
     if (!token) {
-      console.log('No auth token found, redirecting to login');
-      return redirect('/auth/login');
+      console.log("No auth token found, redirecting to login");
+      return redirect("/auth/login");
     }
 
     // Verify token signature and expiration
     const isValid = await jwt.verify(
       token,
-      context.cloudflare.env.AUTH_SESSION_SECRET
+      context.cloudflare.env.AUTH_SESSION_SECRET,
     );
 
     if (!isValid) {
-      console.log('Invalid auth token, redirecting to login');
-      return redirect('/auth/login');
+      console.log("Invalid auth token, redirecting to login");
+      return redirect("/auth/login");
     }
 
     // Decode and extract user payload
@@ -48,15 +48,15 @@ export async function loader({ request, context }: any) {
 
     // Validate payload has required fields
     if (!payload?.email || !payload?.role) {
-      console.log('Invalid token payload, redirecting to login');
-      return redirect('/auth/login');
+      console.log("Invalid token payload, redirecting to login");
+      return redirect("/auth/login");
     }
 
     return { user: payload };
   } catch (error) {
     // Any error during authentication - redirect to login
-    console.error('Auth error:', error);
-    return redirect('/auth/login');
+    console.error("Auth error:", error);
+    return redirect("/auth/login");
   }
 }
 
