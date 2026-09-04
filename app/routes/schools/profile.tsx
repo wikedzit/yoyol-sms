@@ -52,20 +52,21 @@ export default function SchoolProfilePage() {
 
   if (!school) {
     return (
-      <div className="min-h-screen space-y-6 pb-8">
-        <PageHeader title="School Profile" />
-        <Card>
-          <CardContent className="flex min-h-[320px] flex-col items-center justify-center text-center">
-            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-              <Building2 className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <h2 className="text-xl font-semibold">School Profile Not Found</h2>
-            <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-              WE DON'T HAVE A REGISTERED SCHOOL YET
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <p>School Profile to be added during onboarding</p>
+      // <div className="min-h-screen space-y-6 pb-8">
+      //   <PageHeader title="School Profile" />
+      //   <Card>
+      //     <CardContent className="flex min-h-[320px] flex-col items-center justify-center text-center">
+      //       <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+      //         <Building2 className="h-10 w-10 text-muted-foreground" />
+      //       </div>
+      //       <h2 className="text-xl font-semibold">School Profile Not Found</h2>
+      //       <p className="mt-2 max-w-lg text-sm text-muted-foreground">
+      //         WE DON'T HAVE A REGISTERED SCHOOL YET
+      //       </p>
+      //     </CardContent>
+      //   </Card>
+      // </div>
     );
   }
 

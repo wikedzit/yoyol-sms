@@ -246,6 +246,20 @@
       "when": 1788375687416,
       "tag": "0034_jazzy_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1788468480000,
+      "tag": "0035_add_owner_user_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "6",
+      "when": 1788471530270,
+      "tag": "0036_unique_nekra",
+      "breakpoints": true
     }
   ]
 }

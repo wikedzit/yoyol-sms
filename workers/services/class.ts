@@ -1,8 +1,9 @@
-import { eq, desc, asc, like, sql } from 'drizzle-orm';
+import { eq, desc, asc, like, sql, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { classes, type InsertClass, type SelectClass } from '../database/class';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { students } from 'workers/database';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // Zod schemas for validation
 const CreateClassSchema = z.object({
@@ -69,9 +70,11 @@ export type GetClassesInput = z.infer<typeof GetClassesSchema>;
  */
 export default class ClassService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
   }
 
   /**
@@ -79,6 +82,7 @@ export default class ClassService {
    */
   async create(data: CreateClassInput): Promise<SelectClass | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = CreateClassSchema.parse(data);
 
       const result = await this.db
@@ -89,6 +93,7 @@ export default class ClassService {
           section: validatedData.section,
           year: validatedData.year,
           departmentId: validatedData.departmentId ?? null,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -106,10 +111,11 @@ export default class ClassService {
    */
   async getById(id: number): Promise<SelectClass | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(classes)
-        .where(eq(classes.id, id))
+        .where(and(eq(classes.id, id), eq(classes.ownerUserId, ownerUserId)))
         .get();
 
       return result || null;
@@ -124,10 +130,10 @@ export default class ClassService {
    */
   async getAll(options: GetClassesInput): Promise<SelectClass[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const { limit, offset, sortBy, sortOrder, search } =
         GetClassesSchema.parse(options) ?? {};
 
-      // Get the correct column for sorting
       const sortColumn =
         sortBy === 'name'
           ? classes.name
@@ -135,24 +141,18 @@ export default class ClassService {
           ? classes.createdAt
           : classes.updatedAt;
 
+      const filters = [eq(classes.ownerUserId, ownerUserId)];
       if (search) {
-        const result = await this.db
-          .select()
-          .from(classes)
-          .where(like(classes.name, `%${search}%`))
-          .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
-          .limit(limit ?? 10)
-          .offset(offset ?? 0);
-        return result;
-      } else {
-        const result = await this.db
-          .select()
-          .from(classes)
-          .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
-          .limit(limit ?? 10)
-          .offset(offset ?? 0);
-        return result;
+        filters.push(like(classes.name, `%${search}%`));
       }
+
+      return await this.db
+        .select()
+        .from(classes)
+        .where(and(...filters))
+        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit ?? 10)
+        .offset(offset ?? 0);
     } catch (error) {
       console.error('Error fetching classes:', error);
       return [];
@@ -164,6 +164,7 @@ export default class ClassService {
     options: GetClassesInput
   ): Promise<(SelectClass & { studentCount: number })[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const { limit, offset, sortBy, sortOrder, search } =
         GetClassesSchema.parse(options) ?? {};
 
@@ -174,7 +175,11 @@ export default class ClassService {
           ? classes.createdAt
           : classes.updatedAt;
 
-      // 💡 One SQL query using LEFT JOIN for performance
+      const filters = [eq(classes.ownerUserId, ownerUserId)];
+      if (search) {
+        filters.push(like(classes.name, `%${search}%`));
+      }
+
       const result = await this.db
         .select({
           id: classes.id,
@@ -182,19 +187,23 @@ export default class ClassService {
           EducationalLevel: classes.EducationalLevel,
           section: classes.section,
           year: classes.year,
+          departmentId: classes.departmentId,
+          ownerUserId: classes.ownerUserId,
           createdAt: classes.createdAt,
           updatedAt: classes.updatedAt,
           studentCount: sql<number>`COUNT(${students.id})`.as('studentCount'),
         })
         .from(classes)
         .leftJoin(students, eq(students.classId, classes.id))
-        .where(search ? like(classes.name, `%${search}%`) : undefined)
+        .where(and(...filters))
         .groupBy(
           classes.id,
           classes.name,
           classes.EducationalLevel,
           classes.section,
           classes.year,
+          classes.departmentId,
+          classes.ownerUserId,
           classes.createdAt,
           classes.updatedAt
         )
@@ -228,7 +237,12 @@ export default class ClassService {
       const result = await this.db
         .update(classes)
         .set(updateValues)
-        .where(eq(classes.id, id))
+        .where(
+          and(
+            eq(classes.id, id),
+            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .returning();
 
       return result[0] || null;
@@ -245,7 +259,12 @@ export default class ClassService {
     try {
       const result = await this.db
         .delete(classes)
-        .where(eq(classes.id, id))
+        .where(
+          and(
+            eq(classes.id, id),
+            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .returning({ id: classes.id });
 
       return result.length > 0;
@@ -263,7 +282,12 @@ export default class ClassService {
       const result = await this.db
         .select({ id: classes.id })
         .from(classes)
-        .where(eq(classes.name, name))
+        .where(
+          and(
+            eq(classes.name, name),
+            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .get();
 
       return result !== null;

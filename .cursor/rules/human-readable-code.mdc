@@ -1,0 +1,36 @@
+---
+description: Write code a teammate can read aloud and understand in 30 seconds
+alwaysApply: true
+---
+
+# Human-readable, human-friendly code
+
+Apply this to every file we write or change. Do not rewrite unrelated files.
+
+Prefer names a person can say out loud. Prefer a few clear lines over a clever one-liner. Prefer a function with one job over a block that does three things. Comments explain *why*, never *what*.
+
+```typescript
+// ❌ BAD — silent types, cryptic names, comment restates the code
+async function f(d: any) {
+  const u = await this.db.select().from(users).where(eq(users.email, d)).get(); // find user
+  return u || null;
+}
+
+// ✅ GOOD — sayable names, explicit types, no noise comments
+async function findUserByEmail(email: string): Promise<User | null> {
+  const user = await this.db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1)
+    .get();
+
+  return user ?? null;
+}
+```
+
+- Name functions as verbs (`createUser`, `signIn`), booleans as questions (`isSubmitting`, `hasExistingAccount`).
+- Split a function when a reader needs a scroll or a nested `if` to follow it.
+- Do not use `any`. Type the values the function actually uses.
+- Do not abbreviate unless the name is already a project-wide term (`db`, `id`, `jwt`).
+- Leave generated files, vendor UI primitives, and unrelated modules untouched.

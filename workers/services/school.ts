@@ -1,7 +1,8 @@
-import { eq, like, asc } from 'drizzle-orm';
+import { and, eq, like, asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { school, type SelectSchool } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 const SchoolProfileSchema = z.object({
   name: z
@@ -65,17 +66,22 @@ export type SchoolProfileInput =
 
 export default class SchoolService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
   }
 
-  // Orodha ya shule ZOTE
+  // Orodha ya shule za mmiliki
   async getAll(): Promise<SelectSchool[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+
       return await this.db
         .select()
         .from(school)
+        .where(eq(school.ownerUserId, ownerUserId))
         .orderBy(asc(school.name));
     } catch (error) {
       console.error(
@@ -92,10 +98,11 @@ export default class SchoolService {
     id: number
   ): Promise<SelectSchool | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(school)
-        .where(eq(school.id, id))
+        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
         .get();
 
       return result || null;
@@ -114,13 +121,18 @@ export default class SchoolService {
     query: string
   ): Promise<SelectSchool[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+
       return await this.db
         .select()
         .from(school)
         .where(
-          like(
-            school.name,
-            `%${query.trim()}%`
+          and(
+            eq(school.ownerUserId, ownerUserId),
+            like(
+              school.name,
+              `%${query.trim()}%`
+            )
           )
         )
         .orderBy(asc(school.name));
@@ -139,6 +151,7 @@ export default class SchoolService {
     data: SchoolProfileInput
   ): Promise<SelectSchool | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated =
         SchoolProfileSchema.parse(data);
 
@@ -146,7 +159,7 @@ export default class SchoolService {
         .insert(school)
         .values({
           ...validated,
-
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -169,6 +182,7 @@ export default class SchoolService {
     data: SchoolProfileInput
   ): Promise<SelectSchool | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated =
         SchoolProfileSchema.parse(data);
 
@@ -179,7 +193,7 @@ export default class SchoolService {
 
           updatedAt: Date.now(),
         })
-        .where(eq(school.id, id))
+        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
         .returning();
 
       return result[0] || null;
@@ -198,9 +212,10 @@ export default class SchoolService {
     id: number
   ): Promise<boolean> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .delete(school)
-        .where(eq(school.id, id))
+        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
         .returning({
           id: school.id,
         });

@@ -1,20 +1,38 @@
 import { sql } from 'drizzle-orm';
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import {
+  sqliteTable,
+  text,
+  integer,
+  uniqueIndex,
+} from 'drizzle-orm/sqlite-core';
+import { users } from './users';
 
 // Academic Years table
-export const academicYears = sqliteTable('academic_years', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull().unique(), // e.g. "2026/2027"
-  startDate: text('start_date').notNull(), // ISO date string
-  endDate: text('end_date').notNull(), // ISO date string
-  status: text('status').notNull().default('upcoming'), // 'upcoming' | 'active' | 'archived'
-  createdAt: integer('created_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: integer('updated_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-});
+export const academicYears = sqliteTable(
+  'academic_years',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    name: text('name').notNull(), // e.g. "2026/2027"
+    startDate: text('start_date').notNull(), // ISO date string
+    endDate: text('end_date').notNull(), // ISO date string
+    status: text('status').notNull().default('upcoming'), // 'upcoming' | 'active' | 'archived'
+    ownerUserId: integer('owner_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: integer('created_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: integer('updated_at')
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    ownerNameUnique: uniqueIndex('academic_years_owner_name_unique').on(
+      table.ownerUserId,
+      table.name,
+    ),
+  }),
+);
 
 // Terms table (nested under an Academic Year)
 export const terms = sqliteTable('terms', {

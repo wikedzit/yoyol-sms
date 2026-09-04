@@ -1,8 +1,9 @@
 // --- Zod schemas for validation ---
-import { like, asc, desc, eq } from 'drizzle-orm';
+import { like, asc, desc, eq, and } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
 import { subject, type SelectSubject } from 'workers/database/subjects';
 import { z } from 'zod';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
@@ -36,19 +37,23 @@ export type GetSubjectsInput = z.infer<typeof getSubjectsSchema>;
 // --- Subject Service ---
 export default class SubjectService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(db: DrizzleD1Database) {
+  constructor(db: DrizzleD1Database, ownerUserId: number | null) {
     this.db = db;
+    this.ownerUserId = ownerUserId;
   }
 
   // Create a new subject
   async createSubject(data: SubjectInput): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = subjectSchema.parse(data);
       const result = await this.db
         .insert(subject)
         .values({
           ...validatedData,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -56,10 +61,10 @@ export default class SubjectService {
         .execute();
 
       return result[0] || null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating subject:', error);
-      // Check for UNIQUE constraint violation
-      if (error?.message?.includes('UNIQUE constraint failed: subjects.code')) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('UNIQUE constraint failed')) {
         throw new Error(
           'A subject with this code already exists. Please use a different code.'
         );
@@ -71,10 +76,11 @@ export default class SubjectService {
   // Get subject by ID
   async getSubjectById(id: number): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.id, id))
+        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
         .execute();
 
       return result[0] || null;
@@ -87,10 +93,11 @@ export default class SubjectService {
   // Get subject by code
   async getSubjectByCode(code: string): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.code, code))
+        .where(and(eq(subject.code, code), eq(subject.ownerUserId, ownerUserId)))
         .execute();
 
       return result[0] || null;
@@ -103,10 +110,16 @@ export default class SubjectService {
   // Get Subjects by Stream ID
   async getSubjectsByStreamId(streamId: number): Promise<SelectSubject[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.streamId, streamId))
+        .where(
+          and(
+            eq(subject.streamId, streamId),
+            eq(subject.ownerUserId, ownerUserId),
+          ),
+        )
         .execute();
 
       return result;
@@ -119,6 +132,7 @@ export default class SubjectService {
   // Get all subjects with pagination, search, and sorting
   async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const { limit, offset, sortBy, sortOrder, search } =
         getSubjectsSchema.parse(options || {});
 
@@ -131,13 +145,15 @@ export default class SubjectService {
           ? subject.createdAt
           : subject.updatedAt;
 
-      const query = this.db.select().from(subject);
-
+      const filters = [eq(subject.ownerUserId, ownerUserId)];
       if (search) {
-        query.where(like(subject.subjectName, `%${search}%`));
+        filters.push(like(subject.subjectName, `%${search}%`));
       }
 
-      const results = await query
+      const results = await this.db
+        .select()
+        .from(subject)
+        .where(and(...filters))
         .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
         .limit(limit)
         .offset(offset ?? 0)
@@ -156,6 +172,7 @@ export default class SubjectService {
     data: UpdateSubjectInput
   ): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = updateSubjectSchema.parse(data);
       const updateResult = {
         ...validatedData,
@@ -164,7 +181,7 @@ export default class SubjectService {
       const result = await this.db
         .update(subject)
         .set(updateResult)
-        .where(eq(subject.id, id))
+        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
         .returning()
         .execute();
 
@@ -178,7 +195,11 @@ export default class SubjectService {
   // Delete a subject
   async deleteSubject(id: number): Promise<boolean> {
     try {
-      await this.db.delete(subject).where(eq(subject.id, id)).execute();
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      await this.db
+        .delete(subject)
+        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .execute();
       return true;
     } catch (error) {
       console.error('Error deleting subject:', error);

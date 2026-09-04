@@ -10,6 +10,7 @@ import { students } from '../database/students';
 import { subject } from '../database/subjects';
 import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
 import { teachers } from '../database/teachers';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // Helper function to calculate grade from score
 const getGradeFromScore = (score: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
@@ -100,9 +101,11 @@ export type GradeWithRelations = SelectGrade & {
  */
 export default class GradeService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
   }
 
   /**
@@ -110,14 +113,31 @@ export default class GradeService {
    */
   async create(data: CreateGradeInput): Promise<SelectGrade | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = CreateGradeSchema.parse(data);
       const grade = getGradeFromScore(validated.score);
+
+      const ownedStudent = await this.db
+        .select({ id: students.id })
+        .from(students)
+        .where(
+          and(
+            eq(students.id, validated.studentId),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        )
+        .get();
+
+      if (!ownedStudent) {
+        return null;
+      }
 
       const result = await this.db
         .insert(grades)
         .values({
           ...validated,
           grade,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -135,10 +155,16 @@ export default class GradeService {
    */
   async getById(id: string): Promise<GradeWithRelations | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const grade = await this.db
         .select()
         .from(grades)
-        .where(eq(grades.id, parseInt(id)))
+        .where(
+          and(
+            eq(grades.id, parseInt(id)),
+            eq(grades.ownerUserId, ownerUserId),
+          ),
+        )
         .get();
 
       if (!grade) return null;
@@ -155,6 +181,7 @@ export default class GradeService {
    */
   async getAll(options?: GetGradesInput): Promise<GradeWithRelations[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const {
         limit,
         offset,
@@ -168,8 +195,7 @@ export default class GradeService {
         levelId,
       } = GetGradesSchema.parse(options) ?? {};
 
-      // Build where conditions
-      const conditions = [];
+      const conditions = [eq(grades.ownerUserId, ownerUserId)];
       if (studentId) conditions.push(eq(grades.studentId, studentId));
       if (subjectId) conditions.push(eq(grades.subjectId, subjectId));
       if (streamId) conditions.push(eq(grades.streamId, streamId));
@@ -179,36 +205,34 @@ export default class GradeService {
       // Handle level filter (filter by stream's level)
       let gradeIds: number[] | null = null;
       if (levelId) {
-        // Get all streams for this level
         const levelStreams = await this.db
           .select({ id: academicStreams.id })
           .from(academicStreams)
-          .where(eq(academicStreams.levelId, levelId));
+          .where(
+            and(
+              eq(academicStreams.levelId, levelId),
+              eq(academicStreams.ownerUserId, ownerUserId),
+            ),
+          );
         
         const streamIds = levelStreams.map(s => s.id);
         if (streamIds.length === 0) return [];
 
-        // Get grades with these streams
         const levelGrades = await this.db
           .select({ id: grades.id })
           .from(grades)
-          .where(inArray(grades.streamId, streamIds));
+          .where(
+            and(
+              inArray(grades.streamId, streamIds),
+              eq(grades.ownerUserId, ownerUserId),
+            ),
+          );
         
         gradeIds = levelGrades.map(g => g.id);
         if (gradeIds.length === 0) return [];
+        conditions.push(inArray(grades.id, gradeIds));
       }
 
-      let query = this.db.select().from(grades);
-
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
-
-      if (gradeIds) {
-        query = query.where(inArray(grades.id, gradeIds)) as any;
-      }
-
-      // Sort
       const sortColumn =
         sortBy === 'score'
           ? grades.score
@@ -218,12 +242,14 @@ export default class GradeService {
           ? grades.createdAt
           : grades.updatedAt;
 
-      const results = await query
+      const results = await this.db
+        .select()
+        .from(grades)
+        .where(and(...conditions))
         .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
         .limit(limit ?? 50)
         .offset(offset ?? 0);
 
-      // Enrich with relations
       const enrichedResults = await Promise.all(
         results.map((grade) => this.enrichGradeWithRelations(grade))
       );
@@ -328,7 +354,7 @@ export default class GradeService {
         subject: subjectData,
         stream: streamData,
         form: formData,
-        teacher: teacherData,
+        teacher: teacherData ?? null,
         level: levelData || undefined,
       };
     } catch (error) {
@@ -359,7 +385,12 @@ export default class GradeService {
       const result = await this.db
         .update(grades)
         .set(updateValues)
-        .where(eq(grades.id, parseInt(id)))
+        .where(
+          and(
+            eq(grades.id, parseInt(id)),
+            eq(grades.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .returning();
 
       return result[0] || null;
@@ -376,7 +407,12 @@ export default class GradeService {
     try {
       const result = await this.db
         .delete(grades)
-        .where(eq(grades.id, parseInt(id)))
+        .where(
+          and(
+            eq(grades.id, parseInt(id)),
+            eq(grades.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .returning({ id: grades.id });
 
       return result.length > 0;

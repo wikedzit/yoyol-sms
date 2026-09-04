@@ -11,6 +11,7 @@ const routes: RouteConfig = [
   ...prefix('auth', [
     layout('./layout/AuthLayout.tsx', [
       route('login', './routes/auth/SignIn.tsx'),
+      route('signup', './routes/auth/sign-up.tsx'),
     ]),
   ]),
 

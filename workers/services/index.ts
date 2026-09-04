@@ -10,7 +10,7 @@ import TeacherClassService from './teacher-classes';
 import StudentSubjectService from './student-subjects';
 import GradeService from './grades';
 import NoticeService from './notices';
-import LoginService from './auth.server';
+import AuthService from './auth.server';
 import AcademicLevelService from './academic-levels';
 import SchoolService from './school';
 import AcademicYearService from './academic-years';
@@ -20,7 +20,7 @@ import AcademicYearService from './academic-years';
  * Provides centralized access to all business logic services
  */
 export default class ServiceContainer {
-  public readonly users: LoginService;
+  public readonly users: AuthService;
   public readonly class: ClassService;
   public readonly student: StudentService;
   public readonly teacher: TeacherService;
@@ -36,23 +36,26 @@ export default class ServiceContainer {
   public readonly academicYear: AcademicYearService;
   private db: DrizzleD1Database;
 
-  constructor(database: D1Database, jwtSecret: string) {
-    // Initialize all services with the database connection
+  constructor(
+    database: D1Database,
+    jwtSecret: string,
+    ownerUserId: number | null = null,
+  ) {
     this.db = drizzle(database);
-    this.users = new LoginService(this.db, jwtSecret);
-    this.class = new ClassService(this.db);
-    this.student = new StudentService(this.db);
-    this.teacher = new TeacherService(this.db);
-    this.subject = new SubjectService(this.db);
-    this.teacherSubject = new TeacherSubjectService(this.db);
-    this.classSubject = new ClassSubjectService(this.db);
-    this.teacherClass = new TeacherClassService(this.db);
-    this.studentSubjects = new StudentSubjectService(this.db);
-    this.grade = new GradeService(this.db);
-    this.notice = new NoticeService(this.db);
-    this.academicLevel = new AcademicLevelService(this.db);
-    this.school = new SchoolService(this.db);
-    this.academicYear = new AcademicYearService(this.db);
+    this.users = new AuthService(this.db, jwtSecret);
+    this.class = new ClassService(this.db, ownerUserId);
+    this.student = new StudentService(this.db, ownerUserId);
+    this.teacher = new TeacherService(this.db, ownerUserId);
+    this.subject = new SubjectService(this.db, ownerUserId);
+    this.teacherSubject = new TeacherSubjectService(this.db, ownerUserId);
+    this.classSubject = new ClassSubjectService(this.db, ownerUserId);
+    this.teacherClass = new TeacherClassService(this.db, ownerUserId);
+    this.studentSubjects = new StudentSubjectService(this.db, ownerUserId);
+    this.grade = new GradeService(this.db, ownerUserId);
+    this.notice = new NoticeService(this.db, ownerUserId);
+    this.academicLevel = new AcademicLevelService(this.db, ownerUserId);
+    this.school = new SchoolService(this.db, ownerUserId);
+    this.academicYear = new AcademicYearService(this.db, ownerUserId);
   }
 
   /**

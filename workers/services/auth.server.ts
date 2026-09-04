@@ -2,18 +2,28 @@ import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import z from 'zod';
 import jwt from '@tsndr/cloudflare-worker-jwt';
-import { users } from 'workers/database';
-import { verifyPassword } from 'workers/utils/password.server';
-import { hashPassword } from 'workers/utils/password.server';
+import { users, type SelectUser } from 'workers/database';
+import {
+  hashPassword,
+  verifyPassword,
+} from 'workers/utils/password.server';
 
-const CreateUserSchema = z.object({
+const ACCOUNT_EXISTS_MESSAGE = 'An account with this email already exists';
+const SIGNUP_FAILED_MESSAGE = 'Could not create account. Please try again.';
+
+const createUserInputSchema = z.object({
   email: z.string().email(),
-  passwordHash: z.string(),
+  password: z.string().min(1),
   role: z.string().default('admin'),
 });
-export type CreateUserSchema = z.infer<typeof CreateUserSchema>;
 
-export default class LoginService {
+export type CreateUserInput = z.infer<typeof createUserInputSchema>;
+
+export type SignUpResult =
+  | { token: string }
+  | { error: string };
+
+export default class AuthService {
   private db: DrizzleD1Database;
   private jwtSecret: string;
 
@@ -22,60 +32,76 @@ export default class LoginService {
     this.jwtSecret = jwtSecret;
   }
 
-  //find user by email
-  async findUserByEmail(email: string) {
-    const result = await this.db
+  async findUserByEmail(email: string): Promise<SelectUser | null> {
+    const user = await this.db
       .select()
       .from(users)
       .where(eq(users.email, email))
       .limit(1)
       .get();
 
-    return result || null;
+    return user ?? null;
   }
 
-  // CREATE USER
-  async createUser(data: CreateUserSchema) {
-    const validated = CreateUserSchema.parse(data);
+  async createUser(data: CreateUserInput): Promise<SelectUser | undefined> {
+    const input = createUserInputSchema.parse(data);
+    const passwordHash = await hashPassword(input.password);
 
-    // hash password BEFORE saving
-    const passwordHash = await hashPassword(validated.passwordHash);
-
-    const result = await this.db
+    const createdUsers = await this.db
       .insert(users)
       .values({
-        email: validated.email,
-        role: validated.role,
+        email: input.email,
+        role: input.role,
         passwordHash,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       })
-      .returning()
-      .get();
+      .returning();
 
-    return result;
+    return createdUsers[0];
   }
 
-  // LOGIN USER
-  async login(email: string, password: string) {
-    const user = await this.findUserByEmail(email);
+  async signup(email: string, password: string): Promise<SignUpResult> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const existingAccount = await this.findUserByEmail(normalizedEmail);
+
+    if (existingAccount) {
+      return { error: ACCOUNT_EXISTS_MESSAGE };
+    }
+
+    try {
+      await this.createUser({
+        email: normalizedEmail,
+        password,
+        role: 'admin',
+      });
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        return { error: ACCOUNT_EXISTS_MESSAGE };
+      }
+
+      console.error('Signup failed:', error);
+      return { error: SIGNUP_FAILED_MESSAGE };
+    }
+
+    const token = await this.login(normalizedEmail, password);
+    if (!token) {
+      return { error: SIGNUP_FAILED_MESSAGE };
+    }
+
+    return { token };
+  }
+
+  async login(email: string, password: string): Promise<string | null> {
+    const user = await this.findUserByEmail(this.normalizeEmail(email));
     if (!user) return null;
 
-    const match = await verifyPassword(password, user.passwordHash);
-    if (!match) return null;
+    const passwordMatches = await verifyPassword(password, user.passwordHash);
+    if (!passwordMatches) return null;
 
-    // Create JWT using Web Crypto API (Cloudflare Workers compatible)
-    const token = await jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      this.jwtSecret
-    );
-
-    return token;
+    return this.createSessionToken(user);
   }
 
-  // VERIFY TOKEN
   async verifyToken(token: string) {
     const payload = await jwt.verify(token, this.jwtSecret);
     if (!payload) return null;
@@ -83,26 +109,43 @@ export default class LoginService {
     return payload;
   }
 
-  // UPDATE NAME (used for account holders with no linked teacher/student
-  // record — e.g. Admin, Finance — whose only name lives on `users`)
-  async updateName(id: number, firstName: string, lastName: string) {
-    const result = await this.db
+  // Account holders with no teacher/student record (Admin, Finance) store
+  // their name only on `users`.
+  async updateName(
+    id: number,
+    firstName: string,
+    lastName: string,
+  ): Promise<SelectUser | null> {
+    const updatedUser = await this.db
       .update(users)
       .set({ firstName, lastName, updatedAt: Date.now() })
       .where(eq(users.id, id))
       .returning()
       .get();
 
-    return result || null;
+    return updatedUser ?? null;
   }
 
-  // CHANGE PASSWORD
-  async changePassword(id: number, currentPassword: string, newPassword: string) {
-    const user = await this.db.select().from(users).where(eq(users.id, id)).get();
+  async changePassword(
+    id: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: true } | { error: string }> {
+    const user = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.id, id))
+      .get();
+
     if (!user) return { error: 'User not found' };
 
-    const match = await verifyPassword(currentPassword, user.passwordHash);
-    if (!match) return { error: 'Current password is incorrect' };
+    const currentPasswordMatches = await verifyPassword(
+      currentPassword,
+      user.passwordHash,
+    );
+    if (!currentPasswordMatches) {
+      return { error: 'Current password is incorrect' };
+    }
 
     const passwordHash = await hashPassword(newPassword);
     await this.db
@@ -112,11 +155,24 @@ export default class LoginService {
 
     return { success: true };
   }
-}
-function sign(
-  arg0: { id: number; role: string | null },
-  jwtSecret: string,
-  arg2: number
-) {
-  throw new Error('Function not implemented.');
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return /unique/i.test(message);
+  }
+
+  private async createSessionToken(user: SelectUser): Promise<string> {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      },
+      this.jwtSecret,
+    );
+  }
 }
