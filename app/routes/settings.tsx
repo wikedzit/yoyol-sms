@@ -10,38 +10,40 @@ import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { Switch } from '~/components/ui/switch';
 import { Separator } from '~/components/ui/separator';
+import { useLanguage } from '~/lib/i18n';
 
 export default function Settings() {
+  const { t } = useLanguage();
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('settings')}</h1>
         <p className="text-muted-foreground mt-1">
-          Manage your account and application preferences
+          {t('settingsDescription')}
         </p>
       </div>
 
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
+            <CardTitle>{t('profileInformation')}</CardTitle>
             <CardDescription>
-              Update your personal details and contact information
+              {t('personalDetails')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName">{t('firstName')}</Label>
                 <Input id="firstName" placeholder="John" defaultValue="Admin" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName">{t('lastName')}</Label>
                 <Input id="lastName" placeholder="Doe" defaultValue="User" />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('email')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -50,28 +52,28 @@ export default function Settings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">{t('phoneNumber')}</Label>
               <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" />
             </div>
             <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
-              Save Changes
+              {t('saveChanges')}
             </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
+            <CardTitle>{t('notifications')}</CardTitle>
             <CardDescription>
-              Configure how you receive notifications
+              {t('notificationDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Email Notifications</Label>
+                <Label>{t('emailNotifications')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receive email updates about student activities
+                  {t('studentActivityUpdates')}
                 </p>
               </div>
               <Switch defaultChecked />
@@ -79,9 +81,9 @@ export default function Settings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Grade Submissions</Label>
+                <Label>{t('gradeSubmissions')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Get notified when grades are submitted
+                  {t('gradeNotification')}
                 </p>
               </div>
               <Switch defaultChecked />
@@ -89,9 +91,9 @@ export default function Settings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Attendance Alerts</Label>
+                <Label>{t('attendanceAlerts')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Alerts for low attendance rates
+                  {t('lowAttendance')}
                 </p>
               </div>
               <Switch />
@@ -101,26 +103,26 @@ export default function Settings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Security</CardTitle>
+            <CardTitle>{t('security')}</CardTitle>
             <CardDescription>
-              Manage your password and security settings
+              {t('securityDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
+              <Label htmlFor="currentPassword">{t('currentPassword')}</Label>
               <Input id="currentPassword" type="password" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
+              <Label htmlFor="newPassword">{t('newPassword')}</Label>
               <Input id="newPassword" type="password" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label htmlFor="confirmPassword">{t('confirmNewPassword')}</Label>
               <Input id="confirmPassword" type="password" />
             </div>
             <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
-              Update Password
+              {t('updatePassword')}
             </Button>
           </CardContent>
         </Card>

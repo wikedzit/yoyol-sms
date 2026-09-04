@@ -25,6 +25,7 @@ import type TeacherService from "workers/services/teachers";
 import type StudentService from "workers/services/student";
 import type SchoolService from "workers/services/school";
 import { Button } from "~/components/ui/button";
+import { useLanguage } from "~/lib/i18n";
 
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
@@ -47,12 +48,13 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 export default function SchoolProfilePage() {
+  const { t } = useLanguage();
   const { school, totalTeachers, totalStudents, totalRegistered } =
     useLoaderData<typeof loader>();
 
   if (!school) {
     return (
-      <p>School Profile to be added during onboarding</p>
+      <p>{t('schoolProfile')} to be added during onboarding</p>
       // <div className="min-h-screen space-y-6 pb-8">
       //   <PageHeader title="School Profile" />
       //   <Card>
@@ -71,11 +73,11 @@ export default function SchoolProfilePage() {
   }
 
   const schoolName = school.name;
-  const schoolMotto = school.motto || "No motto provided";
-  const schoolAddress = school.address || "Not provided";
-  const schoolPhone = school.phone || "Not provided";
-  const schoolEmail = school.email || "Not provided";
-  const registrationNumber = school.registrationNumber || "Not provided";
+  const schoolMotto = school.motto || t('noMotto');
+  const schoolAddress = school.address || t('notProvided');
+  const schoolPhone = school.phone || t('notProvided');
+  const schoolEmail = school.email || t('notProvided');
+  const registrationNumber = school.registrationNumber || t('notProvided');
   const logoUrl = school.logoUrl || "/assets/auth-page/yoyol-logo.png";
   const primaryColor = school.primaryColor || "#2563eb";
   const secondaryColor = school.secondaryColor || "#0f172a";
@@ -83,13 +85,13 @@ export default function SchoolProfilePage() {
   return (
     <div className="min-h-screen space-y-6 pb-8">
       <PageHeader
-        title="About Our School"
+        title={t('aboutSchool')}
         actions={
           <>
             <Link to={`/schools/${school.id}`}>
               <Button className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white-600 hover:scale-110 cursor-pointer transition-all duration-300">
                 <Pencil className="h-4 w-4" />
-                Edit School
+                {t('editSchool')}
               </Button>
             </Link>
             <Button
@@ -98,7 +100,7 @@ export default function SchoolProfilePage() {
             >
               <Link to="/schools/new">
                 <Plus size={18} />
-                <span className="font-medium">Add Campus</span>
+                <span className="font-medium">{t('addCampus')}</span>
               </Link>
             </Button>
           </>
@@ -124,7 +126,7 @@ export default function SchoolProfilePage() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-muted-foreground">
-                  School-NAME
+                  {t('schoolName')}
                 </p>
                 <p className="truncate text-2xl font-bold">{schoolName}</p>
               </div>
@@ -150,7 +152,7 @@ export default function SchoolProfilePage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Teachers
+                  {t('teachers')}
                 </p>
                 <p className="text-2xl font-bold">{totalTeachers}</p>
               </div>
@@ -176,7 +178,7 @@ export default function SchoolProfilePage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Students
+                  {t('students')}
                 </p>
                 <p className="text-2xl font-bold">{totalStudents}</p>
               </div>
@@ -202,7 +204,7 @@ export default function SchoolProfilePage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Total Registered
+                  {t('totalRegistered')}
                 </p>
                 <p className="text-2xl font-bold">{totalRegistered}</p>
               </div>
@@ -232,7 +234,7 @@ export default function SchoolProfilePage() {
               {/* SCHOOL NAME */}
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  School Name
+                  {t('schoolName')}
                 </p>
                 <p className="text-2xl font-semibold">{school.name}</p>
               </div>
@@ -240,15 +242,15 @@ export default function SchoolProfilePage() {
               {/* MOTTO */}
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Motto
+                  {t('motto')}
                 </p>
-                <p className="text-2xl">{school.motto || "Not provided"}</p>
+                <p className="text-2xl">{school.motto || t('notProvided')}</p>
               </div>
 
               {/* REGISTRATION NUMBER */}
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Registration Number
+                  {t('registrationNumber')}
                 </p>
                 <p className="text-2xl">{registrationNumber}</p>
               </div>
@@ -266,8 +268,8 @@ export default function SchoolProfilePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Official School Logo</CardTitle>
-            <CardDescription>OUR OFFICIAL LOGO</CardDescription>
+            <CardTitle>{t('officialLogo')}</CardTitle>
+            <CardDescription>{t('officialLogo')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div
@@ -290,7 +292,7 @@ export default function SchoolProfilePage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>HOW TO REACH US</CardTitle>
+            <CardTitle>{t('howToReachUs')}</CardTitle>
           </CardHeader>
 
           <CardContent>
@@ -303,7 +305,7 @@ export default function SchoolProfilePage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">Address</p>
+                  <p className="text-sm font-medium">{t('address')}</p>
                   <p className="text-sm text-muted-foreground">
                     {schoolAddress}
                   </p>
@@ -318,7 +320,7 @@ export default function SchoolProfilePage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">Phone</p>
+                  <p className="text-sm font-medium">{t('phone')}</p>
                   <p className="text-sm text-muted-foreground">{schoolPhone}</p>
                 </div>
               </div>
@@ -331,7 +333,7 @@ export default function SchoolProfilePage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">Email</p>
+                  <p className="text-sm font-medium">{t('email')}</p>
                   <p className="break-all text-sm text-muted-foreground">
                     {schoolEmail}
                   </p>
@@ -346,7 +348,7 @@ export default function SchoolProfilePage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">Registration Number</p>
+                  <p className="text-sm font-medium">{t('registrationNumber')}</p>
                   <p className="text-sm text-muted-foreground">
                     {registrationNumber}
                   </p>

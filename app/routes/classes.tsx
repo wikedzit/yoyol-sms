@@ -24,6 +24,7 @@ import { StreamBadge } from '~/components/ui/StreamBadge';
 import type { LevelType } from '~/type/shools';
 import CreateSchoolClassModal from '~/components/modal/CreateSchoolClassModal';
 import EditSchoolClassModal from '~/components/modal/EditSchoolClassModal';
+import { useLanguage } from '~/lib/i18n';
 
 // Type for enriched form class data
 interface EnrichedFormClass {
@@ -184,6 +185,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function ClassesRoute() {
+  const { t } = useLanguage();
   const {
     classes: initialClasses,
     streams,
@@ -286,9 +288,9 @@ export default function ClassesRoute() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-3xl font-bold">Classes</h1>
+          <h1 className="text-xl sm:text-3xl font-bold">{t('classes')}</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage classes across all levels and streams
+            {t('manageClasses')}
           </p>
         </div>
 
@@ -323,7 +325,7 @@ export default function ClassesRoute() {
             className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
           >
             <span className="text-xl">+</span>
-            <span className="font-medium">Add Class</span>
+            <span className="font-medium">{t('addClass')}</span>
           </Button>
         </div>
       </div>
@@ -341,7 +343,7 @@ export default function ClassesRoute() {
           }`}
           
         >
-          All Levels ({classes.length})
+          {t('allLevels')} ({classes.length})
         </button>
         <button
           onClick={() => setLevelFilter('o-level')}
@@ -372,7 +374,7 @@ export default function ClassesRoute() {
         <div className="text-center py-12">
           <GraduationCap className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-4 text-lg font-medium text-gray-900">
-            No classes yet
+            {t('noClasses')}
           </h3>
           <p className="mt-2 text-sm text-gray-500">
             {levelFilter === 'all'
@@ -384,13 +386,13 @@ export default function ClassesRoute() {
               onClick={() => setOpenCreate(true)}
               className="bg-primary-gradient text-white  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              Add Class
+              {t('addClass')}
             </Button>
             <Link to="/levels/o-level">
-              <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">Set Up O-Level</Button>
+              <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">{t('academicLevels')} O-Level</Button>
             </Link>
             <Link to="/levels/a-level">
-              <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">Set Up A-Level</Button>
+              <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">{t('academicLevels')} A-Level</Button>
             </Link>
           </div>
         </div>

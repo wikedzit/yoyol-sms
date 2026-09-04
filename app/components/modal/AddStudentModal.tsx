@@ -17,6 +17,7 @@ import {
   SelectItem,
 } from '~/components/ui/select';
 import type { FetcherWithComponents } from 'react-router';
+import { useLanguage } from '~/lib/i18n';
 
 interface SchoolOption {
   id: number;
@@ -38,6 +39,7 @@ export default function AddStudentModal({
   fetcher,
   schools = [],
 }: AddStudentModalProps) {
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -121,7 +123,7 @@ export default function AddStudentModal({
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
                 <SheetTitle className="text-xl md:text-2xl font-semibold">
-                  Add New Student
+                  {t('addNewStudent')}
                 </SheetTitle>
               </SheetHeader>
               <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
@@ -130,7 +132,7 @@ export default function AddStudentModal({
             </div>
 
             <p className="text-sm text-[#898989] mb-6 md:mb-8">
-              Fill in the details below to register a new student.
+              {t('addStudentDescription')}
             </p>
 
             {/* Form fields */}
@@ -138,7 +140,7 @@ export default function AddStudentModal({
               {/* School (dynamic, dropdown ya shule) - LAZIMA */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  School <span className="text-red-500">*</span>
+                  {t('school')} <span className="text-red-500">*</span>
                 </label>
                 <Select
                   value={formData.schoolId}
@@ -149,7 +151,7 @@ export default function AddStudentModal({
                   required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select school" />
+                    <SelectValue placeholder={t('selectSchool')} />
                   </SelectTrigger>
                   <SelectContent>
                     {schools.map((s) => (
@@ -161,7 +163,7 @@ export default function AddStudentModal({
                 </Select>
                 {schools.length === 0 && (
                   <p className="text-xs text-red-500 mt-1">
-                    No schools available. Please add a school first.
+                    {t('noSchools')}
                   </p>
                 )}
               </div>
@@ -178,9 +180,9 @@ export default function AddStudentModal({
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {field === 'firstName'
-                      ? 'First Name'
+                      ? t('firstName')
                       : field === 'lastName'
-                        ? 'Last Name'
+                        ? t('lastName')
                         : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <Input
@@ -203,7 +205,7 @@ export default function AddStudentModal({
                 {/* Gender */}
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Gender
+                    {t('gender')}
                   </label>
                   <Select
                     value={formData.gender}
@@ -213,11 +215,11 @@ export default function AddStudentModal({
                     name="gender"
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select gender" />
+                      <SelectValue placeholder={t('selectGender')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="male">{t('male')}</SelectItem>
+                      <SelectItem value="female">{t('female')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -225,7 +227,7 @@ export default function AddStudentModal({
                 {/* Status */}
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    {t('status')}
                   </label>
                   <Select
                     value={formData.status}
@@ -235,12 +237,12 @@ export default function AddStudentModal({
                     name="status"
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder={t('selectStatus')} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Pending">{t('pending')}</SelectItem>
+                      <SelectItem value="Inactive">{t('inactive')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -256,13 +258,13 @@ export default function AddStudentModal({
               onClick={() => setOpen(false)}
               className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
+              {fetcher.state === 'submitting' ? t('adding') : t('addStudent')}
             </Button>
           </div>
         </fetcher.Form>

@@ -9,6 +9,14 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
+import { useLanguage } from '~/lib/i18n';
 
 export default function EditProfileModal({
   open,
@@ -17,7 +25,9 @@ export default function EditProfileModal({
   role,
   account,
   roleData,
+  onLanguageChange,
 }: any) {
+  const { t } = useLanguage();
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
 
@@ -25,10 +35,13 @@ export default function EditProfileModal({
     firstName: (isTeacher || isStudent ? roleData?.firstName : account?.firstName) || '',
     lastName: (isTeacher || isStudent ? roleData?.lastName : account?.lastName) || '',
     phone: roleData?.phone || '',
+    accountPhone: account?.phone || '',
     address: roleData?.address || '',
     qualification: (isTeacher && roleData?.qualification) || '',
     guardianName: (isStudent && roleData?.guardianName) || '',
     guardianPhone: (isStudent && roleData?.guardianPhone) || '',
+    preferredLanguage: account?.preferredLanguage || 'en',
+    avatarUrl: account?.avatarUrl || '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -37,8 +50,38 @@ export default function EditProfileModal({
     if (error) setError(null);
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setError(t('pictureHelp'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 320;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        setFormData((current) => ({
+          ...current,
+          avatarUrl: canvas.toDataURL('image/jpeg', 0.82),
+        }));
+        setError(null);
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data?.action === 'update_profile') {
+      onLanguageChange?.(formData.preferredLanguage);
       setOpen(false);
       setError(null);
     }
@@ -66,11 +109,12 @@ export default function EditProfileModal({
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="action" value="update_profile" />
+          <input type="hidden" name="avatarUrl" value={formData.avatarUrl} />
 
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
               <SheetTitle className="text-xl md:text-2xl font-semibold">
-                Edit Profile
+                {t('editProfile')}
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
@@ -85,9 +129,25 @@ export default function EditProfileModal({
           )}
 
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 overflow-hidden rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
+                {formData.avatarUrl ? (
+                  <img src={formData.avatarUrl} alt={t('profilePicture')} className="h-full w-full object-cover" />
+                ) : (
+                  (formData.firstName || formData.lastName || 'U').charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {t('profilePicture')}
+                </label>
+                <Input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleAvatarChange} />
+                <p className="text-xs text-muted-foreground">{t('pictureHelp')}</p>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
+                  {t('firstName')}
               </label>
               <Input
                 type="text"
@@ -100,7 +160,7 @@ export default function EditProfileModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
+                  {t('lastName')}
               </label>
               <Input
                 type="text"
@@ -111,11 +171,25 @@ export default function EditProfileModal({
               />
             </div>
 
+            {!isTeacher && !isStudent && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('phone')}
+                </label>
+                <Input
+                  type="text"
+                  name="accountPhone"
+                  value={formData.accountPhone}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
+
             {(isTeacher || isStudent) && (
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
+                    {t('phone')}
                   </label>
                   <Input
                     type="text"
@@ -127,7 +201,7 @@ export default function EditProfileModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
+                    {t('address')}
                   </label>
                   <Input
                     type="text"
@@ -142,7 +216,7 @@ export default function EditProfileModal({
             {isTeacher && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Qualification
+                  {t('qualification')}
                 </label>
                 <Input
                   type="text"
@@ -157,7 +231,7 @@ export default function EditProfileModal({
               <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Guardian Name
+                    {t('guardianName')}
                   </label>
                   <Input
                     type="text"
@@ -169,7 +243,7 @@ export default function EditProfileModal({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Guardian Phone
+                    {t('guardianPhone')}
                   </label>
                   <Input
                     type="text"
@@ -181,9 +255,33 @@ export default function EditProfileModal({
               </>
             )}
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('preferredLanguage')}
+              </label>
+              <Select
+                value={formData.preferredLanguage}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, preferredLanguage: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('selectLanguage')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">{t('english')}</SelectItem>
+                  <SelectItem value="sw">{t('swahili')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <input
+                type="hidden"
+                name="preferredLanguage"
+                value={formData.preferredLanguage}
+              />
+            </div>
+
             <p className="text-xs text-muted-foreground">
-              Email can&apos;t be changed here since it&apos;s tied to your
-              login. Contact your school admin if it needs to change.
+              {t('emailCannotChange')}
             </p>
           </div>
 
@@ -194,13 +292,13 @@ export default function EditProfileModal({
               onClick={() => setOpen(false)}
               className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer">
             
-              {fetcher.state === 'submitting' ? 'Saving...' : 'Save Changes'}
+              {fetcher.state === 'submitting' ? t('saving') : t('saveChanges')}
             </Button>
           </div>
         </fetcher.Form>
