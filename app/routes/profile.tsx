@@ -7,11 +7,18 @@ import { toast } from 'sonner';
 import { authCookie } from 'workers/utils/cookies.server';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
 import { Input } from '~/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import EditProfileModal from '~/components/modal/EditProfileModal';
+import { useLanguage } from '~/lib/i18n';
 
 type ProfileLoaderData = {
   account: {
@@ -20,15 +27,25 @@ type ProfileLoaderData = {
     role: string;
     firstName: string | null;
     lastName: string | null;
+    phone: string | null;
+    preferredLanguage: string | null;
+    avatarUrl: string | null;
     createdAt: number;
   } | null;
   role: string;
   roleData: Record<string, any> | null;
+  teacherSubjects: { id: number; subjectName: string }[];
+  teacherClasses: { id: number; name: string }[];
+  recentGrades: Array<{
+    id: number;
+    score: number;
+    grade: string;
+    createdAt: number;
+    subject: { subjectName: string };
+    student: { firstName: string; lastName: string };
+  }>;
 };
 
-// --- Shared auth helper: same JWT-parse pattern used in the loader below
-// and DashboardLyout.tsx / ProtectedLayout.tsx, since loaders can't read
-// the Outlet context ProtectedLayout already builds. ---
 async function getAuthPayload(request: Request, context: any) {
   const cookieHeader = request.headers.get('Cookie');
   const token = await authCookie.parse(cookieHeader || '');
@@ -51,10 +68,32 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const account = await services.users.findUserByEmail(payload.email);
 
   let roleData: Record<string, any> | null = null;
+  let teacherSubjects: { id: number; subjectName: string }[] = [];
+  let teacherClasses: { id: number; name: string }[] = [];
+  let recentGrades: any[] = [];
+
   if (payload.role === 'teacher') {
     roleData = await services.teacher.getTeacherByEmail(payload.email);
+    if (roleData) {
+      teacherSubjects = await services.teacherSubject.getSubjectsByTeacher(roleData.id);
+      teacherClasses = await services.teacherClass.getClassesByTeacher(roleData.id);
+      recentGrades = await services.grade.getAll({
+        teacherId: roleData.id,
+        limit: 5,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+    }
   } else if (payload.role === 'student') {
     roleData = await services.student.getByEmail(payload.email);
+    if (roleData) {
+      recentGrades = await services.grade.getAll({
+        studentId: roleData.id,
+        limit: 5,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      });
+    }
   }
 
   return {
@@ -65,11 +104,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
           role: account.role,
           firstName: account.firstName,
           lastName: account.lastName,
+          phone: account.phone,
+          preferredLanguage: account.preferredLanguage,
+          avatarUrl: account.avatarUrl,
           createdAt: account.createdAt,
         }
       : null,
     role: payload.role,
     roleData,
+    teacherSubjects,
+    teacherClasses,
+    recentGrades,
   };
 }
 
@@ -84,6 +129,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
   try {
     if (actionType === 'update_profile') {
+      const preferredLanguage = String(form.get('preferredLanguage') ?? 'en');
+      const avatarUrl = String(form.get('avatarUrl') ?? '');
+
       if (payload.role === 'teacher') {
         const roleData = await services.teacher.getTeacherByEmail(payload.email);
         if (!roleData) {
@@ -96,6 +144,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
           address: String(form.get('address') ?? ''),
           qualification: String(form.get('qualification') ?? ''),
         });
+        // preferredLanguage is an account-level preference, so it lives on
+        // `users` even for roles whose name/contact info lives elsewhere.
+        await services.users.updateProfile(payload.id, { preferredLanguage, avatarUrl });
         if (!updated) {
           return { error: 'Failed to update profile.', action: 'update_profile' };
         }
@@ -115,22 +166,39 @@ export async function action({ request, context }: ActionFunctionArgs) {
           guardianName: String(form.get('guardianName') ?? ''),
           guardianPhone: String(form.get('guardianPhone') ?? ''),
         });
+        await services.users.updateProfile(payload.id, { preferredLanguage, avatarUrl });
         if (!updated) {
           return { error: 'Failed to update profile.', action: 'update_profile' };
         }
         return { success: true, action: 'update_profile' };
       }
 
-      // Admin / Finance / Parent: name lives on `users` directly.
-      const updated = await services.users.updateName(
-        payload.id,
-        String(form.get('firstName') ?? ''),
-        String(form.get('lastName') ?? '')
-      );
+      // Admin / Finance / Parent: name, phone, and language all live on `users`.
+      const updated = await services.users.updateProfile(payload.id, {
+        firstName: String(form.get('firstName') ?? ''),
+        lastName: String(form.get('lastName') ?? ''),
+        phone: String(form.get('accountPhone') ?? ''),
+        preferredLanguage,
+        avatarUrl,
+      });
       if (!updated) {
         return { error: 'Failed to update profile.', action: 'update_profile' };
       }
       return { success: true, action: 'update_profile' };
+    }
+
+    // Dedicated action for the inline language dropdown on the Account
+    // Information card. Kept separate from `update_profile` so that
+    // changing just the language never touches firstName/lastName/phone
+    // (the update_profile branches above pull those from the form too,
+    // and would overwrite them with empty strings if reused here).
+    if (actionType === 'update_language') {
+      const preferredLanguage = String(form.get('preferredLanguage') ?? 'en');
+      const updated = await services.users.updateProfile(payload.id, { preferredLanguage });
+      if (!updated) {
+        return { error: 'Failed to update language.', action: 'update_language' };
+      }
+      return { success: true, action: 'update_language' };
     }
 
     if (actionType === 'change_password') {
@@ -184,20 +252,57 @@ function formatDate(timestamp?: number | null): string {
   });
 }
 
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
+function FieldBox({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between py-2 border-b last:border-b-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
-      <span className="text-sm font-medium text-foreground">{value ?? '—'}</span>
+    <div>
+      <p className="text-xs font-medium text-gray-500 mb-1.5">{label}</p>
+      {/* No border here — signals "display only" at a glance, in contrast
+          with the bordered, white-background Preferred Language <select>. */}
+      <div className="min-h-[38px] flex items-center rounded-lg bg-gray-50 px-3.5 py-2 text-sm font-medium text-foreground">
+        {value ?? '—'}
+      </div>
+    </div>
+  );
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-purple/10 text-purple text-xs font-medium px-3 py-1 mr-1.5 mb-1.5">
+      {children}
+    </span>
+  );
+}
+
+function SectionPanel({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card shadow-sm p-6">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        {description && (
+          <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+        )}
+      </div>
+      {children}
     </div>
   );
 }
 
 // --- Page ---
 export default function ProfilePage() {
-  const { account, role, roleData } = useLoaderData<ProfileLoaderData>();
+  const { account, role, roleData, teacherSubjects, teacherClasses, recentGrades } =
+    useLoaderData<ProfileLoaderData>();
   const fetcher = useFetcher<any>();
   const passwordFetcher = useFetcher<any>();
+  const languageFetcher = useFetcher<any>();
+  const { setLanguage, t } = useLanguage();
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -205,6 +310,9 @@ export default function ProfilePage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [preferredLanguage, setPreferredLanguage] = useState(
+    account?.preferredLanguage ?? 'en'
+  );
 
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
@@ -236,6 +344,21 @@ export default function ProfilePage() {
     }
   }, [passwordFetcher.state, passwordFetcher.data]);
 
+  useEffect(() => {
+    if (languageFetcher.state === 'idle' && languageFetcher.data) {
+      if (languageFetcher.data.success) {
+        setLanguage(preferredLanguage === 'sw' ? 'sw' : 'en');
+        toast.success(t('languageUpdated'));
+      }
+      if (languageFetcher.data.error) {
+        toast.error(languageFetcher.data.error);
+        // Revert the dropdown to the last known-good value from the server
+        // since the save failed.
+        setPreferredLanguage(account?.preferredLanguage ?? 'en');
+      }
+    }
+  }, [languageFetcher.state, languageFetcher.data, account?.preferredLanguage, preferredLanguage, setLanguage, t]);
+
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const fd = new FormData();
@@ -247,24 +370,42 @@ export default function ProfilePage() {
     passwordFetcher.submit(fd, { method: 'post', action: '/profile' });
   };
 
+  const handleLanguageChange = (value: string) => {
+    setPreferredLanguage(value);
+    const fd = new FormData();
+    fd.set('action', 'update_language');
+    fd.set('preferredLanguage', value);
+    languageFetcher.submit(fd, { method: 'post', action: '/profile' });
+  };
+
   return (
     <div className="min-h-screen">
       <div className="space-y-6 max-w-2xl">
         <PageHeader title="My Profile" description="Your account information" />
 
-        {/* Header card */}
-        <Card className="p-6 border-none shadow-none">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between">
+        {/* Hero header */}
+        <div className="rounded-2xl border border-border shadow-sm overflow-hidden width-full">
+          <div
+            className="px-6 py-7 sm:px-8"
+            style={{ background: 'var(--gradient-purple-light)' }}
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 flex items-center justify-center rounded-full bg-primary/10 text-primary text-2xl font-semibold">
-                  {initial}
+                <div
+                  className="h-20 w-20 flex items-center justify-center rounded-full text-white text-2xl font-bold shadow-lg ring-4 ring-white shrink-0 overflow-hidden"
+                  style={{ background: 'var(--primary-gradient)' }}
+                >
+                  {account?.avatarUrl ? (
+                    <img src={account.avatarUrl} alt={fullName} className="h-full w-full object-cover" />
+                  ) : initial}
                 </div>
                 <div>
-                  <p className="text-lg font-semibold text-foreground">{fullName}</p>
-                  <Badge variant="secondary">{roleLabel(role)}</Badge>
+                  <p className="text-xl font-bold text-foreground">{fullName}</p>
+                  <span className="inline-block mt-1.5 rounded-full bg-purple/10 text-purple text-xs font-semibold px-3 py-1">
+                    {roleLabel(role)}
+                  </span>
                   {hasRoleData && (roleData.gender || roleData.address) && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-2">
                       {[roleData.gender, isStudent && roleData.dob && `Born ${roleData.dob}`, roleData.address]
                         .filter(Boolean)
                         .join(' • ')}
@@ -272,106 +413,204 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
-              <Button variant="outline" onClick={() => setIsEditOpen(true)}
-               className =" hover:scale-110 hover:text-white-600 transition cursor-pointer">
+              <Button
+                onClick={() => setIsEditOpen(true)}
+                className="hover:scale-110 hover:text-white-600 transition bg-primary-gradient text-white shadow-md py-2 px-4 rounded-[8px] cursor-pointer shrink-0"
+              >
                 Edit Profile
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <Tabs defaultValue="profile">
           <TabsList>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="profile" className='cursor-pointer'>Profile</TabsTrigger>
+            <TabsTrigger value="security" className='cursor-pointer'>Security</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="space-y-6 mt-4">
-            <Card className="p-6 border-none shadow-none">
-              <CardContent className="p-0">
-                <InfoRow label="Email" value={account?.email} />
-                <InfoRow label="Role" value={roleLabel(role)} />
-                <InfoRow label="Member since" value={formatDate(account?.createdAt)} />
-              </CardContent>
-            </Card>
+            <SectionPanel title="Account Information">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FieldBox label="Email" value={account?.email} />
+                <FieldBox label="Role" value={roleLabel(role)} />
+                <FieldBox label="Phone" value={roleData?.phone || account?.phone} />
+
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-1.5">
+                    {t('preferredLanguage')}
+                  </p>
+                  <select
+                    value={preferredLanguage ?? 'en'}
+                    onChange={(e) => handleLanguageChange(e.target.value)}
+                    disabled={languageFetcher.state === 'submitting'}
+                    className="min-h-[38px] w-full rounded-lg border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <option value="en">{t('english')}</option>
+                    <option value="sw">{t('swahili')}</option>
+                  </select>
+                </div>
+
+                <FieldBox label="Member since" value={formatDate(account?.createdAt)} />
+              </div>
+            </SectionPanel>
 
             {isTeacher && roleData && (
-              <Card className="p-6 border-none shadow-none">
-                <CardContent className="p-0">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">
-                    Teacher Details
-                  </h3>
-                  <InfoRow label="Subject" value={roleData.subject} />
-                  <InfoRow label="Phone" value={roleData.phone} />
-                  <InfoRow label="Qualification" value={roleData.qualification} />
-                  <InfoRow
+              <SectionPanel title="Teacher Details">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                  <FieldBox label="Subject" value={roleData.subject} />
+                  <FieldBox label="Qualification" value={roleData.qualification} />
+                  <FieldBox
                     label="Experience"
                     value={roleData.experience ? `${roleData.experience} years` : '—'}
                   />
-                  <InfoRow label="Status" value={roleData.status} />
-                </CardContent>
-              </Card>
+                  <FieldBox label="Status" value={roleData.status} />
+                </div>
+                <div className="mb-4">
+                  <p className="text-xs font-medium text-gray-500 mb-2">Subjects Taught</p>
+                  {teacherSubjects.length > 0 ? (
+                    <div className="flex flex-wrap">
+                      {teacherSubjects.map((s) => (
+                        <Chip key={s.id}>{s.subjectName}</Chip>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">None assigned yet</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-2">Classes Assigned</p>
+                  {teacherClasses.length > 0 ? (
+                    <div className="flex flex-wrap">
+                      {teacherClasses.map((c) => (
+                        <Chip key={c.id}>{c.name}</Chip>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">None assigned yet</p>
+                  )}
+                </div>
+              </SectionPanel>
+            )}
+
+            {isTeacher && roleData && (
+              <SectionPanel title="Recent Results Recorded">
+                {recentGrades.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">
+                    No results recorded yet.
+                  </p>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead>Student</TableHead>
+                          <TableHead>Subject</TableHead>
+                          <TableHead>Score</TableHead>
+                          <TableHead>Grade</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentGrades.map((g) => (
+                          <TableRow key={g.id}>
+                            <TableCell>
+                              {g.student.firstName} {g.student.lastName}
+                            </TableCell>
+                            <TableCell>{g.subject.subjectName}</TableCell>
+                            <TableCell>{g.score}</TableCell>
+                            <TableCell>{g.grade}</TableCell>
+                            <TableCell>{formatDate(g.createdAt)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </SectionPanel>
             )}
             {isTeacher && !roleData && (
-              <Card className="p-6 border-none shadow-none bg-amber-50">
-                <CardContent className="p-0">
-                  <p className="text-sm text-amber-700">
-                    We couldn&apos;t find a teacher record linked to your
-                    account yet. Contact your school admin to have one
-                    connected.
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                <p className="text-sm text-amber-700">
+                  We couldn&apos;t find a teacher record linked to your
+                  account yet. Contact your school admin to have one
+                  connected.
+                </p>
+              </div>
             )}
 
             {isStudent && roleData && (
-              <Card className="p-6 border-none shadow-none">
-                <CardContent className="p-0">
-                  <h3 className="text-sm font-semibold text-foreground mb-3">
-                    Student Details
-                  </h3>
-                  <InfoRow label="Phone" value={roleData.phone} />
-                  <InfoRow label="Guardian" value={roleData.guardianName} />
-                  <InfoRow label="Guardian phone" value={roleData.guardianPhone} />
-                  <InfoRow label="Grade" value={roleData.grade} />
-                  <InfoRow label="Enrollment date" value={roleData.enrollmentDate} />
-                  <InfoRow label="Status" value={roleData.status} />
-                </CardContent>
-              </Card>
+              <SectionPanel title="Student Details">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FieldBox label="Guardian" value={roleData.guardianName} />
+                  <FieldBox label="Guardian phone" value={roleData.guardianPhone} />
+                  <FieldBox label="Grade" value={roleData.grade} />
+                  <FieldBox label="Enrollment date" value={roleData.enrollmentDate} />
+                  <FieldBox label="Status" value={roleData.status} />
+                </div>
+              </SectionPanel>
             )}
             {isStudent && !roleData && (
-              <Card className="p-6 border-none shadow-none bg-amber-50">
-                <CardContent className="p-0">
-                  <p className="text-sm text-amber-700">
-                    We couldn&apos;t find a student record linked to your
-                    account yet. Contact your school admin to have one
-                    connected.
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                <p className="text-sm text-amber-700">
+                  We couldn&apos;t find a student record linked to your
+                  account yet. Contact your school admin to have one
+                  connected.
+                </p>
+              </div>
+            )}
+
+            {isStudent && roleData && (
+              <SectionPanel
+                title="Recent Academic Performance"
+                description="Your most recent results. Results aren't linked to a specific term yet, so this shows the latest overall."
+              >
+                {recentGrades.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">
+                    No results recorded yet.
                   </p>
-                </CardContent>
-              </Card>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead>Subject</TableHead>
+                          <TableHead>Score</TableHead>
+                          <TableHead>Grade</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recentGrades.map((g) => (
+                          <TableRow key={g.id}>
+                            <TableCell>{g.subject.subjectName}</TableCell>
+                            <TableCell>{g.score}</TableCell>
+                            <TableCell>{g.grade}</TableCell>
+                            <TableCell>{formatDate(g.createdAt)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </SectionPanel>
             )}
 
             {role === 'parent' && (
-              <Card className="p-6 border-none shadow-none bg-blue-50">
-                <CardContent className="p-0">
-                  <p className="text-sm text-blue-700">
-                    No student records are linked to your account yet. This
-                    feature is still being built out — check back soon.
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+                <p className="text-sm text-blue-700">
+                  No student records are linked to your account yet. This
+                  feature is still being built out — check back soon.
+                </p>
+              </div>
             )}
           </TabsContent>
 
           <TabsContent value="security" className="mt-4">
-            <Card className="p-6 border-none shadow-none">
-              <CardContent className="p-0">
-                <h3 className="text-sm font-semibold text-foreground mb-1">
-                  Change Password
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Choose a new password with at least 8 characters.
-                </p>
+            <SectionPanel
+              title="Change Password"
+              description="Choose a new password with at least 8 characters."
+            >
                 <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-sm">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -416,13 +655,12 @@ export default function ProfilePage() {
                   </div>
                   <Button
                     type="submit"
-                    className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                    className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
                   >
                     {passwordFetcher.state === 'submitting' ? 'Updating...' : 'Update Password'}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
+            </SectionPanel>
           </TabsContent>
         </Tabs>
       </div>
@@ -435,6 +673,10 @@ export default function ProfilePage() {
           role={role}
           account={account}
           roleData={roleData}
+          onLanguageChange={(value: string) => {
+            setPreferredLanguage(value);
+            setLanguage(value === 'sw' ? 'sw' : 'en');
+          }}
         />
       )}
     </div>

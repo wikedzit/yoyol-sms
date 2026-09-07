@@ -33,6 +33,7 @@ import type StudentSubjectService from 'workers/services/student-subjects';
 import type SchoolService from 'workers/services/school';
 import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
+import { useLanguage } from '~/lib/i18n';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 
 // 🧠 Loader – fetch students with their assigned subjects + schools list
@@ -239,6 +240,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function Students() {
+  const { t } = useLanguage();
   const {
     students: initialStudents,
     allSubjects,
@@ -344,9 +346,9 @@ export default function Students() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Students</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('studentsPage')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage and view all student records
+            {t('manageStudents')}
           </p>
         </div>
         <Button
@@ -354,7 +356,7 @@ export default function Students() {
           onClick={() => setAddStudentModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Student
+          {t('addStudent')}
         </Button>
       </div>
 
@@ -366,7 +368,7 @@ export default function Students() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search students..."
+                placeholder={t('searchStudents')}
                 className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -375,7 +377,7 @@ export default function Students() {
 
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by course/grade" />
+                <SelectValue placeholder={t('filterCourseGrade')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -394,16 +396,16 @@ export default function Students() {
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">First name</TableHead>
-                  <TableHead className="font-semibold">Last name</TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
+                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
+                  <TableHead className="font-semibold">{t('email')}</TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Subjects
+                    {t('assignedSubjects')}
                   </TableHead>
-                  <TableHead className="font-semibold">Enrolled</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">{t('enrolled')}</TableHead>
+                  <TableHead className="font-semibold">{t('status')}</TableHead>
                   <TableHead className="text-right font-semibold">
-                    Actions
+                    {t('actions')}
                   </TableHead>
                 </TableRow>
               </TableHeader>

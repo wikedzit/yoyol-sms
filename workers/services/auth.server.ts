@@ -109,21 +109,28 @@ export default class AuthService {
     return payload;
   }
 
-  // Account holders with no teacher/student record (Admin, Finance) store
-  // their name only on `users`.
-  async updateName(
+  // UPDATE PROFILE (used for account holders with no linked teacher/
+  // student record — e.g. Admin, Finance — whose only name lives on
+  // `users`. preferredLanguage applies to every role, since it's a UI
+  // preference tied to the login account itself.)
+  async updateProfile(
     id: number,
-    firstName: string,
-    lastName: string,
-  ): Promise<SelectUser | null> {
-    const updatedUser = await this.db
+    data: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      preferredLanguage?: string;
+      avatarUrl?: string;
+    }
+  ) {
+    const result = await this.db
       .update(users)
-      .set({ firstName, lastName, updatedAt: Date.now() })
+      .set({ ...data, updatedAt: Date.now() })
       .where(eq(users.id, id))
       .returning()
       .get();
 
-    return updatedUser ?? null;
+    return result ?? null;
   }
 
   async changePassword(

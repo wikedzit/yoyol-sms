@@ -33,6 +33,7 @@ import type { GradeWithRelations } from 'workers/services/grades';
 import type SubjectService from 'workers/services/subjects';
 import type StudentService from 'workers/services/student';
 import type TeacherService from 'workers/services/teachers';
+import { useLanguage } from '~/lib/i18n';
 import type AcademicLevelService from 'workers/services/academic-levels';
 import { DeleteButton } from '~/components/DeleteButton';
 
@@ -177,6 +178,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function Grades() {
+  const { t } = useLanguage();
   const {
     grades: initialGrades,
     streams,
@@ -341,10 +343,10 @@ export default function Grades() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          Grades Management
+          {t('gradesManagement')}
         </h1>
         <p className="text-muted-foreground mt-2">
-          View, add, and manage students' grades by stream, form, or subject.
+          {t('manageGrades')}
         </p>
       </div>
 
@@ -456,9 +458,9 @@ export default function Grades() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Student Grades</CardTitle>
+              <CardTitle>{t('studentGrades')}</CardTitle>
               <CardDescription>
-                A list of all student grades for the selected filters
+                {t('gradesDescription')}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -466,7 +468,7 @@ export default function Grades() {
               className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
               onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
-                Export
+                {t('exportGrades')}
               </Button>
               <Button
                 onClick={() => {
@@ -476,7 +478,7 @@ export default function Grades() {
                 className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Grade
+                {t('addGrade')}
               </Button>
             </div>
           </div>
@@ -486,22 +488,22 @@ export default function Grades() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead>Student Name</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Score</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Remarks</TableHead>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Stream</TableHead>
-                  <TableHead>Form</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('student')} {t('name')}</TableHead>
+                  <TableHead>{t('subjects')}</TableHead>
+                  <TableHead>{t('score')}</TableHead>
+                  <TableHead>{t('grade')}</TableHead>
+                  <TableHead>{t('remarks')}</TableHead>
+                  <TableHead>{t('teachers')}</TableHead>
+                  <TableHead>{t('streams')}</TableHead>
+                  <TableHead>{t('forms')}</TableHead>
+                  <TableHead className="text-right">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {grades.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
-                      No grades found. Add a grade to get started.
+                      {t('noGrades')}
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -36,6 +36,7 @@ import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
 
 // 🧠 Loader – fetch teachers with their subjects and classes
@@ -216,6 +217,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🧑‍🏫 UI – Teachers Table & Modals
 export default function Teachers() {
+  const { t } = useLanguage();
   const {
     teachers: initialTeachers,
     allSubjects,
@@ -331,9 +333,9 @@ export default function Teachers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('teachersPage')}</h1>
           <p className="text-muted-foreground mt-1">
-            Manage and view all teacher records
+            {t('manageTeachers')}
           </p>
         </div>
         <Button
@@ -341,7 +343,7 @@ export default function Teachers() {
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Teacher
+          {t('addTeacher')}
         </Button>
       </div>
 
@@ -353,7 +355,7 @@ export default function Teachers() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search teachers..."
+                placeholder={t('searchTeachers')}
                 className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -362,7 +364,7 @@ export default function Teachers() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('filterStatus')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -380,19 +382,19 @@ export default function Teachers() {
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">First name</TableHead>
-                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
+                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Subjects
+                    {t('assignedSubjects')}
                   </TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Classes
+                    {t('assignedClasses')}
                   </TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Phone</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">{t('email')}</TableHead>
+                  <TableHead className="font-semibold">{t('phone')}</TableHead>
+                  <TableHead className="font-semibold">{t('status')}</TableHead>
                   <TableHead className="text-right font-semibold">
-                    Actions
+                    {t('actions')}
                   </TableHead>
                 </TableRow>
               </TableHeader>

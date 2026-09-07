@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+import { useLanguage } from '~/lib/i18n';
 
 export default function AddSubjectModal({
   open,
@@ -24,6 +25,7 @@ export default function AddSubjectModal({
   streams,
   id,
 }: any) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
@@ -103,7 +105,7 @@ export default function AddSubjectModal({
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
               <SheetTitle className="text-xl md:text-2xl font-semibold">
-                Add New Subject
+                {t('addNewSubject')}
               </SheetTitle>
             </SheetHeader>
 
@@ -113,7 +115,7 @@ export default function AddSubjectModal({
           </div>
 
           <p className="text-sm text-[#898989] mb-6 md:mb-8">
-            Fill in the details below to add a new subject.
+            {t('subjectDescription')}
           </p>
 
           {/* ERROR MESSAGE */}
@@ -126,7 +128,7 @@ export default function AddSubjectModal({
           {/* STREAM SELECT */}
           <div className="mb-4 w-full">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Stream
+              {t('streams')}
             </label>
 
             <Select
@@ -143,13 +145,13 @@ export default function AddSubjectModal({
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select stream" />
+                <SelectValue placeholder={`${t('select')} ${t('streams').toLowerCase()}`} />
               </SelectTrigger>
 
               <SelectContent>
                 {!streams || streams.length === 0 ? (
                   <SelectItem value="no-stream" disabled>
-                    No streams available
+                    {t('noStreams')}
                   </SelectItem>
                 ) : (
                   streams.map((stream: any) => (
@@ -193,7 +195,7 @@ export default function AddSubjectModal({
             {/* STATUS */}
             <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                {t('status')}
               </label>
 
               <Select
@@ -203,12 +205,12 @@ export default function AddSubjectModal({
                 }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={t('selectStatus')} />
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Inactive">Inactive</SelectItem>
+                  <SelectItem value="Active">{t('active')}</SelectItem>
+                  <SelectItem value="Inactive">{t('inactive')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -222,14 +224,14 @@ export default function AddSubjectModal({
               onClick={() => setOpen(false)}
               className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button
               type="submit"
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              {fetcher.state === 'submitting' ? 'Adding...' : 'Add Subject'}
+              {fetcher.state === 'submitting' ? t('adding') : t('addSubject')}
             </Button>
           </div>
         </fetcher.Form>

@@ -22,6 +22,7 @@ import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
+import { useLanguage } from "~/lib/i18n";
 
 const mainNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -53,6 +54,7 @@ const mainNavigation = [
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
     /* 
@@ -94,7 +96,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               )}
             >
               <LogOut className="h-5 w-5" />
-              <span className="truncate">Logout</span>
+              <span className="truncate">{t('logout')}</span>
             </button>
           }
         />
@@ -107,6 +109,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
    NORMAL LINK (no children)
 ---------------------------------------- */
 const SidebarLink = ({ item, location, onNavigate }: any) => {
+  const { t } = useLanguage();
   const isActive = location.pathname === item.href;
 
   return (
@@ -128,7 +131,7 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
       )}
     >
       <item.icon className="h-5 w-5" />
-      <span className="truncate">{item.name}</span>
+      <span className="truncate">{translateNavigationLabel(item.name, t)}</span>
       {isActive && (
         <ChevronRight className="ml-auto h-4 w-4 text-primary-foreground" />
       )}
@@ -140,6 +143,7 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
    PARENT LINK (with children)
 ---------------------------------------- */
 const SidebarParent = ({ item, location, onNavigate }: any) => {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
 
   // Is any child active?
@@ -166,7 +170,7 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
         )}
       >
         <item.icon className="h-5 w-5" />
-        <span className="truncate">{item.name}</span>
+        <span className="truncate">{translateNavigationLabel(item.name, t)}</span>
 
         <ChevronDown
           className={cn(
@@ -198,7 +202,7 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
-                {child.name}
+                {translateNavigationLabel(child.name, t)}
               </Link>
             );
           })}
@@ -207,3 +211,19 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
     </div>
   );
 };
+
+function translateNavigationLabel(name: string, t: (key: any) => string) {
+  const labels: Record<string, string> = {
+    Dashboard: 'dashboard',
+    'Academic levels': 'academicLevels',
+    'Schools Setup': 'schoolsSetup',
+    'School Profile': 'schoolProfile',
+    'Academic Year': 'academicYear',
+    Subjects: 'subjects',
+    Classrooms: 'classrooms',
+    'Students List': 'studentsList',
+    Teachers: 'teachers',
+    Grades: 'grades',
+  };
+  return labels[name] ? t(labels[name]) : name;
+}
