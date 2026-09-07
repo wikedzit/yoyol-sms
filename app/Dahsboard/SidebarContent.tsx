@@ -45,6 +45,7 @@ const mainNavigation = [
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
     <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card/95 backdrop-blur-lg transition-colors duration-200">
@@ -80,7 +81,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               )}
             >
               <LogOut className="h-5 w-5" />
-              <span className="truncate">Logout</span>
+              <span className="truncate">{t('logout')}</span>
             </button>
           }
         />
@@ -93,6 +94,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
    SINGLE STREAMLINED SIDEBAR LINK
 ---------------------------------------- */
 const SidebarLink = ({ item, location, onNavigate }: any) => {
+  const { t } = useLanguage();
   const isActive = location.pathname === item.href;
 
   return (

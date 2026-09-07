@@ -63,8 +63,38 @@ export default function EditProfileModal({
     if (error) setError(null);
   };
 
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setError(t('pictureHelp'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 320;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        setFormData((current) => ({
+          ...current,
+          avatarUrl: canvas.toDataURL('image/jpeg', 0.82),
+        }));
+        setError(null);
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data?.action === 'update_profile') {
+      onLanguageChange?.(formData.preferredLanguage);
       setOpen(false);
       setError(null);
     }
@@ -93,6 +123,7 @@ export default function EditProfileModal({
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="action" value="update_profile" />
+          <input type="hidden" name="avatarUrl" value={formData.avatarUrl} />
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -140,6 +171,20 @@ export default function EditProfileModal({
                 required
               />
             </div>
+
+            {!isTeacher && !isStudent && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('phone')}
+                </label>
+                <Input
+                  type="text"
+                  name="accountPhone"
+                  value={formData.accountPhone}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
 
             {(isTeacher || isStudent) && (
               <>
@@ -225,7 +270,7 @@ export default function EditProfileModal({
               onClick={() => setOpen(false)}
               className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"

@@ -330,14 +330,14 @@ export default function AddStudentModal({
               onClick={() => setOpen(false)}
               className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
               disabled={fetcher.state === 'submitting'}
               className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
+              {fetcher.state === 'submitting' ? t('adding') : t('addStudent')}
             </Button>
           </div>
         </fetcher.Form>

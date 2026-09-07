@@ -12,6 +12,7 @@ import {
 } from '~/components/ui/alert-dialog';
 import { Trash2 } from 'lucide-react';
 import { useFetcher } from 'react-router-dom';
+import { useLanguage } from '~/lib/i18n';
 
 export const DeleteStudentButton = ({
   id,
@@ -23,6 +24,7 @@ export const DeleteStudentButton = ({
   fetcher?: any;
 }) => {
   const fetcher = externalFetcher || useFetcher();
+  const { t } = useLanguage();
 
   return (
     <AlertDialog>
@@ -30,7 +32,7 @@ export const DeleteStudentButton = ({
         <button
           type="button"
           className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-          title="Delete"
+          title={t('delete')}
         >
           <Trash2 className="w-5 h-5" />
         </button>
@@ -38,16 +40,16 @@ export const DeleteStudentButton = ({
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete</AlertDialogTitle>
+          <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete{' '}
+            {t('deleteConfirmation')}{' '}
             <strong className="font-semibold">{name}</strong>? This action
-            cannot be undone.
+            {t('cannotUndo')}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
 
           <fetcher.Form method="post">
             <input type="hidden" name="_method" value="DELETE" />
@@ -56,7 +58,7 @@ export const DeleteStudentButton = ({
               type="submit"
               className="bg-red-500 text-white hover:bg-red-600"
             >
-              {fetcher.state === 'submitting' ? 'Deleting...' : 'Delete'}
+              {fetcher.state === 'submitting' ? t('deleting') : t('delete')}
             </AlertDialogAction>
           </fetcher.Form>
         </AlertDialogFooter>

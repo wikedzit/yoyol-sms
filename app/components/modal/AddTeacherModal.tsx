@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import {
@@ -8,7 +9,6 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
-import { useState, useEffect } from 'react';
 import {
   Select,
   SelectTrigger,
@@ -16,19 +16,13 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
+import { useLanguage } from '~/lib/i18n';
 
 export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    subject: '',
-    email: '',
-    phone: '',
-    address: '',
-    qualification: '',
-    gender: '',
-    experience: '',
-    status: '',
+    firstName: '', lastName: '', email: '', phone: '', address: '',
+    gender: '', experience: '', status: '', qualification: '', subject: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,18 +33,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
-      setFormData({
-        firstName: '',
-        lastName: '',
-        subject: '',
-        email: '',
-        phone: '',
-        address: '',
-        qualification: '',
-        gender: '',
-        experience: '',
-        status: '',
-      });
+      setFormData({ firstName: '', lastName: '', email: '', phone: '', address: '', gender: '', experience: '', status: '', qualification: '', subject: '' });
     }
   }, [fetcher.data, setOpen]);
 
@@ -74,8 +57,6 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
         >
           <input type="hidden" name="_method" value="POST" />
           <input type="hidden" name="_entity" value="teacher" />
-
-          {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
               <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
@@ -93,16 +74,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
 
           {/* Scrollable Form Content */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
-            {[
-              'firstName',
-              'lastName',
-              'subject',
-              'email',
-              'phone',
-              'address',
-              'qualification',
-              'experience',
-            ].map((field) => (
+            {['firstName', 'lastName', 'subject', 'email', 'phone', 'address', 'qualification', 'experience'].map((field) => (
               <div key={field}>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   {field === 'firstName'
@@ -130,8 +102,6 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
                 />
               </div>
             ))}
-
-            {/* Gender & Status Selects */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="mb-4 w-full sm:w-1/2">
                 <label className="block text-sm font-medium text-foreground mb-1">
@@ -154,7 +124,6 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="mb-4 w-full sm:w-1/2">
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Status

@@ -21,6 +21,7 @@ import { LevelBadge } from '~/components/ui/LevelBadge';
 import type { LevelType } from '~/type/shools';
 import CreateSchoolClassModal from '~/components/modal/CreateSchoolClassModal';
 import EditSchoolClassModal from '~/components/modal/EditSchoolClassModal';
+import { useLanguage } from '~/lib/i18n';
 
 export interface EnrichedFormClass {
   id: number;
@@ -238,7 +239,7 @@ export default function ClassesRoute() {
         <div>
           <h1 className="text-xl sm:text-3xl font-bold text-foreground">Classes</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage classes across all levels and streams
+            {t('manageClasses')}
           </p>
         </div>
 
@@ -276,7 +277,7 @@ export default function ClassesRoute() {
             className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto hover:scale-105 transition cursor-pointer"
           >
             <span className="text-xl">+</span>
-            <span className="font-medium">Add Class</span>
+            <span className="font-medium">{t('addClass')}</span>
           </Button>
         </div>
       </div>
@@ -291,7 +292,7 @@ export default function ClassesRoute() {
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
-          All Levels ({classes.length})
+          {t('allLevels')} ({classes.length})
         </button>
         <button
           onClick={() => setLevelFilter('o-level')}
@@ -334,7 +335,7 @@ export default function ClassesRoute() {
               onClick={() => setOpenCreate(true)}
               className="bg-primary-gradient text-white hover:scale-105 transition cursor-pointer"
             >
-              Add Class
+              {t('addClass')}
             </Button>
             <Link to="/levels/o-level">
               <Button variant="outline" className="hover:scale-105 transition cursor-pointer">

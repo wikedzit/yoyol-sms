@@ -11,6 +11,7 @@ import type TeacherService from 'workers/services/teachers';
 import type AcademicLevelService from 'workers/services/academic-levels';
 import type GradeService from 'workers/services/grades';
 import type NoticeService from 'workers/services/notices';
+import { useLanguage } from '~/lib/i18n';
 
 // Loader function to fetch dashboard data
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -249,6 +250,7 @@ async function calculateStreamInsights(
 }
 
 const Dashboard = () => {
+  const { t } = useLanguage();
   const {
     stats,
     statuses,
@@ -262,39 +264,39 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">{t('dashboard')}</h1>
         <p className="text-muted-foreground">
-          Welcome back! Here's what's happening today.
+          {t('welcomeBack')}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
-          title="Total Students"
+          title={t('totalStudents')}
           value={stats.totalStudents.toLocaleString()}
           icon={GraduationCap}
           status={statuses.students}
         />
         <StatCard
-          title="Total Teachers"
+          title={t('totalTeachers')}
           value={stats.totalTeachers.toLocaleString()}
           icon={Users}
           status={statuses.teachers}
         />
         <StatCard
-          title="Streams"
+          title={t('streams')}
           value={stats.totalStreams.toLocaleString()}
           icon={Layers}
           status={statuses.streams}
         />
         <StatCard
-          title="Forms"
+          title={t('forms')}
           value={stats.totalForms.toLocaleString()}
           icon={ClipboardList}
           status={statuses.forms}
         />
         <StatCard
-          title="Average GPA"
+          title={t('averageGpa')}
           value={stats.averageGPA}
           icon={Award}
           status={statuses.gpa}
