@@ -38,7 +38,7 @@ import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 import { GraduationCap } from 'lucide-react';
 
-// 🧠 Loader – fetch teachers with their subjects and classes
+// Loader – fetch teachers with their subjects and classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -91,7 +91,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 
-// ⚙️ Action – handle create, update, delete, and subject/class assignments
+// Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -214,7 +214,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 
-// 🧑‍🏫 UI – Teachers Table & Modals
+// Teachers Table & Modals Component
 export default function Teachers() {
   const {
     teachers: initialTeachers,
@@ -238,7 +238,6 @@ export default function Teachers() {
   const [assignClassesModalOpen, setAssignClassesModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
-  // added state to hold the newly added teacher for the profile modal
   const [newTeacher, setNewTeacher] = useState<any>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
@@ -267,12 +266,11 @@ export default function Teachers() {
       lastMethod.current = method ?? (fetcher.formMethod || null);
     }
   }, [fetcher.formData, fetcher.state, fetcher.formMethod]);
-   // updated to use the new controlled modal approach for TeacherProfileModal
+
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) return;
     const data = fetcher.data;
 
-    // Refresh list in background
     listFetcher.load(window.location.pathname);
 
     if (data.error) {
@@ -296,7 +294,6 @@ export default function Teachers() {
 
       switch (lastMethod.current) {
         case 'POST':
-          // added logic to set the new teacher and open the profile modal after adding a teacher
           if (data.teacher) {
             setNewTeacher(data.teacher);
             setAddModalOpen(false);
@@ -328,16 +325,18 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
-      {/* Header */}
+      {/* Header section with text-foreground */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Teachers
+          </h1>
+          <p className="text-foreground text-sm font-medium mt-1">
             Manage and view all teacher records
           </p>
         </div>
         <Button
-         className = " bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
+          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -455,7 +454,7 @@ export default function Teachers() {
                     <TableCell className="text-right flex justify-end gap-2">
                       <TeacherProfileModal teacher={teacher} />
                       <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Subjects"
@@ -467,7 +466,7 @@ export default function Teachers() {
                         <BookOpen className="h-4 w-4" />
                       </Button>
                       <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Classes"
@@ -479,7 +478,7 @@ export default function Teachers() {
                         <GraduationCap className="h-4 w-4" />
                       </Button>
                       <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         onClick={() => {
@@ -551,7 +550,7 @@ export default function Teachers() {
           fetcher={fetcher}
         />
       )}
-      
+
       <TeacherProfileModal
         teacher={newTeacher}
         open={profileModalOpen}

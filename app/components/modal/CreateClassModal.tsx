@@ -1,5 +1,5 @@
-import { X, School } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { X, School } from 'lucide-react';
 import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
@@ -75,10 +75,7 @@ export default function CreateClassModal({
           bg-card text-card-foreground border-border
         "
       >
-        <fetcher.Form
-          method="post"
-          className="flex flex-col h-full"
-        >
+        <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
           <input type="hidden" name="action" value="create_class" />
 
@@ -95,7 +92,7 @@ export default function CreateClassModal({
             </SheetClose>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+          <p className="text-sm text-foreground mb-6 md:mb-8">
             Configure form, level, and stream parameters to create a new class.
           </p>
 
@@ -119,8 +116,8 @@ export default function CreateClassModal({
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Level <span className="text-destructive">*</span>
                 </label>
-                <Select value={levelId} onValueChange={setLevelId} name="levelId">
-                  <SelectTrigger>
+                <Select value={levelId} onValueChange={setLevelId}>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent>
@@ -131,14 +128,15 @@ export default function CreateClassModal({
                     ))}
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="levelId" value={levelId} required />
               </div>
 
               <div className="w-full sm:w-1/2">
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Form <span className="text-destructive">*</span>
                 </label>
-                <Select value={formId} onValueChange={setFormId} name="formId">
-                  <SelectTrigger>
+                <Select value={formId} onValueChange={setFormId}>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select form" />
                   </SelectTrigger>
                   <SelectContent>
@@ -149,6 +147,7 @@ export default function CreateClassModal({
                     ))}
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="formId" value={formId} required />
               </div>
             </div>
 
@@ -156,8 +155,8 @@ export default function CreateClassModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Stream <span className="text-destructive">*</span>
               </label>
-              <Select value={streamId} onValueChange={setStreamId} name="streamId">
-                <SelectTrigger>
+              <Select value={streamId} onValueChange={setStreamId}>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select stream" />
                 </SelectTrigger>
                 <SelectContent>
@@ -168,6 +167,7 @@ export default function CreateClassModal({
                   ))}
                 </SelectContent>
               </Select>
+              <input type="hidden" name="streamId" value={streamId} required />
             </div>
           </div>
 

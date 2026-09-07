@@ -133,7 +133,7 @@ export function GradeForm({
             </SheetClose>
           </div>
 
-          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+          <p className="text-sm text-foreground mb-6 md:mb-8">
             {editData
               ? 'Update the grade information below.'
               : "Enter the student's grade details below."}
@@ -146,7 +146,7 @@ export function GradeForm({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Student *
               </label>
-              <Select value={studentId} onValueChange={setStudentId} required>
+              <Select value={studentId} onValueChange={setStudentId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select student" />
                 </SelectTrigger>
@@ -158,7 +158,7 @@ export function GradeForm({
                   ))}
                 </SelectContent>
               </Select>
-              <input type="hidden" name="studentId" value={studentId} />
+              <input type="hidden" name="studentId" value={studentId} required />
             </div>
 
             {/* Subject Select */}
@@ -166,7 +166,7 @@ export function GradeForm({
               <label className="block text-sm font-medium text-foreground mb-1">
                 Subject *
               </label>
-              <Select value={subjectId} onValueChange={setSubjectId} required>
+              <Select value={subjectId} onValueChange={setSubjectId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select subject" />
                 </SelectTrigger>
@@ -178,7 +178,7 @@ export function GradeForm({
                   ))}
                 </SelectContent>
               </Select>
-              <input type="hidden" name="subjectId" value={subjectId} />
+              <input type="hidden" name="subjectId" value={subjectId} required />
             </div>
 
             {/* Stream & Form Class Selects */}
@@ -193,7 +193,6 @@ export function GradeForm({
                     setStreamId(value);
                     setFormId('');
                   }}
-                  required
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select stream" />
@@ -206,7 +205,7 @@ export function GradeForm({
                     ))}
                   </SelectContent>
                 </Select>
-                <input type="hidden" name="streamId" value={streamId} />
+                <input type="hidden" name="streamId" value={streamId} required />
               </div>
 
               <div className="w-full sm:w-1/2">
@@ -216,7 +215,6 @@ export function GradeForm({
                 <Select
                   value={formId}
                   onValueChange={setFormId}
-                  required
                   disabled={!streamId}
                 >
                   <SelectTrigger className="w-full">
@@ -234,7 +232,7 @@ export function GradeForm({
                     ))}
                   </SelectContent>
                 </Select>
-                <input type="hidden" name="formId" value={formId} />
+                <input type="hidden" name="formId" value={formId} required />
               </div>
             </div>
 
@@ -276,7 +274,7 @@ export function GradeForm({
                 required
               />
               {score && (
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-foreground/80 mt-1">
                   Calculated Grade: {getGradeFromScore(Number(score))}
                 </p>
               )}

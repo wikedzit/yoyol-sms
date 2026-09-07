@@ -118,7 +118,10 @@ body {
   --secondary-foreground: oklch(0.35 0.18 272.5);
 
   --muted: oklch(0.96 0.005 247.839);
-  --muted-foreground: oklch(0.48 0.02 264.376);
+  
+  /* UPDATED LIGHT MODE SUBTITLE COLOR: Adjusted lightness from 0.48 -> 0.38 for sharper, high-contrast dark slate text */
+  --muted-foreground: oklch(0.38 0.02 264.376);
+
   --accent: oklch(0.94 0.025 272.5);
   --accent-foreground: oklch(0.40 0.20 272.5);
   
@@ -185,7 +188,9 @@ body {
   --secondary-foreground: oklch(0.985 0 0);
 
   --muted: oklch(0.22 0.03 264.376);
-  --muted-foreground: oklch(0.75 0.02 264.376);
+
+  /* UPDATED DARK MODE SUBTITLE COLOR: Increased lightness from 0.75 -> 0.88 for bright, high-legibility subtitle text */
+  --muted-foreground: oklch(0.88 0.02 264.376);
   
   --accent: oklch(0.25 0.05 272.5);
   --accent-foreground: oklch(0.985 0 0);
@@ -276,6 +281,15 @@ body {
     background-color: var(--sidebar-accent);
     color: var(--sidebar-accent-foreground);
     transform: translateX(2px);
+  }
+
+  /* ADDED CUSTOM UTILITY: Dedicated subtitle style utility mapping directly to gray theme values */
+  .text-subtitle {
+    color: var(--color-gray-700);
+  }
+
+  .dark .text-subtitle {
+    color: var(--color-gray-100);
   }
 }
 
