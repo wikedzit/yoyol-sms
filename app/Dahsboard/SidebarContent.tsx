@@ -8,39 +8,40 @@ import {
   FileText,
   GraduationCap,
   LogOut,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { Link, useLocation } from 'react-router';
-import { cn } from '~/lib/utils';
-import { useState, useEffect } from 'react';
-import { LogoutConfirmDialog } from '~/components/LogoutConfirmDialog';
+import { Link, useLocation } from "react-router";
+import { cn } from "~/lib/utils";
+import { useState, useEffect } from "react";
+import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
+import { useLanguage } from "~/lib/i18n";
 
 const mainNavigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
 
   {
-    name: 'Academic levels',
+    name: "Academic levels",
     icon: Building2,
     children: [
-      { name: 'O-Level', href: '/levels/o-level' },
-      { name: 'A-Level', href: '/levels/a-level' },
+      { name: "O-Level", href: "/levels/o-level" },
+      { name: "A-Level", href: "/levels/a-level" },
     ],
   },
 
   {
-    name: 'Schools Setup',
+    name: "Schools Setup",
     icon: Building2,
     children: [
-      { name: 'School Profile', href: '/schools/profile' },
-      { name: 'Academic Year', href: '/schools/academic-year' },
-      { name: 'Subjects', href: '/subjects', icon: FileText },
-      { name: 'Classrooms', href: '/classes', icon: DoorOpen },
+      { name: "School Profile", href: "/schools/profile" },
+      { name: "Academic Year", href: "/schools/academic-year" },
+      { name: "Subjects", href: "/subjects", icon: FileText },
+      { name: "Classrooms", href: "/classes", icon: DoorOpen },
     ],
   },
 
-  { name: 'Students List', href: '/students', icon: GraduationCap },
-  { name: 'Teachers', href: '/teachers', icon: Users },
-  { name: 'Grades', href: '/grades', icon: GraduationCap },
+  { name: "Students List", href: "/students", icon: GraduationCap },
+  { name: "Teachers", href: "/teachers", icon: Users },
+  { name: "Grades", href: "/grades", icon: GraduationCap },
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
@@ -76,12 +77,12 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               type="button"
               onClick={onNavigate}
               className={cn(
-                'w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out cursor-pointer',
-                'text-app-body hover:bg-accent hover:text-app-text',
+                "w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out cursor-pointer",
+                "text-app-body hover:bg-accent hover:text-app-text",
               )}
             >
               <LogOut className="h-5 w-5" />
-              <span className="truncate">{t('logout')}</span>
+              <span className="truncate">{t("logout")}</span>
             </button>
           }
         />
@@ -94,7 +95,6 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
    SINGLE STREAMLINED SIDEBAR LINK
 ---------------------------------------- */
 const SidebarLink = ({ item, location, onNavigate }: any) => {
-  const { t } = useLanguage();
   const isActive = location.pathname === item.href;
 
   return (
@@ -102,16 +102,18 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
       to={item.href}
       onClick={onNavigate}
       className={cn(
-        'relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group',
+        "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group",
         isActive
-          ? 'bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100'
-          : 'text-app-body hover:bg-accent hover:text-app-text',
+          ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+          : "text-app-body hover:bg-accent hover:text-app-text",
       )}
     >
       <item.icon
         className={cn(
-          'h-5 w-5 transition-transform duration-200',
-          isActive ? 'text-white scale-105' : 'text-app-body group-hover:scale-105',
+          "h-5 w-5 transition-transform duration-200",
+          isActive
+            ? "text-white scale-105"
+            : "text-app-body group-hover:scale-105",
         )}
       />
 
@@ -144,25 +146,27 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          'relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group',
+          "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group",
           isChildActive
-            ? 'bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100'
-            : 'text-app-body hover:bg-accent hover:text-app-text',
+            ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+            : "text-app-body hover:bg-accent hover:text-app-text",
         )}
       >
         <item.icon
           className={cn(
-            'h-5 w-5 transition-transform duration-200',
-            isChildActive ? 'text-white scale-105' : 'text-app-body group-hover:scale-105',
+            "h-5 w-5 transition-transform duration-200",
+            isChildActive
+              ? "text-white scale-105"
+              : "text-app-body group-hover:scale-105",
           )}
         />
         <span className="truncate">{item.name}</span>
 
         <ChevronDown
           className={cn(
-            'ml-auto h-4 w-4 transition-transform duration-200',
-            isChildActive ? 'text-white' : 'text-app-body',
-            open && 'rotate-180',
+            "ml-auto h-4 w-4 transition-transform duration-200",
+            isChildActive ? "text-white" : "text-app-body",
+            open && "rotate-180",
           )}
         />
       </button>
@@ -178,10 +182,10 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                 to={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  'relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200',
+                  "relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200",
                   isActive
-                    ? 'bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100'
-                    : 'text-app-body hover:bg-accent hover:text-app-text font-medium',
+                    ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+                    : "text-app-body hover:bg-accent hover:text-app-text font-medium",
                 )}
               >
                 <span className="truncate">{child.name}</span>
