@@ -102,19 +102,16 @@ export default class CampusService {
   }
 
   /**
-   * Create an additional campus.
-   *
-   * Main Campus should be created automatically
-   * when the school is created.
+   * Create a campus for a school this owner owns.
+   * The first campus for that school is marked as the main campus.
    */
   async create(
-    data: Omit<InsertCampus, 'id' | 'createdAt' | 'updatedAt'>
+    data: Omit<InsertCampus, 'id' | 'createdAt' | 'updatedAt' | 'isMain'>
   ): Promise<SelectCampus | null> {
     try {
       const ownerUserId =
         requireOwnerUserId(this.ownerUserId);
 
-      // Make sure the school belongs to this owner.
       const existingSchool = await this.db
         .select({
           id: school.id,
@@ -132,10 +129,14 @@ export default class CampusService {
         return null;
       }
 
+      const existingCampuses = await this.getBySchoolId(data.schoolId);
+      const isFirstCampusForSchool = existingCampuses.length === 0;
+
       const result = await this.db
         .insert(campus)
         .values({
           ...data,
+          isMain: isFirstCampusForSchool,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })

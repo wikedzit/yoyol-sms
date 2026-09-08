@@ -18,6 +18,7 @@ const routes: RouteConfig = [
   route('logout', './routes/logout.ts'),
   // Protected routes
   layout('./layout/ProtectedLayout.tsx', [
+    route('onboarding', './routes/onboarding.tsx'),
     layout('./layout/DashboardLyout.tsx', [
       index('routes/home.tsx'),
       ...prefix('levels', [
