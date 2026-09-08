@@ -1,5 +1,5 @@
-import { X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { X, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import {
@@ -19,6 +19,19 @@ interface EditProfileModalProps {
   account?: Record<string, any>;
   roleData?: Record<string, any>;
 }
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip';
+import { useLanguage } from '~/lib/i18n';
 
 export default function EditProfileModal({
   open,
@@ -30,6 +43,8 @@ export default function EditProfileModal({
 }: EditProfileModalProps) {
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -92,6 +107,17 @@ export default function EditProfileModal({
     reader.readAsDataURL(file);
   };
 
+  const handleRemoveAvatar = () => {
+    setFormData((current) => ({ ...current, avatarUrl: '' }));
+    // Clear the file input's selection too, so choosing the same file
+    // again still fires onChange (otherwise the browser treats it as
+    // "no change" and handleAvatarChange never runs).
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (error) setError(null);
+  };
+
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data?.action === 'update_profile') {
       onLanguageChange?.(formData.preferredLanguage);
@@ -146,6 +172,49 @@ export default function EditProfileModal({
 
           {/* SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 overflow-hidden rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary shrink-0">
+                {formData.avatarUrl ? (
+                  <img src={formData.avatarUrl} alt={t('profilePicture')} className="h-full w-full object-cover" />
+                ) : (
+                  (formData.firstName || formData.lastName || 'U').charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  {t('profilePicture')}
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleAvatarChange}
+                    className="flex-1"
+                  />
+                  {formData.avatarUrl && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRemoveAvatar}
+                          className="shrink-0 px-3 py-2 rounded-[8px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 cursor-pointer"
+                          aria-label={t('removePicture')}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={6} className="z-[60]">
+                        {t('removePicture')}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">{t('pictureHelp')}</p>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
                 First Name
