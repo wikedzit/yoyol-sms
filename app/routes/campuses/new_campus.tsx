@@ -1,11 +1,13 @@
 import {
   type ActionFunctionArgs,
+  type LoaderFunctionArgs,
   Form,
   redirect,
   useActionData,
   useLoaderData,
   useNavigation,
 } from 'react-router';
+import { safeInternalPath } from '~/lib/safe-return-path';
 import { Building2, Save } from 'lucide-react';
 
 import { PageHeader } from '~/components/ui/PageHeader';
@@ -24,7 +26,7 @@ import {
 import type SchoolService from 'workers/services/school';
 import type CampusService from 'workers/services/campus';
 
-export async function loader({ params, context }: ActionFunctionArgs) {
+export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const services = context.services as {
     school: SchoolService;
   };
@@ -41,8 +43,13 @@ export async function loader({ params, context }: ActionFunctionArgs) {
     throw new Response('School not found', { status: 404 });
   }
 
+  const returnTo =
+    safeInternalPath(new URL(request.url).searchParams.get('returnTo')) ??
+    '/schools/profile';
+
   return {
     school,
+    returnTo,
   };
 }
 
@@ -94,10 +101,6 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     address,
     phone,
     email,
-
-    // A new campus is NEVER the main campus.
-    // The school already has its main campus.
-    isMain: false,
   });
 
   if (!created) {
@@ -106,12 +109,14 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
     };
   }
 
-  // Return to the school that owns this campus.
-  return redirect(`/schools/${schoolId}`);
+  const returnTo =
+    safeInternalPath(String(form.get('returnTo') || '')) ?? '/schools/profile';
+
+  return redirect(returnTo);
 }
 
 export default function NewCampusPage() {
-  const { school } = useLoaderData<typeof loader>();
+  const { school, returnTo } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
 
@@ -142,6 +147,7 @@ export default function NewCampusPage() {
 
         <CardContent>
           <Form method="post" className="space-y-4">
+            <input type="hidden" name="returnTo" value={returnTo} />
             <div className="grid gap-4 sm:grid-cols-2">
 
               {/* School - read only */}

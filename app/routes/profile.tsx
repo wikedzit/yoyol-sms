@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { redirect } from "react-router";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData, useSearchParams } from "react-router";
 import jwt from "@tsndr/cloudflare-worker-jwt";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
@@ -19,6 +19,13 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import EditProfileModal from "~/components/modal/EditProfileModal";
+import { SchoolProfileView } from "~/components/school/SchoolProfileView";
+import { isAdminRole } from "~/lib/onboarding.server";
+import {
+  emptySchoolProfile,
+  loadSchoolProfile,
+  type SchoolProfileData,
+} from "~/lib/school-profile.server";
 import { useLanguage } from "~/lib/i18n";
 
 type ProfileLoaderData = {
@@ -45,7 +52,7 @@ type ProfileLoaderData = {
     subject: { subjectName: string };
     student: { firstName: string; lastName: string };
   }>;
-};
+} & SchoolProfileData;
 
 async function getAuthPayload(request: Request, context: any) {
   const cookieHeader = request.headers.get("Cookie");
@@ -104,6 +111,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     }
   }
 
+  const schoolProfile = isAdminRole(payload.role)
+    ? await loadSchoolProfile(context.services)
+    : emptySchoolProfile;
+
   return {
     account: account
       ? {
@@ -123,6 +134,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     teacherSubjects,
     teacherClasses,
     recentGrades,
+    ...schoolProfile,
   };
 }
 
@@ -343,11 +355,20 @@ export default function ProfilePage() {
     teacherSubjects,
     teacherClasses,
     recentGrades,
+    school,
+    campuses,
+    totalTeachers,
+    totalStudents,
   } = useLoaderData<ProfileLoaderData>();
   const fetcher = useFetcher<any>();
   const passwordFetcher = useFetcher<any>();
   const languageFetcher = useFetcher<any>();
   const { setLanguage, t } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const initialTab =
+    isAdminRole(role) && searchParams.get("tab") === "school"
+      ? "school"
+      : "profile";
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -367,6 +388,7 @@ export default function ProfilePage() {
 
   const isTeacher = role === "teacher";
   const isStudent = role === "student";
+  const isAdmin = isAdminRole(role);
   const hasRoleData = (isTeacher || isStudent) && roleData;
 
   const fullName = hasRoleData
@@ -445,7 +467,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="space-y-6 max-w-2xl">
+      <div className="space-y-6">
+        <div className="max-w-2xl">
         <PageHeader title="My Profile" description="Your account information" />
 
         {/* Hero header */}
@@ -499,18 +522,24 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+        </div>
 
-        <Tabs defaultValue="profile">
+        <Tabs defaultValue={initialTab}>
           <TabsList>
             <TabsTrigger value="profile" className="cursor-pointer">
               Profile
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="school" className="cursor-pointer">
+                {t("schoolTab")}
+              </TabsTrigger>
+            )}
             <TabsTrigger value="security" className="cursor-pointer">
               Security
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="space-y-6 mt-4">
+          <TabsContent value="profile" className="space-y-6 mt-4 max-w-2xl">
             <SectionPanel title="Account Information">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FieldBox label="Email" value={account?.email} />
@@ -710,7 +739,19 @@ export default function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="security" className="mt-4">
+          {isAdmin && (
+            <TabsContent value="school" className="mt-4">
+              <SchoolProfileView
+                school={school}
+                campuses={campuses}
+                totalTeachers={totalTeachers}
+                totalStudents={totalStudents}
+                addCampusReturnTo="/profile?tab=school"
+              />
+            </TabsContent>
+          )}
+
+          <TabsContent value="security" className="mt-4 max-w-2xl">
             <SectionPanel
               title="Change Password"
               description="Choose a new password with at least 8 characters."
