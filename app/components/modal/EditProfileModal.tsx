@@ -16,6 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip';
 import { useLanguage } from '~/lib/i18n';
 
 export default function EditProfileModal({
@@ -163,15 +168,22 @@ export default function EditProfileModal({
                     className="flex-1"
                   />
                   {formData.avatarUrl && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleRemoveAvatar}
-                      className="shrink-0 px-3 py-2 rounded-[8px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 cursor-pointer"
-                      aria-label={t('removePicture') || 'Remove picture'}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRemoveAvatar}
+                          className="shrink-0 px-3 py-2 rounded-[8px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 cursor-pointer"
+                          aria-label={t('removePicture')}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={6} className="z-[60]">
+                        {t('removePicture')}
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">{t('pictureHelp')}</p>
