@@ -1,5 +1,5 @@
 import { ChevronDown, LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
 import { authCookie } from "workers/utils/cookies.server";
 import { Button } from "~/components/ui/button";
@@ -16,7 +16,7 @@ import {
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { useTheme } from "next-themes";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
-import { LanguageProvider, useLanguage, type Language } from "~/lib/i18n";
+import { useLanguage } from "~/lib/i18n";
 
 export async function loader({ request, context }: any) {
   const cookieHeader = request.headers.get("Cookie");
@@ -64,22 +64,17 @@ const DashboardLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-  const displayName = [user?.firstName, user?.lastName]
-    .filter(Boolean)
-    .join(" ") || user?.email;
 
   return (
-    <LanguageProvider initialLanguage={user.preferredLanguage}>
-      <DashboardContent
-        user={user}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-        isLogoutConfirmOpen={isLogoutConfirmOpen}
-        setIsLogoutConfirmOpen={setIsLogoutConfirmOpen}
-        theme={theme}
-        setTheme={setTheme}
-      />
-    </LanguageProvider>
+    <DashboardContent
+      user={user}
+      mobileMenuOpen={mobileMenuOpen}
+      setMobileMenuOpen={setMobileMenuOpen}
+      isLogoutConfirmOpen={isLogoutConfirmOpen}
+      setIsLogoutConfirmOpen={setIsLogoutConfirmOpen}
+      theme={theme}
+      setTheme={setTheme}
+    />
   );
 };
 
@@ -92,10 +87,15 @@ function DashboardContent({
   theme,
   setTheme,
 }: any) {
-  const { t } = useLanguage();
+  const { t, setLanguage } = useLanguage();
   const displayName = [user?.firstName, user?.lastName]
     .filter(Boolean)
     .join(" ") || user?.email;
+
+  useEffect(() => {
+    const preferredLanguage = user?.preferredLanguage === "sw" ? "sw" : "en";
+    setLanguage(preferredLanguage);
+  }, [user?.preferredLanguage, setLanguage]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">

@@ -12,3 +12,4 @@ export * from './notices';
 export * from './academic-levels';
 export * from './school';
 export * from './academic-years';
+export * from './campuses';

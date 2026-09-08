@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { school, type SelectSchool } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { campus } from '../database/campuses';
 
 const SchoolProfileSchema = z.object({
   name: z
@@ -65,6 +66,10 @@ export type SchoolProfileInput =
   z.infer<typeof SchoolProfileSchema>;
 
 export default class SchoolService {
+    async list(): Promise<SelectSchool[]> {
+  return this.getAll();
+}
+
   private db: DrizzleD1Database;
   private ownerUserId: number | null;
 
@@ -147,34 +152,58 @@ export default class SchoolService {
   }
 
   // Ongeza shule MPYA
-  async create(
-    data: SchoolProfileInput
-  ): Promise<SelectSchool | null> {
-    try {
+async create(
+  data: SchoolProfileInput
+): Promise<SelectSchool | null> {
+  try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      const validated =
-        SchoolProfileSchema.parse(data);
+    const validated =
+      SchoolProfileSchema.parse(data);
 
-      const result = await this.db
-        .insert(school)
-        .values({
-          ...validated,
-          ownerUserId,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        })
-        .returning();
+    const now = Date.now();
 
-      return result[0] || null;
-    } catch (error) {
-      console.error(
-        'Error creating school:',
-        error
-      );
+    const result = await this.db
+      .insert(school)
+      .values({
+        ...validated,
+        ownerUserId,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
 
+    const createdSchool = result[0];
+
+    if (!createdSchool) {
       return null;
     }
+
+    // Automatically create the first campus.
+    await this.db
+      .insert(campus)
+      .values({
+        schoolId: createdSchool.id,
+        name: 'Main Campus',
+        code: 'MAIN',
+        address: createdSchool.address ?? null,
+        phone: createdSchool.phone ?? null,
+        email: createdSchool.email ?? null,
+        isMain: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+    return createdSchool;
+  } catch (error) {
+    console.error(
+      'Error creating school and main campus:',
+      error
+    );
+
+    return null;
   }
+}
+
 
   // Badilisha shule ILIYOPO
   async update(
