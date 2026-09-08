@@ -24,6 +24,7 @@ import {
 import type TeacherService from "workers/services/teachers";
 import type StudentService from "workers/services/student";
 import type SchoolService from "workers/services/school";
+import type CampusService from "workers/services/campus";
 import { Button } from "~/components/ui/button";
 import { useLanguage } from "~/lib/i18n";
 
@@ -32,24 +33,35 @@ export async function loader({ context }: LoaderFunctionArgs) {
     school: SchoolService;
     teacher: TeacherService;
     student: StudentService;
+    campus: CampusService;
   };
   const schools = await services.school.getAll();
   const school = schools[0] ?? null;
-  const [totalTeachers, totalStudents] = await Promise.all([
+  if (!school) {
+    return {
+      school: null,
+      totalTeachers: 0,
+      totalStudents: 0,
+      totalCampuses: 0,
+    };
+  }
+
+  const [totalTeachers, totalStudents, campuses] = await Promise.all([
     services.teacher.countAll(),
     services.student.countAll(),
+    services.campus.getBySchoolId(school.id),
   ]);
 
   return {
     school,
     totalTeachers,
     totalStudents,
-    totalRegistered: totalTeachers + totalStudents,
+    totalCampuses: campuses.length,
   };
 }
 export default function SchoolProfilePage() {
   const { t } = useLanguage();
-  const { school, totalTeachers, totalStudents, totalRegistered } =
+  const { school, totalTeachers, totalStudents, totalCampuses } =
     useLoaderData<typeof loader>();
 
   if (!school) {
@@ -98,7 +110,7 @@ export default function SchoolProfilePage() {
               asChild
               className="flex items-center gap-2 bg-primary-gradient text-white hover:scale-110 hover:text-white-600 cursor-pointer transition-all duration-300"
             >
-              <Link to="/schools/new">
+              <Link to={`/schools/${school.id}/campuses/new_campus`}>
                 <Plus size={18} />
                 <span className="font-medium">{t('addCampus')}</span>
               </Link>
@@ -107,7 +119,6 @@ export default function SchoolProfilePage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-none shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -134,6 +145,7 @@ export default function SchoolProfilePage() {
           </CardContent>
         </Card>
 
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="border-none shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
@@ -195,18 +207,22 @@ export default function SchoolProfilePage() {
                   backgroundColor: `${primaryColor}15`,
                 }}
               >
-                <Users
+                <Building2
                   className="h-6 w-6"
                   style={{
                     color: primaryColor,
                   }}
                 />
               </div>
+
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  {t('totalRegistered')}
+                  Total Campuses
                 </p>
-                <p className="text-2xl font-bold">{totalRegistered}</p>
+
+                <p className="text-2xl font-bold">
+                  {totalCampuses}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -424,101 +440,6 @@ export default function SchoolProfilePage() {
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Registration Summary
-          </CardTitle>
-          <CardDescription>
-            Live registration totals retrieved from the database.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* TEACHERS */}
-            <div className="rounded-lg border p-5">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: `${primaryColor}15`,
-                  }}
-                >
-                  <GraduationCap
-                    className="h-5 w-5"
-                    style={{
-                      color: primaryColor,
-                    }}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Registered Teachers
-                  </p>
-                  <p className="text-3xl font-bold">{totalTeachers}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* STUDENTS */}
-            <div className="rounded-lg border p-5">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: `${secondaryColor}15`,
-                  }}
-                >
-                  <UserRound
-                    className="h-5 w-5"
-                    style={{
-                      color: secondaryColor,
-                    }}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Registered Students
-                  </p>
-                  <p className="text-3xl font-bold">{totalStudents}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* TOTAL */}
-            <div
-              className="rounded-lg border p-5"
-              style={{
-                borderColor: `${primaryColor}40`,
-              }}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{
-                    backgroundColor: `${primaryColor}15`,
-                  }}
-                >
-                  <Users
-                    className="h-5 w-5"
-                    style={{
-                      color: primaryColor,
-                    }}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Total Registered
-                  </p>
-                  <p className="text-3xl font-bold">{totalRegistered}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
