@@ -9,6 +9,16 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
+import type { FetcherWithComponents } from 'react-router';
+
+interface EditProfileModalProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  fetcher: FetcherWithComponents<any>;
+  role: string;
+  account?: Record<string, any>;
+  roleData?: Record<string, any>;
+}
 import {
   Select,
   SelectContent,
@@ -30,27 +40,38 @@ export default function EditProfileModal({
   role,
   account,
   roleData,
-  onLanguageChange,
-}: any) {
-  const { t } = useLanguage();
+}: EditProfileModalProps) {
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    firstName: (isTeacher || isStudent ? roleData?.firstName : account?.firstName) || '',
-    lastName: (isTeacher || isStudent ? roleData?.lastName : account?.lastName) || '',
-    phone: roleData?.phone || '',
-    accountPhone: account?.phone || '',
-    address: roleData?.address || '',
-    qualification: (isTeacher && roleData?.qualification) || '',
-    guardianName: (isStudent && roleData?.guardianName) || '',
-    guardianPhone: (isStudent && roleData?.guardianPhone) || '',
-    preferredLanguage: account?.preferredLanguage || 'en',
-    avatarUrl: account?.avatarUrl || '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    address: '',
+    qualification: '',
+    guardianName: '',
+    guardianPhone: '',
   });
   const [error, setError] = useState<string | null>(null);
+
+  // Sync state when account/roleData or open state changes
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        firstName: (isTeacher || isStudent ? roleData?.firstName : account?.firstName) || '',
+        lastName: (isTeacher || isStudent ? roleData?.lastName : account?.lastName) || '',
+        phone: roleData?.phone || '',
+        address: roleData?.address || '',
+        qualification: (isTeacher && roleData?.qualification) || '',
+        guardianName: (isStudent && roleData?.guardianName) || '',
+        guardianPhone: (isStudent && roleData?.guardianPhone) || '',
+      });
+      setError(null);
+    }
+  }, [open, role, account, roleData, isTeacher, isStudent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -106,7 +127,7 @@ export default function EditProfileModal({
     if (fetcher.data?.error && fetcher.data?.action === 'update_profile') {
       setError(fetcher.data.error);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -117,7 +138,8 @@ export default function EditProfileModal({
           sm:max-w-[90%]
           md:max-w-[500px] md:w-[500px]
           p-6 md:p-10
-          flex flex-col
+          flex flex-col justify-between
+          bg-card text-card-foreground border-border
         "
       >
         <fetcher.Form
@@ -129,23 +151,27 @@ export default function EditProfileModal({
           <input type="hidden" name="action" value="update_profile" />
           <input type="hidden" name="avatarUrl" value={formData.avatarUrl} />
 
+          {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
-                {t('editProfile')}
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+                Edit Profile
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={25} />
+              <X size={24} className="text-muted-foreground hover:text-foreground transition-colors" />
             </SheetClose>
           </div>
 
+          {/* SERVER ERROR DISPLAY */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
+          {/* SCROLLABLE CONTENT */}
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
           <div className="flex-1 overflow-y-auto pr-2 space-y-4">
             <div className="flex items-center gap-4">
               <div className="h-20 w-20 overflow-hidden rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary shrink-0">
@@ -190,8 +216,8 @@ export default function EditProfileModal({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('firstName')}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                First Name
               </label>
               <Input
                 type="text"
@@ -203,8 +229,8 @@ export default function EditProfileModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('lastName')}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Last Name
               </label>
               <Input
                 type="text"
@@ -232,8 +258,8 @@ export default function EditProfileModal({
             {(isTeacher || isStudent) && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('phone')}
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Phone
                   </label>
                   <Input
                     type="text"
@@ -244,8 +270,8 @@ export default function EditProfileModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('address')}
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Address
                   </label>
                   <Input
                     type="text"
@@ -259,8 +285,8 @@ export default function EditProfileModal({
 
             {isTeacher && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('qualification')}
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Qualification
                 </label>
                 <Input
                   type="text"
@@ -274,8 +300,8 @@ export default function EditProfileModal({
             {isStudent && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('guardianName')}
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Guardian Name
                   </label>
                   <Input
                     type="text"
@@ -286,8 +312,8 @@ export default function EditProfileModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t('guardianPhone')}
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Guardian Phone
                   </label>
                   <Input
                     type="text"
@@ -299,50 +325,27 @@ export default function EditProfileModal({
               </>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('preferredLanguage')}
-              </label>
-              <Select
-                value={formData.preferredLanguage}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, preferredLanguage: value })
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('selectLanguage')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">{t('english')}</SelectItem>
-                  <SelectItem value="sw">{t('swahili')}</SelectItem>
-                </SelectContent>
-              </Select>
-              <input
-                type="hidden"
-                name="preferredLanguage"
-                value={formData.preferredLanguage}
-              />
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              {t('emailCannotChange')}
+            <p className="text-xs text-muted-foreground pt-2">
+              Email can&apos;t be changed here since it&apos;s tied to your
+              login. Contact your school admin if it needs to change.
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          {/* STICKY FOOTER */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               {t('cancel')}
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            
-              {fetcher.state === 'submitting' ? t('saving') : t('saveChanges')}
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+            >
+              {fetcher.state === 'submitting' ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </fetcher.Form>

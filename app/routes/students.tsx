@@ -343,12 +343,12 @@ export default function Students() {
 
   return (
     <div className="space-y-2 h-min-screen">
-      {/* Header */}
+      {/* Header section with text-foreground */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('studentsPage')}</h1>
-          <p className="text-muted-foreground mt-1">
-            {t('manageStudents')}
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Students</h1>
+          <p className="mt-1 text-sm text-foreground font-medium">
+            Manage and view all student records
           </p>
         </div>
         <Button

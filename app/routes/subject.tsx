@@ -316,14 +316,14 @@ export default function SubjectsPage() {
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header section with text-foreground */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
               {t('subjectManagement')}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t('organizeSubjects')}
+            <p className="mt-1 text-sm text-foreground font-medium">
+              Manage and organize academic subjects
             </p>
           </div>
           <Button

@@ -76,7 +76,7 @@ export default function AddSubjectModal({
     if (fetcher.data?.error) {
       setError(fetcher.data.error);
     }
-  }, [fetcher.data, id]);
+  }, [fetcher.data, id, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -88,6 +88,7 @@ export default function AddSubjectModal({
           md:max-w-[573px] md:w-[573px]   /* Desktop fixed width */
           p-6 md:p-10
           flex flex-col
+          bg-card text-card-foreground border-border
         "
       >
         <fetcher.Form
@@ -104,31 +105,31 @@ export default function AddSubjectModal({
           {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
-                {t('addNewSubject')}
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+                Add New Subject
               </SheetTitle>
             </SheetHeader>
 
             <SheetClose asChild className="cursor-pointer">
-              <X size={25} />
+              <X size={25} className="text-muted-foreground hover:text-foreground transition-colors" />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-6 md:mb-8">
-            {t('subjectDescription')}
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+            Fill in the details below to add a new subject.
           </p>
 
           {/* ERROR MESSAGE */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
           {/* STREAM SELECT */}
           <div className="mb-4 w-full">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('streams')}
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Stream
             </label>
 
             <Select
@@ -177,7 +178,7 @@ export default function AddSubjectModal({
               },
             ].map(({ label, field, type }) => (
               <div key={field} className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {label}
                 </label>
 
@@ -194,8 +195,8 @@ export default function AddSubjectModal({
 
             {/* STATUS */}
             <div className="mb-4 w-full">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('status')}
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Status
               </label>
 
               <Select
@@ -217,19 +218,19 @@ export default function AddSubjectModal({
           </div>
 
           {/* FOOTER */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex justify-end gap-3 border-t border-border pt-4 mt-6 sticky bottom-0 bg-card z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-105 transition cursor-pointer"
             >
               {t('cancel')}
             </Button>
 
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting' ? t('adding') : t('addSubject')}
             </Button>

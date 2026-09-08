@@ -1,55 +1,46 @@
 import {
   LayoutDashboard,
   Users,
-  BookOpen,
   DoorOpen,
   ChevronRight,
   ChevronDown,
   Building2,
-  GitBranch,
   FileText,
   GraduationCap,
   LogOut,
-} from "lucide-react";
+} from 'lucide-react';
 
-/* 
-  ============================================================================
-  MODIFIED BY AI: Changed import from 'react-router-dom' to 'react-router'
-  to match React Router v7 / React Router framework setups.
-  ============================================================================
-*/
-import { Link, useLocation } from "react-router";
-import { cn } from "~/lib/utils";
-import { useState } from "react";
-import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
-import { useLanguage } from "~/lib/i18n";
+import { Link, useLocation } from 'react-router';
+import { cn } from '~/lib/utils';
+import { useState, useEffect } from 'react';
+import { LogoutConfirmDialog } from '~/components/LogoutConfirmDialog';
 
 const mainNavigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
 
   {
-    name: "Academic levels",
+    name: 'Academic levels',
     icon: Building2,
     children: [
-      { name: "O-Level", href: "/levels/o-level" },
-      { name: "A-Level", href: "/levels/a-level" },
+      { name: 'O-Level', href: '/levels/o-level' },
+      { name: 'A-Level', href: '/levels/a-level' },
     ],
   },
 
   {
-    name: "Schools Setup",
+    name: 'Schools Setup',
     icon: Building2,
     children: [
-      { name: "School Profile", href: "/schools/profile" },
-      { name: "Academic Year", href: "/schools/academic-year" },
-      { name: "Subjects", href: "/subjects", icon: FileText },
-      { name: "Classrooms", href: "/classes", icon: DoorOpen },
+      { name: 'School Profile', href: '/schools/profile' },
+      { name: 'Academic Year', href: '/schools/academic-year' },
+      { name: 'Subjects', href: '/subjects', icon: FileText },
+      { name: 'Classrooms', href: '/classes', icon: DoorOpen },
     ],
   },
 
-  { name: "Students List", href: "/students", icon: GraduationCap },
-  { name: "Teachers", href: "/teachers", icon: Users },
-  { name: "Grades", href: "/grades", icon: GraduationCap },
+  { name: 'Students List', href: '/students', icon: GraduationCap },
+  { name: 'Teachers', href: '/teachers', icon: Users },
+  { name: 'Grades', href: '/grades', icon: GraduationCap },
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
@@ -57,16 +48,9 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const { t } = useLanguage();
 
   return (
-    /* 
-      ============================================================================
-      MODIFIED BY AI: 
-      - Replaced 'bg-white' with 'bg-card'
-      - Replaced 'border-sidebar-border' with 'border-border'
-      ============================================================================
-    */
-    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card transition-colors duration-200">
-      {/* --- Top Navigation --- */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card/95 backdrop-blur-lg transition-colors duration-200">
+      {/* Main Navigation List */}
+      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
         {mainNavigation.map((item) =>
           item.children ? (
             <SidebarParent
@@ -85,14 +69,15 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           ),
         )}
 
+        {/* Logout trigger button */}
         <LogoutConfirmDialog
           trigger={
             <button
               type="button"
               onClick={onNavigate}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out cursor-pointer",
-                "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                'w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out cursor-pointer',
+                'text-app-body hover:bg-accent hover:text-app-text',
               )}
             >
               <LogOut className="h-5 w-5" />
@@ -106,7 +91,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 };
 
 /* ----------------------------------------
-   NORMAL LINK (no children)
+   SINGLE STREAMLINED SIDEBAR LINK
 ---------------------------------------- */
 const SidebarLink = ({ item, location, onNavigate }: any) => {
   const { t } = useLanguage();
@@ -116,72 +101,75 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
     <Link
       to={item.href}
       onClick={onNavigate}
-      /* 
-        ============================================================================
-        MODIFIED BY AI: 
-        - Active links now use 'bg-primary text-primary-foreground'
-        - Inactive links use 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-        ============================================================================
-      */
       className={cn(
-        "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out",
+        'relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group',
         isActive
-          ? "bg-primary text-primary-foreground shadow-xs"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+          ? 'bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100'
+          : 'text-app-body hover:bg-accent hover:text-app-text',
       )}
     >
-      <item.icon className="h-5 w-5" />
-      <span className="truncate">{translateNavigationLabel(item.name, t)}</span>
-      {isActive && (
-        <ChevronRight className="ml-auto h-4 w-4 text-primary-foreground" />
-      )}
+      <item.icon
+        className={cn(
+          'h-5 w-5 transition-transform duration-200',
+          isActive ? 'text-white scale-105' : 'text-app-body group-hover:scale-105',
+        )}
+      />
+
+      <span className="truncate">{item.name}</span>
+
+      {/* Subtle indicator icon for active route */}
+      {isActive && <ChevronRight className="ml-auto h-4 w-4 text-white" />}
     </Link>
   );
 };
 
 /* ----------------------------------------
-   PARENT LINK (with children)
+   SINGLE STREAMLINED PARENT COMPONENT
 ---------------------------------------- */
 const SidebarParent = ({ item, location, onNavigate }: any) => {
-  const { t } = useLanguage();
-  const [open, setOpen] = useState(false);
-
-  // Is any child active?
   const isChildActive = item.children.some(
     (child: any) => location.pathname === child.href,
   );
 
+  const [open, setOpen] = useState(isChildActive);
+
+  useEffect(() => {
+    if (isChildActive) {
+      setOpen(true);
+    }
+  }, [isChildActive]);
+
   return (
-    <div>
+    <div className="space-y-1">
       <button
         onClick={() => setOpen(!open)}
-        /* 
-          ============================================================================
-          MODIFIED BY AI: 
-          - Active parent buttons use 'bg-primary text-primary-foreground'
-          - Inactive parent buttons use 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-          ============================================================================
-        */
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition duration-200 cursor-pointer",
+          'relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group',
           isChildActive
-            ? "bg-primary text-primary-foreground shadow-xs"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+            ? 'bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100'
+            : 'text-app-body hover:bg-accent hover:text-app-text',
         )}
       >
-        <item.icon className="h-5 w-5" />
-        <span className="truncate">{translateNavigationLabel(item.name, t)}</span>
+        <item.icon
+          className={cn(
+            'h-5 w-5 transition-transform duration-200',
+            isChildActive ? 'text-white scale-105' : 'text-app-body group-hover:scale-105',
+          )}
+        />
+        <span className="truncate">{item.name}</span>
 
         <ChevronDown
           className={cn(
-            "ml-auto h-4 w-4 transition-transform",
-            open && "rotate-180",
+            'ml-auto h-4 w-4 transition-transform duration-200',
+            isChildActive ? 'text-white' : 'text-app-body',
+            open && 'rotate-180',
           )}
         />
       </button>
 
+      {/* Nested Sub-navigation */}
       {open && (
-        <div className="ml-8 mt-1 space-y-1">
+        <div className="ml-5 pl-3 border-l border-border space-y-1 mt-1">
           {item.children.map((child: any) => {
             const isActive = location.pathname === child.href;
             return (
@@ -189,20 +177,14 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                 key={child.name}
                 to={child.href}
                 onClick={onNavigate}
-                /* 
-                  ============================================================================
-                  MODIFIED BY AI: 
-                  - Sub-links use dynamic theme colors for active and hover states
-                  ============================================================================
-                */
                 className={cn(
-                  "block px-3 py-2 text-sm rounded-md transition duration-150",
+                  'relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200',
                   isActive
-                    ? "bg-primary text-primary-foreground font-medium"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    ? 'bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100'
+                    : 'text-app-body hover:bg-accent hover:text-app-text font-medium',
                 )}
               >
-                {translateNavigationLabel(child.name, t)}
+                <span className="truncate">{child.name}</span>
               </Link>
             );
           })}
@@ -211,19 +193,3 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
     </div>
   );
 };
-
-function translateNavigationLabel(name: string, t: (key: any) => string) {
-  const labels: Record<string, string> = {
-    Dashboard: 'dashboard',
-    'Academic levels': 'academicLevels',
-    'Schools Setup': 'schoolsSetup',
-    'School Profile': 'schoolProfile',
-    'Academic Year': 'academicYear',
-    Subjects: 'subjects',
-    Classrooms: 'classrooms',
-    'Students List': 'studentsList',
-    Teachers: 'teachers',
-    Grades: 'grades',
-  };
-  return labels[name] ? t(labels[name]) : name;
-}
