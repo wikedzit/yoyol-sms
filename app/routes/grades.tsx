@@ -1,27 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   useLoaderData,
   useFetcher,
   useSearchParams,
   type LoaderFunctionArgs,
   type ActionFunctionArgs,
-} from 'react-router';
-import { z } from 'zod';
-import { Button } from '~/components/ui/button';
+} from "react-router";
+import { z } from "zod";
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '~/components/ui/card';
+} from "~/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select';
+} from "~/components/ui/select";
 import {
   Table,
   TableBody,
@@ -29,33 +29,33 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '~/components/ui/table';
-import { Plus, Download, Edit } from 'lucide-react';
-import { toast } from 'sonner';
-import { GradeBadge } from '~/components/grade/GradeBadge';
-import { GradeForm } from '~/components/grade/GradeFormModal';
-import type GradeService from 'workers/services/grades';
-import type { GradeWithRelations } from 'workers/services/grades';
-import type SubjectService from 'workers/services/subjects';
-import type StudentService from 'workers/services/student';
-import type TeacherService from 'workers/services/teachers';
-import { useLanguage } from '~/lib/i18n';
-import type AcademicLevelService from 'workers/services/academic-levels';
-import { DeleteButton } from '~/components/DeleteButton';
+} from "~/components/ui/table";
+import { Plus, Download, Edit } from "lucide-react";
+import { toast } from "sonner";
+import { GradeBadge } from "~/components/grade/GradeBadge";
+import { GradeForm } from "~/components/grade/GradeFormModal";
+import type GradeService from "workers/services/grades";
+import type { GradeWithRelations } from "workers/services/grades";
+import type SubjectService from "workers/services/subjects";
+import type StudentService from "workers/services/student";
+import type TeacherService from "workers/services/teachers";
+import { useLanguage } from "~/lib/i18n";
+import type AcademicLevelService from "workers/services/academic-levels";
+import { DeleteButton } from "~/components/DeleteButton";
 
 // Validation Schemas
 const GradeCreateSchema = z.object({
-  studentId: z.coerce.number().int().positive('Student is required'),
-  subjectId: z.coerce.number().int().positive('Subject is required'),
-  streamId: z.coerce.number().int().positive('Stream is required'),
-  formId: z.coerce.number().int().positive('Form is required'),
+  studentId: z.coerce.number().int().positive("Student is required"),
+  subjectId: z.coerce.number().int().positive("Subject is required"),
+  streamId: z.coerce.number().int().positive("Stream is required"),
+  formId: z.coerce.number().int().positive("Form is required"),
   teacherId: z.coerce.number().int().positive().optional(),
-  score: z.coerce.number().min(0).max(100, 'Score must be between 0 and 100'),
+  score: z.coerce.number().min(0).max(100, "Score must be between 0 and 100"),
   remarks: z.string().optional(),
 });
 
 const GradeUpdateSchema = GradeCreateSchema.partial().extend({
-  id: z.string().min(1, 'Grade ID is required'),
+  id: z.string().min(1, "Grade ID is required"),
 });
 
 // Loader: fetch grades and all related options
@@ -69,17 +69,17 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   };
 
   const url = new URL(request.url);
-  const streamId = url.searchParams.get('streamId');
-  const formId = url.searchParams.get('formId');
-  const subjectId = url.searchParams.get('subjectId');
-  const studentId = url.searchParams.get('studentId');
-  const teacherId = url.searchParams.get('teacherId');
+  const streamId = url.searchParams.get("streamId");
+  const formId = url.searchParams.get("formId");
+  const subjectId = url.searchParams.get("subjectId");
+  const studentId = url.searchParams.get("studentId");
+  const teacherId = url.searchParams.get("teacherId");
 
   const grades = await services.grade.getAll({
     limit: 100,
     offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    sortBy: "createdAt",
+    sortOrder: "desc",
     streamId: streamId ? parseInt(streamId, 10) : undefined,
     formId: formId ? parseInt(formId, 10) : undefined,
     subjectId: subjectId ? parseInt(subjectId, 10) : undefined,
@@ -92,19 +92,19 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     services.academicLevel.getAllForms(),
     services.subject.getAllSubjects({
       limit: 100,
-      sortBy: 'subjectName',
-      sortOrder: 'asc',
+      sortBy: "subjectName",
+      sortOrder: "asc",
     }),
     services.student.getAll({
       limit: 100,
       offset: 0,
-      sortBy: 'firstName',
-      sortOrder: 'asc',
+      sortBy: "firstName",
+      sortOrder: "asc",
     }),
     services.teacher.getAllTeachers({
       limit: 100,
-      sortBy: 'firstName',
-      sortOrder: 'asc',
+      sortBy: "firstName",
+      sortOrder: "asc",
     }),
   ]);
 
@@ -122,54 +122,67 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { grade: GradeService };
   const form = await request.formData();
-  const method = (form.get('_method') as string) || request.method;
+  const method = (form.get("_method") as string) || request.method;
   const rawData = Object.fromEntries(form.entries());
 
   try {
-    if (method === 'POST') {
+    if (method === "POST") {
       const parsed = GradeCreateSchema.safeParse(rawData);
       if (!parsed.success) {
-        const error = parsed.error.issues[0]?.message || 'Invalid input data';
+        const error = parsed.error.issues[0]?.message || "Invalid input data";
         return Response.json({ error }, { status: 400 });
       }
 
       const created = await services.grade.create(parsed.data);
       if (!created) {
-        return Response.json({ error: 'Failed to create grade' }, { status: 400 });
+        return Response.json(
+          { error: "Failed to create grade" },
+          { status: 400 },
+        );
       }
-      return Response.json({ success: true, method: 'POST' });
+      return Response.json({ success: true, method: "POST" });
     }
 
-    if (method === 'PUT') {
+    if (method === "PUT") {
       const parsed = GradeUpdateSchema.safeParse(rawData);
       if (!parsed.success) {
-        const error = parsed.error.issues[0]?.message || 'Invalid input data';
+        const error = parsed.error.issues[0]?.message || "Invalid input data";
         return Response.json({ error }, { status: 400 });
       }
 
       const { id, ...data } = parsed.data;
       const updated = await services.grade.update(id, data);
       if (!updated) {
-        return Response.json({ error: 'Failed to update grade' }, { status: 400 });
+        return Response.json(
+          { error: "Failed to update grade" },
+          { status: 400 },
+        );
       }
-      return Response.json({ success: true, method: 'PUT' });
+      return Response.json({ success: true, method: "PUT" });
     }
 
-    if (method === 'DELETE') {
-      const id = String(form.get('id') ?? '');
-      if (!id) return Response.json({ error: 'Grade ID is required' }, { status: 400 });
+    if (method === "DELETE") {
+      const id = String(form.get("id") ?? "");
+      if (!id)
+        return Response.json(
+          { error: "Grade ID is required" },
+          { status: 400 },
+        );
 
       const deleted = await services.grade.delete(id);
       if (!deleted) {
-        return Response.json({ error: 'Failed to delete grade' }, { status: 400 });
+        return Response.json(
+          { error: "Failed to delete grade" },
+          { status: 400 },
+        );
       }
-      return Response.json({ success: true, method: 'DELETE' });
+      return Response.json({ success: true, method: "DELETE" });
     }
 
-    return Response.json({ error: 'Unknown method' }, { status: 400 });
+    return Response.json({ error: "Unknown method" }, { status: 400 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Server error';
-    console.error('grades action error:', err);
+    const message = err instanceof Error ? err.message : "Server error";
+    console.error("grades action error:", err);
     return Response.json({ error: message }, { status: 500 });
   }
 }
@@ -185,21 +198,15 @@ function sanitizeCsvCell(cell: string): string {
 
 export default function Grades() {
   const { t } = useLanguage();
-  const {
-    grades,
-    streams,
-    forms,
-    subjects,
-    students,
-    teachers,
-  } = useLoaderData() as {
-    grades: GradeWithRelations[];
-    streams: any[];
-    forms: any[];
-    subjects: any[];
-    students: any[];
-    teachers: any[];
-  };
+  const { grades, streams, forms, subjects, students, teachers } =
+    useLoaderData() as {
+      grades: GradeWithRelations[];
+      streams: any[];
+      forms: any[];
+      subjects: any[];
+      students: any[];
+      teachers: any[];
+    };
 
   const fetcher = useFetcher();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -209,25 +216,29 @@ export default function Grades() {
 
   // Filter local state
   const [selectedStream, setSelectedStream] = useState<string>(
-    searchParams.get('streamId') || ''
+    searchParams.get("streamId") || "",
   );
   const [selectedForm, setSelectedForm] = useState<string>(
-    searchParams.get('formId') || ''
+    searchParams.get("formId") || "",
   );
   const [selectedSubject, setSelectedSubject] = useState<string>(
-    searchParams.get('subjectId') || ''
+    searchParams.get("subjectId") || "",
   );
   const [selectedStudent, setSelectedStudent] = useState<string>(
-    searchParams.get('studentId') || ''
+    searchParams.get("studentId") || "",
   );
   const [selectedTeacher, setSelectedTeacher] = useState<string>(
-    searchParams.get('teacherId') || ''
+    searchParams.get("teacherId") || "",
   );
 
   // Handle toast notifications & modal close on action resolution
   useEffect(() => {
-    if (fetcher.state !== 'idle' || !fetcher.data) return;
-    const data = fetcher.data as { error?: string; success?: boolean; method?: string };
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    const data = fetcher.data as {
+      error?: string;
+      success?: boolean;
+      method?: string;
+    };
 
     if (data.error) {
       toast.error(data.error);
@@ -236,16 +247,16 @@ export default function Grades() {
 
     if (data.success) {
       switch (data.method) {
-        case 'POST':
-          toast.success('Grade added successfully!');
+        case "POST":
+          toast.success("Grade added successfully!");
           setFormOpen(false);
           break;
-        case 'PUT':
-          toast.success('Grade updated successfully!');
+        case "PUT":
+          toast.success("Grade updated successfully!");
           setFormOpen(false);
           break;
-        case 'DELETE':
-          toast.success('Grade deleted successfully!');
+        case "DELETE":
+          toast.success("Grade deleted successfully!");
           break;
       }
     }
@@ -259,69 +270,69 @@ export default function Grades() {
   const handleExport = () => {
     try {
       const headers = [
-        'Student Name',
-        'Subject',
-        'Score',
-        'Grade',
-        'Remarks',
-        'Teacher',
-        'Stream',
-        'Form',
+        "Student Name",
+        "Subject",
+        "Score",
+        "Grade",
+        "Remarks",
+        "Teacher",
+        "Stream",
+        "Form",
       ];
 
       const rows = grades.map((grade) => [
         sanitizeCsvCell(
           grade.student
             ? `${grade.student.firstName} ${grade.student.lastName}`
-            : ''
+            : "",
         ),
-        sanitizeCsvCell(grade.subject ? grade.subject.subjectName : ''),
+        sanitizeCsvCell(grade.subject ? grade.subject.subjectName : ""),
         sanitizeCsvCell(grade.score.toString()),
-        sanitizeCsvCell(grade.grade || ''),
-        sanitizeCsvCell(grade.remarks || ''),
+        sanitizeCsvCell(grade.grade || ""),
+        sanitizeCsvCell(grade.remarks || ""),
         sanitizeCsvCell(
           grade.teacher
             ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-            : ''
+            : "",
         ),
-        sanitizeCsvCell(grade.stream?.name || ''),
-        sanitizeCsvCell(grade.form?.name || ''),
+        sanitizeCsvCell(grade.stream?.name || ""),
+        sanitizeCsvCell(grade.form?.name || ""),
       ]);
 
       const csvContent = [
-        headers.join(','),
-        ...rows.map((row) => row.join(',')),
-      ].join('\n');
+        headers.join(","),
+        ...rows.map((row) => row.join(",")),
+      ].join("\n");
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
 
-      link.setAttribute('href', url);
+      link.setAttribute("href", url);
       link.setAttribute(
-        'download',
-        `grades_export_${new Date().toISOString().split('T')[0]}.csv`
+        "download",
+        `grades_export_${new Date().toISOString().split("T")[0]}.csv`,
       );
-      link.style.visibility = 'hidden';
+      link.style.visibility = "hidden";
 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      toast.success('Grades exported successfully');
+      toast.success("Grades exported successfully");
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export grades');
+      console.error("Export error:", error);
+      toast.error("Failed to export grades");
     }
   };
 
   const handleFilterChange = () => {
     const params = new URLSearchParams();
-    if (selectedStream) params.set('streamId', selectedStream);
-    if (selectedForm) params.set('formId', selectedForm);
-    if (selectedSubject) params.set('subjectId', selectedSubject);
-    if (selectedStudent) params.set('studentId', selectedStudent);
-    if (selectedTeacher) params.set('teacherId', selectedTeacher);
+    if (selectedStream) params.set("streamId", selectedStream);
+    if (selectedForm) params.set("formId", selectedForm);
+    if (selectedSubject) params.set("subjectId", selectedSubject);
+    if (selectedStudent) params.set("studentId", selectedStudent);
+    if (selectedTeacher) params.set("teacherId", selectedTeacher);
 
     setSearchParams(params);
   };
@@ -335,11 +346,9 @@ export default function Grades() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          {t('gradesManagement')}
+          {t("gradesManagement")}
         </h1>
-        <p className="text-muted-foreground mt-2">
-          {t('manageGrades')}
-        </p>
+        <p className="text-foreground mt-2">{t("manageGrades")}</p>
       </div>
 
       {/* Filters and Actions */}
@@ -351,7 +360,7 @@ export default function Grades() {
                 value={selectedStream}
                 onValueChange={(value) => {
                   setSelectedStream(value);
-                  setSelectedForm('');
+                  setSelectedForm("");
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -372,7 +381,9 @@ export default function Grades() {
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
-                    placeholder={selectedStream ? 'Form' : 'Select stream first'}
+                    placeholder={
+                      selectedStream ? "Form" : "Select stream first"
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -447,10 +458,8 @@ export default function Grades() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{t('studentGrades')}</CardTitle>
-              <CardDescription>
-                {t('gradesDescription')}
-              </CardDescription>
+              <CardTitle>{t("studentGrades")}</CardTitle>
+              <CardDescription>{t("gradesDescription")}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button
@@ -458,7 +467,7 @@ export default function Grades() {
                 className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
               >
                 <Download className="mr-2 h-4 w-4" />
-                {t('exportGrades')}
+                {t("exportGrades")}
               </Button>
               <Button
                 onClick={() => {
@@ -468,7 +477,7 @@ export default function Grades() {
                 className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                {t('addGrade')}
+                {t("addGrade")}
               </Button>
             </div>
           </div>
@@ -478,22 +487,24 @@ export default function Grades() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead>{t('student')} {t('name')}</TableHead>
-                  <TableHead>{t('subjects')}</TableHead>
-                  <TableHead>{t('score')}</TableHead>
-                  <TableHead>{t('grade')}</TableHead>
-                  <TableHead>{t('remarks')}</TableHead>
-                  <TableHead>{t('teachers')}</TableHead>
-                  <TableHead>{t('streams')}</TableHead>
-                  <TableHead>{t('forms')}</TableHead>
-                  <TableHead className="text-right">{t('actions')}</TableHead>
+                  <TableHead>
+                    {t("student")} {t("name")}
+                  </TableHead>
+                  <TableHead>{t("subjects")}</TableHead>
+                  <TableHead>{t("score")}</TableHead>
+                  <TableHead>{t("grade")}</TableHead>
+                  <TableHead>{t("remarks")}</TableHead>
+                  <TableHead>{t("teachers")}</TableHead>
+                  <TableHead>{t("streams")}</TableHead>
+                  <TableHead>{t("forms")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {grades.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
-                      {t('noGrades')}
+                      {t("noGrades")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -502,34 +513,34 @@ export default function Grades() {
                       <TableCell className="font-medium">
                         {grade.student
                           ? `${grade.student.firstName} ${grade.student.lastName}`
-                          : '—'}
+                          : "—"}
                       </TableCell>
 
                       <TableCell>
-                        {grade.subject ? grade.subject.subjectName : '—'}
+                        {grade.subject ? grade.subject.subjectName : "—"}
                       </TableCell>
 
                       <TableCell>{grade.score}</TableCell>
 
                       <TableCell>
                         <GradeBadge
-                          grade={grade.grade as 'A' | 'B' | 'C' | 'D' | 'F'}
+                          grade={grade.grade as "A" | "B" | "C" | "D" | "F"}
                         />
                       </TableCell>
 
                       <TableCell className="max-w-xs truncate">
-                        {grade.remarks || '—'}
+                        {grade.remarks || "—"}
                       </TableCell>
 
                       <TableCell>
                         {grade.teacher
                           ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-                          : '—'}
+                          : "—"}
                       </TableCell>
 
-                      <TableCell>{grade.stream?.name || '—'}</TableCell>
+                      <TableCell>{grade.stream?.name || "—"}</TableCell>
 
-                      <TableCell>{grade.form?.name || '—'}</TableCell>
+                      <TableCell>{grade.form?.name || "—"}</TableCell>
 
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -546,7 +557,7 @@ export default function Grades() {
                             name={
                               grade.student
                                 ? `${grade.student.firstName} ${grade.student.lastName}`
-                                : 'Grade'
+                                : "Grade"
                             }
                             fetcher={fetcher}
                           />

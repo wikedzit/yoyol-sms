@@ -17,6 +17,7 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
+import { useLanguage } from '~/lib/i18n';
 
 interface Stream {
   id: number;
@@ -44,6 +45,7 @@ export default function AddStudentModal({
   forms = [],
   fetcher,
 }: AddStudentModalProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
