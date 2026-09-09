@@ -47,6 +47,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
     class: ClassService;
+    academicLevel: {
+      getAllFormClasses: () => Promise<any[]>;
+    };
   };
 
   const teachers = await services.teacher?.getAllTeachers({
@@ -63,20 +66,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  const allClasses = await services.class.getAll({
-    limit: 100,
-    offset: 0,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
+  const allClasses = await services.academicLevel.getAllFormClasses();
 
   const teachersWithSubjectsAndClasses = await Promise.all(
     teachers.map(async (teacher) => {
       const assignedSubjects =
         await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
-      const assignedClasses = await services.teacherClass?.getClassesByTeacher(
-        teacher.id
-      );
+      const assignedClasses =
+        await services.teacherClass?.getFormClassesByTeacher(teacher.id);
       return {
         ...teacher,
         subjects: assignedSubjects || [],
@@ -128,7 +125,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         return { error: 'Teacher ID is required' };
       }
 
-      await services.teacherClass?.replaceTeacherClasses(teacherId, classIds);
+      await services.teacherClass?.replaceTeacherFormClasses(teacherId, classIds);
       return { success: true, action: 'assign_classes' };
     }
 

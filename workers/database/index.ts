@@ -6,6 +6,7 @@ export * from './subjects';
 export * from './teacher-subjects';
 export * from './class-subjects';
 export * from './teacher-classes';
+export * from './teacher-form-classes';
 export * from './student-subjects';
 export * from './grades';
 export * from './notices';
