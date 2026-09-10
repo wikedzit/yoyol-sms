@@ -1,6 +1,0 @@
-import{c as d}from"./createLucideIcon-BrgwMZPW.js";import{r as l,j as e}from"./chunk-NISHYRIK-CHWYR4vq.js";import{c as o}from"./i18n-CTyknpym.js";import{C as m}from"./select-C2nivN6X.js";/**
- * @license lucide-react v0.545.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const h=[["path",{d:"m21 21-4.34-4.34",key:"14j7rj"}],["circle",{cx:"11",cy:"11",r:"8",key:"4ej97u"}]],k=d("search",h),f=l.forwardRef(({className:c,checked:s,onCheckedChange:i,onChange:a,...n},t)=>{const p=r=>{a?.(r),i?.(r.target.checked)};return e.jsxs("div",{className:"relative inline-flex",children:[e.jsx("input",{type:"checkbox",ref:t,checked:s,onChange:p,className:o("peer h-4 w-4 shrink-0 rounded-sm border border-primary appearance-none cursor-pointer","ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2","disabled:cursor-not-allowed disabled:opacity-50","checked:bg-primary checked:border-primary","transition-colors",c),...n}),e.jsx(m,{className:o("h-4 w-4 absolute top-0 left-0 text-primary-foreground pointer-events-none","opacity-0 peer-checked:opacity-100 transition-opacity")})]})});f.displayName="Checkbox";export{f as C,k as S};

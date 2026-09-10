@@ -11,10 +11,6 @@ export type OwnerOnboardingStatus = {
   campuses: SelectCampus[];
 };
 
-export function isAdminRole(role: string): boolean {
-  return role === 'admin';
-}
-
 export async function getOwnerOnboardingStatus(services: {
   school: SchoolService;
   campus: CampusService;
