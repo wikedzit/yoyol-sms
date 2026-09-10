@@ -1,4 +1,4 @@
-import { eq, and, ne } from 'drizzle-orm';
+import { eq, and, ne, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   academicYears,
@@ -9,6 +9,7 @@ import {
   type SelectTerm,
 } from '../database/academic-years';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod Schemas for Validation ---
 
@@ -106,20 +107,24 @@ export type CurrentTermStatus =
 
 export default class AcademicYearService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database) {
+  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
     this.db = database;
+    this.ownerUserId = ownerUserId;
   }
 
   // ==================== ACADEMIC YEAR OPERATIONS ====================
 
   async createYear(data: CreateAcademicYearInput): Promise<SelectAcademicYear | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = CreateAcademicYearSchema.parse(data);
       const result = await this.db
         .insert(academicYears)
         .values({
           ...validated,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -143,7 +148,12 @@ export default class AcademicYearService {
       const result = await this.db
         .select()
         .from(academicYears)
-        .where(eq(academicYears.id, id))
+        .where(
+          and(
+            eq(academicYears.id, id),
+            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .get();
       return result || null;
     } catch (error) {
@@ -157,6 +167,7 @@ export default class AcademicYearService {
       return await this.db
         .select()
         .from(academicYears)
+        .where(eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)))
         .orderBy(academicYears.startDate);
     } catch (error) {
       console.error('Error fetching academic years:', error);
@@ -208,7 +219,12 @@ export default class AcademicYearService {
           await this.db
             .update(academicYears)
             .set({ ...rest, updatedAt: Date.now() })
-            .where(eq(academicYears.id, id));
+            .where(
+              and(
+                eq(academicYears.id, id),
+                eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+              ),
+            );
         }
         await this.setActiveYear(id);
         return this.getYearById(id);
@@ -220,7 +236,12 @@ export default class AcademicYearService {
           ...validated,
           updatedAt: Date.now(),
         })
-        .where(eq(academicYears.id, id))
+        .where(
+          and(
+            eq(academicYears.id, id),
+            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .returning();
       return result[0] || null;
     } catch (error) {
@@ -235,18 +256,30 @@ export default class AcademicYearService {
    */
   async setActiveYear(id: number): Promise<SelectAcademicYear | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const target = await this.getYearById(id);
       if (!target) return null;
 
       await this.db
         .update(academicYears)
         .set({ status: 'archived', updatedAt: Date.now() })
-        .where(and(eq(academicYears.status, 'active'), ne(academicYears.id, id)));
+        .where(
+          and(
+            eq(academicYears.status, 'active'),
+            eq(academicYears.ownerUserId, ownerUserId),
+            ne(academicYears.id, id),
+          ),
+        );
 
       const result = await this.db
         .update(academicYears)
         .set({ status: 'active', updatedAt: Date.now() })
-        .where(eq(academicYears.id, id))
+        .where(
+          and(
+            eq(academicYears.id, id),
+            eq(academicYears.ownerUserId, ownerUserId),
+          ),
+        )
         .returning();
       return result[0] || null;
     } catch (error) {
@@ -260,7 +293,12 @@ export default class AcademicYearService {
       // Terms cascade via the FK, so no manual cleanup needed here.
       const result = await this.db
         .delete(academicYears)
-        .where(eq(academicYears.id, id))
+        .where(
+          and(
+            eq(academicYears.id, id),
+            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+          ),
+        )
         .returning({ id: academicYears.id });
       return result.length > 0;
     } catch (error) {
@@ -308,12 +346,16 @@ export default class AcademicYearService {
 
   async getTermById(id: number): Promise<SelectTerm | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
-        .select()
+        .select({ term: terms })
         .from(terms)
-        .where(eq(terms.id, id))
+        .innerJoin(academicYears, eq(terms.academicYearId, academicYears.id))
+        .where(
+          and(eq(terms.id, id), eq(academicYears.ownerUserId, ownerUserId)),
+        )
         .get();
-      return result || null;
+      return result?.term || null;
     } catch (error) {
       console.error('Error fetching term:', error);
       return null;
@@ -322,6 +364,9 @@ export default class AcademicYearService {
 
   async getTermsByYearId(academicYearId: number): Promise<SelectTerm[]> {
     try {
+      const year = await this.getYearById(academicYearId);
+      if (!year) return [];
+
       return await this.db
         .select()
         .from(terms)
@@ -364,10 +409,18 @@ export default class AcademicYearService {
 
       // Today doesn't fall inside any term for the active year — a break.
       if (storedCurrent) {
-        await this.db
-          .update(terms)
-          .set({ isCurrent: false, updatedAt: Date.now() })
-          .where(eq(terms.isCurrent, true));
+        const ownedYearIds = (await this.getAllYears()).map((year) => year.id);
+        if (ownedYearIds.length > 0) {
+          await this.db
+            .update(terms)
+            .set({ isCurrent: false, updatedAt: Date.now() })
+            .where(
+              and(
+                eq(terms.isCurrent, true),
+                inArray(terms.academicYearId, ownedYearIds),
+              ),
+            );
+        }
       }
       return { term: null, status: 'break' };
     } catch (error) {
@@ -439,10 +492,19 @@ export default class AcademicYearService {
         return { error: 'Only a term within the active academic year can be marked current' };
       }
 
-      await this.db
-        .update(terms)
-        .set({ isCurrent: false, updatedAt: Date.now() })
-        .where(and(eq(terms.isCurrent, true), ne(terms.id, id)));
+      const ownedYearIds = (await this.getAllYears()).map((year) => year.id);
+      if (ownedYearIds.length > 0) {
+        await this.db
+          .update(terms)
+          .set({ isCurrent: false, updatedAt: Date.now() })
+          .where(
+            and(
+              eq(terms.isCurrent, true),
+              ne(terms.id, id),
+              inArray(terms.academicYearId, ownedYearIds),
+            ),
+          );
+      }
 
       const result = await this.db
         .update(terms)
@@ -458,6 +520,9 @@ export default class AcademicYearService {
 
   async deleteTerm(id: number): Promise<boolean> {
     try {
+      const existing = await this.getTermById(id);
+      if (!existing) return false;
+
       const result = await this.db
         .delete(terms)
         .where(eq(terms.id, id))

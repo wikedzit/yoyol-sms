@@ -1,61 +1,90 @@
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useFetcher, useNavigation } from 'react-router';
-import { authCookie } from 'workers/utils/cookies.server';
-import { redirect } from 'react-router';
-import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Link,
+  redirect,
+  useFetcher,
+  useNavigation,
+  type ActionFunctionArgs,
+} from "react-router";
+import { authCookie } from "workers/utils/cookies.server";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
-// 🧩 Zod validation schema
-const schema = z.object({
-  email: z.string().min(1, 'Email is required').email('Invalid email address'),
+const signInSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
   password: z
     .string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(100, 'Password too long'),
+    .min(6, "Password must be at least 6 characters")
+    .max(100, "Password too long"),
 });
 
-type FormData = z.infer<typeof schema>;
+type SignInFormValues = z.infer<typeof signInSchema>;
+type SignInActionData = { error?: string };
 
-export async function action({ request, context }: any) {
+function jsonErrorResponse(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function fieldClassName(hasError: boolean) {
+  const ringColor = hasError
+    ? "border-red-500 focus:ring-red-200"
+    : "border-gray-300 focus:ring-purple-200";
+
+  return `w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${ringColor}`;
+}
+
+export async function action({ request, context }: ActionFunctionArgs) {
   const form = await request.formData();
-  const email = form.get('email');
-  const password = form.get('password');
+  const parsed = signInSchema.safeParse({
+    email: String(form.get("email") ?? ""),
+    password: String(form.get("password") ?? ""),
+  });
 
-  const token = await context.services.users.login(email, password);
-  if (!token) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid email or password' }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
+  if (!parsed.success) {
+    return jsonErrorResponse(
+      parsed.error.issues[0]?.message ?? "Invalid input",
+      400,
     );
   }
 
-  return redirect('/', {
+  const token = await context.services.users.login(
+    parsed.data.email,
+    parsed.data.password,
+  );
+
+  if (!token) {
+    return jsonErrorResponse("Invalid email or password", 401);
+  }
+
+  return redirect("/", {
     headers: {
-      'Set-Cookie': await authCookie.serialize(token),
+      "Set-Cookie": await authCookie.serialize(token),
     },
   });
 }
 
-export default function LoginPage() {
+export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const fetcher = useFetcher();
+  const fetcher = useFetcher<SignInActionData>();
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === 'submitting';
+  const isSubmitting = navigation.state === "submitting";
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    mode: 'onBlur', // validate on blur
+  } = useForm<SignInFormValues>({
+    resolver: zodResolver(signInSchema),
+    mode: "onBlur",
   });
 
-  const onSubmit = (data: FormData) => {
-    // ✅ Only submit if valid
-    fetcher.submit(data, { method: 'POST' });
+  const submitSignIn = (values: SignInFormValues) => {
+    fetcher.submit(values, { method: "POST" });
   };
 
   return (
@@ -63,7 +92,7 @@ export default function LoginPage() {
       className="w-full max-w-md bg-white rounded-3xl"
       style={{
         boxShadow:
-          '0px 8px 10px -6px rgba(0, 0, 0, 0.1), 0px 20px 25px -5px rgba(0, 0, 0, 0.1)',
+          "0px 8px 10px -6px rgba(0, 0, 0, 0.1), 0px 20px 25px -5px rgba(0, 0, 0, 0.1)",
       }}
     >
       <div className="px-5 md:px-10 py-10">
@@ -72,7 +101,7 @@ export default function LoginPage() {
           Welcome back! <br /> Login to view your dashboard.
         </p>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
           <div>
             <label htmlFor="email" className="block text-sm mb-1 font-medium">
               Email
@@ -80,13 +109,9 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
-              {...register('email')}
+              {...register("email")}
               autoComplete="email"
-              className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.email
-                  ? 'border-red-500 focus:ring-red-200'
-                  : 'border-gray-300 focus:ring-purple-200'
-              }`}
+              className={fieldClassName(Boolean(errors.email))}
               placeholder="Enter your email"
             />
             {errors.email && (
@@ -107,13 +132,9 @@ export default function LoginPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                {...register('password')}
+                {...register("password")}
                 autoComplete="current-password"
-                className={`w-full px-4 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 ${
-                  errors.password
-                    ? 'border-red-500 focus:ring-red-200'
-                    : 'border-gray-300 focus:ring-purple-200'
-                }`}
+                className={`${fieldClassName(Boolean(errors.password))} pr-10`}
                 placeholder="Enter your password"
               />
               <button
@@ -122,9 +143,9 @@ export default function LoginPage() {
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
               >
                 {showPassword ? (
-                  <Eye className="w-5 h-5" />
+                  <Eye className="w-5 h-5 cursor-pointer" />
                 ) : (
-                  <EyeOff className="w-5 h-5" />
+                  <EyeOff className="w-5 h-5 cursor-pointer" />
                 )}
               </button>
             </div>
@@ -140,7 +161,7 @@ export default function LoginPage() {
             disabled={isSubmitting}
             className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity  cursor-pointer"
           >
-            {isSubmitting ? 'Logging in...' : 'Login'}
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
 
           {fetcher.data?.error && (
@@ -148,16 +169,16 @@ export default function LoginPage() {
               {fetcher.data.error}
             </p>
           )}
-          {/* 
+
           <p className="text-center text-sm text-gray-500 mt-4">
             Don't have an account?
-            <a
-              href="/signup"
+            <Link
+              to="/auth/signup"
               className="text-purple-600 ml-1 underline hover:text-purple-700"
             >
               Create an account
-            </a>
-          </p> */}
+            </Link>
+          </p>
         </form>
       </div>
     </div>

@@ -36,9 +36,10 @@ import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
 
-// 🧠 Loader – fetch teachers with their subjects and classes
+// Loader – fetch teachers with their subjects and classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -46,6 +47,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
     class: ClassService;
+    academicLevel: {
+      getAllFormClasses: () => Promise<any[]>;
+    };
   };
 
   const teachers = await services.teacher?.getAllTeachers({
@@ -55,7 +59,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all subjects for assignment modal
   const subjects = await services.subject?.getAllSubjects({
     limit: 100,
     offset: 0,
@@ -63,22 +66,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  // Get all classes for assignment modal
-  const allClasses = await services.class.getAll({
-    limit: 100,
-    offset: 0,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
+  const allClasses = await services.academicLevel.getAllFormClasses();
 
-  // Get subjects and classes for each teacher
   const teachersWithSubjectsAndClasses = await Promise.all(
     teachers.map(async (teacher) => {
       const assignedSubjects =
         await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
-      const assignedClasses = await services.teacherClass?.getClassesByTeacher(
-        teacher.id
-      );
+      const assignedClasses =
+        await services.teacherClass?.getFormClassesByTeacher(teacher.id);
       return {
         ...teacher,
         subjects: assignedSubjects || [],
@@ -94,7 +89,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 
-// ⚙️ Action – handle create, update, delete, and subject/class assignments
+// Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -107,7 +102,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const action = form.get('action') as string | null;
 
   try {
-    // --- ASSIGN SUBJECTS TO TEACHER ---
     if (action === 'assign_subjects') {
       const teacherId = Number(form.get('teacherId'));
       const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
@@ -123,7 +117,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, action: 'assign_subjects' };
     }
 
-    // --- ASSIGN CLASSES TO TEACHER ---
     if (action === 'assign_classes') {
       const teacherId = Number(form.get('teacherId'));
       const classIds = JSON.parse(String(form.get('classIds') || '[]'));
@@ -132,10 +125,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
         return { error: 'Teacher ID is required' };
       }
 
-      await services.teacherClass?.replaceTeacherClasses(teacherId, classIds);
+      await services.teacherClass?.replaceTeacherFormClasses(teacherId, classIds);
       return { success: true, action: 'assign_classes' };
     }
-    // --- CREATE TEACHER ---
+
     if (method === 'POST') {
       const data = {
         firstName: String(form.get('firstName') ?? ''),
@@ -160,7 +153,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       });
     }
 
-    // --- UPDATE TEACHER ---
     if (method === 'PUT') {
       const id = form.get('id');
       if (!id) {
@@ -194,7 +186,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, teacher: updated };
     }
 
-    // --- DELETE TEACHER ---
     if (method === 'DELETE') {
       const id = form.get('id');
       if (!id) {
@@ -221,8 +212,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 
-// 🧑‍🏫 UI – Teachers Table & Modals
+// Teachers Table & Modals Component
 export default function Teachers() {
+  const { t } = useLanguage();
   const {
     teachers: initialTeachers,
     allSubjects,
@@ -245,6 +237,9 @@ export default function Teachers() {
   const [assignClassesModalOpen, setAssignClassesModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
+  const [newTeacher, setNewTeacher] = useState<any>(null);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+
   const filteredStudents = initialTeachers?.filter((teacher) => {
     const matchesSearch =
       teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
@@ -255,7 +250,6 @@ export default function Teachers() {
     return matchesSearch && matchesFilter;
   });
 
-  //pagination logic
   const {
     currentPage,
     totalPages,
@@ -264,7 +258,6 @@ export default function Teachers() {
     goToPage,
   } = usePagination(filteredStudents, 10);
 
-  //truck last method used in fetcher
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
       const method =
@@ -272,15 +265,11 @@ export default function Teachers() {
       lastMethod.current = method ?? (fetcher.formMethod || null);
     }
   }, [fetcher.formData, fetcher.state, fetcher.formMethod]);
-  //use useEffect to show sonner form shardcn as a toast on successful add, edit, delete
 
-  // react on finished action
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) return;
     const data = fetcher.data;
-    fetcher.load(window.location.pathname);
 
-    // Refresh list
     listFetcher.load(window.location.pathname);
 
     if (data.error) {
@@ -290,7 +279,6 @@ export default function Teachers() {
     }
 
     if (data.success) {
-      // Check for specific actions first
       if (data.action === 'assign_subjects') {
         toast.success('Subjects assigned successfully!');
         lastMethod.current = null;
@@ -303,13 +291,13 @@ export default function Teachers() {
         return;
       }
 
-      // Handle CRUD operations
       switch (lastMethod.current) {
         case 'POST':
-          toast.success('Teacher added successfully!');
-          // Optimistic: add returned teacher
           if (data.teacher) {
-            setTeachers((prev) => [...prev, data.teacher]);
+            setNewTeacher(data.teacher);
+            setAddModalOpen(false);
+            setProfileModalOpen(true);
+            toast.success('Teacher added successfully!');
           }
           break;
 
@@ -336,20 +324,22 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
-      {/* Header */}
+      {/* Header section with text-foreground */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Teachers
+          </h1>
+          <p className="text-foreground text-sm font-medium mt-1">
             Manage and view all teacher records
           </p>
         </div>
         <Button
-          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Teacher
+          {t('addTeacher')}
         </Button>
       </div>
 
@@ -361,7 +351,7 @@ export default function Teachers() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search teachers..."
+                placeholder={t('searchTeachers')}
                 className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -370,7 +360,7 @@ export default function Teachers() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('filterStatus')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -388,19 +378,19 @@ export default function Teachers() {
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">First name</TableHead>
-                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
+                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Subjects
+                    {t('assignedSubjects')}
                   </TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Classes
+                    {t('assignedClasses')}
                   </TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Phone</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">{t('email')}</TableHead>
+                  <TableHead className="font-semibold">{t('phone')}</TableHead>
+                  <TableHead className="font-semibold">{t('status')}</TableHead>
                   <TableHead className="text-right font-semibold">
-                    Actions
+                    {t('actions')}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -463,6 +453,7 @@ export default function Teachers() {
                     <TableCell className="text-right flex justify-end gap-2">
                       <TeacherProfileModal teacher={teacher} />
                       <Button
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Subjects"
@@ -474,6 +465,7 @@ export default function Teachers() {
                         <BookOpen className="h-4 w-4" />
                       </Button>
                       <Button
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Classes"
@@ -485,6 +477,7 @@ export default function Teachers() {
                         <GraduationCap className="h-4 w-4" />
                       </Button>
                       <Button
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         onClick={() => {
@@ -556,6 +549,13 @@ export default function Teachers() {
           fetcher={fetcher}
         />
       )}
+
+      <TeacherProfileModal
+        teacher={newTeacher}
+        open={profileModalOpen}
+        onOpenChange={setProfileModalOpen}
+        showTrigger={false}
+      />
     </div>
   );
 }

@@ -8,6 +8,9 @@ export const users = sqliteTable('users', {
   role: text('role').default('admin'), // optional: 'admin', 'teacher', 'student', etc.
   firstName: text('first_name'),
   lastName: text('last_name'),
+  phone: text('phone'),
+  preferredLanguage: text('preferred_language').default('en'), // 'en' | 'sw'
+  avatarUrl: text('avatar_url'),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

@@ -1,21 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLoaderData, useFetcher } from 'react-router';
-import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { Button } from '~/components/ui/button';
+import { useState, useEffect } from "react";
+import {
+  useLoaderData,
+  useFetcher,
+  useSearchParams,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "react-router";
+import { z } from "zod";
+import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '~/components/ui/card';
+} from "~/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select';
+} from "~/components/ui/select";
 import {
   Table,
   TableBody,
@@ -23,20 +29,36 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '~/components/ui/table';
-import { Plus, Download, Edit } from 'lucide-react';
-import { toast } from 'sonner';
-import { GradeBadge } from '~/components/grade/GradeBadge';
-import { GradeForm } from '~/components/grade/GradeFormModal';
-import type GradeService from 'workers/services/grades';
-import type { GradeWithRelations } from 'workers/services/grades';
-import type SubjectService from 'workers/services/subjects';
-import type StudentService from 'workers/services/student';
-import type TeacherService from 'workers/services/teachers';
-import type AcademicLevelService from 'workers/services/academic-levels';
-import { DeleteButton } from '~/components/DeleteButton';
+} from "~/components/ui/table";
+import { Plus, Download, Edit } from "lucide-react";
+import { toast } from "sonner";
+import { GradeBadge } from "~/components/grade/GradeBadge";
+import { GradeForm } from "~/components/grade/GradeFormModal";
+import type GradeService from "workers/services/grades";
+import type { GradeWithRelations } from "workers/services/grades";
+import type SubjectService from "workers/services/subjects";
+import type StudentService from "workers/services/student";
+import type TeacherService from "workers/services/teachers";
+import { useLanguage } from "~/lib/i18n";
+import type AcademicLevelService from "workers/services/academic-levels";
+import { DeleteButton } from "~/components/DeleteButton";
 
-// Loader: fetch grades and all related data
+// Validation Schemas
+const GradeCreateSchema = z.object({
+  studentId: z.coerce.number().int().positive("Student is required"),
+  subjectId: z.coerce.number().int().positive("Subject is required"),
+  streamId: z.coerce.number().int().positive("Stream is required"),
+  formId: z.coerce.number().int().positive("Form is required"),
+  teacherId: z.coerce.number().int().positive().optional(),
+  score: z.coerce.number().min(0).max(100, "Score must be between 0 and 100"),
+  remarks: z.string().optional(),
+});
+
+const GradeUpdateSchema = GradeCreateSchema.partial().extend({
+  id: z.string().min(1, "Grade ID is required"),
+});
+
+// Loader: fetch grades and all related options
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const services = context.services as {
     grade: GradeService;
@@ -46,211 +68,199 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     academicLevel: AcademicLevelService;
   };
 
-  // Get filter params from URL
   const url = new URL(request.url);
-  const streamId = url.searchParams.get('streamId');
-  const formId = url.searchParams.get('formId');
-  const subjectId = url.searchParams.get('subjectId');
-  const studentId = url.searchParams.get('studentId');
-  const teacherId = url.searchParams.get('teacherId');
+  const streamId = url.searchParams.get("streamId");
+  const formId = url.searchParams.get("formId");
+  const subjectId = url.searchParams.get("subjectId");
+  const studentId = url.searchParams.get("studentId");
+  const teacherId = url.searchParams.get("teacherId");
 
-  // Fetch grades with filters
   const grades = await services.grade.getAll({
     limit: 100,
     offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-    streamId: streamId ? parseInt(streamId) : undefined,
-    formId: formId ? parseInt(formId) : undefined,
-    subjectId: subjectId ? parseInt(subjectId) : undefined,
-    studentId: studentId ? parseInt(studentId) : undefined,
-    teacherId: teacherId ? parseInt(teacherId) : undefined,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+    streamId: streamId ? parseInt(streamId, 10) : undefined,
+    formId: formId ? parseInt(formId, 10) : undefined,
+    subjectId: subjectId ? parseInt(subjectId, 10) : undefined,
+    studentId: studentId ? parseInt(studentId, 10) : undefined,
+    teacherId: teacherId ? parseInt(teacherId, 10) : undefined,
   });
 
-  // Fetch all filter options
   const [streams, forms, subjects, students, teachers] = await Promise.all([
     services.academicLevel.getAllStreams(),
     services.academicLevel.getAllForms(),
     services.subject.getAllSubjects({
       limit: 100,
-      sortBy: 'subjectName',
-      sortOrder: 'asc',
+      sortBy: "subjectName",
+      sortOrder: "asc",
     }),
     services.student.getAll({
       limit: 100,
       offset: 0,
-      sortBy: 'firstName',
-      sortOrder: 'asc',
+      sortBy: "firstName",
+      sortOrder: "asc",
     }),
     services.teacher.getAllTeachers({
       limit: 100,
-      sortBy: 'firstName',
-      sortOrder: 'asc',
+      sortBy: "firstName",
+      sortOrder: "asc",
     }),
   ]);
 
-  return {
+  return Response.json({
     grades: grades.filter((g): g is GradeWithRelations => g !== null),
     streams,
     forms,
     subjects,
     students,
     teachers,
-  };
+  });
 }
 
-// Action: handle create, update, delete
+// Action: handle create, update, delete with Zod validation
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { grade: GradeService };
   const form = await request.formData();
-  const method = (form.get('_method') as string) || request.method;
+  const method = (form.get("_method") as string) || request.method;
+  const rawData = Object.fromEntries(form.entries());
 
   try {
-    // CREATE
-    if (method === 'POST') {
-      const data = {
-        studentId: parseInt(String(form.get('studentId') ?? '')),
-        subjectId: parseInt(String(form.get('subjectId') ?? '')),
-        streamId: parseInt(String(form.get('streamId') ?? '')),
-        formId: parseInt(String(form.get('formId') ?? '')),
-        teacherId: form.get('teacherId')
-          ? parseInt(String(form.get('teacherId')))
-          : undefined,
-        score: parseInt(String(form.get('score') ?? '')),
-        remarks: form.get('remarks') ? String(form.get('remarks')) : undefined,
-      };
-      const created = await services.grade.create(data);
+    if (method === "POST") {
+      const parsed = GradeCreateSchema.safeParse(rawData);
+      if (!parsed.success) {
+        const error = parsed.error.issues[0]?.message || "Invalid input data";
+        return Response.json({ error }, { status: 400 });
+      }
+
+      const created = await services.grade.create(parsed.data);
       if (!created) {
-        return { error: 'Failed to create grade' };
+        return Response.json(
+          { error: "Failed to create grade" },
+          { status: 400 },
+        );
       }
-      return { success: true, grade: created };
+      return Response.json({ success: true, method: "POST" });
     }
 
-    // UPDATE
-    if (method === 'PUT') {
-      const id = form.get('id');
-      if (!id) return { error: 'Grade ID is required' };
-      const data = {
-        studentId: form.get('studentId')
-          ? parseInt(String(form.get('studentId')))
-          : undefined,
-        subjectId: form.get('subjectId')
-          ? parseInt(String(form.get('subjectId')))
-          : undefined,
-        streamId: form.get('streamId')
-          ? parseInt(String(form.get('streamId')))
-          : undefined,
-        formId: form.get('formId')
-          ? parseInt(String(form.get('formId')))
-          : undefined,
-        teacherId: form.get('teacherId')
-          ? parseInt(String(form.get('teacherId')))
-          : undefined,
-        score: form.get('score')
-          ? parseInt(String(form.get('score')))
-          : undefined,
-        remarks: form.get('remarks') ? String(form.get('remarks')) : undefined,
-      };
-      const updated = await services.grade.update(String(id), data);
+    if (method === "PUT") {
+      const parsed = GradeUpdateSchema.safeParse(rawData);
+      if (!parsed.success) {
+        const error = parsed.error.issues[0]?.message || "Invalid input data";
+        return Response.json({ error }, { status: 400 });
+      }
+
+      const { id, ...data } = parsed.data;
+      const updated = await services.grade.update(id, data);
       if (!updated) {
-        return { error: 'Failed to update grade' };
+        return Response.json(
+          { error: "Failed to update grade" },
+          { status: 400 },
+        );
       }
-      return { success: true, grade: updated };
+      return Response.json({ success: true, method: "PUT" });
     }
 
-    // DELETE
-    if (method === 'DELETE') {
-      const id = form.get('id');
-      if (!id) return { error: 'Grade ID is required' };
-      const deleted = await services.grade.delete(String(id));
+    if (method === "DELETE") {
+      const id = String(form.get("id") ?? "");
+      if (!id)
+        return Response.json(
+          { error: "Grade ID is required" },
+          { status: 400 },
+        );
+
+      const deleted = await services.grade.delete(id);
       if (!deleted) {
-        return { error: 'Failed to delete grade' };
+        return Response.json(
+          { error: "Failed to delete grade" },
+          { status: 400 },
+        );
       }
-      return { success: true, id };
+      return Response.json({ success: true, method: "DELETE" });
     }
 
-    return { error: 'Unknown method' };
-  } catch (err: any) {
-    console.error('grades action error:', err);
-    return { error: err?.message || 'Server error' };
+    return Response.json({ error: "Unknown method" }, { status: 400 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Server error";
+    console.error("grades action error:", err);
+    return Response.json({ error: message }, { status: 500 });
   }
 }
 
+// Utility to escape fields and prevent CSV Injection attacks
+function sanitizeCsvCell(cell: string): string {
+  let escaped = cell.replace(/"/g, '""');
+  if (/^[=+@-].*/.test(escaped)) {
+    escaped = `'${escaped}`;
+  }
+  return `"${escaped}"`;
+}
+
 export default function Grades() {
-  const {
-    grades: initialGrades,
-    streams,
-    forms,
-    subjects,
-    students,
-    teachers,
-  } = useLoaderData<typeof loader>();
+  const { t } = useLanguage();
+  const { grades, streams, forms, subjects, students, teachers } =
+    useLoaderData() as {
+      grades: GradeWithRelations[];
+      streams: any[];
+      forms: any[];
+      subjects: any[];
+      students: any[];
+      teachers: any[];
+    };
+
   const fetcher = useFetcher();
-  const lastMethod = useRef<string | null>(null);
-  const listFetcher = useFetcher();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editData, setEditData] = useState<GradeWithRelations | null>(null);
-  const [grades, setGrades] = useState<GradeWithRelations[]>(initialGrades);
 
-  // Filter states
-  const [selectedStream, setSelectedStream] = useState<string>('');
-  const [selectedForm, setSelectedForm] = useState<string>('');
-  const [selectedSubject, setSelectedSubject] = useState<string>('');
-  const [selectedStudent, setSelectedStudent] = useState<string>('');
-  const [selectedTeacher, setSelectedTeacher] = useState<string>('');
+  // Filter local state
+  const [selectedStream, setSelectedStream] = useState<string>(
+    searchParams.get("streamId") || "",
+  );
+  const [selectedForm, setSelectedForm] = useState<string>(
+    searchParams.get("formId") || "",
+  );
+  const [selectedSubject, setSelectedSubject] = useState<string>(
+    searchParams.get("subjectId") || "",
+  );
+  const [selectedStudent, setSelectedStudent] = useState<string>(
+    searchParams.get("studentId") || "",
+  );
+  const [selectedTeacher, setSelectedTeacher] = useState<string>(
+    searchParams.get("teacherId") || "",
+  );
 
-  // Track method when submitting
+  // Handle toast notifications & modal close on action resolution
   useEffect(() => {
-    if (fetcher.state === 'submitting' && fetcher.formData) {
-      const method = fetcher.formData.get('_method') as string | null;
-      lastMethod.current = method || fetcher.formMethod;
-    }
-  }, [fetcher.state, fetcher.formData, fetcher.formMethod]);
-
-  // react on finished action
-  useEffect(() => {
-    if (fetcher.state !== 'idle' || !fetcher.data) return;
-    const data = fetcher.data;
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+    const data = fetcher.data as {
+      error?: string;
+      success?: boolean;
+      method?: string;
+    };
 
     if (data.error) {
       toast.error(data.error);
-      lastMethod.current = null;
       return;
     }
 
     if (data.success) {
-      switch (lastMethod.current) {
-        case 'POST':
-          toast.success('Grade added successfully!');
-          setGrades((prev) => [...prev, data.grade]); // optimistic add
+      switch (data.method) {
+        case "POST":
+          toast.success("Grade added successfully!");
+          setFormOpen(false);
           break;
-
-        case 'PUT':
-          toast.success('Grade updated successfully!');
-          setGrades((prev) =>
-            prev.map((g) => (g.id === data.grade.id ? data.grade : g))
-          );
+        case "PUT":
+          toast.success("Grade updated successfully!");
+          setFormOpen(false);
           break;
-
-        case 'DELETE':
-          toast.error('Grade deleted successfully!');
-          setGrades((prev) => prev.filter((g) => g.id !== Number(data.id)));
+        case "DELETE":
+          toast.success("Grade deleted successfully!");
           break;
       }
-
-      // Refresh from server to sync full data (relations)
-      listFetcher.load(window.location.pathname);
-      lastMethod.current = null;
     }
   }, [fetcher.state, fetcher.data]);
-
-  // if listFetcher has fresh loader data, sync local state (keeps counts, nested info up-to-date)
-  useEffect(() => {
-    if (listFetcher.state === 'idle' && listFetcher.data?.grades) {
-      setGrades(listFetcher.data.grades);
-    }
-  }, [listFetcher.state, listFetcher.data]);
 
   const handleEdit = (grade: GradeWithRelations) => {
     setEditData(grade);
@@ -259,81 +269,76 @@ export default function Grades() {
 
   const handleExport = () => {
     try {
-      // Prepare CSV headers
       const headers = [
-        'Student Name',
-        'Subject',
-        'Score',
-        'Grade',
-        'Remarks',
-        'Teacher',
-        'Stream',
-        'Form',
+        "Student Name",
+        "Subject",
+        "Score",
+        "Grade",
+        "Remarks",
+        "Teacher",
+        "Stream",
+        "Form",
       ];
 
-      // Prepare CSV rows
-      const rows = grades.map((grade) => {
-        return [
+      const rows = grades.map((grade) => [
+        sanitizeCsvCell(
           grade.student
             ? `${grade.student.firstName} ${grade.student.lastName}`
-            : '',
-          grade.subject ? grade.subject.subjectName : '',
-          grade.score.toString(),
-          grade.grade || '',
-          grade.remarks ? `"${grade.remarks.replace(/"/g, '""')}"` : '', // Escape quotes in remarks
+            : "",
+        ),
+        sanitizeCsvCell(grade.subject ? grade.subject.subjectName : ""),
+        sanitizeCsvCell(grade.score.toString()),
+        sanitizeCsvCell(grade.grade || ""),
+        sanitizeCsvCell(grade.remarks || ""),
+        sanitizeCsvCell(
           grade.teacher
             ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-            : '',
-          grade.stream?.name || '',
-          grade.form?.name || '',
-        ];
-      });
+            : "",
+        ),
+        sanitizeCsvCell(grade.stream?.name || ""),
+        sanitizeCsvCell(grade.form?.name || ""),
+      ]);
 
-      // Combine headers and rows
       const csvContent = [
-        headers.join(','),
-        ...rows.map((row) => row.join(',')),
-      ].join('\n');
+        headers.join(","),
+        ...rows.map((row) => row.join(",")),
+      ].join("\n");
 
-      // Create blob and download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
 
-      link.setAttribute('href', url);
+      link.setAttribute("href", url);
       link.setAttribute(
-        'download',
-        `grades_export_${new Date().toISOString().split('T')[0]}.csv`
+        "download",
+        `grades_export_${new Date().toISOString().split("T")[0]}.csv`,
       );
-      link.style.visibility = 'hidden';
+      link.style.visibility = "hidden";
 
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
-      toast.success('Grades exported successfully');
+      toast.success("Grades exported successfully");
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export grades');
+      console.error("Export error:", error);
+      toast.error("Failed to export grades");
     }
   };
 
   const handleFilterChange = () => {
-    // Build URL with filters
     const params = new URLSearchParams();
-    if (selectedStream) params.set('streamId', selectedStream);
-    if (selectedForm) params.set('formId', selectedForm);
-    if (selectedSubject) params.set('subjectId', selectedSubject);
-    if (selectedStudent) params.set('studentId', selectedStudent);
-    if (selectedTeacher) params.set('teacherId', selectedTeacher);
+    if (selectedStream) params.set("streamId", selectedStream);
+    if (selectedForm) params.set("formId", selectedForm);
+    if (selectedSubject) params.set("subjectId", selectedSubject);
+    if (selectedStudent) params.set("studentId", selectedStudent);
+    if (selectedTeacher) params.set("teacherId", selectedTeacher);
 
-    // Reload with filters
-    window.location.search = params.toString();
+    setSearchParams(params);
   };
 
-  // Filter forms by stream
   const filteredForms = selectedStream
-    ? forms.filter((f) => f.streamId === parseInt(selectedStream))
+    ? forms.filter((f) => f.streamId === parseInt(selectedStream, 10))
     : forms;
 
   return (
@@ -341,16 +346,13 @@ export default function Grades() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">
-          Grades Management
+          {t("gradesManagement")}
         </h1>
-        <p className="text-muted-foreground mt-2">
-          View, add, and manage students' grades by stream, form, or subject.
-        </p>
+        <p className="text-foreground mt-2">{t("manageGrades")}</p>
       </div>
 
-      {/* TODO: will deal with this later */}
       {/* Filters and Actions */}
-      {/* <Card className="border-none shadow-none">
+      <Card className="border-none shadow-none">
         <CardHeader>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -358,7 +360,7 @@ export default function Grades() {
                 value={selectedStream}
                 onValueChange={(value) => {
                   setSelectedStream(value);
-                  setSelectedForm(''); // Reset form when stream changes
+                  setSelectedForm("");
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -379,7 +381,9 @@ export default function Grades() {
               >
                 <SelectTrigger className="w-full">
                   <SelectValue
-                    placeholder={selectedStream ? 'Form' : 'Select stream first'}
+                    placeholder={
+                      selectedStream ? "Form" : "Select stream first"
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -439,41 +443,41 @@ export default function Grades() {
             <div>
               <Button
                 onClick={handleFilterChange}
-                variant="outline"
                 size="sm"
-                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer transition hover:scale-105"
               >
                 Apply Filters
               </Button>
             </div>
           </div>
         </CardHeader>
-      </Card> */}
+      </Card>
 
       {/* Grades Table */}
       <Card className="border-none shadow-none">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Student Grades</CardTitle>
-              <CardDescription>
-                A list of all student grades for the selected filters
-              </CardDescription>
+              <CardTitle>{t("studentGrades")}</CardTitle>
+              <CardDescription>{t("gradesDescription")}</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExport}>
+              <Button
+                onClick={handleExport}
+                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
+              >
                 <Download className="mr-2 h-4 w-4" />
-                Export
+                {t("exportGrades")}
               </Button>
               <Button
                 onClick={() => {
                   setEditData(null);
                   setFormOpen(true);
                 }}
-                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Add Grade
+                {t("addGrade")}
               </Button>
             </div>
           </div>
@@ -483,83 +487,84 @@ export default function Grades() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead>Student Name</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Score</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead>Remarks</TableHead>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Stream</TableHead>
-                  <TableHead>Form</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>
+                    {t("student")} {t("name")}
+                  </TableHead>
+                  <TableHead>{t("subjects")}</TableHead>
+                  <TableHead>{t("score")}</TableHead>
+                  <TableHead>{t("grade")}</TableHead>
+                  <TableHead>{t("remarks")}</TableHead>
+                  <TableHead>{t("teachers")}</TableHead>
+                  <TableHead>{t("streams")}</TableHead>
+                  <TableHead>{t("forms")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {grades.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
-                      No grades found. Add a grade to get started.
+                      {t("noGrades")}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  grades.map((grade) => {
-                    return (
-                      <TableRow key={grade.id}>
-                        <TableCell className="font-medium">
-                          {grade.student
-                            ? `${grade.student.firstName} ${grade.student.lastName}`
-                            : '—'}
-                        </TableCell>
+                  grades.map((grade) => (
+                    <TableRow key={grade.id}>
+                      <TableCell className="font-medium">
+                        {grade.student
+                          ? `${grade.student.firstName} ${grade.student.lastName}`
+                          : "—"}
+                      </TableCell>
 
-                        <TableCell>
-                          {grade.subject ? grade.subject.subjectName : '—'}
-                        </TableCell>
+                      <TableCell>
+                        {grade.subject ? grade.subject.subjectName : "—"}
+                      </TableCell>
 
-                        <TableCell>{grade.score}</TableCell>
+                      <TableCell>{grade.score}</TableCell>
 
-                        <TableCell>
-                          <GradeBadge
-                            grade={grade.grade as 'A' | 'B' | 'C' | 'D' | 'F'}
+                      <TableCell>
+                        <GradeBadge
+                          grade={grade.grade as "A" | "B" | "C" | "D" | "F"}
+                        />
+                      </TableCell>
+
+                      <TableCell className="max-w-xs truncate">
+                        {grade.remarks || "—"}
+                      </TableCell>
+
+                      <TableCell>
+                        {grade.teacher
+                          ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
+                          : "—"}
+                      </TableCell>
+
+                      <TableCell>{grade.stream?.name || "—"}</TableCell>
+
+                      <TableCell>{grade.form?.name || "—"}</TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            className="hover:scale-105 transition cursor-pointer"
+                            size="icon"
+                            onClick={() => handleEdit(grade)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <DeleteButton
+                            id={grade.id}
+                            name={
+                              grade.student
+                                ? `${grade.student.firstName} ${grade.student.lastName}`
+                                : "Grade"
+                            }
+                            fetcher={fetcher}
                           />
-                        </TableCell>
-
-                        <TableCell className="max-w-xs truncate">
-                          {grade.remarks || '—'}
-                        </TableCell>
-
-                        <TableCell>
-                          {grade.teacher
-                            ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-                            : '—'}
-                        </TableCell>
-
-                        <TableCell>{grade.stream?.name || '—'}</TableCell>
-
-                        <TableCell>{grade.form?.name || '—'}</TableCell>
-
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(grade)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <DeleteButton
-                              id={grade.id}
-                              name={
-                                grade.student
-                                  ? `${grade.student.firstName} ${grade.student.lastName}`
-                                  : 'Grade'
-                              }
-                              fetcher={fetcher}
-                            />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>

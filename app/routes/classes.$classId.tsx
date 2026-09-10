@@ -131,16 +131,24 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       };
       const created = await services.student.create(studentData);
 
-      // Update the formClass student count
-      if (created) {
-        const currentClass = await services.academicLevel.getFormClassById(
-          Number(classId)
+      // FIX: previously this always returned { success: true } even when
+      // `created` was null (e.g. validation failed silently in the service).
+      // Now we check first and return a real error if creation failed.
+      if (!created) {
+        return new Response(
+          JSON.stringify({ error: 'Failed to add student to class.' }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
-        if (currentClass) {
-          await services.academicLevel.updateFormClass(Number(classId), {
-            studentCount: (currentClass.studentCount || 0) + 1,
-          });
-        }
+      }
+
+      // Update the formClass student count (only runs when creation succeeded)
+      const currentClass = await services.academicLevel.getFormClassById(
+        Number(classId)
+      );
+      if (currentClass) {
+        await services.academicLevel.updateFormClass(Number(classId), {
+          studentCount: (currentClass.studentCount || 0) + 1,
+        });
       }
 
       return new Response(JSON.stringify({ success: true, student: created }), {
@@ -289,9 +297,12 @@ export default function ClassDetails() {
         toast.success('Student removed from class successfully!');
       }
 
+      // Re-runs the loader so `initialStudents` reflects the latest data
       revalidator.revalidate();
     }
 
+    // FIX: this now actually fires correctly once the action returns a real
+    // error instead of always reporting success.
     if (fetcher.data.error) {
       toast.error(fetcher.data.error || 'An error occurred');
     }
@@ -334,7 +345,7 @@ export default function ClassDetails() {
             Assign Subjects
           </Button> */}
           <Button
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             onClick={() => setAddStudentModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -434,7 +445,7 @@ export default function ClassDetails() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="cursor-pointer"
+                          className=" hover:scale-110 hover:text-white-600 transition cursor-pointer"
                           onClick={() => {
                             setSelectedStudent(student);
                             setEditStudentModalOpen(true);

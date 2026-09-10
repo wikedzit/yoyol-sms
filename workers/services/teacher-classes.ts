@@ -1,15 +1,56 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, getTableColumns } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import {
   teacherClasses,
+  teacherFormClasses,
   teachers,
   classes,
+  formClasses,
   type SelectClass,
+  type SelectFormClass,
   type SelectTeacher,
 } from 'workers/database';
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export default class TeacherClassService {
-  constructor(private db: DrizzleD1Database) {}
+  constructor(
+    private db: DrizzleD1Database,
+    private ownerUserId: number | null,
+  ) {}
+
+  private currentOwner(): number {
+    return requireOwnerUserId(this.ownerUserId);
+  }
+
+  private async teacherBelongsToOwner(teacherId: number): Promise<boolean> {
+    const row = await this.db
+      .select({ id: teachers.id })
+      .from(teachers)
+      .where(
+        and(
+          eq(teachers.id, teacherId),
+          eq(teachers.ownerUserId, this.currentOwner()),
+        ),
+      )
+      .get();
+
+    return Boolean(row);
+  }
+
+  private async classBelongsToOwner(classId: number): Promise<boolean> {
+    const row = await this.db
+      .select({ id: classes.id })
+      .from(classes)
+      .where(
+        and(
+          eq(classes.id, classId),
+          eq(classes.ownerUserId, this.currentOwner()),
+        ),
+      )
+      .get();
+
+    return Boolean(row);
+  }
 
   /**
    * Assign a teacher to a class
@@ -19,6 +60,11 @@ export default class TeacherClassService {
     classId: number
   ): Promise<boolean> {
     try {
+      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      if (!teacherIsOwned || !classIsOwned) {
+        return false;
+      }
       // Check if assignment already exists
       const existing = await this.db
         .select()
@@ -41,7 +87,7 @@ export default class TeacherClassService {
         .values({
           teacherId,
           classId,
-          assignedAt: new Date().toISOString(),
+          assignedAt: Date.now(),
         })
         .execute();
 
@@ -60,6 +106,10 @@ export default class TeacherClassService {
     classId: number
   ): Promise<boolean> {
     try {
+      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      if (!teacherIsOwned) {
+        return false;
+      }
       await this.db
         .delete(teacherClasses)
         .where(
@@ -83,24 +133,52 @@ export default class TeacherClassService {
   async getClassesByTeacher(teacherId: number): Promise<SelectClass[]> {
     try {
       const results = await this.db
-        .select({
-          id: classes.id,
-          name: classes.name,
-          EducationalLevel: classes.EducationalLevel,
-          section: classes.section,
-          year: classes.year,
-          departmentId: classes.departmentId,
-          createdAt: classes.createdAt,
-          updatedAt: classes.updatedAt,
-        })
+        .select(getTableColumns(classes))
         .from(teacherClasses)
         .innerJoin(classes, eq(teacherClasses.classId, classes.id))
-        .where(eq(teacherClasses.teacherId, teacherId))
+        .where(
+          and(
+            eq(teacherClasses.teacherId, teacherId),
+            eq(classes.ownerUserId, this.currentOwner()),
+          ),
+        )
         .execute();
 
       return results;
     } catch (error) {
       console.error('Error fetching classes for teacher:', error);
+      return [];
+    }
+  }
+
+  async getFormClassesByTeacher(teacherId: number): Promise<SelectFormClass[]> {
+    try {
+      return await this.db
+        .select({
+          id: formClasses.id,
+          name: formClasses.name,
+          formId: formClasses.formId,
+          streamId: formClasses.streamId,
+          levelId: formClasses.levelId,
+          studentCount: formClasses.studentCount,
+          ownerUserId: formClasses.ownerUserId,
+          createdAt: formClasses.createdAt,
+          updatedAt: formClasses.updatedAt,
+        })
+        .from(teacherFormClasses)
+        .innerJoin(
+          formClasses,
+          eq(teacherFormClasses.formClassId, formClasses.id),
+        )
+        .where(
+          and(
+            eq(teacherFormClasses.teacherId, teacherId),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
+        .execute();
+    } catch (error) {
+      console.error('Error fetching form classes for teacher:', error);
       return [];
     }
   }
@@ -111,25 +189,15 @@ export default class TeacherClassService {
   async getTeachersByClass(classId: number): Promise<SelectTeacher[]> {
     try {
       const results = await this.db
-        .select({
-          id: teachers.id,
-          firstName: teachers.firstName,
-          lastName: teachers.lastName,
-          subject: teachers.subject,
-          email: teachers.email,
-          phone: teachers.phone,
-          address: teachers.address,
-          qualification: teachers.qualification,
-          gender: teachers.gender,
-          experience: teachers.experience,
-          status: teachers.status,
-          departmentId: teachers.departmentId,
-          createdAt: teachers.createdAt,
-          updatedAt: teachers.updatedAt,
-        })
+        .select(getTableColumns(teachers))
         .from(teacherClasses)
         .innerJoin(teachers, eq(teacherClasses.teacherId, teachers.id))
-        .where(eq(teacherClasses.classId, classId))
+        .where(
+          and(
+            eq(teacherClasses.classId, classId),
+            eq(teachers.ownerUserId, this.currentOwner()),
+          ),
+        )
         .execute();
 
       return results;
@@ -147,13 +215,24 @@ export default class TeacherClassService {
     teacherIds: number[]
   ): Promise<boolean> {
     try {
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      if (!classIsOwned) {
+        return false;
+      }
+
+      for (const teacherId of teacherIds) {
+        const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+        if (!teacherIsOwned) {
+          return false;
+        }
+      }
       // Remove duplicates
       const uniqueTeacherIds = [...new Set(teacherIds)];
       
       const values = uniqueTeacherIds.map((teacherId) => ({
         classId,
         teacherId,
-        assignedAt: new Date().toISOString(),
+        assignedAt: Date.now(),
       }));
 
       if (values.length > 0) {
@@ -174,6 +253,17 @@ export default class TeacherClassService {
     teacherIds: number[]
   ): Promise<boolean> {
     try {
+      const classIsOwned = await this.classBelongsToOwner(classId);
+      if (!classIsOwned) {
+        return false;
+      }
+
+      for (const teacherId of teacherIds) {
+        const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+        if (!teacherIsOwned) {
+          return false;
+        }
+      }
       // Delete all existing assignments
       await this.db
         .delete(teacherClasses)
@@ -185,7 +275,7 @@ export default class TeacherClassService {
         const values = teacherIds.map((teacherId) => ({
           classId,
           teacherId,
-          assignedAt: new Date().toISOString(),
+          assignedAt: Date.now(),
         }));
 
         await this.db.insert(teacherClasses).values(values).execute();
@@ -206,6 +296,17 @@ export default class TeacherClassService {
     classIds: number[]
   ): Promise<boolean> {
     try {
+      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      if (!teacherIsOwned) {
+        return false;
+      }
+
+      for (const classId of classIds) {
+        const classIsOwned = await this.classBelongsToOwner(classId);
+        if (!classIsOwned) {
+          return false;
+        }
+      }
       // Delete all existing assignments
       await this.db
         .delete(teacherClasses)
@@ -217,7 +318,7 @@ export default class TeacherClassService {
         const values = classIds.map((classId) => ({
           teacherId,
           classId,
-          assignedAt: new Date().toISOString(),
+          assignedAt: Date.now(),
         }));
 
         await this.db.insert(teacherClasses).values(values).execute();
@@ -230,6 +331,49 @@ export default class TeacherClassService {
     }
   }
 
+  async replaceTeacherFormClasses(
+    teacherId: number,
+    formClassIds: number[],
+  ): Promise<boolean> {
+    try {
+      if (!(await this.teacherBelongsToOwner(teacherId))) return false;
+
+      for (const formClassId of formClassIds) {
+        const formClass = await this.db
+          .select({ id: formClasses.id })
+          .from(formClasses)
+          .where(
+            and(
+              eq(formClasses.id, formClassId),
+              eq(formClasses.ownerUserId, this.currentOwner()),
+            ),
+          )
+          .get();
+        if (!formClass) return false;
+      }
+
+      await this.db
+        .delete(teacherFormClasses)
+        .where(eq(teacherFormClasses.teacherId, teacherId))
+        .execute();
+
+      if (formClassIds.length > 0) {
+        await this.db.insert(teacherFormClasses).values(
+          formClassIds.map((formClassId) => ({
+            teacherId,
+            formClassId,
+            assignedAt: Date.now(),
+          })),
+        ).execute();
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error replacing teacher form class assignments:', error);
+      return false;
+    }
+  }
+
   /**
    * Get teachers with their assigned classes (with counts)
    */
@@ -238,7 +382,11 @@ export default class TeacherClassService {
   > {
     try {
       // First get all teachers
-      const allTeachers = await this.db.select().from(teachers).execute();
+      const allTeachers = await this.db
+        .select()
+        .from(teachers)
+        .where(eq(teachers.ownerUserId, this.currentOwner()))
+        .execute();
 
       // Then get class counts for each teacher
       const teachersWithCounts = await Promise.all(
@@ -266,7 +414,11 @@ export default class TeacherClassService {
   > {
     try {
       // First get all classes
-      const allClasses = await this.db.select().from(classes).execute();
+      const allClasses = await this.db
+        .select()
+        .from(classes)
+        .where(eq(classes.ownerUserId, this.currentOwner()))
+        .execute();
 
       // Then get teacher counts for each class
       const classesWithCounts = await Promise.all(

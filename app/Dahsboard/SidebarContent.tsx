@@ -1,54 +1,57 @@
 import {
   LayoutDashboard,
   Users,
-  BookOpen,
   DoorOpen,
   ChevronRight,
   ChevronDown,
   Building2,
-  GitBranch,
   FileText,
   GraduationCap,
-} from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '~/lib/utils';
-import { useState } from 'react';
+  LogOut,
+} from "lucide-react";
+
+import { Link, useLocation } from "react-router";
+import { cn } from "~/lib/utils";
+import { useState, useEffect } from "react";
+import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
+import { useLanguage } from "~/lib/i18n";
 
 const mainNavigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
 
   {
-    name: 'Academic levels',
+    name: "Academic levels",
     icon: Building2,
     children: [
-      { name: 'O-Level', href: '/levels/o-level' },
-      { name: 'A-Level', href: '/levels/a-level' },
+      { name: "O-Level", href: "/levels/o-level" },
+      { name: "A-Level", href: "/levels/a-level" },
     ],
   },
 
   {
-    name: 'Schools Setup',
+    name: "Schools Setup",
     icon: Building2,
     children: [
-     { name: 'School Profile', href: '/schools/profile' },
-      { name: 'Academic Year', href: '/schools/academic-year' },
-      { name: 'Subjects', href: '/subjects', icon: FileText },
-      { name: 'Classrooms', href: '/classes', icon: DoorOpen },
+      { name: "School Profile", href: "/schools/profile" },
+      { name: "Academic Year", href: "/schools/academic-year" },
+      { name: "Subjects", href: "/subjects", icon: FileText },
+      { name: "Classrooms", href: "/classes", icon: DoorOpen },
     ],
   },
 
-  { name: 'Students List', href: '/students', icon: GraduationCap },
-  { name: 'Teachers', href: '/teachers', icon: Users },
-  { name: 'Grades', href: '/grades', icon: GraduationCap },
+  { name: "Students List", href: "/students", icon: GraduationCap },
+  { name: "Teachers", href: "/teachers", icon: Users },
+  { name: "Grades", href: "/grades", icon: GraduationCap },
 ];
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
-    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-sidebar-border bg-white">
-      {/* --- Top Navigation --- */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card/95 backdrop-blur-lg transition-colors duration-200">
+      {/* Main Navigation List */}
+      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
         {mainNavigation.map((item) =>
           item.children ? (
             <SidebarParent
@@ -64,15 +67,32 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               location={location}
               onNavigate={onNavigate}
             />
-          )
+          ),
         )}
+
+        {/* Logout trigger button */}
+        <LogoutConfirmDialog
+          trigger={
+            <button
+              type="button"
+              onClick={onNavigate}
+              className={cn(
+                "w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out cursor-pointer",
+                "text-app-body hover:bg-accent hover:text-app-text",
+              )}
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="truncate">{t("logout")}</span>
+            </button>
+          }
+        />
       </nav>
     </div>
   );
 };
 
 /* ----------------------------------------
-   NORMAL LINK (no children)
+   SINGLE STREAMLINED SIDEBAR LINK
 ---------------------------------------- */
 const SidebarLink = ({ item, location, onNavigate }: any) => {
   const isActive = location.pathname === item.href;
@@ -82,54 +102,78 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
       to={item.href}
       onClick={onNavigate}
       className={cn(
-        'w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] sidebar-item-hover transition-colors duration-200 ease-in-out',
+        "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group",
         isActive
-          ? 'sidebar-item-active text-white'
-          : 'text-black-2020 hover:text-gray-900'
+          ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+          : "text-app-body hover:bg-accent hover:text-app-text",
       )}
     >
-      <item.icon className="h-5 w-5" />
+      <item.icon
+        className={cn(
+          "h-5 w-5 transition-transform duration-200",
+          isActive
+            ? "text-white scale-105"
+            : "text-app-body group-hover:scale-105",
+        )}
+      />
+
       <span className="truncate">{item.name}</span>
+
+      {/* Subtle indicator icon for active route */}
       {isActive && <ChevronRight className="ml-auto h-4 w-4 text-white" />}
     </Link>
   );
 };
 
 /* ----------------------------------------
-   PARENT LINK (with children)
+   SINGLE STREAMLINED PARENT COMPONENT
 ---------------------------------------- */
 const SidebarParent = ({ item, location, onNavigate }: any) => {
-  const [open, setOpen] = useState(false);
-
-  // Is any child active?
   const isChildActive = item.children.some(
-    (child: any) => location.pathname === child.href
+    (child: any) => location.pathname === child.href,
   );
 
+  const [open, setOpen] = useState(isChildActive);
+
+  useEffect(() => {
+    if (isChildActive) {
+      setOpen(true);
+    }
+  }, [isChildActive]);
+
   return (
-    <div>
+    <div className="space-y-1">
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] sidebar-item-hover transition duration-200',
+          "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group",
           isChildActive
-            ? 'sidebar-item-active text-white'
-            : 'text-black-2020 hover:text-gray-900'
+            ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+            : "text-app-body hover:bg-accent hover:text-app-text",
         )}
       >
-        <item.icon className="h-5 w-5" />
+        <item.icon
+          className={cn(
+            "h-5 w-5 transition-transform duration-200",
+            isChildActive
+              ? "text-white scale-105"
+              : "text-app-body group-hover:scale-105",
+          )}
+        />
         <span className="truncate">{item.name}</span>
 
         <ChevronDown
           className={cn(
-            'ml-auto h-4 w-4 transition-transform',
-            open && 'rotate-180'
+            "ml-auto h-4 w-4 transition-transform duration-200",
+            isChildActive ? "text-white" : "text-app-body",
+            open && "rotate-180",
           )}
         />
       </button>
 
+      {/* Nested Sub-navigation */}
       {open && (
-        <div className="ml-8 mt-1 space-y-1">
+        <div className="ml-5 pl-3 border-l border-border space-y-1 mt-1">
           {item.children.map((child: any) => {
             const isActive = location.pathname === child.href;
             return (
@@ -138,13 +182,13 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                 to={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  'block px-3 py-2 text-sm rounded-md sidebar-item-hover transition',
+                  "relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200",
                   isActive
-                    ? 'sidebar-item-active text-white'
-                    : 'text-black-2020 hover:text-gray-900'
+                    ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+                    : "text-app-body hover:bg-accent hover:text-app-text font-medium",
                 )}
               >
-                {child.name}
+                <span className="truncate">{child.name}</span>
               </Link>
             );
           })}

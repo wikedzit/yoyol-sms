@@ -10,6 +10,8 @@ import {
 import type { Route } from './+types/root';
 import './app.css';
 import { Toaster } from './components/ui/sonner';
+import { ThemeProvider } from './components/ui/theme-toggle';
+import { LanguageProvider } from './lib/i18n';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -26,15 +28,24 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+
+  // Added superssionHydrationWarning to avoid hydration mismatch warnings when using theme toggling 
+
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
-      <body>
-        {children}
+      
+      {/* added bg-background and text-foreground classes to ensure the body respects the theme state from ThemeProvider */}
+      <body className="bg-background text-foreground antialiased min-h-screen">
+
+        <ThemeProvider>
+          <LanguageProvider>{children}</LanguageProvider>
+        </ThemeProvider>
+
         <Toaster richColors position="top-right" />
         <ScrollRestoration />
         <Scripts />

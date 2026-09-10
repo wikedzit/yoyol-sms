@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from '~/components/ui/card';
 import type SchoolService from 'workers/services/school';
+import { useLanguage } from '~/lib/i18n';
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { school: SchoolService };
@@ -39,56 +40,56 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return { error: 'Failed to create school' };
   }
 
-  // Baada ya kuunda, elekeza moja kwa moja kwenye profile ya shule mpya
-  return redirect(`/schools/${created.id}`);
+  return redirect(`/schools/${created.id}/campuses/new_campus`);
 }
 
 export default function NewSchoolPage() {
+  const { t } = useLanguage();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSaving = navigation.state === 'submitting';
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Add School" description="Register a new school" />
+      <PageHeader title={t('addSchool')} description={t('registerNewSchool')} />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            School Details
+            {t('schoolDetails')}
           </CardTitle>
-          <CardDescription>Fill in the new school's information.</CardDescription>
+          <CardDescription>{t('fillSchoolInfo')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Form method="post" className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">School Name *</Label>
+                <Label htmlFor="name">{t('schoolName')} *</Label>
                 <Input id="name" name="name" required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="registrationNumber">Registration Number</Label>
+                <Label htmlFor="registrationNumber">{t('registrationNumber')}</Label>
                 <Input id="registrationNumber" name="registrationNumber" />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t('address')}</Label>
                 <Input id="address" name="address" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">{t('phone')}</Label>
                 <Input id="phone" name="phone" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('email')}</Label>
                 <Input id="email" name="email" type="email" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="motto">Motto</Label>
+                <Label htmlFor="motto">{t('motto')}</Label>
                 <Input id="motto" name="motto" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="logoUrl">Logo URL</Label>
+                <Label htmlFor="logoUrl">{t('logoUrl')}</Label>
                 <Input id="logoUrl" name="logoUrl" />
               </div>
             </div>
@@ -97,9 +98,9 @@ export default function NewSchoolPage() {
               <p className="text-sm text-destructive">{actionData.error}</p>
             )}
 
-            <Button type="submit" disabled={isSaving} className="bg-primary-gradient text-white flex items-center gap-2">
+            <Button type="submit" disabled={isSaving} className="bg-primary-gradient text-white flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer">
               <Save size={16} />
-              {isSaving ? 'Saving...' : 'Save School'}
+              {isSaving ? t('saving') : t('saveSchool')}
             </Button>
           </Form>
         </CardContent>

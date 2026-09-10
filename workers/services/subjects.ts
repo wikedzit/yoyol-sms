@@ -1,9 +1,12 @@
-// --- Zod schemas for validation ---
-import { like, asc, desc, eq } from 'drizzle-orm';
+import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
-import { subject, type SelectSubject } from 'workers/database/subjects';
+import {
+  subject,
+  type SelectSubject,
+} from 'workers/database/subjects';
+import { studentSubjects } from 'workers/database/student-subjects';
 import { z } from 'zod';
-
+import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
@@ -36,19 +39,23 @@ export type GetSubjectsInput = z.infer<typeof getSubjectsSchema>;
 // --- Subject Service ---
 export default class SubjectService {
   private db: DrizzleD1Database;
+  private ownerUserId: number | null;
 
-  constructor(db: DrizzleD1Database) {
+  constructor(db: DrizzleD1Database, ownerUserId: number | null) {
     this.db = db;
+    this.ownerUserId = ownerUserId;
   }
 
   // Create a new subject
   async createSubject(data: SubjectInput): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = subjectSchema.parse(data);
       const result = await this.db
         .insert(subject)
         .values({
           ...validatedData,
+          ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -56,10 +63,10 @@ export default class SubjectService {
         .execute();
 
       return result[0] || null;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating subject:', error);
-      // Check for UNIQUE constraint violation
-      if (error?.message?.includes('UNIQUE constraint failed: subjects.code')) {
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('UNIQUE constraint failed')) {
         throw new Error(
           'A subject with this code already exists. Please use a different code.'
         );
@@ -71,10 +78,11 @@ export default class SubjectService {
   // Get subject by ID
   async getSubjectById(id: number): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.id, id))
+        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
         .execute();
 
       return result[0] || null;
@@ -87,10 +95,11 @@ export default class SubjectService {
   // Get subject by code
   async getSubjectByCode(code: string): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.code, code))
+        .where(and(eq(subject.code, code), eq(subject.ownerUserId, ownerUserId)))
         .execute();
 
       return result[0] || null;
@@ -103,10 +112,16 @@ export default class SubjectService {
   // Get Subjects by Stream ID
   async getSubjectsByStreamId(streamId: number): Promise<SelectSubject[]> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.streamId, streamId))
+        .where(
+          and(
+            eq(subject.streamId, streamId),
+            eq(subject.ownerUserId, ownerUserId),
+          ),
+        )
         .execute();
 
       return result;
@@ -116,46 +131,81 @@ export default class SubjectService {
     }
   }
 
-  // Get all subjects with pagination, search, and sorting
-  async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
-    try {
-      const { limit, offset, sortBy, sortOrder, search } =
-        getSubjectsSchema.parse(options || {});
+  // Get all subjects with pagination, search, sorting,
+// and REAL number of students enrolled
+async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
+  try {
+    const ownerUserId = requireOwnerUserId(this.ownerUserId);
 
-      const sortColumn =
-        sortBy === 'subjectName'
-          ? subject.subjectName
-          : sortBy === 'code'
-          ? subject.code
-          : sortBy === 'createdAt'
-          ? subject.createdAt
-          : subject.updatedAt;
+    const { limit, offset, sortBy, sortOrder, search } =
+      getSubjectsSchema.parse(options || {});
 
-      const query = this.db.select().from(subject);
+    const sortColumn =
+      sortBy === 'subjectName'
+        ? subject.subjectName
+        : sortBy === 'code'
+        ? subject.code
+        : sortBy === 'createdAt'
+        ? subject.createdAt
+        : subject.updatedAt;
 
-      if (search) {
-        query.where(like(subject.subjectName, `%${search}%`));
-      }
+    const filters = [eq(subject.ownerUserId, ownerUserId)];
 
-      const results = await query
-        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
-        .limit(limit)
-        .offset(offset ?? 0)
-        .execute();
-
-      return results;
-    } catch (error) {
-      console.error('Error fetching all subjects:', error);
-      return [];
+    if (search) {
+      filters.push(like(subject.subjectName, `%${search}%`));
     }
-  }
 
+    const results = await this.db
+      .select({
+        id: subject.id,
+        subjectName: subject.subjectName,
+        code: subject.code,
+        stream: subject.stream,
+        instructor: subject.instructor,
+        description: subject.description,
+
+        // 🔥 REAL student count
+        enrolledStudents: sql<number>`
+          (
+            SELECT COUNT(*)
+            FROM ${studentSubjects}
+            WHERE ${studentSubjects.subjectId} = ${subject.id}
+          )
+        `,
+
+        status: subject.status,
+        streamId: subject.streamId,
+        ownerUserId: subject.ownerUserId,
+        createdAt: subject.createdAt,
+        updatedAt: subject.updatedAt,
+      })
+      .from(subject)
+      .where(and(...filters))
+      .orderBy(
+        sortOrder === 'asc'
+          ? asc(sortColumn)
+          : desc(sortColumn)
+      )
+      .limit(limit)
+      .offset(offset ?? 0)
+      .execute();
+
+    return results.map((item) => ({
+      ...item,
+      enrolledStudents: Number(item.enrolledStudents ?? 0),
+    })) as SelectSubject[];
+  } catch (error) {
+    console.error('Error fetching all subjects:', error);
+    return [];
+  }
+}
   // Update a subject
   async updateSubject(
     id: number,
     data: UpdateSubjectInput
   ): Promise<SelectSubject | null> {
     try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = updateSubjectSchema.parse(data);
       const updateResult = {
         ...validatedData,
@@ -164,7 +214,7 @@ export default class SubjectService {
       const result = await this.db
         .update(subject)
         .set(updateResult)
-        .where(eq(subject.id, id))
+        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
         .returning()
         .execute();
 
@@ -178,7 +228,11 @@ export default class SubjectService {
   // Delete a subject
   async deleteSubject(id: number): Promise<boolean> {
     try {
-      await this.db.delete(subject).where(eq(subject.id, id)).execute();
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      await this.db
+        .delete(subject)
+        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .execute();
       return true;
     } catch (error) {
       console.error('Error deleting subject:', error);
