@@ -40,8 +40,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return { error: 'Failed to create school' };
   }
 
-  // Baada ya kuunda, elekeza moja kwa moja kwenye profile ya shule mpya
-  return redirect(`/schools/${created.id}`);
+  return redirect(`/schools/${created.id}/campuses/new_campus`);
 }
 
 export default function NewSchoolPage() {
