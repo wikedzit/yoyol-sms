@@ -89,7 +89,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       teacherSubjects = await services.teacherSubject.getSubjectsByTeacher(
         roleData.id,
       );
-      teacherClasses = await services.teacherClass.getClassesByTeacher(
+      teacherClasses = await services.teacherClass.getFormClassesByTeacher(
         roleData.id,
       );
       recentGrades = await services.grade.getAll({

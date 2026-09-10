@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e38c04c7-10f9-4f01-8e85-7ea691464a64",
+  "id": "f9a671ba-af29-4c01-8761-23c289ed377a",
   "prevId": "2372512b-04fe-4c4e-b83b-5714ff98b2c3",
   "tables": {
     "users": {
@@ -869,6 +869,73 @@
             "class_id"
           ],
           "name": "teacher_classes_teacher_id_class_id_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "teacher_form_classes": {
+      "name": "teacher_form_classes",
+      "columns": {
+        "teacher_id": {
+          "name": "teacher_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "form_class_id": {
+          "name": "form_class_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "assigned_at": {
+          "name": "assigned_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "teacher_form_classes_teacher_id_teachers_id_fk": {
+          "name": "teacher_form_classes_teacher_id_teachers_id_fk",
+          "tableFrom": "teacher_form_classes",
+          "tableTo": "teachers",
+          "columnsFrom": [
+            "teacher_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "teacher_form_classes_form_class_id_form_classes_id_fk": {
+          "name": "teacher_form_classes_form_class_id_form_classes_id_fk",
+          "tableFrom": "teacher_form_classes",
+          "tableTo": "form_classes",
+          "columnsFrom": [
+            "form_class_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "teacher_form_classes_teacher_id_form_class_id_pk": {
+          "columns": [
+            "teacher_id",
+            "form_class_id"
+          ],
+          "name": "teacher_form_classes_teacher_id_form_class_id_pk"
         }
       },
       "uniqueConstraints": {},
@@ -1920,103 +1987,6 @@
           "tableTo": "academic_years",
           "columnsFrom": [
             "academic_year_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "campus": {
-      "name": "campus",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "school_id": {
-          "name": "school_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "address": {
-          "name": "address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "phone": {
-          "name": "phone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "is_main": {
-          "name": "is_main",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "CURRENT_TIMESTAMP"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "campus_school_id_school_id_fk": {
-          "name": "campus_school_id_school_id_fk",
-          "tableFrom": "campus",
-          "tableTo": "school",
-          "columnsFrom": [
-            "school_id"
           ],
           "columnsTo": [
             "id"
