@@ -86,7 +86,7 @@ export default function AssignTeachersToClassModal({
   const handleSubmit = () => {
     const formData = new FormData();
     formData.append('_method', 'POST');
-    formData.append('action', 'assign_teachers');
+    formData.append('action', 'assign_Class_teachers');
     formData.append('classId', String(classData.id));
     formData.append('teacherIds', JSON.stringify(selectedTeachers));
 

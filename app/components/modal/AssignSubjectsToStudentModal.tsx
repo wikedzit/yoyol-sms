@@ -97,7 +97,7 @@ export default function AssignSubjectsToStudentModal({
     e.preventDefault();
     const formData = new FormData();
     formData.append('_method', 'POST');
-    formData.append('action', 'assign_student_subjects');
+    formData.append('action', 'assign_subjects');
     formData.append('studentId', String(student.id));
     formData.append('subjectIds', JSON.stringify(selectedSubjects));
 

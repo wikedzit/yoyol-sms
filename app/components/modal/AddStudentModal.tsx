@@ -30,12 +30,18 @@ interface FormClass {
   streamId: number;
 }
 
+interface CampusOption {
+  id: number;
+  name: string;
+}
+
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   streams?: Stream[];
   forms?: FormClass[];
   fetcher: FetcherWithComponents<any>;
+  campuses?: CampusOption[];
 }
 
 export default function AddStudentModal({
@@ -44,8 +50,11 @@ export default function AddStudentModal({
   streams = [],
   forms = [],
   fetcher,
+  campuses = [],
 }: AddStudentModalProps) {
   const { t } = useLanguage();
+  const hasCampuses = campuses.length > 0;
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -55,6 +64,7 @@ export default function AddStudentModal({
     dateOfBirth: '',
     streamId: '',
     formId: '',
+    campusId: '',
     gender: '',
     status: 'Active',
   });
@@ -76,6 +86,7 @@ export default function AddStudentModal({
         dateOfBirth: '',
         streamId: '',
         formId: '',
+        campusId: '',
         gender: '',
         status: 'Active',
       });
@@ -126,6 +137,39 @@ export default function AddStudentModal({
 
           {/* Scrollable Form Content */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
+            {/* Campus — required only if at least one campus exists */}
+            {hasCampuses ? (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Campus <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={formData.campusId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, campusId: value })
+                  }
+                  name="campusId"
+                  required
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campuses.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" name="campusId" value={formData.campusId} />
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+                No campus added yet — this student will be added to your default school.
+              </p>
+            )}
+
             {/* First Name */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
