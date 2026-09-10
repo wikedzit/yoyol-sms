@@ -33,6 +33,8 @@ import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type StudentSubjectService from 'workers/services/student-subjects';
 import type SchoolService from 'workers/services/school';
+// ✅ ADDED: needed to fetch streams/forms
+import type AcademicLevelService from 'workers/services/academic-levels';
 import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
@@ -46,6 +48,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
     studentSubjects: StudentSubjectService;
     school: SchoolService;
     campus: CampusService;
+    // ✅ ADDED: type for the academicLevel service
     academicLevel: AcademicLevelService;
   };
 

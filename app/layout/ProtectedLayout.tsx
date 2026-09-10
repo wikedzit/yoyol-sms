@@ -5,8 +5,8 @@ import { useLoaderData, Outlet } from "react-router";
 import {
   getOwnerOnboardingStatus,
   hasFinishedOnboarding,
+  isAdminRole,
 } from "~/lib/onboarding.server";
-import { isAdminRole } from "~/lib/roles";
 
 interface UserPayload {
   id: number;

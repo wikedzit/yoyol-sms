@@ -20,7 +20,7 @@ import {
 } from "~/components/ui/table";
 import EditProfileModal from "~/components/modal/EditProfileModal";
 import { SchoolProfileView } from "~/components/school/SchoolProfileView";
-import { isAdminRole } from "~/lib/roles";
+import { isAdminRole } from "~/lib/onboarding.server";
 import {
   emptySchoolProfile,
   loadSchoolProfile,

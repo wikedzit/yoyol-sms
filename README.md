@@ -68,11 +68,9 @@ Open the local URL (usually `http://localhost:5173`) and sign in with the seed c
 | `pnpm db:migrations` | List local migration status |
 | `pnpm db:seed` | Seed local admin user |
 | `pnpm db:reset` | Wipe local D1, migrate, then seed |
-| `pnpm db:migrate-prod` | Apply D1 migrations (production remote) |
-| `pnpm db:migrate-development` | Apply D1 migrations (development remote) |
+| `pnpm db:migrate-prod` | Apply D1 migrations (remote) |
 | `pnpm build` | Production build |
-| `pnpm deploy` / `pnpm deploy:production` | Build + deploy production Worker |
-| `pnpm deploy:development` | Build + deploy development Worker |
+| `pnpm deploy` | Build + deploy to Cloudflare |
 | `pnpm typecheck` |
 
 
@@ -152,32 +150,15 @@ pnpm db:seed
 
 ## Deployment
 
-Two Cloudflare environments live on the Younggeeks account. Bindings are not inherited, so each environment has its own Worker and D1 database.
-
-| Environment | Git source | Worker | D1 |
-|---|---|---|---|
-| Production | `main` | `yoyol-students-system` | `yoyol-student-system` |
-| Development | `develop` | `yoyol-students-system-development` | `yoyol-student-system-development` |
-
-The `deploy` branch tracks deployment-only config (Wrangler environments, scripts).
-
-`CLOUDFLARE_ENV` must be set at **build** time (Vite plugin). Setting it only on `wrangler deploy` has no effect.
-
 ```bash
-# From develop
-pnpm db:migrate-development
-pnpm deploy:development
-
-# From main
-pnpm db:migrate-prod
-pnpm deploy:production
+pnpm deploy
 ```
 
-Set the session secret per Worker after the first deploy:
+Or upload a version first:
 
 ```bash
-pnpm exec wrangler secret put AUTH_SESSION_SECRET
-pnpm exec wrangler secret put AUTH_SESSION_SECRET --env development
+npx wrangler versions upload
+npx wrangler versions deploy
 ```
 
 ## Docs
