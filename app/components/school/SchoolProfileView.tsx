@@ -21,6 +21,9 @@ import {
   CardTitle,
 } from '~/components/ui/card';
 import { useLanguage } from '~/lib/i18n';
+import { DeleteButton } from '~/components/DeleteButton';
+import ViewCampusModal from '~/components/modal/ViewCampusModal';
+import EditCampusModal from '~/components/modal/EditCampusModal';
 import type { SchoolProfileData } from '~/lib/school-profile.server';
 
 type SchoolProfileViewProps = SchoolProfileData & {
@@ -220,22 +223,39 @@ export function SchoolProfileView({
                   key={campus.id}
                   className="rounded-lg border border-border px-4 py-3"
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold">{campus.name}</p>
-                    {campus.isMain && (
-                      <span className="rounded-full bg-purple/10 px-2 py-0.5 text-xs font-medium text-purple">
-                        {t('mainCampusBadge')}
-                      </span>
-                    )}
-                    {campus.code && (
-                      <span className="text-xs text-muted-foreground">
-                        {campus.code}
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold">{campus.name}</p>
+                        {campus.isMain && (
+                          <span className="rounded-full bg-purple/10 px-2 py-0.5 text-xs font-medium text-purple">
+                            {t('mainCampusBadge')}
+                          </span>
+                        )}
+                        {campus.code && (
+                          <span className="text-xs text-muted-foreground">
+                            {campus.code}
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {campus.address || t('notProvided')}
+                      </p>
+                    </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <ViewCampusModal campus={campus} />
+
+                    <EditCampusModal campus={campus} />
+
+                    <DeleteButton
+                      id={campus.id}
+                      name={campus.name}
+                      entityName="campus"
+                      entityType="campus"
+                      action={`/schools/${school.id}/campuses`}
+                    />
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {campus.address || t('notProvided')}
-                  </p>
+                  </div>
                 </li>
               ))}
             </ul>

@@ -24,9 +24,6 @@ export default class CampusService {
 
   /**
    * Get all campuses belonging to one school.
-   *
-   * Security:
-   * The school must belong to the currently authenticated owner.
    */
   async getBySchoolId(
     schoolId: number
@@ -102,11 +99,14 @@ export default class CampusService {
   }
 
   /**
-   * Create a campus for a school this owner owns.
-   * The first campus for that school is marked as the main campus.
+   * Create a campus.
+   * The first campus is automatically the main campus.
    */
   async create(
-    data: Omit<InsertCampus, 'id' | 'createdAt' | 'updatedAt' | 'isMain'>
+    data: Omit<
+      InsertCampus,
+      'id' | 'createdAt' | 'updatedAt' | 'isMain'
+    >
   ): Promise<SelectCampus | null> {
     try {
       const ownerUserId =
@@ -129,8 +129,11 @@ export default class CampusService {
         return null;
       }
 
-      const existingCampuses = await this.getBySchoolId(data.schoolId);
-      const isFirstCampusForSchool = existingCampuses.length === 0;
+      const existingCampuses =
+        await this.getBySchoolId(data.schoolId);
+
+      const isFirstCampusForSchool =
+        existingCampuses.length === 0;
 
       const result = await this.db
         .insert(campus)
@@ -150,6 +153,136 @@ export default class CampusService {
       );
 
       return null;
+    }
+  }
+
+  /**
+   * Update a campus.
+   *
+   * Security:
+   * The campus must belong to a school
+   * owned by the current user.
+   */
+  async update(
+    id: number,
+    data: Partial<
+      Pick<
+        InsertCampus,
+        | 'name'
+        | 'code'
+        | 'address'
+        | 'phone'
+        | 'email'
+        | 'isMain'
+      >
+    >
+  ): Promise<SelectCampus | null> {
+    try {
+      const ownerUserId =
+        requireOwnerUserId(this.ownerUserId);
+
+      // Verify ownership first.
+      const existingCampus =
+        await this.db
+          .select({
+            id: campus.id,
+          })
+          .from(campus)
+          .innerJoin(
+            school,
+            eq(campus.schoolId, school.id)
+          )
+          .where(
+            and(
+              eq(campus.id, id),
+              eq(
+                school.ownerUserId,
+                ownerUserId
+              )
+            )
+          )
+          .get();
+
+      if (!existingCampus) {
+        return null;
+      }
+
+      const result = await this.db
+        .update(campus)
+        .set({
+          ...data,
+          updatedAt: Date.now(),
+        })
+        .where(
+          eq(campus.id, id)
+        )
+        .returning();
+
+      return result[0] ?? null;
+    } catch (error) {
+      console.error(
+        'Error updating campus:',
+        error
+      );
+
+      return null;
+    }
+  }
+
+  /**
+   * Delete a campus.
+   *
+   * Security:
+   * The campus must belong to a school
+   * owned by the current user.
+   */
+  async delete(
+    id: number
+  ): Promise<boolean> {
+    try {
+      const ownerUserId =
+        requireOwnerUserId(this.ownerUserId);
+
+      // Verify ownership first.
+      const existingCampus =
+        await this.db
+          .select({
+            id: campus.id,
+          })
+          .from(campus)
+          .innerJoin(
+            school,
+            eq(campus.schoolId, school.id)
+          )
+          .where(
+            and(
+              eq(campus.id, id),
+              eq(
+                school.ownerUserId,
+                ownerUserId
+              )
+            )
+          )
+          .get();
+
+      if (!existingCampus) {
+        return false;
+      }
+
+      await this.db
+        .delete(campus)
+        .where(
+          eq(campus.id, id)
+        );
+
+      return true;
+    } catch (error) {
+      console.error(
+        'Error deleting campus:',
+        error
+      );
+
+      return false;
     }
   }
 }

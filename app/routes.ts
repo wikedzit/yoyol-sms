@@ -50,6 +50,7 @@ const routes: RouteConfig = [
   route('new', './routes/schools/new.tsx'),
   route(':schoolId', './routes/schools/detail.tsx', { id: 'school-profile' }),
   route('academic-year', './routes/schools/academic-year.tsx'),
+  route(':schoolId/campuses', './routes/campuses/campuses.tsx'),
   route(':schoolId/campuses/new_campus', './routes/campuses/new_campus.tsx'),
 ]),
 
