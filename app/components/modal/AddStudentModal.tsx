@@ -30,6 +30,7 @@ interface FormClass {
   streamId: number;
 }
 
+
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;

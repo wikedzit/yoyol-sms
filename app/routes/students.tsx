@@ -31,6 +31,8 @@ import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type StudentSubjectService from 'workers/services/student-subjects';
 import type SchoolService from 'workers/services/school';
+// ✅ ADDED: needed to fetch streams/forms
+import type AcademicLevelService from 'workers/services/academic-levels';
 import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
@@ -43,6 +45,8 @@ export async function loader({ context }: LoaderFunctionArgs) {
     subject: SubjectService;
     studentSubjects: StudentSubjectService;
     school: SchoolService;
+    // ✅ ADDED: type for the academicLevel service
+    academicLevel: AcademicLevelService;
   };
 
   const students = await services.student?.getAll({
@@ -60,6 +64,11 @@ export async function loader({ context }: LoaderFunctionArgs) {
   });
 
   const schools = await services.school?.getAll();
+
+  // ✅ ADDED: actually fetch streams and forms (previously missing entirely,
+  // which is why "schools" was being wrongly reused as a stand-in for streams)
+  const streams = await services.academicLevel?.getAllStreams();
+  const forms = await services.academicLevel?.getAllForms();
 
   const studentsWithSubjects = await Promise.all(
   students.map(async (student) => {
@@ -80,6 +89,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     students: studentsWithSubjects,
     allSubjects: subjects,
     schools,
+    // ✅ ADDED: now passed to the component
+    streams,
+    forms,
   };
 }
 
@@ -245,10 +257,15 @@ export default function Students() {
     students: initialStudents,
     allSubjects,
     schools,
+    // ✅ ADDED: pull the real streams/forms out of loader data
+    streams,
+    forms,
   } = useLoaderData() as {
     students: any[];
     allSubjects: any[];
     schools: any[];
+    streams: any[];
+    forms: any[];
   };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
@@ -505,7 +522,10 @@ export default function Students() {
           open={addStudentModalOpen}
           setOpen={setAddStudentModalOpen}
           fetcher={fetcher}
-          schools={schools}
+          // ✅ FIXED: was streams={schools} — wrong data was being shown
+          streams={streams}
+          // ✅ ADDED: AddStudentModal expects a forms list too
+          forms={forms}
         />
       )}
 
