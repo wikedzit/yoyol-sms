@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from '~/components/ui/tooltip';
 import { useLanguage } from '~/lib/i18n';
+import { isAdminRole } from '~/lib/permissions';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -39,6 +40,9 @@ interface EditProfileModalProps {
     phone?: string | null;
     preferredLanguage?: string | null;
     avatarUrl?: string | null;
+    jobTitle?: string | null;
+    staffId?: string | null;
+    bio?: string | null;
   };
   roleData?: {
     firstName?: string | null;
@@ -64,6 +68,7 @@ export default function EditProfileModal({
   const { t } = useLanguage();
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
+  const isAdmin = isAdminRole(role);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,6 +83,9 @@ export default function EditProfileModal({
     guardianPhone: '',
     preferredLanguage: 'en',
     avatarUrl: '',
+    jobTitle: '',
+    staffId: '',
+    bio: '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -98,6 +106,9 @@ export default function EditProfileModal({
       guardianPhone: (isStudent && roleData?.guardianPhone) || '',
       preferredLanguage: account?.preferredLanguage || 'en',
       avatarUrl: account?.avatarUrl || '',
+      jobTitle: account?.jobTitle || '',
+      staffId: account?.staffId || '',
+      bio: account?.bio || '',
     });
     setError(null);
   }, [open, role, account, roleData, isTeacher, isStudent]);
@@ -291,6 +302,54 @@ export default function EditProfileModal({
                   value={formData.accountPhone}
                   onChange={handleChange}
                 />
+              </div>
+            )}
+
+            {isAdmin && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Job title
+                  </label>
+                  <Input
+                    type="text"
+                    name="jobTitle"
+                    value={formData.jobTitle}
+                    onChange={handleChange}
+                    placeholder="Head of admissions"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Staff ID
+                  </label>
+                  <Input
+                    type="text"
+                    name="staffId"
+                    value={formData.staffId}
+                    onChange={handleChange}
+                    placeholder="STF-0231"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={formData.bio}
+                    onChange={(event) =>
+                      setFormData({ ...formData, bio: event.target.value })
+                    }
+                    rows={4}
+                    maxLength={500}
+                    className="flex min-h-[96px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                    placeholder="A short description of your responsibilities"
+                  />
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formData.bio.length}/500 characters
+                  </p>
+                </div>
               </div>
             )}
 

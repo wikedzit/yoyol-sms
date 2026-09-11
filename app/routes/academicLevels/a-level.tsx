@@ -259,44 +259,46 @@ export default function ALevelPage() {
         description={level?.description || LEVEL_INFO.description}
         badge={<LevelBadge level={LEVEL_TYPE} size="lg" />}
         actions={
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
-          >
-            <Plus size={18} />
-            <span className="font-medium">{t('addStream')}</span>
-          </Button>
+          streams.length > 0 ? (
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
+            >
+              <Plus size={18} />
+              <span className="font-medium">{t('addStream')}</span>
+            </Button>
+          ) : undefined
         }
       />
 
       {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="p-6 border-none shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-a-level/10">
-              <GraduationCap className="h-6 w-6 text-a-level" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="p-4 sm:p-6 border-none shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-a-level/10">
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-a-level" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-muted-foreground truncate">
                 {t('totalStreams')}
               </p>
-              <p className="text-2xl font-bold text-foreground">
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
                 {streams.length}
               </p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 border-none shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-500/10">
-              <BookOpen className="h-6 w-6 text-emerald-500" />
+        <Card className="p-4 sm:p-6 border-none shadow-sm">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10">
+              <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-muted-foreground truncate">
                 {t('totalForms')}
               </p>
-              <p className="text-2xl font-bold text-foreground">
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
                 {streams.reduce((sum, s) => sum + (s.formCount || 0), 0)}
               </p>
             </div>
@@ -306,7 +308,7 @@ export default function ALevelPage() {
 
       {/* Streams Grid */}
       {streams.length === 0 ? (
-        <Card className="p-12 text-center border-dashed">
+        <Card className="p-8 sm:p-12 text-center border-dashed">
           <div className="flex flex-col items-center gap-4">
             <div className="rounded-full bg-muted p-4">
               <GraduationCap className="h-8 w-8 text-muted-foreground" />
@@ -327,15 +329,15 @@ export default function ALevelPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {streams.map((stream) => (
-            <Card key={stream.id} className={`p-6 border-none `}>
+            <Card key={stream.id} className={`p-4 sm:p-6 border-none `}>
               <Link to={`/levels/a-level/${stream.id}`} className="block">
                 {/* Stream Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <h3 className="font-semibold text-lg text-foreground">
+                <div className="flex items-start justify-between mb-4 gap-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-lg text-foreground truncate">
                         {stream.name}
                       </h3>
                     </div>
@@ -352,7 +354,7 @@ export default function ALevelPage() {
               </Link>
 
               {/* Actions */}
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="flex items-center justify-between gap-2 mt-4 pt-4 border-t flex-wrap">
                 <Link
                   to={`/levels/a-level/${stream.id}`}
                   className="text-sm font-medium text-primary hover:underline"
@@ -404,4 +406,3 @@ export default function ALevelPage() {
     </div>
   );
 }
-
