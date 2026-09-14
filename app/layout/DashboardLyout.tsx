@@ -160,8 +160,10 @@ function DashboardContent({
 
           {/* Header & Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
+          
             <header className="bg-card/95 backdrop-blur-md border-b border-border h-[70px] flex items-center justify-between px-4 lg:px-8 flex-shrink-0 relative transition-colors">
-              <div className="flex items-center gap-4">
+              {/* LEFT: Hamburger menu, pinned to the far left */}
+              <div className="flex-1 flex items-center">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -174,81 +176,81 @@ function DashboardContent({
                     <Menu className="h-6 w-6" />
                   )}
                 </Button>
+              </div>
 
-                <h1 className="text-lg lg:text-xl md:text-sm sm:text-xs font-semibold text-foreground">
+              {/* CENTER: Title, always centered */}
+              <div className="flex-1 flex justify-center">
+                <h1 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-foreground text-center whitespace-nowrap">
                   {t('studentManagementSystem')}
                 </h1>
               </div>
 
-              {/* Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition cursor-pointer outline-none">
-                    <div className="h-7 w-7 flex items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
-                      {user?.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
-                      ) : displayName?.charAt(0).toUpperCase() ?? "U"}
-                    </div>
-                    <div className="hidden md:block text-left">
-                      <div className="text-sm font-medium text-foreground truncate max-w-[150px]">
-                        {displayName}
+              {/* RIGHT: Profile dropdown, pinned to the far right */}
+              <div className="flex-1 flex justify-end items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition cursor-pointer outline-none">
+                      <div className="h-7 w-7 flex items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
+                        {user?.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                        ) : displayName?.charAt(0).toUpperCase() ?? "U"}
                       </div>
-                    </div>
-                    <ChevronDown className="hidden md:block h-4 w-4 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
+                      <div className="hidden md:block text-left">
+                        <div className="text-sm font-medium text-foreground truncate max-w-[150px]">
+                          {displayName}
+                        </div>
+                      </div>
+                      <ChevronDown className="hidden md:block h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      {t('profile')}
-                    </Link>
-                  </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        {t('profile')}
+                      </Link>
+                    </DropdownMenuItem>
 
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer">
-                      {t('settings')}
-                    </Link>
-                  </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="cursor-pointer">
+                        {t('settings')}
+                      </Link>
+                    </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  {/* 
-                    Entire row is interactive:
-                    - Full edge-to-edge hover background.
-                    - Clicking anywhere on the row toggles the theme.
-                    - e.preventDefault() prevents dropdown auto-close.
-                  */}
-                  <DropdownMenuItem
-                    className="flex items-center justify-between cursor-pointer focus:bg-accent focus:text-accent-foreground select-none"
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setTheme(theme === "dark" ? "light" : "dark");
-                    }}
-                  >
-                    <span className="text-sm font-medium">{t('theme')}</span>
-                    <ThemeToggle />
-                  </DropdownMenuItem>
+                    
+                    <DropdownMenuItem
+                      className="flex items-center justify-between cursor-pointer focus:bg-accent focus:text-accent-foreground select-none"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setTheme(theme === "dark" ? "light" : "dark");
+                      }}
+                    >
+                      <span className="text-sm font-medium">{t('theme')}</span>
+                      <ThemeToggle />
+                    </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive cursor-pointer"
-                    onSelect={() => setIsLogoutConfirmOpen(true)}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {t('logout')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive cursor-pointer"
+                      onSelect={() => setIsLogoutConfirmOpen(true)}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {t('logout')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <LogoutConfirmDialog
-                open={isLogoutConfirmOpen}
-                onOpenChange={setIsLogoutConfirmOpen}
-              />
+                <LogoutConfirmDialog
+                  open={isLogoutConfirmOpen}
+                  onOpenChange={setIsLogoutConfirmOpen}
+                />
+              </div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-background/50">
