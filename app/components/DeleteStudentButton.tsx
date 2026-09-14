@@ -43,7 +43,7 @@ export const DeleteStudentButton = ({
           <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
           <AlertDialogDescription>
             {t('deleteConfirmation')}{' '}
-            <strong className="font-semibold">{name}</strong>? This action
+            <strong className="font-semibold">{name}</strong>?{' '}
             {t('cannotUndo')}
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -51,12 +51,12 @@ export const DeleteStudentButton = ({
         <AlertDialogFooter>
           <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
 
-          <fetcher.Form method="post">
+          <fetcher.Form method="post" className="w-full">
             <input type="hidden" name="_method" value="DELETE" />
             <input type="hidden" name="id" value={id} />
             <AlertDialogAction
               type="submit"
-              className="bg-red-500 text-white hover:bg-red-600"
+              className="w-full bg-red-500 text-white hover:bg-red-600"
             >
               {fetcher.state === 'submitting' ? t('deleting') : t('delete')}
             </AlertDialogAction>

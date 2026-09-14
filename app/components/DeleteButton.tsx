@@ -49,7 +49,7 @@ export const DeleteButton = ({
           <AlertDialogTitle>{t('delete')} {entityName}</AlertDialogTitle>
           <AlertDialogDescription>
             {t('deleteConfirmation')}{' '}
-            <strong className="font-semibold">{name}</strong>? This action
+            <strong className="font-semibold">{name}</strong>?{' '}
             {t('cannotUndo')}
           </AlertDialogDescription>
         </AlertDialogHeader>

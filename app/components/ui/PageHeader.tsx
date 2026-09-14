@@ -25,20 +25,24 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+      <div className="space-y-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground break-words">
             {translateText(title, language)}
           </h1>
           {badge}
         </div>
         {description && (
-          <p className="text-foreground">
+          <p className="text-foreground text-sm sm:text-base">
             {translateText(description, language)}
           </p>
         )}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
