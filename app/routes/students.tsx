@@ -420,16 +420,16 @@ export default function Students() {
   }, [fetcher.state, fetcher.data, fetcher.formData]);
 
   return (
-    <div className="space-y-2 h-min-screen">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 min-h-screen p-4 md:p-6 lg:p-8 bg-background">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Students</h1>
-          <p className="mt-1 text-sm text-foreground font-medium">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage and view all student records
           </p>
         </div>
         <Button
-          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
+          className="bg-primary-gradient text-white py-2 px-4 rounded-lg shadow-md hover:opacity-90 transition-all sm:w-auto w-full"
           onClick={() => setAddStudentModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -437,22 +437,22 @@ export default function Students() {
         </Button>
       </div>
 
-      <Card className="border-none shadow-none ">
-        <CardHeader>
+      <Card className="border shadow-sm">
+        <CardHeader className="pb-4">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={t('searchStudents')}
-                className="pl-10 bg-muted/50"
+                className="pl-10 w-full bg-background"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full md:w-[200px]">
                 <SelectValue placeholder={t('filterCourseGrade')} />
               </SelectTrigger>
               <SelectContent>
@@ -466,10 +466,11 @@ export default function Students() {
         </CardHeader>
 
         <CardContent>
-          <div className="rounded-md border">
+          {/* Desktop Table View */}
+          <div className="hidden lg:block rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100">
+                <TableRow className="bg-muted/50">
                   <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">{t('firstName')}</TableHead>
                   <TableHead className="font-semibold">{t('lastName')}</TableHead>
@@ -534,26 +535,26 @@ export default function Students() {
                       <StudentProfilesModal student={student} />
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         title="Assign Subjects"
-                        className="    hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:bg-muted transition-colors"
                         onClick={() => {
                           setSelectedStudent(student);
                           setAssignSubjectsModalOpen(true);
                         }}
                       >
-                        <BookOpen className="h-4 w-4" />
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <Button
                         variant="ghost"
-                        size="sm"
-                        className="   hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        size="icon"
+                        className="hover:bg-muted transition-colors"
                         onClick={() => {
                           setSelectedStudent(student);
                           setEditStudentModalOpen(true);
                         }}
                       >
-                        <Pencil className="h-4 w-4" />
+                        <Pencil className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <DeleteStudentButton
                         id={student.id}
@@ -566,11 +567,104 @@ export default function Students() {
               </TableBody>
             </Table>
           </div>
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-          />
+
+          {/* Mobile/Tablet Card View */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
+            {paginatedStudentsList?.map((student, index) => (
+              <div key={student.id} className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-start gap-3">
+                    <span className="font-semibold text-lg leading-none">
+                      {student.firstName} {student.lastName}
+                    </span>
+                    <Badge
+                      variant={
+                        student.status === 'Active'
+                          ? 'default'
+                          : student.status === 'Pending'
+                          ? 'secondary'
+                          : 'outline'
+                      }
+                      className="shrink-0 mt-0.5"
+                    >
+                      {student.status}
+                    </Badge>
+                  </div>
+                  <span className="text-sm text-muted-foreground truncate">
+                    {student.email}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm mt-1">
+                  <div>
+                    <span className="text-muted-foreground">{t('enrolled')}: </span>
+                    <span className="font-medium">{student.enrollmentDate}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5 text-sm">
+                  <span className="text-muted-foreground">{t('assignedSubjects')}:</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {student.subjects?.length > 0 ? (
+                      student.subjects.map((subject: any) => (
+                        <Badge
+                          key={subject.id}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {subject.code}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        No subjects
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 mt-2 pt-3 border-t">
+                  <StudentProfilesModal student={student} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Assign Subjects"
+                    className="hover:bg-muted transition-colors h-8 w-8"
+                    onClick={() => {
+                      setSelectedStudent(student);
+                      setAssignSubjectsModalOpen(true);
+                    }}
+                  >
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-muted transition-colors h-8 w-8"
+                    onClick={() => {
+                      setSelectedStudent(student);
+                      setEditStudentModalOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <DeleteStudentButton
+                    id={student.id}
+                    name={student.name}
+                    fetcher={fetcher}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={goToPage}
+            />
+          </div>
         </CardContent>
       </Card>
 

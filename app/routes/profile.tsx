@@ -156,10 +156,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     recentGrades = results;
     profileSchool = schools[0]
       ? {
-          name: schools[0].name,
-          address: schools[0].address,
-          registrationNumber: schools[0].registrationNumber,
-        }
+        name: schools[0].name,
+        address: schools[0].address,
+        registrationNumber: schools[0].registrationNumber,
+      }
       : null;
     stats = { students, teachers, recentResults: results.length };
   }
@@ -167,23 +167,23 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return {
     account: account
       ? {
-          id: account.id,
-          email: account.email,
-          role: account.role,
-          firstName: account.firstName,
-          lastName: account.lastName,
-          phone: account.phone,
-          preferredLanguage: account.preferredLanguage,
-          avatarUrl: account.avatarUrl,
-          jobTitle: account.jobTitle,
-          staffId: account.staffId,
-          bio: account.bio,
-          accountStatus: account.accountStatus,
-          lastLoginAt: account.lastLoginAt,
-          twoFactorEnabled: account.twoFactorEnabled,
-          twoFactorConfirmedAt: account.twoFactorConfirmedAt,
-          createdAt: account.createdAt,
-        }
+        id: account.id,
+        email: account.email,
+        role: account.role,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        phone: account.phone,
+        preferredLanguage: account.preferredLanguage,
+        avatarUrl: account.avatarUrl,
+        jobTitle: account.jobTitle,
+        staffId: account.staffId,
+        bio: account.bio,
+        accountStatus: account.accountStatus,
+        lastLoginAt: account.lastLoginAt,
+        twoFactorEnabled: account.twoFactorEnabled,
+        twoFactorConfirmedAt: account.twoFactorConfirmedAt,
+        createdAt: account.createdAt,
+      }
       : null,
     role,
     roleData,
@@ -521,11 +521,11 @@ export default function ProfilePage() {
   const hasRoleData = (isTeacher || isStudent) && roleData;
   const isTwoFactorEnabled =
     twoFactorFetcher.data?.action === "disable_2fa" &&
-    twoFactorFetcher.data?.success
+      twoFactorFetcher.data?.success
       ? false
       : account?.twoFactorEnabled === true ||
-        (twoFactorFetcher.data?.action === "confirm_2fa" &&
-          twoFactorFetcher.data?.success === true);
+      (twoFactorFetcher.data?.action === "confirm_2fa" &&
+        twoFactorFetcher.data?.success === true);
 
   const fullName = hasRoleData
     ? `${roleData.firstName} ${roleData.lastName}`
@@ -778,259 +778,259 @@ export default function ProfilePage() {
           <TabsContent value="profile" className="mt-4">
             <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
               <div className="space-y-6">
-            <SectionPanel title="Account Information">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FieldBox label="Email" value={account?.email} />
-                <FieldBox label="Role" value={roleLabel(role)} />
+                <SectionPanel title="Account Information">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FieldBox label="Email" value={account?.email} />
+                    <FieldBox label="Role" value={roleLabel(role)} />
+                    {isAdmin && (
+                      <>
+                        <FieldBox
+                          label="Account status"
+                          value={account?.accountStatus ?? "active"}
+                        />
+                        <FieldBox label="Job title" value={account?.jobTitle} />
+                        <FieldBox label="Staff ID" value={account?.staffId} />
+                        <FieldBox
+                          label="Last login"
+                          value={formatDate(account?.lastLoginAt)}
+                        />
+                      </>
+                    )}
+                    <FieldBox
+                      label="Phone"
+                      value={roleData?.phone || account?.phone}
+                    />
+
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-1.5">
+                        {t("preferredLanguage")}
+                      </p>
+                      <select
+                        value={preferredLanguage ?? "en"}
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                        disabled={languageFetcher.state === "submitting"}
+                        className="min-h-[38px] w-full rounded-lg border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <option value="en">{t("english")}</option>
+                        <option value="sw">{t("swahili")}</option>
+                      </select>
+                    </div>
+
+                    <FieldBox
+                      label="Member since"
+                      value={formatDate(account?.createdAt)}
+                    />
+                  </div>
+                </SectionPanel>
+
                 {isAdmin && (
-                  <>
-                    <FieldBox
-                      label="Account status"
-                      value={account?.accountStatus ?? "active"}
-                    />
-                    <FieldBox label="Job title" value={account?.jobTitle} />
-                    <FieldBox label="Staff ID" value={account?.staffId} />
-                    <FieldBox
-                      label="Last login"
-                      value={formatDate(account?.lastLoginAt)}
-                    />
-                  </>
-                )}
-                <FieldBox
-                  label="Phone"
-                  value={roleData?.phone || account?.phone}
-                />
-
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-1.5">
-                    {t("preferredLanguage")}
-                  </p>
-                  <select
-                    value={preferredLanguage ?? "en"}
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                    disabled={languageFetcher.state === "submitting"}
-                    className="min-h-[38px] w-full rounded-lg border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <option value="en">{t("english")}</option>
-                    <option value="sw">{t("swahili")}</option>
-                  </select>
-                </div>
-
-                <FieldBox
-                  label="Member since"
-                  value={formatDate(account?.createdAt)}
-                />
-              </div>
-            </SectionPanel>
-
-            {isAdmin && (
-              <SectionPanel
-                title={isSuperAdmin ? "System access" : "My permissions"}
-                description={
-                  isSuperAdmin
-                    ? "Full system access across schools, administration, and settings."
-                    : "Your operational access is assigned by a Super Administrator."
-                }
-              >
-                <div className="mb-4 flex items-center justify-between gap-4 rounded-lg bg-gray-50 px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">
-                      {isSuperAdmin
-                        ? "Full system access"
-                        : "School operations access"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {isSuperAdmin
-                        ? "You can manage administrators, roles, and system settings."
-                        : "Permissions are read-only here and cannot be changed from your own profile."}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-purple/10 px-3 py-1 text-xs font-semibold text-purple">
-                    {isSuperAdmin ? "Global" : "Assigned"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {rolePermissions.map((permission) => (
-                    <div
-                      key={permission}
-                      className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
-                    >
-                      <span className="text-green-600" aria-hidden="true">
-                        ✓
-                      </span>
-                      {permissionLabel(permission)}
-                    </div>
-                  ))}
-                </div>
-              </SectionPanel>
-            )}
-
-            {isTeacher && roleData && (
-              <SectionPanel title="Teacher Details">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-                  <FieldBox label="Subject" value={roleData.subject} />
-                  <FieldBox
-                    label="Qualification"
-                    value={roleData.qualification}
-                  />
-                  <FieldBox
-                    label="Experience"
-                    value={
-                      roleData.experience ? `${roleData.experience} years` : "—"
+                  <SectionPanel
+                    title={isSuperAdmin ? "System access" : "My permissions"}
+                    description={
+                      isSuperAdmin
+                        ? "Full system access across schools, administration, and settings."
+                        : "Your operational access is assigned by a Super Administrator."
                     }
-                  />
-                  <FieldBox label="Status" value={roleData.status} />
-                </div>
-                <div className="mb-4">
-                  <p className="text-xs font-medium text-gray-500 mb-2">
-                    Subjects Taught
-                  </p>
-                  {teacherSubjects.length > 0 ? (
-                    <div className="flex flex-wrap">
-                      {teacherSubjects.map((s) => (
-                        <Chip key={s.id}>{s.subjectName}</Chip>
+                  >
+                    <div className="mb-4 flex items-center justify-between gap-4 rounded-lg bg-gray-50 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {isSuperAdmin
+                            ? "Full system access"
+                            : "School operations access"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {isSuperAdmin
+                            ? "You can manage administrators, roles, and system settings."
+                            : "Permissions are read-only here and cannot be changed from your own profile."}
+                        </p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-purple/10 px-3 py-1 text-xs font-semibold text-purple">
+                        {isSuperAdmin ? "Global" : "Assigned"}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {rolePermissions.map((permission) => (
+                        <div
+                          key={permission}
+                          className="flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+                        >
+                          <span className="text-green-600" aria-hidden="true">
+                            ✓
+                          </span>
+                          {permissionLabel(permission)}
+                        </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      None assigned yet
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2">
-                    Classes Assigned
-                  </p>
-                  {teacherClasses.length > 0 ? (
-                    <div className="flex flex-wrap">
-                      {teacherClasses.map((c) => (
-                        <Chip key={c.id}>{c.name}</Chip>
-                      ))}
+                  </SectionPanel>
+                )}
+
+                {isTeacher && roleData && (
+                  <SectionPanel title="Teacher Details">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                      <FieldBox label="Subject" value={roleData.subject} />
+                      <FieldBox
+                        label="Qualification"
+                        value={roleData.qualification}
+                      />
+                      <FieldBox
+                        label="Experience"
+                        value={
+                          roleData.experience ? `${roleData.experience} years` : "—"
+                        }
+                      />
+                      <FieldBox label="Status" value={roleData.status} />
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      None assigned yet
+                    <div className="mb-4">
+                      <p className="text-xs font-medium text-gray-500 mb-2">
+                        Subjects Taught
+                      </p>
+                      {teacherSubjects.length > 0 ? (
+                        <div className="flex flex-wrap">
+                          {teacherSubjects.map((s) => (
+                            <Chip key={s.id}>{s.subjectName}</Chip>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          None assigned yet
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 mb-2">
+                        Classes Assigned
+                      </p>
+                      {teacherClasses.length > 0 ? (
+                        <div className="flex flex-wrap">
+                          {teacherClasses.map((c) => (
+                            <Chip key={c.id}>{c.name}</Chip>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          None assigned yet
+                        </p>
+                      )}
+                    </div>
+                  </SectionPanel>
+                )}
+
+                {isTeacher && roleData && (
+                  <SectionPanel title="Recent Results Recorded">
+                    {recentGrades.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4">
+                        No results recorded yet.
+                      </p>
+                    ) : (
+                      <div className="rounded-lg border border-border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead>Student</TableHead>
+                              <TableHead>Subject</TableHead>
+                              <TableHead>Score</TableHead>
+                              <TableHead>Grade</TableHead>
+                              <TableHead>Date</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {recentGrades.map((g) => (
+                              <TableRow key={g.id}>
+                                <TableCell>
+                                  {g.student.firstName} {g.student.lastName}
+                                </TableCell>
+                                <TableCell>{g.subject.subjectName}</TableCell>
+                                <TableCell>{g.score}</TableCell>
+                                <TableCell>{g.grade}</TableCell>
+                                <TableCell>{formatDate(g.createdAt)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </SectionPanel>
+                )}
+                {isTeacher && !roleData && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                    <p className="text-sm text-amber-700">
+                      We couldn&apos;t find a teacher record linked to your account
+                      yet. Contact your school admin to have one connected.
                     </p>
-                  )}
-                </div>
-              </SectionPanel>
-            )}
-
-            {isTeacher && roleData && (
-              <SectionPanel title="Recent Results Recorded">
-                {recentGrades.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4">
-                    No results recorded yet.
-                  </p>
-                ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          <TableHead>Student</TableHead>
-                          <TableHead>Subject</TableHead>
-                          <TableHead>Score</TableHead>
-                          <TableHead>Grade</TableHead>
-                          <TableHead>Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {recentGrades.map((g) => (
-                          <TableRow key={g.id}>
-                            <TableCell>
-                              {g.student.firstName} {g.student.lastName}
-                            </TableCell>
-                            <TableCell>{g.subject.subjectName}</TableCell>
-                            <TableCell>{g.score}</TableCell>
-                            <TableCell>{g.grade}</TableCell>
-                            <TableCell>{formatDate(g.createdAt)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
                   </div>
                 )}
-              </SectionPanel>
-            )}
-            {isTeacher && !roleData && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-                <p className="text-sm text-amber-700">
-                  We couldn&apos;t find a teacher record linked to your account
-                  yet. Contact your school admin to have one connected.
-                </p>
-              </div>
-            )}
 
-            {isStudent && roleData && (
-              <SectionPanel title="Student Details">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FieldBox label="Guardian" value={roleData.guardianName} />
-                  <FieldBox
-                    label="Guardian phone"
-                    value={roleData.guardianPhone}
-                  />
-                  <FieldBox label="Grade" value={roleData.grade} />
-                  <FieldBox
-                    label="Enrollment date"
-                    value={roleData.enrollmentDate}
-                  />
-                  <FieldBox label="Status" value={roleData.status} />
-                </div>
-              </SectionPanel>
-            )}
-            {isStudent && !roleData && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
-                <p className="text-sm text-amber-700">
-                  We couldn&apos;t find a student record linked to your account
-                  yet. Contact your school admin to have one connected.
-                </p>
-              </div>
-            )}
-
-            {isStudent && roleData && (
-              <SectionPanel
-                title="Recent Academic Performance"
-                description="Your most recent results. Results aren't linked to a specific term yet, so this shows the latest overall."
-              >
-                {recentGrades.length === 0 ? (
-                  <p className="text-sm text-muted-foreground py-4">
-                    No results recorded yet.
-                  </p>
-                ) : (
-                  <div className="rounded-lg border border-border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          <TableHead>Subject</TableHead>
-                          <TableHead>Score</TableHead>
-                          <TableHead>Grade</TableHead>
-                          <TableHead>Date</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {recentGrades.map((g) => (
-                          <TableRow key={g.id}>
-                            <TableCell>{g.subject.subjectName}</TableCell>
-                            <TableCell>{g.score}</TableCell>
-                            <TableCell>{g.grade}</TableCell>
-                            <TableCell>{formatDate(g.createdAt)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                {isStudent && roleData && (
+                  <SectionPanel title="Student Details">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FieldBox label="Guardian" value={roleData.guardianName} />
+                      <FieldBox
+                        label="Guardian phone"
+                        value={roleData.guardianPhone}
+                      />
+                      <FieldBox label="Grade" value={roleData.grade} />
+                      <FieldBox
+                        label="Enrollment date"
+                        value={roleData.enrollmentDate}
+                      />
+                      <FieldBox label="Status" value={roleData.status} />
+                    </div>
+                  </SectionPanel>
+                )}
+                {isStudent && !roleData && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
+                    <p className="text-sm text-amber-700">
+                      We couldn&apos;t find a student record linked to your account
+                      yet. Contact your school admin to have one connected.
+                    </p>
                   </div>
                 )}
-              </SectionPanel>
-            )}
 
-            {role === "parent" && (
-              <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
-                <p className="text-sm text-blue-700">
-                  No student records are linked to your account yet. This
-                  feature is still being built out — check back soon.
-                </p>
-              </div>
-            )}
+                {isStudent && roleData && (
+                  <SectionPanel
+                    title="Recent Academic Performance"
+                    description="Your most recent results. Results aren't linked to a specific term yet, so this shows the latest overall."
+                  >
+                    {recentGrades.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-4">
+                        No results recorded yet.
+                      </p>
+                    ) : (
+                      <div className="rounded-lg border border-border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              <TableHead>Subject</TableHead>
+                              <TableHead>Score</TableHead>
+                              <TableHead>Grade</TableHead>
+                              <TableHead>Date</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {recentGrades.map((g) => (
+                              <TableRow key={g.id}>
+                                <TableCell>{g.subject.subjectName}</TableCell>
+                                <TableCell>{g.score}</TableCell>
+                                <TableCell>{g.grade}</TableCell>
+                                <TableCell>{formatDate(g.createdAt)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </SectionPanel>
+                )}
+
+                {role === "parent" && (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
+                    <p className="text-sm text-blue-700">
+                      No student records are linked to your account yet. This
+                      feature is still being built out — check back soon.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {isAdmin && (
@@ -1133,19 +1133,19 @@ export default function ProfilePage() {
                       </div>
                     )}
                     {recentGrades.map((grade) => (
-                    <div key={grade.id} className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-foreground">
-                          {role === "teacher"
-                            ? `Recorded ${grade.grade} for ${grade.student.firstName} ${grade.student.lastName}`
-                            : `Received ${grade.grade} in ${grade.subject.subjectName}`}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {formatRelativeTime(grade.createdAt)}
-                        </p>
+                      <div key={grade.id} className="flex items-start gap-3">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            {role === "teacher"
+                              ? `Recorded ${grade.grade} for ${grade.student.firstName} ${grade.student.lastName}`
+                              : `Received ${grade.grade} in ${grade.subject.subjectName}`}
+                          </p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {formatRelativeTime(grade.createdAt)}
+                          </p>
+                        </div>
                       </div>
-                    </div>
                     ))}
                   </>
                 ) : (
@@ -1269,118 +1269,118 @@ export default function ProfilePage() {
                   onSubmit={handlePasswordSubmit}
                   className="space-y-4 max-w-sm"
                 >
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showCurrentPassword ? "text" : "password"}
-                      value={passwordForm.currentPassword}
-                      onChange={(e) =>
-                        setPasswordForm({
-                          ...passwordForm,
-                          currentPassword: e.target.value,
-                        })
-                      }
-                      required
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                      tabIndex={-1}
-                      aria-label={
-                        showCurrentPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showCurrentPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={passwordForm.currentPassword}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            currentPassword: e.target.value,
+                          })
+                        }
+                        required
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        tabIndex={-1}
+                        aria-label={
+                          showCurrentPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showNewPassword ? "text" : "password"}
-                      value={passwordForm.newPassword}
-                      onChange={(e) =>
-                        setPasswordForm({
-                          ...passwordForm,
-                          newPassword: e.target.value,
-                        })
-                      }
-                      required
-                      minLength={8}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                      tabIndex={-1}
-                      aria-label={
-                        showNewPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showNewPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? "text" : "password"}
+                        value={passwordForm.newPassword}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            newPassword: e.target.value,
+                          })
+                        }
+                        required
+                        minLength={8}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        tabIndex={-1}
+                        aria-label={
+                          showNewPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showNewPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordForm({
-                          ...passwordForm,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      required
-                      minLength={8}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-                      tabIndex={-1}
-                      aria-label={
-                        showConfirmPassword ? "Hide password" : "Show password"
-                      }
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) =>
+                          setPasswordForm({
+                            ...passwordForm,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                        required
+                        minLength={8}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        tabIndex={-1}
+                        aria-label={
+                          showConfirmPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <Button
-                  type="submit"
-                  className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
-                >
-                  {passwordFetcher.state === "submitting"
-                    ? "Updating..."
-                    : "Update Password"}
-                </Button>
+                  <Button
+                    type="submit"
+                    className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
+                  >
+                    {passwordFetcher.state === "submitting"
+                      ? "Updating..."
+                      : "Update Password"}
+                  </Button>
                 </form>
               </SectionPanel>
             </div>

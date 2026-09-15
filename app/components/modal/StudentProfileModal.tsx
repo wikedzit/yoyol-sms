@@ -39,13 +39,13 @@ export function StudentProfilesModal({
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {showTrigger && ( 
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm">
-            <Eye className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="hover:bg-muted transition-colors h-8 w-8">
+            <Eye className="h-4 w-4 text-muted-foreground" />
           </Button>
         </DialogTrigger>
       )}
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-[95vw] max-w-md p-4 sm:p-6 rounded-lg overflow-y-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{student.name}</DialogTitle>
           <DialogDescription>Student Profile Details</DialogDescription>
@@ -65,7 +65,7 @@ export function StudentProfilesModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm mt-4">
             <p>
               <strong>Name:</strong> {student.firstName} {student.lastName}
             </p>
@@ -78,7 +78,7 @@ export function StudentProfilesModal({
             <p>
               <strong>Course:</strong> {student.course}
             </p>
-            <p>
+            <p className="truncate sm:whitespace-normal" title={student.email}>
               <strong>Email:</strong> {student.email}
             </p>
             <p>

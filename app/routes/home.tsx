@@ -66,9 +66,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const averageGPA =
     validGrades.length > 0
       ? (
-          validGrades.reduce((sum, g) => sum + ((g.score || 0) / 100) * 4, 0) /
-          validGrades.length
-        ).toFixed(2)
+        validGrades.reduce((sum, g) => sum + ((g.score || 0) / 100) * 4, 0) /
+        validGrades.length
+      ).toFixed(2)
       : "0.00";
 
   // Calculate performance chart data (grade distribution by month)
@@ -119,14 +119,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const lastTeacherUpdate =
     teachers.length > 0
       ? Math.max(
-          ...teachers.map((t) => {
-            const ts =
-              typeof t.createdAt === "string"
-                ? new Date(t.createdAt).getTime()
-                : t.createdAt || 0;
-            return ts;
-          }),
-        )
+        ...teachers.map((t) => {
+          const ts =
+            typeof t.createdAt === "string"
+              ? new Date(t.createdAt).getTime()
+              : t.createdAt || 0;
+          return ts;
+        }),
+      )
       : null;
   const lastStreamUpdate =
     streams.length > 0

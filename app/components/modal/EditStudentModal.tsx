@@ -206,13 +206,13 @@ export default function EditStudentModal({
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto transition-colors cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto transition-colors cursor-pointer hover:opacity-90"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'

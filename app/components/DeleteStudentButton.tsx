@@ -13,6 +13,7 @@ import {
 import { Trash2 } from 'lucide-react';
 import { useFetcher } from 'react-router-dom';
 import { useLanguage } from '~/lib/i18n';
+import { Button } from '~/components/ui/button';
 
 export const DeleteStudentButton = ({
   id,
@@ -29,16 +30,17 @@ export const DeleteStudentButton = ({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <button
-          type="button"
-          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hover:bg-muted transition-colors h-8 w-8"
           title={t('delete')}
         >
-          <Trash2 className="w-5 h-5" />
-        </button>
+          <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500 transition-colors" />
+        </Button>
       </AlertDialogTrigger>
 
-      <AlertDialogContent>
+      <AlertDialogContent className="w-[95vw] max-w-md p-4 sm:p-6 rounded-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
           <AlertDialogDescription>
