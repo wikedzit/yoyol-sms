@@ -242,19 +242,21 @@ export function SchoolProfileView({
                         {campus.address || t('notProvided')}
                       </p>
                     </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <ViewCampusModal campus={campus} />
+                    <div className="flex shrink-0 items-center gap-1">
+                      <ViewCampusModal campus={campus} />
 
-                    <EditCampusModal campus={campus} />
+                      <EditCampusModal campus={campus} />
 
-                    <DeleteButton
-                      id={campus.id}
-                      name={campus.name}
-                      entityName="campus"
-                      entityType="campus"
-                      action={`/schools/${school.id}/campuses`}
-                    />
-                  </div>
+                      {!campus.isMain && (
+                        <DeleteButton
+                          id={campus.id}
+                          name={campus.name}
+                          entityName="campus"
+                          entityType="campus"
+                          action={`/schools/${school.id}/campuses`}
+                        />
+                      )}
+                    </div>
                   </div>
                 </li>
               ))}
