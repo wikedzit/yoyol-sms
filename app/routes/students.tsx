@@ -102,7 +102,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
         (school) => String(school.id) === String(student.schoolId),
       );
       const studentCampus = campuses.find(
-        (c: any) => String(c.id) === String(student.campusId),
+        (c: any) => String(c.id) === String((student as any).campusId),
       );
       return {
         ...student,
@@ -208,8 +208,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrollmentDate: form.get("enrollmentDate")
           ? String(form.get("enrollmentDate"))
           : undefined,
-        classId: form.get("classId") ? String(form.get("classId")) : undefined,
-        schoolId: String(schoolId),
+        classId: form.get("classId") ? Number(form.get("classId")) : undefined,
+        schoolId: schoolId ? Number(schoolId) : undefined,
         campusId: campusId ? String(campusId) : undefined,
         status: String(form.get("status") ?? "Active") as
           | "Active"
@@ -217,7 +217,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
           | "Inactive",
       };
 
-      const created = await services.student.create(data);
+      const created = await services.student.create(data as any);
 
       if (!created) {
         return new Response(
@@ -248,17 +248,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const campusIdRaw = form.get("campusId")
         ? Number(form.get("campusId"))
         : undefined;
-      let schoolId: string | undefined;
+      let schoolId: number | undefined;
       let campusId: string | undefined;
 
       if (campusIdRaw) {
         const selectedCampus = await services.campus.getById(campusIdRaw);
         if (selectedCampus) {
-          schoolId = String(selectedCampus.schoolId);
+          schoolId = selectedCampus.schoolId;
           campusId = String(selectedCampus.id);
         }
       } else if (form.get("schoolId")) {
-        schoolId = String(form.get("schoolId"));
+        schoolId = Number(form.get("schoolId"));
       }
 
       const data = {
@@ -285,7 +285,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrollmentDate: form.get("enrollmentDate")
           ? String(form.get("enrollmentDate"))
           : undefined,
-        classId: form.get("classId") ? String(form.get("classId")) : undefined,
+        classId: form.get("classId") ? Number(form.get("classId")) : undefined,
         schoolId,
         campusId,
         status: String(form.get("status") ?? "Active") as
@@ -294,7 +294,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
           | "Inactive",
       };
 
-      const updated = await services.student.update(String(id), data);
+      const updated = await services.student.update(String(id), data as any);
       return { success: true, student: updated };
     }
 
