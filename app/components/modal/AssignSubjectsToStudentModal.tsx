@@ -111,7 +111,7 @@ export default function AssignSubjectsToStudentModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[580px] bg-card text-card-foreground border-border p-6">
+      <DialogContent className="w-[95vw] max-w-md sm:max-w-[580px] bg-card text-card-foreground border-border p-4 sm:p-6 rounded-lg max-h-[90vh] overflow-hidden flex flex-col">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* HEADER */}
           <DialogHeader className="space-y-1">
@@ -140,19 +140,19 @@ export default function AssignSubjectsToStudentModal({
             {filteredSubjects.length > 0 && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="sm"
                 onClick={handleSelectAllFiltered}
-                className="text-xs text-muted-foreground hover:text-foreground h-9 px-3 w-full sm:w-auto"
+                className="text-xs h-9 px-4 w-full sm:w-auto border shadow-sm transition-colors"
               >
                 {filteredSubjects.every((s) => selectedSubjects.includes(s.id)) ? (
                   <>
-                    <Square className="h-3.5 w-3.5 mr-1.5" />
+                    <Square className="h-4 w-4 mr-2 opacity-70" />
                     Deselect Visible
                   </>
                 ) : (
                   <>
-                    <CheckSquare className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                    <CheckSquare className="h-4 w-4 mr-2 text-primary" />
                     Select Visible ({filteredSubjects.length})
                   </>
                 )}
@@ -212,25 +212,25 @@ export default function AssignSubjectsToStudentModal({
           </div>
 
           {/* FOOTER ACTIONS */}
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 items-center justify-between pt-2">
-            <span className="text-xs text-muted-foreground">
+          <DialogFooter className="flex flex-col sm:flex-row gap-4 sm:gap-0 items-center justify-between pt-4 border-t mt-4">
+            <span className="text-sm text-muted-foreground w-full sm:w-auto text-center sm:text-left">
               Enrolled: <strong className="text-foreground">{selectedSubjects.length}</strong> subjects
             </span>
 
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 w-full sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
                 disabled={isSubmitting}
                 onClick={() => setOpen(false)}
-                className="h-9 px-4 text-xs w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+                className="w-full sm:w-auto transition-colors"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-9 px-4 text-xs w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+                className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 {isSubmitting ? 'Assigning...' : 'Save Assignments'}
               </Button>
