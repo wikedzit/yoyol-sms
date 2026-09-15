@@ -1,5 +1,5 @@
 import { ChevronDown, LogOut, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
 import { authCookie } from "workers/utils/cookies.server";
 import { Button } from "~/components/ui/button";
@@ -16,6 +16,7 @@ import {
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { useTheme } from "next-themes";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
+import { useLanguage } from "~/lib/i18n";
 
 export async function loader({ request, context }: any) {
   const cookieHeader = request.headers.get("Cookie");
@@ -35,15 +36,66 @@ export async function loader({ request, context }: any) {
 
   const payload = jwt.decode(token);
   const user = payload.payload as { id: number; email: string; role: string };
+  const account = await context.services.users.findUserByEmail(user.email);
 
-  return { user: { email: user.email, role: user.role } };
+  return {
+    user: {
+      email: user.email,
+      role: user.role,
+      firstName: account?.firstName ?? null,
+      lastName: account?.lastName ?? null,
+      preferredLanguage: account?.preferredLanguage ?? 'en',
+      avatarUrl: account?.avatarUrl ?? null,
+    },
+  };
 }
 
 const DashboardLayout = () => {
-  const { user } = useLoaderData<{ user: { email: string; role: string } }>();
+  const { user } = useLoaderData<{
+    user: {
+      email: string;
+      role: string;
+      firstName: string | null;
+      lastName: string | null;
+      preferredLanguage: string | null;
+      avatarUrl: string | null;
+    };
+  }>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const { theme, setTheme } = useTheme();
+
+  return (
+    <DashboardContent
+      user={user}
+      mobileMenuOpen={mobileMenuOpen}
+      setMobileMenuOpen={setMobileMenuOpen}
+      isLogoutConfirmOpen={isLogoutConfirmOpen}
+      setIsLogoutConfirmOpen={setIsLogoutConfirmOpen}
+      theme={theme}
+      setTheme={setTheme}
+    />
+  );
+};
+
+function DashboardContent({
+  user,
+  mobileMenuOpen,
+  setMobileMenuOpen,
+  isLogoutConfirmOpen,
+  setIsLogoutConfirmOpen,
+  theme,
+  setTheme,
+}: any) {
+  const { t, setLanguage } = useLanguage();
+  const displayName = [user?.firstName, user?.lastName]
+    .filter(Boolean)
+    .join(" ") || user?.email;
+
+  useEffect(() => {
+    const preferredLanguage = user?.preferredLanguage === "sw" ? "sw" : "en";
+    setLanguage(preferredLanguage);
+  }, [user?.preferredLanguage, setLanguage]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -108,8 +160,10 @@ const DashboardLayout = () => {
 
           {/* Header & Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
+          
             <header className="bg-card/95 backdrop-blur-md border-b border-border h-[70px] flex items-center justify-between px-4 lg:px-8 flex-shrink-0 relative transition-colors">
-              <div className="flex items-center gap-4">
+              {/* LEFT: Hamburger menu, pinned to the far left */}
+              <div className="flex-1 flex items-center">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -122,79 +176,81 @@ const DashboardLayout = () => {
                     <Menu className="h-6 w-6" />
                   )}
                 </Button>
+              </div>
 
-                <h1 className="text-lg lg:text-xl md:text-sm sm:text-xs font-semibold text-foreground">
-                  Student Management System
+              {/* CENTER: Title, always centered */}
+              <div className="flex-1 flex justify-center">
+                <h1 className="text-xs sm:text-sm md:text-base lg:text-xl font-semibold text-foreground text-center whitespace-nowrap">
+                  {t('studentManagementSystem')}
                 </h1>
               </div>
 
-              {/* Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition cursor-pointer outline-none">
-                    <div className="h-7 w-7 flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
-                      {user?.email?.charAt(0).toUpperCase() ?? "U"}
-                    </div>
-                    <div className="hidden md:block text-left">
-                      <div className="text-sm font-medium text-foreground truncate max-w-[150px]">
-                        {user?.email}
+              {/* RIGHT: Profile dropdown, pinned to the far right */}
+              <div className="flex-1 flex justify-end items-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition cursor-pointer outline-none">
+                      <div className="h-7 w-7 flex items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
+                        {user?.avatarUrl ? (
+                          <img src={user.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                        ) : displayName?.charAt(0).toUpperCase() ?? "U"}
                       </div>
-                    </div>
-                    <ChevronDown className="hidden md:block h-4 w-4 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
+                      <div className="hidden md:block text-left">
+                        <div className="text-sm font-medium text-foreground truncate max-w-[150px]">
+                          {displayName}
+                        </div>
+                      </div>
+                      <ChevronDown className="hidden md:block h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </DropdownMenuTrigger>
 
-                <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        {t('profile')}
+                      </Link>
+                    </DropdownMenuItem>
 
-                  <DropdownMenuItem asChild>
-                    <Link to="/settings" className="cursor-pointer">
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings" className="cursor-pointer">
+                        {t('settings')}
+                      </Link>
+                    </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  {/* 
-                    Entire row is interactive:
-                    - Full edge-to-edge hover background.
-                    - Clicking anywhere on the row toggles the theme.
-                    - e.preventDefault() prevents dropdown auto-close.
-                  */}
-                  <DropdownMenuItem
-                    className="flex items-center justify-between cursor-pointer focus:bg-accent focus:text-accent-foreground select-none"
-                    onSelect={(e) => {
-                      e.preventDefault();
-                      setTheme(theme === "dark" ? "light" : "dark");
-                    }}
-                  >
-                    <span className="text-sm font-medium">Theme</span>
-                    <ThemeToggle />
-                  </DropdownMenuItem>
+                    
+                    <DropdownMenuItem
+                      className="flex items-center justify-between cursor-pointer focus:bg-accent focus:text-accent-foreground select-none"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setTheme(theme === "dark" ? "light" : "dark");
+                      }}
+                    >
+                      <span className="text-sm font-medium">{t('theme')}</span>
+                      <ThemeToggle />
+                    </DropdownMenuItem>
 
-                  <DropdownMenuSeparator />
+                    <DropdownMenuSeparator />
 
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive cursor-pointer"
-                    onSelect={() => setIsLogoutConfirmOpen(true)}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive cursor-pointer"
+                      onSelect={() => setIsLogoutConfirmOpen(true)}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {t('logout')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              <LogoutConfirmDialog
-                open={isLogoutConfirmOpen}
-                onOpenChange={setIsLogoutConfirmOpen}
-              />
+                <LogoutConfirmDialog
+                  open={isLogoutConfirmOpen}
+                  onOpenChange={setIsLogoutConfirmOpen}
+                />
+              </div>
             </header>
 
             <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-background/50">
@@ -205,6 +261,6 @@ const DashboardLayout = () => {
       </div>
     </div>
   );
-};
+}
 
 export default DashboardLayout;

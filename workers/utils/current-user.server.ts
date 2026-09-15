@@ -14,6 +14,7 @@ export async function getCurrentUserId(
   const cookieHeader = request.headers.get('Cookie');
   const token = await authCookie.parse(cookieHeader || '');
   if (typeof token !== 'string' || token.length === 0) return null;
+  if (!token || typeof token !== 'string') return null;
 
   try {
     const isValid = await jwt.verify(token, jwtSecret);

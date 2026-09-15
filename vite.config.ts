@@ -49,6 +49,7 @@ export default defineConfig({
           "clsx",
           "tailwind-merge",
           "recharts",
+          "qrcode.react",
           "zod",
         ],
       },

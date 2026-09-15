@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Plus, Search, Pencil, BookOpen, User } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen, User, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
@@ -25,6 +25,7 @@ import type ClassSubjectService from 'workers/services/class-subjects';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import AssignTeachersModal from '~/components/modal/AssignTeachersModal';
+import ViewSubjectModal from '~/components/modal/ViewSubjectModal';
 import {
   Select,
   SelectContent,
@@ -35,6 +36,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { useLanguage } from '~/lib/i18n';
 
 //Loader — fetch subjects with their teachers and classes from DB
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -134,21 +136,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, action: 'assign_teachers' };
     }
     // CREATE
-    if (method === 'POST') {
+        if (method === 'POST') {
       const streamIdRaw = form.get('streamId');
       const streamId = Number(streamIdRaw);
-      
-      // Validate required fields
+
       if (!streamIdRaw || isNaN(streamId) || streamId < 1) {
         return { error: 'Please select a stream for this subject.' };
       }
-      
+
+      const teacherIdRaw = form.get('teacherId');
+      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
         stream: String(form.get('stream') ?? ''),
         instructor: String(form.get('instructor') ?? ''),
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
         status: String(form.get('status') ?? '') as 'Active' | 'Inactive',
         description: form.get('description')
           ? String(form.get('description'))
@@ -161,13 +164,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
           error: 'Failed to create subject. Please check all required fields.',
         };
       }
+
+      // Auto-assign the chosen teacher so they show up under "Assigned Teachers"
+      if (teacherId) {
+        await services.teacherSubject.assignSubjectToTeacher(teacherId, created.id);
+      }
+
       return { success: true, subject: created };
     }
-
     // UPDATE
-    if (method === 'PUT') {
+       if (method === 'PUT') {
       const id = Number(form.get('id'));
       if (!id) return { error: 'Subject ID is required' };
+
+      const teacherIdRaw = form.get('teacherId');
+      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
@@ -176,9 +188,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
       };
       const updated = await services.subject.updateSubject(id, data);
+
+      if (teacherId) {
+        await services.teacherSubject.assignSubjectToTeacher(teacherId, id);
+      }
 
       return { success: true, subject: updated };
     }
@@ -200,6 +215,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🎓 Subject Management Page
 export default function SubjectsPage() {
+  const { t } = useLanguage();
   const {
     subjects: initialSubjects,
     streams,
@@ -221,6 +237,7 @@ export default function SubjectsPage() {
   const [isAssignTeachersModalOpen, setIsAssignTeachersModalOpen] =
     useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [isViewSubjectModalOpen, setIsViewSubjectModalOpen] = useState(false);
 
   // 🧩 Track last method
   useEffect(() => {
@@ -314,20 +331,20 @@ export default function SubjectsPage() {
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header section with text-foreground */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Subject Management
+              {t('subjectManagement')}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-foreground font-medium">
               Manage and organize academic subjects
             </p>
           </div>
           <Button
             onClick={handleOpenAddDialog}
             className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            <Plus className="h-4 w-4" /> Add Subject
+            <Plus className="h-4 w-4" /> {t('addSubject')}
           </Button>
         </div>
 
@@ -340,7 +357,7 @@ export default function SubjectsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Total Subjects
+                  {t('totalSubjects')}
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {subjects.length}
@@ -355,7 +372,7 @@ export default function SubjectsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Active subjects
+                  {t('activeSubjects')}
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {subjects.filter((s) => s.status === 'Active').length}
@@ -370,7 +387,7 @@ export default function SubjectsPage() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
-                  Total students enrolled
+                  {t('studentsEnrolled')}
                 </p>
                 <p className="text-2xl font-bold text-foreground">
                   {subjects.reduce(
@@ -390,7 +407,7 @@ export default function SubjectsPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search subjects..."
+                placeholder={t('searchSubjects')}
                 className="pl-10 bg-muted/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -399,12 +416,12 @@ export default function SubjectsPage() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('filterStatus')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t('all')}</SelectItem>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -414,20 +431,20 @@ export default function SubjectsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-100">
-                    <TableHead className="font-semibold">Code</TableHead>
+                    <TableHead className="font-semibold">{t('code')}</TableHead>
                     <TableHead className="font-semibold">
-                      Subject Name
+                      {t('subjectName')}
                     </TableHead>
-                    <TableHead className="font-semibold">Stream</TableHead>
+                    <TableHead className="font-semibold">{t('streams')}</TableHead>
                     <TableHead className="font-semibold">
-                      Assigned Teachers
+                      {t('assignedTeachers')}
                     </TableHead>
                     <TableHead className="font-semibold">
-                      Enrolled Students
+                      {t('enrolledStudents')}
                     </TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">{t('status')}</TableHead>
                     <TableHead className="text-right font-semibold">
-                      Actions
+                      {t('actions')}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -436,7 +453,7 @@ export default function SubjectsPage() {
                     <TableRow>
                       <TableCell colSpan={7} className="h-24 text-center">
                         <p className="text-muted-foreground">
-                          No subjects found.
+                          {t('noSubjects')}
                         </p>
                       </TableCell>
                     </TableRow>
@@ -479,6 +496,18 @@ export default function SubjectsPage() {
                         </TableCell>
                         <TableCell className="text-right flex justify-end gap-2">
                           <Button
+  className="text-gray-600 hover:scale-110 hover:text-blue-600 transition cursor-pointer"
+  variant="ghost"
+  size="icon"
+  title="View Subject"
+  onClick={() => {
+    setSelectedSubject(subject);
+    setIsViewSubjectModalOpen(true);
+  }}
+>
+  <Eye className="h-4 w-4" />
+</Button>
+                          <Button
                           className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                             variant="ghost"
                             size="icon"
@@ -519,25 +548,33 @@ export default function SubjectsPage() {
         </Card>
       </div>
 
-      {/* Modals */}
-      {isAddModalOpen && (
-        <AddSubjectModal
-          open={isAddModalOpen}
-          setOpen={setIsAddModalOpen}
-          fetcher={fetcher}
-          streams={streams}
-        />
-      )}
+    {isAddModalOpen && (
+  <AddSubjectModal
+    open={isAddModalOpen}
+    setOpen={setIsAddModalOpen}
+    fetcher={fetcher}
+    streams={streams}
+    teachers={allTeachers}
+  />
+)}
+{isViewSubjectModalOpen && selectedSubject && (
+  <ViewSubjectModal
+    open={isViewSubjectModalOpen}
+    setOpen={setIsViewSubjectModalOpen}
+    subject={selectedSubject}
+  />
+)}
 
-      {isEditModalOpen && selectedSubject && (
-        <EditSubjectModal
-          open={isEditModalOpen}
-          setOpen={setIsEditModalOpen}
-          fetcher={fetcher}
-          subject={selectedSubject}
-          streams={streams}
-        />
-      )}
+{isEditModalOpen && selectedSubject && (
+  <EditSubjectModal
+    open={isEditModalOpen}
+    setOpen={setIsEditModalOpen}
+    fetcher={fetcher}
+    subject={selectedSubject}
+    streams={streams}
+    teachers={allTeachers}
+  />
+)}
 
       {/* Assign Teachers Modal */}
       {isAssignTeachersModalOpen && selectedSubject && (

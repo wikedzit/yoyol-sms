@@ -4,17 +4,47 @@
 	"compatibility_date": "2025-04-04",
 	"main": "./workers/app.ts",
 	"vars": {
-		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
+		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
 	},
 	"observability": {
-		"enabled": true
+		"enabled": true,
 	},
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "yoyo-student-system",
-			"database_id": "5dd1b87b-f0f5-4a52-a280-fb1ab34602a9",
-			"migrations_dir": "./workers/drizzle"
-		}
-	]
+			"database_name": "yoyol-student-system",
+			"database_id": "6923e920-0852-40ef-bc6b-49aa8bb4a7f4",
+			"migrations_dir": "./workers/drizzle",
+		},
+	],
+	"env": {
+		"development": {
+			"name": "yoyol-students-system-development",
+			"vars": {
+				"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "yoyol-student-system-development",
+					"database_id": "32375355-5046-4098-9719-553a036ab578",
+					"migrations_dir": "./workers/drizzle",
+				},
+			],
+		},
+		"production": {
+			"name": "yoyol-students-system",
+			"vars": {
+				"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "yoyol-student-system",
+					"database_id": "6923e920-0852-40ef-bc6b-49aa8bb4a7f4",
+					"migrations_dir": "./workers/drizzle",
+				},
+			],
+		},
+	},
 }
