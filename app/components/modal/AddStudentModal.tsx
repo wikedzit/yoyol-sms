@@ -4,21 +4,26 @@ import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { toTitleCase } from '~/utils/strings';
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import type { FetcherWithComponents } from "react-router";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetClose,
-} from '~/components/ui/sheet';
+} from "~/components/ui/sheet";
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from '~/components/ui/select';
-import { useLanguage } from '~/lib/i18n';
+} from "~/components/ui/select";
+import { useLanguage } from "~/lib/i18n";
 
 interface Stream {
   id: number;
@@ -57,17 +62,17 @@ export default function AddStudentModal({
   const hasCampuses = campuses.length > 0;
 
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    admissionNumber: '',
-    email: '',
-    phone: '',
-    dateOfBirth: '',
-    streamId: '',
-    formId: '',
-    campusId: '',
-    gender: '',
-    status: 'Active',
+    firstName: "",
+    lastName: "",
+    admissionNumber: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "",
+    streamId: "",
+    formId: "",
+    campusId: "",
+    gender: "",
+    status: "Active",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,17 +86,17 @@ export default function AddStudentModal({
     if (fetcher.data?.success) {
       setOpen(false);
       setFormData({
-        firstName: '',
-        lastName: '',
-        admissionNumber: '',
-        email: '',
-        phone: '',
-        dateOfBirth: '',
-        streamId: '',
-        formId: '',
-        campusId: '',
-        gender: '',
-        status: 'Active',
+        firstName: "",
+        lastName: "",
+        admissionNumber: "",
+        email: "",
+        phone: "",
+        dateOfBirth: "",
+        streamId: "",
+        formId: "",
+        campusId: "",
+        gender: "",
+        status: "Active",
       });
     }
   }, [fetcher.data, setOpen]);
@@ -130,7 +135,10 @@ export default function AddStudentModal({
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={24} className="text-muted-foreground hover:text-foreground" />
+              <X
+                size={24}
+                className="text-muted-foreground hover:text-foreground"
+              />
             </SheetClose>
           </div>
 
@@ -165,11 +173,16 @@ export default function AddStudentModal({
                     ))}
                   </SelectContent>
                 </Select>
-                <input type="hidden" name="campusId" value={formData.campusId} />
+                <input
+                  type="hidden"
+                  name="campusId"
+                  value={formData.campusId}
+                />
               </div>
             ) : (
               <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                No campus added yet — this student will be added to your default school.
+                No campus added yet — this student will be added to your default
+                school.
               </p>
             )}
 
@@ -269,7 +282,7 @@ export default function AddStudentModal({
                 <Select
                   value={formData.streamId}
                   onValueChange={(val) =>
-                    setFormData({ ...formData, streamId: val, formId: '' })
+                    setFormData({ ...formData, streamId: val, formId: "" })
                   }
                   name="streamId"
                   required
@@ -285,7 +298,11 @@ export default function AddStudentModal({
                     ))}
                   </SelectContent>
                 </Select>
-                <input type="hidden" name="streamId" value={formData.streamId} />
+                <input
+                  type="hidden"
+                  name="streamId"
+                  value={formData.streamId}
+                />
               </div>
 
               <div className="w-full sm:w-1/2">
@@ -304,7 +321,9 @@ export default function AddStudentModal({
                   <SelectTrigger className="w-full">
                     <SelectValue
                       placeholder={
-                        formData.streamId ? 'Select form' : 'Select stream first'
+                        formData.streamId
+                          ? "Select form"
+                          : "Select stream first"
                       }
                     />
                   </SelectTrigger>
@@ -379,14 +398,14 @@ export default function AddStudentModal({
               onClick={() => setOpen(false)}
               className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              {t('cancel')}
+              {t("cancel")}
             </Button>
             <Button
               type="submit"
-              disabled={fetcher.state === 'submitting'}
+              disabled={fetcher.state === "submitting"}
               className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              {fetcher.state === 'submitting' ? t('adding') : t('addStudent')}
+              {fetcher.state === "submitting" ? t("adding") : t("addStudent")}
             </Button>
           </div>
         </fetcher.Form>

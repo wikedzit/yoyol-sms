@@ -9,14 +9,20 @@ import { z } from 'zod';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
+
   subjectName: z.string().min(2).max(100),
+
   code: z.string().min(2).max(10),
-  stream: z.string().min(2).max(100), // Stream name (Science, Arts, Business)
-  instructor: z.string().min(2).max(100),
+
+  stream: z.string().min(2).max(100),
+
+  // Teacher is OPTIONAL
+  instructor: z.string().max(100).optional(),
+
   description: z.string().max(500).optional(),
-  enrolledStudents: z.number().min(0).optional(),
+
   status: z.enum(['Active', 'Inactive']).default('Active'),
-  // Foreign key to academic streams (required)
+
   streamId: z.number().min(1),
 });
 

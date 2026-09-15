@@ -24,6 +24,7 @@ export default function AddSubjectModal({
   setOpen,
   fetcher,
   streams,
+  teachers,
   id,
 }: any) {
   const { t } = useLanguage();
@@ -32,7 +33,7 @@ export default function AddSubjectModal({
     code: '',
     stream: '',
     instructor: '',
-    enrolledStudents: 0,
+    teacherId: '',
     status: 'Active',
     streamId: id || '',
   });
@@ -71,7 +72,7 @@ export default function AddSubjectModal({
         code: '',
         stream: '',
         instructor: '',
-        enrolledStudents: 0,
+        teacherId: '',
         status: 'Active',
         streamId: id || '',
       });
@@ -104,6 +105,8 @@ export default function AddSubjectModal({
           <input type="hidden" name="status" value={formData.status} />
           <input type="hidden" name="streamId" value={formData.streamId} />
           <input type="hidden" name="stream" value={formData.stream} />
+          <input type="hidden" name="teacherId" value={formData.teacherId} />
+          <input type="hidden" name="instructor" value={formData.instructor} />
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -168,17 +171,52 @@ export default function AddSubjectModal({
             </Select>
           </div>
 
+          {/* TEACHER SELECT */}
+          <div className="mb-4 w-full">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Teacher
+            </label>
+
+            <Select
+              value={formData.teacherId}
+              onValueChange={(value) => {
+                const selectedTeacher = teachers?.find(
+                  (t: any) => String(t.id) === String(value)
+                );
+                setFormData({
+                  ...formData,
+                  teacherId: value,
+                  instructor: selectedTeacher
+                    ? `${selectedTeacher.firstName} ${selectedTeacher.lastName}`
+                    : '',
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select teacher" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {!teachers || teachers.length === 0 ? (
+                  <SelectItem value="no-teacher" disabled>
+                    No teachers available
+                  </SelectItem>
+                ) : (
+                  teachers.map((teacher: any) => (
+                    <SelectItem key={teacher.id} value={String(teacher.id)}>
+                      {teacher.firstName} {teacher.lastName}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto pr-2">
             {[
               { label: 'Subject Name', field: 'subjectName', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Instructor', field: 'instructor', type: 'text' },
-              {
-                label: 'Enrolled Students',
-                field: 'enrolledStudents',
-                type: 'number',
-              },
             ].map(({ label, field, type }) => (
               <div key={field} className="mb-4">
                 <label className="block text-sm font-medium text-foreground mb-1">

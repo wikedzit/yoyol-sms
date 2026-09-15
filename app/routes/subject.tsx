@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Plus, Search, Pencil, BookOpen, User } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen, User, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 
@@ -25,6 +25,7 @@ import type ClassSubjectService from 'workers/services/class-subjects';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import AssignTeachersModal from '~/components/modal/AssignTeachersModal';
+import ViewSubjectModal from '~/components/modal/ViewSubjectModal';
 import {
   Select,
   SelectContent,
@@ -135,21 +136,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, action: 'assign_teachers' };
     }
     // CREATE
-    if (method === 'POST') {
+        if (method === 'POST') {
       const streamIdRaw = form.get('streamId');
       const streamId = Number(streamIdRaw);
-      
-      // Validate required fields
+
       if (!streamIdRaw || isNaN(streamId) || streamId < 1) {
         return { error: 'Please select a stream for this subject.' };
       }
-      
+
+      const teacherIdRaw = form.get('teacherId');
+      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
         stream: String(form.get('stream') ?? ''),
         instructor: String(form.get('instructor') ?? ''),
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
         status: String(form.get('status') ?? '') as 'Active' | 'Inactive',
         description: form.get('description')
           ? String(form.get('description'))
@@ -162,13 +164,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
           error: 'Failed to create subject. Please check all required fields.',
         };
       }
+
+      // Auto-assign the chosen teacher so they show up under "Assigned Teachers"
+      if (teacherId) {
+        await services.teacherSubject.assignSubjectToTeacher(teacherId, created.id);
+      }
+
       return { success: true, subject: created };
     }
-
     // UPDATE
-    if (method === 'PUT') {
+       if (method === 'PUT') {
       const id = Number(form.get('id'));
       if (!id) return { error: 'Subject ID is required' };
+
+      const teacherIdRaw = form.get('teacherId');
+      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
@@ -177,9 +188,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
       };
       const updated = await services.subject.updateSubject(id, data);
+
+      if (teacherId) {
+        await services.teacherSubject.assignSubjectToTeacher(teacherId, id);
+      }
 
       return { success: true, subject: updated };
     }
@@ -223,6 +237,7 @@ export default function SubjectsPage() {
   const [isAssignTeachersModalOpen, setIsAssignTeachersModalOpen] =
     useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [isViewSubjectModalOpen, setIsViewSubjectModalOpen] = useState(false);
 
   // 🧩 Track last method
   useEffect(() => {
@@ -481,6 +496,18 @@ export default function SubjectsPage() {
                         </TableCell>
                         <TableCell className="text-right flex justify-end gap-2">
                           <Button
+  className="text-gray-600 hover:scale-110 hover:text-blue-600 transition cursor-pointer"
+  variant="ghost"
+  size="icon"
+  title="View Subject"
+  onClick={() => {
+    setSelectedSubject(subject);
+    setIsViewSubjectModalOpen(true);
+  }}
+>
+  <Eye className="h-4 w-4" />
+</Button>
+                          <Button
                           className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                             variant="ghost"
                             size="icon"
@@ -521,25 +548,33 @@ export default function SubjectsPage() {
         </Card>
       </div>
 
-      {/* Modals */}
-      {isAddModalOpen && (
-        <AddSubjectModal
-          open={isAddModalOpen}
-          setOpen={setIsAddModalOpen}
-          fetcher={fetcher}
-          streams={streams}
-        />
-      )}
+    {isAddModalOpen && (
+  <AddSubjectModal
+    open={isAddModalOpen}
+    setOpen={setIsAddModalOpen}
+    fetcher={fetcher}
+    streams={streams}
+    teachers={allTeachers}
+  />
+)}
+{isViewSubjectModalOpen && selectedSubject && (
+  <ViewSubjectModal
+    open={isViewSubjectModalOpen}
+    setOpen={setIsViewSubjectModalOpen}
+    subject={selectedSubject}
+  />
+)}
 
-      {isEditModalOpen && selectedSubject && (
-        <EditSubjectModal
-          open={isEditModalOpen}
-          setOpen={setIsEditModalOpen}
-          fetcher={fetcher}
-          subject={selectedSubject}
-          streams={streams}
-        />
-      )}
+{isEditModalOpen && selectedSubject && (
+  <EditSubjectModal
+    open={isEditModalOpen}
+    setOpen={setIsEditModalOpen}
+    fetcher={fetcher}
+    subject={selectedSubject}
+    streams={streams}
+    teachers={allTeachers}
+  />
+)}
 
       {/* Assign Teachers Modal */}
       {isAssignTeachersModalOpen && selectedSubject && (

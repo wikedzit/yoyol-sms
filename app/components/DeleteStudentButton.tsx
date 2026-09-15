@@ -9,11 +9,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '~/components/ui/alert-dialog';
-import { Trash2 } from 'lucide-react';
-import { useFetcher } from 'react-router-dom';
-import { useLanguage } from '~/lib/i18n';
-import { Button } from '~/components/ui/button';
+} from "~/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+import { useFetcher } from "react-router-dom";
+import { useLanguage } from "~/lib/i18n";
+import { Button } from "~/components/ui/button";
 
 export const DeleteStudentButton = ({
   id,
@@ -33,8 +33,8 @@ export const DeleteStudentButton = ({
         <Button
           variant="ghost"
           size="icon"
-          className="hover:bg-muted transition-colors h-8 w-8"
-          title={t('delete')}
+          className="hover:bg-muted transition-colors h-8 w-8 cursor-pointer"
+          title={t("delete")}
         >
           <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500 transition-colors" />
         </Button>
@@ -42,16 +42,15 @@ export const DeleteStudentButton = ({
 
       <AlertDialogContent className="w-[95vw] max-w-md p-4 sm:p-6 rounded-lg">
         <AlertDialogHeader>
-          <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
+          <AlertDialogTitle>{t("delete")}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('deleteConfirmation')}{' '}
-            <strong className="font-semibold">{name}</strong>?{' '}
-            {t('cannotUndo')}
+            {t("deleteConfirmation")}{" "}
+            <strong className="font-semibold">{name}</strong>? {t("cannotUndo")}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
 
           <fetcher.Form method="post" className="w-full">
             <input type="hidden" name="_method" value="DELETE" />
@@ -60,7 +59,7 @@ export const DeleteStudentButton = ({
               type="submit"
               className="w-full bg-red-500 text-white hover:bg-red-600"
             >
-              {fetcher.state === 'submitting' ? t('deleting') : t('delete')}
+              {fetcher.state === "submitting" ? t("deleting") : t("delete")}
             </AlertDialogAction>
           </fetcher.Form>
         </AlertDialogFooter>

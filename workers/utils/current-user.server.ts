@@ -13,7 +13,7 @@ export async function getCurrentUserId(
 ): Promise<number | null> {
   const cookieHeader = request.headers.get('Cookie');
   const token = await authCookie.parse(cookieHeader || '');
-  if (!token) return null;
+  if (!token || typeof token !== 'string') return null;
 
   const isValid = await jwt.verify(token, jwtSecret);
   if (!isValid) return null;
