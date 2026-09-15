@@ -34,6 +34,16 @@ export function TeacherProfileModal({
 
   if (!teacher) return null;
 
+  const subjectNames = Array.isArray(teacher.subjects)
+    ? teacher.subjects
+        .map((subject: any) => subject?.subjectName || subject?.name || subject?.code)
+        .filter(Boolean)
+    : teacher.subject
+      ? [teacher.subject]
+      : [];
+
+  const subjectDisplay = subjectNames.length ? subjectNames.join(', ') : 'Not assigned';
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {showTrigger && (
@@ -93,7 +103,7 @@ export function TeacherProfileModal({
               <strong>Address:</strong> {teacher.address}
             </p>
             <p>
-              <strong>Subject:</strong> {teacher.subject}
+              <strong>Subject:</strong> {subjectDisplay}
             </p>
             <p>
               <strong>Status:</strong>{' '}

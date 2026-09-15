@@ -150,6 +150,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
 
       const created = await services.teacher.createTeacher(data);
+      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+      if (created && Array.isArray(subjectIds)) {
+        await services.teacherSubject?.replaceTeacherSubjects(
+          created.id,
+          subjectIds.map(Number).filter((id: number) => Number.isInteger(id))
+        );
+      }
       return new Response(JSON.stringify({ success: true, teacher: created }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -242,7 +249,17 @@ export default function Teachers() {
   const [newTeacher, setNewTeacher] = useState<any>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
-  const filteredStudents = initialTeachers?.filter((teacher) => {
+  useEffect(() => {
+    setTeachers(initialTeachers || []);
+  }, [initialTeachers]);
+
+  useEffect(() => {
+    if (listFetcher.data?.teachers) {
+      setTeachers(listFetcher.data.teachers);
+    }
+  }, [listFetcher.data]);
+
+  const filteredStudents = teachers.filter((teacher) => {
     const matchesSearch =
       teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
       teacher.lastName.toLowerCase().includes(search.toLowerCase()) ||
@@ -515,6 +532,7 @@ export default function Teachers() {
           open={addModalOpen}
           setOpen={setAddModalOpen}
           fetcher={fetcher}
+          subjects={allSubjects}
         />
       )}
 

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import {
@@ -16,12 +16,36 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu';
 
-export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
+interface SubjectOption {
+  id: number;
+  subjectName: string;
+  code: string;
+  status?: string | null;
+}
+
+export default function AddTeacherModal({
+  open,
+  setOpen,
+  fetcher,
+  subjects,
+}: {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  fetcher: any;
+  subjects: SubjectOption[];
+}) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     subject: '',
+    subjectIds: [] as number[],
     email: '',
     phone: '',
     address: '',
@@ -35,6 +59,21 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const toggleSubject = (subjectId: number) => {
+    const subjectIds = formData.subjectIds.includes(subjectId)
+      ? formData.subjectIds.filter((id) => id !== subjectId)
+      : [...formData.subjectIds, subjectId];
+
+    setFormData({
+      ...formData,
+      subjectIds,
+      subject: subjects
+        .filter((subject) => subjectIds.includes(subject.id))
+        .map((subject) => subject.subjectName)
+        .join(', '),
+    });
+  };
+
   // ✅ Close modal & reset form after successful submission
   useEffect(() => {
     if (fetcher.data?.success) {
@@ -43,6 +82,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
         firstName: '',
         lastName: '',
         subject: '',
+        subjectIds: [],
         email: '',
         phone: '',
         address: '',
@@ -95,7 +135,6 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
             {[
               'firstName',
               'lastName',
-              'subject',
               'email',
               'phone',
               'address',
@@ -109,8 +148,12 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
                     : field === 'lastName'
                     ? 'Last Name'
                     : field.charAt(0).toUpperCase() + field.slice(1)}
+
+<span className="text-red-500">*</span>
+                
                 </label>
-                <Input
+
+                 <Input
                   type={field === 'email' ? 'email' : 'text'}
                   name={field}
                   value={(formData as any)[field]}
@@ -123,12 +166,55 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
                       ? 'Last Name'
                       : field.charAt(0).toUpperCase() + field.slice(1))
                   }
-                  required={['firstName', 'lastName', 'subject'].includes(
-                    field
-                  )}
+                  required={['firstName', 'lastName'].includes(field)}
                 />
               </div>
             ))}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Subjects 
+              </label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className="truncate">
+                      {formData.subjectIds.length > 0
+                        ? formData.subject
+                        : 'Select subjects'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                  {subjects.length === 0 ? (
+                    <DropdownMenuCheckboxItem checked={false} disabled>
+                      No subjects available
+                    </DropdownMenuCheckboxItem>
+                  ) : (
+                    subjects.map((subject) => (
+                      <DropdownMenuCheckboxItem
+                        key={subject.id}
+                        checked={formData.subjectIds.includes(subject.id)}
+                        onSelect={(event) => event.preventDefault()}
+                        onCheckedChange={() => toggleSubject(subject.id)}
+                      >
+                        {subject.subjectName} ({subject.code})
+                      </DropdownMenuCheckboxItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <input
+                type="hidden"
+                name="subjectIds"
+                value={JSON.stringify(formData.subjectIds)}
+              />
+            </div>
 
             {/* Gender & Status Selects */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

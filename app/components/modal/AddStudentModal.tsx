@@ -47,9 +47,9 @@ export default function AddStudentModal({
     enrollmentDate: '',
     dob: '',
     address: '',
-    gender: undefined,
-    status: undefined,
-    schoolId: undefined,
+    gender: '',
+    status: '',
+    schoolId: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,9 +66,9 @@ export default function AddStudentModal({
         enrollmentDate: '',
         dob: '',
         address: '',
-        gender: undefined,
-        status: undefined,
-        schoolId: undefined,
+        gender: '',
+        status: '',
+        schoolId: '',
       });
     }
   }, [fetcher.state, fetcher.data]);
@@ -84,9 +84,9 @@ export default function AddStudentModal({
         enrollmentDate: '',
         dob: '',
         address: '',
-        gender: undefined,
-        status: undefined,
-        schoolId: undefined,
+        gender: '',
+        status: '',
+        schoolId: '',
       });
     }
   }, [open]);

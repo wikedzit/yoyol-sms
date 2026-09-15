@@ -9,7 +9,7 @@ import { z } from 'zod';
 const CreateTeacherSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
   lastName: z.string().min(1, 'Last name is required').max(100),
-  subject: z.string().min(1, 'Subject is required').max(100),
+  subject: z.string().max(100).optional().default(''),
   email: z.string().email().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
