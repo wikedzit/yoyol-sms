@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -22,7 +23,7 @@ interface EditStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   student: any;
-  classId: string | undefined;
+  classId?: string | undefined;
   fetcher: FetcherWithComponents<any>;
 }
 
@@ -72,7 +73,9 @@ export default function EditStudentModal({
   }, [student, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const formatted = ['firstName', 'lastName'].includes(name) ? toTitleCase(value) : value;
+    setFormData({ ...formData, [name]: formatted });
   };
 
   const formatLabel = (field: string) => {

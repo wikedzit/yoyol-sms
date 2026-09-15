@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useLoaderData, useFetcher } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import type CampusService from 'workers/services/campus';
-import type AcademicLevelService from 'workers/services/academic-levels';
 import {
   Table,
   TableBody,
@@ -174,9 +173,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
         );
       }
 
+      const toTitleCase = (s: string) =>
+        s
+          .split(' ')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
+        firstName: toTitleCase(String(form.get('firstName') ?? '')),
+        lastName: toTitleCase(String(form.get('lastName') ?? '')),
         gender: String(form.get('gender') ?? 'Select gender') as
           | 'Male'
           | 'Female',
@@ -185,7 +189,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
         address: form.get('address') ? String(form.get('address')) : undefined,
         guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
+          ? toTitleCase(String(form.get('guardianName')))
           : undefined,
         guardianPhone: form.get('guardianPhone')
           ? String(form.get('guardianPhone'))
@@ -249,9 +253,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
         schoolId = String(form.get('schoolId'));
       }
 
+      const toTitleCase = (s: string) =>
+        s
+          .split(' ')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
+        firstName: toTitleCase(String(form.get('firstName') ?? '')),
+        lastName: toTitleCase(String(form.get('lastName') ?? '')),
         gender: String(form.get('gender') ?? 'Select gender') as
           | 'Male'
           | 'Female',
@@ -260,7 +269,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
         address: form.get('address') ? String(form.get('address')) : undefined,
         guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
+          ? toTitleCase(String(form.get('guardianName')))
           : undefined,
         guardianPhone: form.get('guardianPhone')
           ? String(form.get('guardianPhone'))

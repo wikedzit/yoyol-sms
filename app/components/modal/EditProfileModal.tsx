@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -114,7 +115,11 @@ export default function EditProfileModal({
   }, [open, role, account, roleData, isTeacher, isStudent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const formatted = ['firstName', 'lastName', 'name', 'subject', 'qualification'].includes(name)
+      ? toTitleCase(value)
+      : value;
+    setFormData({ ...formData, [name]: formatted });
     if (error) setError(null);
   };
 

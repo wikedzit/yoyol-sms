@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -40,7 +41,9 @@ export default function AddSubjectModal({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const formatted = ['subjectName', 'instructor'].includes(name) ? toTitleCase(value) : value;
+    setFormData({ ...formData, [name]: formatted });
     if (error) setError(null);
   };
 

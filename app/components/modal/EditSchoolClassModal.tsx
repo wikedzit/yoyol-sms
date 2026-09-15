@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -150,7 +151,7 @@ export default function EditSchoolClassModal({
                 name="name"
                 value={name}
                 onChange={(e) => {
-                  setName(e.target.value);
+                  setName(toTitleCase(e.target.value));
                   if (error) setError(null);
                 }}
                 placeholder={`e.g., ${editingClass.formNumber}A, ${editingClass.formNumber}B`}

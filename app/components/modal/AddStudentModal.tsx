@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -70,7 +71,9 @@ export default function AddStudentModal({
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const formatted = ['firstName', 'lastName'].includes(name) ? toTitleCase(value) : value;
+    setFormData({ ...formData, [name]: formatted });
   };
 
   // Close modal and reset form state after successful form submit

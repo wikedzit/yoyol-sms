@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Layers, Sparkles, Check } from 'lucide-react';
 import type { FetcherWithComponents } from 'react-router';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -106,7 +107,7 @@ export function AddStreamModal({
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
-      name: e.target.value,
+      name: toTitleCase(e.target.value),
     }));
   };
 

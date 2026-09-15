@@ -39,6 +39,7 @@ import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
 
+import { toTitleCase } from '~/utils/strings';
 // Loader – fetch teachers with their subjects and classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
@@ -131,8 +132,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (method === 'POST') {
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
+        firstName: toTitleCase(String(form.get('firstName') ?? '')),
+        lastName: toTitleCase(String(form.get('lastName') ?? '')),
         subject: String(form.get('subject') ?? ''),
         email: form.get('email') ? String(form.get('email')) : undefined,
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
@@ -163,8 +164,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
       }
 
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
+        firstName: toTitleCase(String(form.get('firstName') ?? '')),
+        lastName: toTitleCase(String(form.get('lastName') ?? '')),
         subject: String(form.get('subject') ?? ''),
         email: form.get('email') ? String(form.get('email')) : undefined,
         phone: form.get('phone') ? String(form.get('phone')) : undefined,

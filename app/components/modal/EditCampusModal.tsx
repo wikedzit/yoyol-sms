@@ -12,6 +12,7 @@ import {
 
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 
 interface EditCampusModalProps {
   campus: any;
@@ -60,10 +61,11 @@ export default function EditCampusModal({
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const { name, value } = event.target;
+    const formatted = ['name'].includes(name) ? toTitleCase(value) : value;
 
     setFormData((previous) => ({
       ...previous,
-      [name]: value,
+      [name]: formatted,
     }));
   };
 
