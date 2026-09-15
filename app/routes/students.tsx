@@ -14,7 +14,14 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Eye, Pencil, BookOpen } from 'lucide-react';
+import { Plus, Search, Eye, Pencil, BookOpen, MoreVertical, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '~/components/ui/dropdown-menu';
 import {
   Select,
   SelectTrigger,
@@ -568,15 +575,45 @@ export default function Students() {
             </Table>
           </div>
 
-          {/* Mobile/Tablet Card View */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden">
-            {paginatedStudentsList?.map((student, index) => (
-              <div key={student.id} className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-start gap-3">
-                    <span className="font-semibold text-lg leading-none">
+          {/* Mobile/Tablet List View */}
+          <div className="lg:hidden">
+            {/* Info header */}
+            <div className="mb-2 text-xs text-muted-foreground">
+              <span>Showing {paginatedStudentsList?.length ?? 0} of {filteredStudents?.length ?? 0} students</span>
+              <br />
+              <span>Page {currentPage} of {totalPages}</span>
+            </div>
+
+            {/* Column headers */}
+            <div className="grid grid-cols-[1.5rem_1fr_4rem_2rem] md:grid-cols-[1.5rem_1fr_5rem_6rem_2rem] items-center px-2 py-2 border-b bg-muted/50 text-xs font-medium text-muted-foreground rounded-t-md">
+              <span>SN</span>
+              <span className="pl-1">Student</span>
+              <span className="text-center">Status</span>
+              <span className="hidden md:block text-center">Enrolled</span>
+              <span></span>
+            </div>
+
+            {/* Rows */}
+            <div className="flex flex-col divide-y border border-t-0 rounded-b-md">
+              {paginatedStudentsList?.map((student, index) => (
+                <div key={student.id} className="grid grid-cols-[1.5rem_1fr_4rem_2rem] md:grid-cols-[1.5rem_1fr_5rem_6rem_2rem] items-center px-2 py-3 hover:bg-muted/30 transition-colors">
+                  {/* SN */}
+                  <span className="text-xs text-muted-foreground font-medium tabular-nums">
+                    {startIndex + index + 1}
+                  </span>
+
+                  {/* Student name + email */}
+                  <div className="flex flex-col min-w-0 pl-1">
+                    <span className="font-semibold text-[14px] md:text-[16px] leading-tight truncate">
                       {student.firstName} {student.lastName}
                     </span>
+                    <span className="text-[10px] md:text-[13px] text-muted-foreground truncate mt-0.5 tracking-tight">
+                      {student.email}
+                    </span>
+                  </div>
+
+                  {/* Status */}
+                  <div className="flex justify-center">
                     <Badge
                       variant={
                         student.status === 'Active'
@@ -585,77 +622,79 @@ export default function Students() {
                           ? 'secondary'
                           : 'outline'
                       }
-                      className="shrink-0 mt-0.5"
+                      className="text-[10px] px-1.5 py-0 shrink-0"
                     >
                       {student.status}
                     </Badge>
                   </div>
-                  <span className="text-sm text-muted-foreground truncate">
-                    {student.email}
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-2 text-sm mt-1">
-                  <div>
-                    <span className="text-muted-foreground">{t('enrolled')}: </span>
-                    <span className="font-medium">{student.enrollmentDate}</span>
+                  {/* Enrolled date — hidden on small screens */}
+                  <div className="hidden md:flex w-24 justify-center text-xs text-muted-foreground whitespace-nowrap">
+                    {student.enrollmentDate ?? '—'}
                   </div>
-                </div>
 
-                <div className="flex flex-col gap-1.5 text-sm">
-                  <span className="text-muted-foreground">{t('assignedSubjects')}:</span>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {student.subjects?.length > 0 ? (
-                      student.subjects.map((subject: any) => (
-                        <Badge
-                          key={subject.id}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {subject.code}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        No subjects
-                      </span>
-                    )}
-                  </div>
+                  {/* 3-dot actions */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 hover:bg-muted transition-colors"
+                      >
+                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40 rounded-lg shadow-lg">
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setProfileModalOpen(true);
+                          setNewStudent(student);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setAssignSubjectsModalOpen(true);
+                        }}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        Assign Subjects
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setEditStudentModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer gap-2 text-destructive font-medium focus:text-destructive focus:bg-destructive/10"
+                        asChild
+                      >
+                        <fetcher.Form method="post">
+                          <input type="hidden" name="_method" value="DELETE" />
+                          <input type="hidden" name="id" value={student.id} />
+                          <button type="submit" className="w-full flex items-center gap-2 text-left text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        </fetcher.Form>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-
-                <div className="flex justify-end gap-2 mt-2 pt-3 border-t">
-                  <StudentProfilesModal student={student} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="Assign Subjects"
-                    className="hover:bg-muted transition-colors h-8 w-8"
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setAssignSubjectsModalOpen(true);
-                    }}
-                  >
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hover:bg-muted transition-colors h-8 w-8"
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setEditStudentModalOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                  <DeleteStudentButton
-                    id={student.id}
-                    name={student.name}
-                    fetcher={fetcher}
-                  />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           <div className="mt-4">
