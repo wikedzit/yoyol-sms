@@ -19,7 +19,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Pencil, ArrowBigLeftDash, MoreVertical, Eye } from 'lucide-react';
+import { Plus, Search, Pencil, ArrowBigLeftDash } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -47,14 +47,8 @@ import { toast } from 'sonner';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
 import type { LevelType } from '~/type/shools';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu';
 
+// Type for enriched form class data
 interface EnrichedFormClass {
   id: number;
   name: string;
@@ -79,6 +73,7 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     subject: SubjectService;
   };
 
+  // Get the form class with details (school format)
   const classInfo = await services.academicLevel.getFormClassByIdWithDetails(
     Number(classId)
   );
@@ -87,8 +82,10 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     throw new Response('Class not found', { status: 404 });
   }
 
+  // Get students for this form class
   const students = await services.student.getByFormClassId(Number(classId));
 
+  // Get all subjects for assignment
   const allSubjects = await services.subject.getAllSubjects({
     limit: 100,
     offset: 0,
@@ -115,6 +112,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   const action = form.get('action') as string | null;
 
   try {
+    // CREATE STUDENT
     if (method === 'POST') {
       const studentData = {
         firstName: String(form.get('firstName') || ''),
@@ -123,7 +121,7 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
         status:
           (String(form.get('status')) as 'Active' | 'Pending' | 'Inactive') ||
           'Active',
-        formClassId: Number(classId),
+        formClassId: Number(classId), // Use formClassId for school structure
         dob: form.get('dob') ? String(form.get('dob')) : undefined,
         email: form.get('email') ? String(form.get('email')) : undefined,
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
@@ -133,20 +131,16 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       };
       const created = await services.student.create(studentData);
 
-      if (!created) {
-        return new Response(
-          JSON.stringify({ error: 'Failed to add student to class.' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+      // Update the formClass student count
+      if (created) {
+        const currentClass = await services.academicLevel.getFormClassById(
+          Number(classId)
         );
-      }
-
-      const currentClass = await services.academicLevel.getFormClassById(
-        Number(classId)
-      );
-      if (currentClass) {
-        await services.academicLevel.updateFormClass(Number(classId), {
-          studentCount: (currentClass.studentCount || 0) + 1,
-        });
+        if (currentClass) {
+          await services.academicLevel.updateFormClass(Number(classId), {
+            studentCount: (currentClass.studentCount || 0) + 1,
+          });
+        }
       }
 
       return new Response(JSON.stringify({ success: true, student: created }), {
@@ -154,9 +148,11 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       });
     }
 
+    // UPDATE STUDENT
     if (method === 'PUT') {
       const id = form.get('id') as string;
       const data = Object.fromEntries(form.entries());
+      // Ensure formClassId is maintained
       const updated = await services.student.update(id, {
         ...data,
         formClassId: Number(classId),
@@ -166,10 +162,12 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       });
     }
 
+    // DELETE STUDENT
     if (method === 'DELETE') {
       const id = form.get('id') as string;
       await services.student.delete(id);
 
+      // Update the formClass student count
       const currentClass = await services.academicLevel.getFormClassById(
         Number(classId)
       );
@@ -184,10 +182,12 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       });
     }
 
+    // REMOVE STUDENT FROM CLASS
     if (method === 'REMOVE') {
       const id = form.get('id') as string;
       await services.student.update(id, { formClassId: undefined });
 
+      // Update the formClass student count
       const currentClass = await services.academicLevel.getFormClassById(
         Number(classId)
       );
@@ -236,11 +236,8 @@ export default function ClassDetails() {
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
-  // NEW: controlled delete target for the mobile dropdown menu
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
-  // NEW: controlled profile view target for the mobile dropdown menu
-  const [viewTarget, setViewTarget] = useState<any>(null);
 
+  // filtering logic
   const filteredStudents = initialStudents?.filter((student) => {
     const matchesSearch =
       student.firstName.toLowerCase().includes(search.toLowerCase()) ||
@@ -259,6 +256,7 @@ export default function ClassDetails() {
     goToPage,
   } = usePagination(filteredStudents, 10);
 
+  // Unified toast notification handler
   useEffect(() => {
     if (!fetcher.data || fetcher.data === processedResponseRef.current) return;
     if (fetcher.state !== 'idle') return;
@@ -314,19 +312,27 @@ export default function ClassDetails() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3">
-            {/* FIXED: smaller, responsive heading size */}
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight">
               {classInfo?.name}
             </h1>
             <LevelBadge level={classInfo?.levelType} size="md" />
             <StreamBadge stream={classInfo?.streamColor} size="md" />
           </div>
-          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+          <p className="text-muted-foreground mt-1">
             {classInfo?.formName} • {classInfo?.streamName} •{' '}
             {classInfo?.levelName}
           </p>
         </div>
         <div className="flex gap-2">
+          {/* TODO: will deal with it leter */}
+          {/* <Button
+            variant="outline"
+            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer hover:text-white"
+            onClick={() => setAssignSubjectsModalOpen(true)}
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Assign Subjects
+          </Button> */}
           <Button
             className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             onClick={() => setAddStudentModalOpen(true)}
@@ -353,7 +359,7 @@ export default function ClassDetails() {
             </div>
 
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
+              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -369,17 +375,15 @@ export default function ClassDetails() {
         {/* Table */}
         <CardContent>
           <div className="rounded-md border">
-            {/* FIXED: smaller text on mobile, normal from sm: up */}
-            <Table className="text-xs sm:text-sm">
+            <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  {/* FIXED: SN hidden on mobile, shown from md: up */}
-                  <TableHead className="font-semibold hidden md:table-cell">SN</TableHead>
+                  <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">First name</TableHead>
                   <TableHead className="font-semibold">Last name</TableHead>
-                  <TableHead className="font-semibold hidden md:table-cell">Email</TableHead>
-                  <TableHead className="font-semibold hidden lg:table-cell">Phone</TableHead>
-                  <TableHead className="font-semibold hidden lg:table-cell">Enrolled</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Phone</TableHead>
+                  <TableHead className="font-semibold">Enrolled</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right font-semibold">
                     Actions
@@ -399,20 +403,18 @@ export default function ClassDetails() {
                 ) : (
                   paginatedStudents?.map((student, index) => (
                     <TableRow key={student.id}>
-                      <TableCell className="font-medium hidden md:table-cell">
+                      <TableCell className="font-medium">
                         {startIndex + index + 1}
                       </TableCell>
                       <TableCell>{student.firstName}</TableCell>
                       <TableCell>{student.lastName}</TableCell>
-                      <TableCell className="text-muted-foreground hidden md:table-cell">
+                      <TableCell className="text-muted-foreground">
                         {student.email || '-'}
                       </TableCell>
-                      <TableCell className="text-muted-foreground hidden lg:table-cell">
+                      <TableCell className="text-muted-foreground">
                         {student.phone || '-'}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {student.enrollmentDate || '-'}
-                      </TableCell>
+                      <TableCell>{student.enrollmentDate || '-'}</TableCell>
                       <TableCell className="border-none">
                         <Badge
                           variant={
@@ -422,65 +424,29 @@ export default function ClassDetails() {
                               ? 'secondary'
                               : 'outline'
                           }
-                          className="border-none text-[10px] sm:text-xs"
+                          className="border-none"
                         >
                           {student.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        {/* Desktop: unchanged, full buttons */}
-                        <div className="hidden lg:flex justify-end gap-2">
-                          <StudentProfilesModal student={student} />
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className=" hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                            onClick={() => {
-                              setSelectedStudent(student);
-                              setEditStudentModalOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <DeleteStudentButton
-                            id={student.id}
-                            name={`${student.firstName} ${student.lastName}`}
-                            fetcher={fetcher}
-                          />
-                        </div>
-
-                        {/* Mobile/tablet: collapsed three-dot menu */}
-                        <div className="flex lg:hidden justify-end">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="cursor-pointer">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setViewTarget(student)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Profile
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedStudent(student);
-                                  setEditStudentModalOpen(true);
-                                }}
-                              >
-                                <Pencil className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                variant="destructive"
-                                onClick={() => setDeleteTarget(student)}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                      <TableCell className="text-right flex justify-end gap-2">
+                        <StudentProfilesModal student={student} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className=" hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                          onClick={() => {
+                            setSelectedStudent(student);
+                            setEditStudentModalOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <DeleteStudentButton
+                          id={student.id}
+                          name={`${student.firstName} ${student.lastName}`}
+                          fetcher={fetcher}
+                        />
                       </TableCell>
                     </TableRow>
                   ))
@@ -521,28 +487,6 @@ export default function ClassDetails() {
           classInfo={classInfo}
           availableSubjects={allSubjects}
           fetcher={fetcher}
-        />
-      )}
-
-      {/* NEW: mobile dropdown "View Profile" target */}
-      {viewTarget && (
-        <StudentProfilesModal
-          student={viewTarget}
-          open={!!viewTarget}
-          onOpenChange={(open: boolean) => !open && setViewTarget(null)}
-          showTrigger={false}
-        />
-      )}
-
-      {/* NEW: controlled delete confirmation for mobile dropdown */}
-      {deleteTarget && (
-        <DeleteStudentButton
-          id={deleteTarget.id}
-          name={`${deleteTarget.firstName} ${deleteTarget.lastName}`}
-          fetcher={fetcher}
-          open={!!deleteTarget}
-          onOpenChange={(open) => !open && setDeleteTarget(null)}
-          showTrigger={false}
         />
       )}
     </div>
