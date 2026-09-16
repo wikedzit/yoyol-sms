@@ -17,24 +17,32 @@ export const DeleteStudentButton = ({
   id,
   name,
   fetcher: externalFetcher,
+  open,
+  onOpenChange,
+  showTrigger = true,
 }: {
   id: string;
   name: string;
   fetcher?: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }) => {
   const fetcher = externalFetcher || useFetcher();
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button
-          type="button"
-          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-          title="Delete"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {showTrigger && (
+        <AlertDialogTrigger asChild>
+          <button
+            type="button"
+            className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
+            title="Delete"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </AlertDialogTrigger>
+      )}
 
       <AlertDialogContent>
         <AlertDialogHeader>
