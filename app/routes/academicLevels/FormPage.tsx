@@ -495,10 +495,8 @@ export default function FormPage() {
                 {/* Counts */}
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
                   <div className="flex items-center gap-1">
-                 <Users size={14} />
-                 {c.studentCount || 0}{' '}
-                   {(c.studentCount || 0) === 1 ? 'student' : 'students'}
-                 </div>
+                    <Users size={14} /> {c.studentCount || 0} students
+                  </div>
                 </div>
               </Link>
 
@@ -552,10 +550,8 @@ export default function FormPage() {
 
               <div className="flex flex-wrap gap-4 text-xs text-gray-600">
                 <span className="flex items-center gap-1">
-                <Users size={14} />
-                {c.studentCount || 0}{' '}
-               {(c.studentCount || 0) === 1 ? 'student' : 'students'}
-              </span>
+                  <Users size={14} /> {c.studentCount || 0} students
+                </span>
               </div>
 
               <div className="flex gap-2">
