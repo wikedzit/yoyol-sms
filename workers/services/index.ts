@@ -14,7 +14,6 @@ import AuthService from './auth.server';
 import AcademicLevelService from './academic-levels';
 import SchoolService from './school';
 import AcademicYearService from './academic-years';
-import CampusService from './campus';
 
 /**
  * Service Container that aggregates all individual services
@@ -35,7 +34,6 @@ export default class ServiceContainer {
   public readonly academicLevel: AcademicLevelService;
   public readonly school: SchoolService;
   public readonly academicYear: AcademicYearService;
-  public readonly campus: CampusService;
   private db: DrizzleD1Database;
 
   constructor(
@@ -58,7 +56,6 @@ export default class ServiceContainer {
     this.academicLevel = new AcademicLevelService(this.db, ownerUserId);
     this.school = new SchoolService(this.db, ownerUserId);
     this.academicYear = new AcademicYearService(this.db, ownerUserId);
-    this.campus = new CampusService(this.db,ownerUserId);
   }
 
   /**
@@ -81,7 +78,6 @@ export default class ServiceContainer {
       academicLevel: this.academicLevel,
       school: this.school,
       academicYear: this.academicYear,
-      campus: this.campus,
     };
   }
 
@@ -108,7 +104,6 @@ export default class ServiceContainer {
       academicLevel: true,
       school: true,
       academicYear: true,
-      campus: true,
     };
 
     // Check if all services are available

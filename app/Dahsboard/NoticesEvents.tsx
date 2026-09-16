@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Calendar, Bell, AlertCircle, Info } from 'lucide-react';
-import { useLanguage } from '~/lib/i18n';
 
 interface Notice {
   id: number;
@@ -26,16 +25,15 @@ const typeConfig = {
 };
 
 export function NoticesEvents({ notices = [] }: NoticesEventsProps) {
-  const { t } = useLanguage();
   // If no notices provided, show empty state or fallback to empty array
   const displayNotices = notices.length > 0 ? notices : [];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('noticesEvents')}</CardTitle>
+        <CardTitle>Notices & Upcoming Events</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {t('importantDates')}
+          Important dates and announcements
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -60,7 +58,7 @@ export function NoticesEvents({ notices = [] }: NoticesEventsProps) {
                     </h4>
                     {notice.priority === 'high' && (
                       <Badge variant="destructive" className="text-xs">
-                        {t('urgent')}
+                        Urgent
                       </Badge>
                     )}
                   </div>
@@ -77,7 +75,7 @@ export function NoticesEvents({ notices = [] }: NoticesEventsProps) {
           })
         ) : (
           <p className="text-sm text-muted-foreground text-center py-4">
-            {t('noNotices')}
+            No notices or events available
           </p>
         )}
       </CardContent>

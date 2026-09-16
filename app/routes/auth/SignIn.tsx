@@ -139,43 +139,11 @@ export default function SignInPage() {
       }}
     >
       <div className="px-5 md:px-10 py-10">
-        <h2 className="text-3xl font-bold text-black mb-3">
-          {requiresTwoFactor ? "Two-factor authentication" : "Login"}
-        </h2>
+        <h2 className="text-3xl font-bold text-black mb-3">Login</h2>
         <p className="mb-5 text-medium-gray max-w-[288px] text-sm">
           Welcome back! <br /> Login to view your dashboard.
         </p>
 
-        {requiresTwoFactor ? (
-          <form onSubmit={submitTwoFactor} className="space-y-5">
-            <p className="text-sm text-gray-600">
-              Enter the six-digit code from your authenticator app, or use a recovery code.
-            </p>
-            <div>
-              <label htmlFor="twoFactorCode" className="block text-sm mb-1 font-medium">
-                Authentication code
-              </label>
-              <input
-                id="twoFactorCode"
-                value={twoFactorCode}
-                onChange={(event) => setTwoFactorCode(event.target.value)}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                autoFocus
-                required
-                className={fieldClassName(false)}
-                placeholder="123456"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting || twoFactorCode.length < 6}
-              className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
-            >
-              {isSubmitting ? "Verifying..." : "Verify and continue"}
-            </button>
-          </form>
-        ) : (
         <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
           <div>
             <label htmlFor="email" className="block text-sm mb-1 font-medium">

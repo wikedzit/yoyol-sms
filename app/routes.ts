@@ -18,7 +18,6 @@ const routes: RouteConfig = [
   route('logout', './routes/logout.ts'),
   // Protected routes
   layout('./layout/ProtectedLayout.tsx', [
-    route('onboarding', './routes/onboarding.tsx'),
     layout('./layout/DashboardLyout.tsx', [
       index('routes/home.tsx'),
       ...prefix('levels', [
@@ -50,8 +49,6 @@ const routes: RouteConfig = [
   route('new', './routes/schools/new.tsx'),
   route(':schoolId', './routes/schools/detail.tsx', { id: 'school-profile' }),
   route('academic-year', './routes/schools/academic-year.tsx'),
-  route(':schoolId/campuses', './routes/campuses/campuses.tsx'),
-  route(':schoolId/campuses/new_campus', './routes/campuses/new_campus.tsx'),
 ]),
 
       route('students', './routes/students.tsx'),

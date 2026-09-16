@@ -71,7 +71,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return jsonErrorResponse(result.error, 409);
   }
 
-  return redirect("/onboarding", {
+  return redirect("/", {
     headers: {
       "Set-Cookie": await authCookie.serialize(result.token),
     },
@@ -109,7 +109,7 @@ export default function SignUpPage() {
       <div className="px-5 md:px-10 py-10">
         <h2 className="text-3xl font-bold text-black mb-3">Sign up</h2>
         <p className="mb-5 text-medium-gray max-w-[288px] text-sm">
-          Create your account. <br /> You will set up your school next.
+          Create your account <br /> to start using the dashboard.
         </p>
 
         <form onSubmit={handleSubmit(submitSignUp)} className="space-y-5">

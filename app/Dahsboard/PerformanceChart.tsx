@@ -10,7 +10,6 @@ import {
   Legend,
 } from 'recharts';
 import { useTheme } from 'next-themes';
-import { useLanguage } from '~/lib/i18n';
 
 interface PerformanceChartProps {
   data: Array<{
@@ -32,7 +31,6 @@ const gradeColors = {
 
 export function PerformanceChart({ data }: PerformanceChartProps) {
   const { resolvedTheme } = useTheme();
-  const { t } = useLanguage();
   const isDark = resolvedTheme === 'dark';
 
   const textColor = isDark ? '#94a3b8' : '#64748b';
@@ -41,9 +39,9 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
   return (
     <Card className="bg-card text-card-foreground border-border">
       <CardHeader>
-        <CardTitle className="text-foreground">{t('performanceOverview')}</CardTitle>
+        <CardTitle className="text-foreground">Student Performance Overview</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {t('gradeTrends')}
+          Grade distribution trends over the year
         </p>
       </CardHeader>
       <CardContent>
@@ -96,25 +94,25 @@ export function PerformanceChart({ data }: PerformanceChartProps) {
             <Bar
               dataKey="excellent"
               fill={gradeColors.excellent}
-              name={`${t('excellent')} (A)`}
+              name="Excellent (A)"
               radius={[4, 4, 0, 0]}
             />
             <Bar
               dataKey="good"
               fill={gradeColors.good}
-              name={`${t('good')} (B)`}
+              name="Good (B)"
               radius={[4, 4, 0, 0]}
             />
             <Bar
               dataKey="average"
               fill={gradeColors.average}
-              name={`${t('average')} (C)`}
+              name="Average (C)"
               radius={[4, 4, 0, 0]}
             />
             <Bar
               dataKey="poor"
               fill={gradeColors.poor}
-              name={`${t('poor')} (D-F)`}
+              name="Poor (D-F)"
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

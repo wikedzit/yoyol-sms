@@ -1,6 +1,4 @@
-import { X, UserPlus } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import type { FetcherWithComponents } from 'react-router';
+import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import {
@@ -17,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
+import { useState, useEffect } from 'react';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
 import type { LevelType } from '~/type/shools';
@@ -24,12 +23,12 @@ import type { LevelType } from '~/type/shools';
 interface ClassInfo {
   id: number;
   name: string;
-  formId?: number;
-  streamId?: number;
-  levelId?: number;
-  studentCount?: number;
+  formId: number;
+  streamId: number;
+  levelId: number;
+  studentCount: number;
   formName: string;
-  formNumber?: number;
+  formNumber: number;
   streamName: string;
   streamColor: 'science' | 'arts' | 'business';
   levelName: string;
@@ -40,7 +39,7 @@ interface AddStudentToClassModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   classInfo: ClassInfo;
-  fetcher: FetcherWithComponents<any>;
+  fetcher: any;
 }
 
 export default function AddStudentToClassModal({
@@ -58,9 +57,23 @@ export default function AddStudentToClassModal({
   const [enrollmentDate, setEnrollmentDate] = useState('');
   const [status, setStatus] = useState('Active');
 
-  const isSubmitting = fetcher.state === 'submitting';
+  // Close modal on successful create
+  useEffect(() => {
+    if (fetcher.data?.success && fetcher.state === 'idle') {
+      setOpen(false);
+      resetForm();
+    }
+  }, [fetcher.data, fetcher.state, setOpen]);
 
-  // Reset form helper
+  // Reset form when modal opens
+  useEffect(() => {
+    if (open) {
+      resetForm();
+      // Set default enrollment date to today
+      setEnrollmentDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [open]);
+
   const resetForm = () => {
     setFirstName('');
     setLastName('');
@@ -72,38 +85,18 @@ export default function AddStudentToClassModal({
     setStatus('Active');
   };
 
-  // Close modal on successful server action
-  useEffect(() => {
-    if (fetcher.data?.success && fetcher.state === 'idle') {
-      setOpen(false);
-      resetForm();
-    }
-  }, [fetcher.data, fetcher.state, setOpen]);
-
-  // Sync state when drawer is triggered
-  useEffect(() => {
-    if (open) {
-      resetForm();
-      setEnrollmentDate(new Date().toISOString().split('T')[0]);
-    }
-  }, [open]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const submitData = new FormData();
     submitData.append('_method', 'POST');
-    submitData.append('action', 'add_student');
-    submitData.append('classId', String(classInfo.id));
-    submitData.append('firstName', firstName.trim());
-    submitData.append('lastName', lastName.trim());
+    submitData.append('firstName', firstName);
+    submitData.append('lastName', lastName);
     submitData.append('gender', gender);
     submitData.append('status', status);
-    
-    if (email.trim()) submitData.append('email', email.trim());
-    if (phone.trim()) submitData.append('phone', phone.trim());
+    if (email) submitData.append('email', email);
+    if (phone) submitData.append('phone', phone);
     if (dob) submitData.append('dob', dob);
     if (enrollmentDate) submitData.append('enrollmentDate', enrollmentDate);
-
     fetcher.submit(submitData, { method: 'post' });
   };
 
@@ -114,77 +107,77 @@ export default function AddStudentToClassModal({
         className="
           w-full max-w-full
           sm:max-w-[90%]
-          md:max-w-[540px] md:w-[540px]
+          md:max-w-[520px] md:w-[520px]
           p-6 md:p-8
-          flex flex-col justify-between
-          bg-card text-card-foreground border-border
+          flex flex-col
+          overflow-y-auto
         "
       >
-        <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full">
           {/* HEADER */}
-          <div className="flex justify-between items-center mb-4 shrink-0">
+          <div className="flex justify-between items-center mb-4">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-primary" />
+              <SheetTitle className="text-xl md:text-2xl font-semibold">
                 Add Student
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
               <X
-                size={22}
+                size={24}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               />
             </SheetClose>
           </div>
 
-          {/* CLASS CONTEXT DISPLAY */}
-          <div className="bg-muted/40 border border-border rounded-lg p-3.5 mb-5 shrink-0">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="font-semibold text-foreground">{classInfo.name}</span>
+          {/* Class Context */}
+          <div className="bg-muted/50 rounded-lg p-3 mb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium">{classInfo.name}</span>
               <LevelBadge level={classInfo.levelType} size="sm" />
               <StreamBadge stream={classInfo.streamColor} size="sm" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {classInfo.formName} &bull; {classInfo.streamName} &bull; {classInfo.levelName}
+            <p className="text-sm text-muted-foreground">
+              {classInfo.formName} • {classInfo.streamName} •{' '}
+              {classInfo.levelName}
             </p>
           </div>
 
-          {/* FORM INPUTS SCROLL CONTAINER */}
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {/* FORM INPUTS */}
+          <div className="flex-1 space-y-4 overflow-y-auto">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
-                  First Name <span className="text-destructive">*</span>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  First Name <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="e.g. Baraka"
+                  placeholder="Enter first name"
                   required
-                  className="h-10 bg-background border-input"
+                  className="h-10"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
-                  Last Name <span className="text-destructive">*</span>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Last Name <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="e.g. Mushi"
+                  placeholder="Enter last name"
                   required
-                  className="h-10 bg-background border-input"
+                  className="h-10"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
-                  Gender <span className="text-destructive">*</span>
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Gender <span className="text-red-500">*</span>
                 </label>
                 <Select value={gender} onValueChange={setGender}>
-                  <SelectTrigger className="h-10 w-full bg-background border-input">
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -194,11 +187,11 @@ export default function AddStudentToClassModal({
                 </Select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
+                <label className="block text-sm font-medium text-foreground mb-1.5">
                   Status
                 </label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="h-10 w-full bg-background border-input">
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -212,78 +205,77 @@ export default function AddStudentToClassModal({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
-                  Email Address
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Email
                 </label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="student@example.com"
-                  className="h-10 bg-background border-input"
+                  placeholder="student@email.com"
+                  className="h-10"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
-                  Phone Number
+                <label className="block text-sm font-medium text-foreground mb-1.5">
+                  Phone
                 </label>
                 <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+255 7xx xxx xxx"
-                  className="h-10 bg-background border-input"
+                  placeholder="+255 xxx xxx xxx"
+                  className="h-10"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
+                <label className="block text-sm font-medium text-foreground mb-1.5">
                   Date of Birth
                 </label>
                 <Input
                   type="date"
                   value={dob}
                   onChange={(e) => setDob(e.target.value)}
-                  className="h-10 bg-background border-input"
+                  className="h-10"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1.5">
+                <label className="block text-sm font-medium text-foreground mb-1.5">
                   Enrollment Date
                 </label>
                 <Input
                   type="date"
                   value={enrollmentDate}
                   onChange={(e) => setEnrollmentDate(e.target.value)}
-                  className="h-10 bg-background border-input"
+                  className="h-10"
                 />
               </div>
             </div>
           </div>
 
-          {/* STICKY ACTION FOOTER */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 shrink-0 bg-card">
+          {/* FOOTER */}
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              disabled={isSubmitting}
-              className="h-10 px-6 w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="h-10 px-6 w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              className="bg-primary-gradient text-white h-10 px-6 w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
               disabled={
-                isSubmitting ||
+                fetcher.state === 'submitting' ||
                 !firstName.trim() ||
                 !lastName.trim()
               }
-              className="h-10 px-6 w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              {isSubmitting ? 'Adding...' : 'Add Student'}
+              {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
             </Button>
           </div>
         </form>

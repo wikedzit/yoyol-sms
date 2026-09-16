@@ -10,9 +10,8 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
-import type { FetcherWithComponents } from 'react-router';
 
-interface Term {
+type Term = {
   id: number;
   academicYearId: number;
   name: string;
@@ -20,30 +19,14 @@ interface Term {
   startDate: string;
   endDate: string;
   isCurrent: boolean;
-}
-
-interface AcademicYear {
-  id: string | number;
-  name?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: string;
-  terms?: Term[];
-}
-
-interface ManageTermsModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  fetcher: FetcherWithComponents<any>;
-  year: AcademicYear | null;
-}
+};
 
 export default function ManageTermsModal({
   open,
   setOpen,
   fetcher,
   year,
-}: ManageTermsModalProps) {
+}: any) {
   const [terms, setTerms] = useState<Term[]>(year?.terms || []);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState({
@@ -60,17 +43,13 @@ export default function ManageTermsModal({
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lastAction = useState<{ current: string | null }>({ current: null })[0];
 
-  // Sync state when incoming academic year updates or modal opens
   useEffect(() => {
-    if (year && open) {
-      setTerms(year.terms || []);
-      setNewTerm((prev) => ({ ...prev, termNumber: (year.terms?.length || 0) + 1 }));
-      setError(null);
-    }
-  }, [year, open]);
+    setTerms(year?.terms || []);
+    setNewTerm((prev) => ({ ...prev, termNumber: (year?.terms?.length || 0) + 1 }));
+  }, [year]);
 
-  // Handle fetcher responses
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data) {
       const data = fetcher.data;
@@ -99,7 +78,8 @@ export default function ManageTermsModal({
         }
       }
     }
-  }, [fetcher.state, fetcher.data, terms.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state, fetcher.data]);
 
   if (!year) return null;
 
@@ -160,203 +140,179 @@ export default function ManageTermsModal({
           sm:max-w-[90%]
           md:max-w-[620px] md:w-[620px]
           p-6 md:p-10
-          flex flex-col justify-between
-          bg-card text-card-foreground border-border
+          flex flex-col
         "
       >
-        <div className="flex flex-col h-full">
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-1">
-            <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
-                Terms &mdash; {year.name}
-              </SheetTitle>
-            </SheetHeader>
-            <SheetClose asChild className="cursor-pointer">
-              <X size={24} className="text-muted-foreground hover:text-foreground transition-colors" />
-            </SheetClose>
+        <div className="flex justify-between items-center mb-2">
+          <SheetHeader className="p-0">
+            <SheetTitle className="text-xl md:text-2xl font-semibold">
+              Terms &mdash; {year.name}
+            </SheetTitle>
+          </SheetHeader>
+          <SheetClose asChild className="cursor-pointer">
+            <X size={25} />
+          </SheetClose>
+        </div>
+        <p className="text-sm text-[#898989] mb-6">
+          {year.startDate} &ndash; {year.endDate}
+        </p>
+
+        {!isActiveYear && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-700">
+              This year isn&apos;t active yet. Once its start date arrives, it
+              will become the active year automatically, and its terms will
+              take over as the current term based on their own dates.
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mb-6">
-            {year.startDate} &ndash; {year.endDate}
-          </p>
+        )}
 
-          {/* STATUS NOTICES */}
-          {!isActiveYear && (
-            <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-md">
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                This year isn&apos;t active yet. Once its start date arrives, it
-                will become the active year automatically, and its terms will
-                take over as the current term based on their own dates.
-              </p>
-            </div>
-          )}
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
 
-          {error && (
-            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
-
-          {/* SCROLLABLE TERMS LIST */}
-          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-3">
-            {terms.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No terms yet for this academic year.
-              </p>
-            ) : (
-              terms
-                .slice()
-                .sort((a, b) => a.termNumber - b.termNumber)
-                .map((term) =>
-                  editingId === term.id ? (
-                    <div key={term.id} className="border border-border rounded-md p-3 space-y-2 bg-background">
+        <div className="flex-1 overflow-y-auto pr-1 space-y-3">
+          {terms.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No terms yet for this academic year.
+            </p>
+          ) : (
+            terms
+              .slice()
+              .sort((a, b) => a.termNumber - b.termNumber)
+              .map((term) =>
+                editingId === term.id ? (
+                  <div key={term.id} className="border rounded-md p-3 space-y-2">
+                    <Input
+                      value={editForm.name}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                      placeholder="Term name"
+                    />
+                    <div className="grid grid-cols-2 gap-2">
                       <Input
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        placeholder="Term name"
+                        type="date"
+                        value={editForm.startDate}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, startDate: e.target.value })
+                        }
                       />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          type="date"
-                          value={editForm.startDate}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, startDate: e.target.value })
-                          }
-                        />
-                        <Input
-                          type="date"
-                          value={editForm.endDate}
-                          onChange={(e) =>
-                            setEditForm({ ...editForm, endDate: e.target.value })
-                          }
-                        />
-                      </div>
-                      <div className="flex justify-end gap-2 pt-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setEditingId(null)}
-                          className="hover:scale-105 transition cursor-pointer"
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => submitEdit(term.id)}
-                          className="hover:scale-105 transition cursor-pointer"
-                        >
-                          <Check className="h-4 w-4 mr-1" /> Save
-                        </Button>
-                      </div>
+                      <Input
+                        type="date"
+                        value={editForm.endDate}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, endDate: e.target.value })
+                        }
+                      />
                     </div>
-                  ) : (
-                    <div
-                      key={term.id}
-                      className="flex items-center justify-between border border-border rounded-md p-3 bg-card hover:bg-muted/30 transition-colors"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-foreground">{term.name}</p>
-                          {term.isCurrent && (
-                            <Badge variant="default" className="text-xs">
-                              Current
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {term.startDate} &ndash; {term.endDate}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => startEdit(term)}
-                          className="hover:scale-105 transition cursor-pointer text-muted-foreground hover:text-foreground"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteTerm(term.id)}
-                          className="hover:scale-105 transition cursor-pointer text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                      className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="button" size="sm"
+                      className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                      onClick={() => submitEdit(term.id)}>
+                        <Check className="h-4 w-4" /> Save
+                      </Button>
                     </div>
-                  )
+                  </div>
+                ) : (
+                  <div
+                    key={term.id}
+                    className="flex items-center justify-between border rounded-md p-3"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{term.name}</p>
+                        {term.isCurrent && (
+                          <Badge variant="default" className="text-xs">
+                            Current
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {term.startDate} &ndash; {term.endDate}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        size="icon"
+                        onClick={() => startEdit(term)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        size="icon"
+                        onClick={() => deleteTerm(term.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </div>
                 )
-            )}
+              )
+          )}
 
-            {/* ADD TERM FORM OR TRIGGER BUTTON */}
-            {showAddForm ? (
-              <div className="border border-border rounded-md p-3 space-y-2 bg-muted/30">
+          {showAddForm ? (
+            <div className="border rounded-md p-3 space-y-2 bg-muted/30">
+              <Input
+                placeholder="Term name (e.g. Term 1)"
+                value={newTerm.name}
+                onChange={(e) => setNewTerm({ ...newTerm, name: e.target.value })}
+              />
+              <div className="grid grid-cols-2 gap-2">
                 <Input
-                  placeholder="Term name (e.g. Term 1)"
-                  value={newTerm.name}
-                  onChange={(e) => setNewTerm({ ...newTerm, name: e.target.value })}
+                  type="date"
+                  value={newTerm.startDate}
+                  onChange={(e) => setNewTerm({ ...newTerm, startDate: e.target.value })}
                 />
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="date"
-                    value={newTerm.startDate}
-                    onChange={(e) => setNewTerm({ ...newTerm, startDate: e.target.value })}
-                  />
-                  <Input
-                    type="date"
-                    value={newTerm.endDate}
-                    onChange={(e) => setNewTerm({ ...newTerm, endDate: e.target.value })}
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddForm(false)}
-                    className="hover:scale-105 transition cursor-pointer"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={submitCreate}
-                    className="hover:scale-105 transition cursor-pointer"
-                  >
-                    {fetcher.state === 'submitting' ? 'Adding...' : 'Add Term'}
-                  </Button>
-                </div>
+                <Input
+                  type="date"
+                  value={newTerm.endDate}
+                  onChange={(e) => setNewTerm({ ...newTerm, endDate: e.target.value })}
+                />
               </div>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full hover:scale-105 transition cursor-pointer border-dashed"
-                onClick={() => setShowAddForm(true)}
-              >
-                <Plus className="h-4 w-4 mr-2" /> Add Term
-              </Button>
-            )}
-          </div>
-
-          {/* STICKY FOOTER */}
-          <div className="flex justify-end border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                  size="sm"
+                  onClick={() => setShowAddForm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="button" 
+                className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                size="sm" onClick={submitCreate}>
+                  {fetcher.state === 'submitting' ? 'Adding...' : 'Add Term'}
+                </Button>
+              </div>
+            </div>
+          ) : (
             <Button
+          
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
-              className="py-2 px-8 rounded-[8px] hover:scale-105 transition cursor-pointer"
+              className=" hover:scale-110 hover:text-white-600 transition cursor-pointerw-full"
+              onClick={() => setShowAddForm(true)}
             >
-              Done
+              <Plus className="h-4 w-4" /> Add Term
             </Button>
-          </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
