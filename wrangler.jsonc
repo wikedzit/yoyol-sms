@@ -12,9 +12,24 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "yoyo-student-system",
-			"database_id": "5dd1b87b-f0f5-4a52-a280-fb1ab34602a9",
+			"database_name": "yoyol-student-system",
+			"database_id": "6923e920-0852-40ef-bc6b-49aa8bb4a7f4",
 			"migrations_dir": "./workers/drizzle"
 		}
-	]
+	],
+	"env": {
+		"development": {
+			"vars": {
+				"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare"
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "yoyol-student-system-development",
+					"database_id": "2cba5c03-c066-42c0-ac27-53d58a616c9e",
+					"migrations_dir": "./workers/drizzle"
+				}
+			]
+		}
+	}
 }

@@ -36,9 +36,10 @@ import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
 
-// 🧠 Loader – fetch teachers with their subjects and classes
+// Loader – fetch teachers with their subjects and classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -46,6 +47,9 @@ export async function loader({ context }: LoaderFunctionArgs) {
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
     class: ClassService;
+    academicLevel: {
+      getAllFormClasses: () => Promise<any[]>;
+    };
   };
 
   const teachers = await services.teacher?.getAllTeachers({
@@ -62,20 +66,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  const allClasses = await services.class.getAll({
-    limit: 100,
-    offset: 0,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
+  const allClasses = await services.academicLevel.getAllFormClasses();
 
   const teachersWithSubjectsAndClasses = await Promise.all(
     teachers.map(async (teacher) => {
       const assignedSubjects =
         await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
-      const assignedClasses = await services.teacherClass?.getClassesByTeacher(
-        teacher.id
-      );
+      const assignedClasses =
+        await services.teacherClass?.getFormClassesByTeacher(teacher.id);
       return {
         ...teacher,
         subjects: assignedSubjects || [],
@@ -91,11 +89,10 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 
-// ⚙️ Action – handle create, update, delete, and subject/class assignments
+// Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
-    subject: SubjectService;
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
   };
@@ -128,7 +125,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         return { error: 'Teacher ID is required' };
       }
 
-      await services.teacherClass?.replaceTeacherClasses(teacherId, classIds);
+      await services.teacherClass?.replaceTeacherFormClasses(teacherId, classIds);
       return { success: true, action: 'assign_classes' };
     }
 
@@ -151,29 +148,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
 
       const created = await services.teacher.createTeacher(data);
-      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
-      if (created && Array.isArray(subjectIds)) {
-        await services.teacherSubject?.replaceTeacherSubjects(
-          created.id,
-          subjectIds.map(Number).filter((id: number) => Number.isInteger(id))
-        );
-      }
-
-      const assignedSubjects = created
-        ? await services.teacherSubject?.getSubjectsByTeacher(created.id)
-        : [];
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          teacher: created
-            ? { ...created, subjects: assignedSubjects || [] }
-            : created,
-        }),
-        {
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      return new Response(JSON.stringify({ success: true, teacher: created }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     if (method === 'PUT') {
@@ -235,8 +212,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 
-// 🧑‍🏫 UI – Teachers Table & Modals
+// Teachers Table & Modals Component
 export default function Teachers() {
+  const { t } = useLanguage();
   const {
     teachers: initialTeachers,
     allSubjects,
@@ -259,21 +237,10 @@ export default function Teachers() {
   const [assignClassesModalOpen, setAssignClassesModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
-  // added state to hold the newly added teacher for the profile modal
   const [newTeacher, setNewTeacher] = useState<any>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
 
-  useEffect(() => {
-    setTeachers(initialTeachers || []);
-  }, [initialTeachers]);
-
-  useEffect(() => {
-    if (listFetcher.data?.teachers) {
-      setTeachers(listFetcher.data.teachers);
-    }
-  }, [listFetcher.data]);
-
-  const filteredStudents = teachers.filter((teacher) => {
+  const filteredStudents = initialTeachers?.filter((teacher) => {
     const matchesSearch =
       teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
       teacher.lastName.toLowerCase().includes(search.toLowerCase()) ||
@@ -298,12 +265,11 @@ export default function Teachers() {
       lastMethod.current = method ?? (fetcher.formMethod || null);
     }
   }, [fetcher.formData, fetcher.state, fetcher.formMethod]);
-   // updated to use the new controlled modal approach for TeacherProfileModal
+
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) return;
     const data = fetcher.data;
 
-    // Refresh list in background
     listFetcher.load(window.location.pathname);
 
     if (data.error) {
@@ -327,7 +293,6 @@ export default function Teachers() {
 
       switch (lastMethod.current) {
         case 'POST':
-          // added logic to set the new teacher and open the profile modal after adding a teacher
           if (data.teacher) {
             setNewTeacher(data.teacher);
             setAddModalOpen(false);
@@ -359,20 +324,22 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
-      {/* Header */}
+      {/* Header section with text-foreground */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+            Teachers
+          </h1>
+          <p className="text-foreground text-sm font-medium mt-1">
             Manage and view all teacher records
           </p>
         </div>
         <Button
-         className = " bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
+          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Teacher
+          {t('addTeacher')}
         </Button>
       </div>
 
@@ -384,7 +351,7 @@ export default function Teachers() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search teachers..."
+                placeholder={t('searchTeachers')}
                 className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -393,7 +360,7 @@ export default function Teachers() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
+                <SelectValue placeholder={t('filterStatus')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -411,19 +378,19 @@ export default function Teachers() {
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">First name</TableHead>
-                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
+                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Subjects
+                    {t('assignedSubjects')}
                   </TableHead>
                   <TableHead className="font-semibold">
-                    Assigned Classes
+                    {t('assignedClasses')}
                   </TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Phone</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">{t('email')}</TableHead>
+                  <TableHead className="font-semibold">{t('phone')}</TableHead>
+                  <TableHead className="font-semibold">{t('status')}</TableHead>
                   <TableHead className="text-right font-semibold">
-                    Actions
+                    {t('actions')}
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -486,7 +453,7 @@ export default function Teachers() {
                     <TableCell className="text-right flex justify-end gap-2">
                       <TeacherProfileModal teacher={teacher} />
                       <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Subjects"
@@ -498,7 +465,7 @@ export default function Teachers() {
                         <BookOpen className="h-4 w-4" />
                       </Button>
                       <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         title="Assign Classes"
@@ -510,7 +477,7 @@ export default function Teachers() {
                         <GraduationCap className="h-4 w-4" />
                       </Button>
                       <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
                         variant="ghost"
                         size="sm"
                         onClick={() => {
@@ -546,7 +513,6 @@ export default function Teachers() {
           open={addModalOpen}
           setOpen={setAddModalOpen}
           fetcher={fetcher}
-          subjects={allSubjects}
         />
       )}
 
@@ -583,7 +549,7 @@ export default function Teachers() {
           fetcher={fetcher}
         />
       )}
-      
+
       <TeacherProfileModal
         teacher={newTeacher}
         open={profileModalOpen}
