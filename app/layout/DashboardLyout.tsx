@@ -1,5 +1,5 @@
 import { ChevronDown, LogOut, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
 import { authCookie } from "workers/utils/cookies.server";
 import { Button } from "~/components/ui/button";
@@ -16,7 +16,6 @@ import {
 import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { useTheme } from "next-themes";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
-import { useLanguage } from "~/lib/i18n";
 
 export async function loader({ request, context }: any) {
   const cookieHeader = request.headers.get("Cookie");
@@ -36,66 +35,15 @@ export async function loader({ request, context }: any) {
 
   const payload = jwt.decode(token);
   const user = payload.payload as { id: number; email: string; role: string };
-  const account = await context.services.users.findUserByEmail(user.email);
 
-  return {
-    user: {
-      email: user.email,
-      role: user.role,
-      firstName: account?.firstName ?? null,
-      lastName: account?.lastName ?? null,
-      preferredLanguage: account?.preferredLanguage ?? 'en',
-      avatarUrl: account?.avatarUrl ?? null,
-    },
-  };
+  return { user: { email: user.email, role: user.role } };
 }
 
 const DashboardLayout = () => {
-  const { user } = useLoaderData<{
-    user: {
-      email: string;
-      role: string;
-      firstName: string | null;
-      lastName: string | null;
-      preferredLanguage: string | null;
-      avatarUrl: string | null;
-    };
-  }>();
+  const { user } = useLoaderData<{ user: { email: string; role: string } }>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const { theme, setTheme } = useTheme();
-
-  return (
-    <DashboardContent
-      user={user}
-      mobileMenuOpen={mobileMenuOpen}
-      setMobileMenuOpen={setMobileMenuOpen}
-      isLogoutConfirmOpen={isLogoutConfirmOpen}
-      setIsLogoutConfirmOpen={setIsLogoutConfirmOpen}
-      theme={theme}
-      setTheme={setTheme}
-    />
-  );
-};
-
-function DashboardContent({
-  user,
-  mobileMenuOpen,
-  setMobileMenuOpen,
-  isLogoutConfirmOpen,
-  setIsLogoutConfirmOpen,
-  theme,
-  setTheme,
-}: any) {
-  const { t, setLanguage } = useLanguage();
-  const displayName = [user?.firstName, user?.lastName]
-    .filter(Boolean)
-    .join(" ") || user?.email;
-
-  useEffect(() => {
-    const preferredLanguage = user?.preferredLanguage === "sw" ? "sw" : "en";
-    setLanguage(preferredLanguage);
-  }, [user?.preferredLanguage, setLanguage]);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -176,7 +124,7 @@ function DashboardContent({
                 </Button>
 
                 <h1 className="text-lg lg:text-xl md:text-sm sm:text-xs font-semibold text-foreground">
-                  {t('studentManagementSystem')}
+                  Student Management System
                 </h1>
               </div>
 
@@ -184,14 +132,12 @@ function DashboardContent({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent hover:text-accent-foreground transition cursor-pointer outline-none">
-                    <div className="h-7 w-7 flex items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
-                      {user?.avatarUrl ? (
-                        <img src={user.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
-                      ) : displayName?.charAt(0).toUpperCase() ?? "U"}
+                    <div className="h-7 w-7 flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
+                      {user?.email?.charAt(0).toUpperCase() ?? "U"}
                     </div>
                     <div className="hidden md:block text-left">
                       <div className="text-sm font-medium text-foreground truncate max-w-[150px]">
-                        {displayName}
+                        {user?.email}
                       </div>
                     </div>
                     <ChevronDown className="hidden md:block h-4 w-4 text-muted-foreground" />
@@ -199,18 +145,18 @@ function DashboardContent({
                 </DropdownMenuTrigger>
 
                 <DropdownMenuContent className="w-56" align="end">
-                  <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="cursor-pointer">
-                      {t('profile')}
+                      Profile
                     </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="cursor-pointer">
-                      {t('settings')}
+                      Settings
                     </Link>
                   </DropdownMenuItem>
 
@@ -229,7 +175,7 @@ function DashboardContent({
                       setTheme(theme === "dark" ? "light" : "dark");
                     }}
                   >
-                    <span className="text-sm font-medium">{t('theme')}</span>
+                    <span className="text-sm font-medium">Theme</span>
                     <ThemeToggle />
                   </DropdownMenuItem>
 
@@ -240,7 +186,7 @@ function DashboardContent({
                     onSelect={() => setIsLogoutConfirmOpen(true)}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    {t('logout')}
+                    Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -259,6 +205,6 @@ function DashboardContent({
       </div>
     </div>
   );
-}
+};
 
 export default DashboardLayout;
