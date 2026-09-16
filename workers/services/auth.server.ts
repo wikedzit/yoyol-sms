@@ -204,10 +204,15 @@ export default class AuthService {
   }
 
   private async finishLogin(user: SelectUser): Promise<string> {
-    await this.db
-      .update(users)
-      .set({ lastLoginAt: Date.now(), updatedAt: Date.now() })
-      .where(eq(users.id, user.id));
+    try {
+      await this.db
+        .update(users)
+        .set({ lastLoginAt: Date.now(), updatedAt: Date.now() })
+        .where(eq(users.id, user.id));
+    } catch (error) {
+      // Login should still succeed if this analytics column is missing.
+      console.error('Could not record last login time:', error);
+    }
 
     return this.createSessionToken(user);
   }

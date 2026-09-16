@@ -4,12 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Link,
   redirect,
-  useFetcher,
+  useActionData,
   useNavigation,
+  useSubmit,
   type ActionFunctionArgs,
 } from "react-router";
 import { authCookie, pendingAuthCookie } from "workers/utils/cookies.server";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const signInSchema = z.object({
@@ -24,15 +25,7 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 type SignInActionData = {
   error?: string;
   twoFactorRequired?: boolean;
-  pendingToken?: string;
 };
-
-function jsonErrorResponse(message: string, status: number) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
 
 function fieldClassName(hasError: boolean) {
   const ringColor = hasError
@@ -51,15 +44,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
         (await pendingAuthCookie.parse(request.headers.get("Cookie") || "")) ||
         "",
     );
-    const token = await context.services.users.completeTwoFactorLogin(
-      String(pendingToken || ""),
+    const sessionToken = await context.services.users.completeTwoFactorLogin(
+      pendingToken,
       String(form.get("code") || ""),
     );
-    if (!token) return jsonErrorResponse("Invalid authentication code", 401);
+    if (!sessionToken) {
+      return { error: "Invalid authentication code", twoFactorRequired: true };
+    }
 
     return redirect("/", {
       headers: [
-        ["Set-Cookie", await authCookie.serialize(token)],
+        ["Set-Cookie", await authCookie.serialize(sessionToken)],
         ["Set-Cookie", await pendingAuthCookie.serialize("", { maxAge: 0 })],
       ],
     });
@@ -71,39 +66,36 @@ export async function action({ request, context }: ActionFunctionArgs) {
   });
 
   if (!parsed.success) {
-    return jsonErrorResponse(
-      parsed.error.issues[0]?.message ?? "Invalid input",
-      400,
-    );
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid input",
+    };
   }
 
-  const token = await context.services.users.login(
+  const loginResult = await context.services.users.login(
     parsed.data.email,
     parsed.data.password,
   );
 
-  if (!token) {
-    return jsonErrorResponse("Invalid email or password", 401);
+  if (!loginResult) {
+    return { error: "Invalid email or password" };
   }
 
-  if ("twoFactorRequired" in token) {
-    return new Response(
-      JSON.stringify({
-        twoFactorRequired: true,
-        pendingToken: token.pendingToken,
-      }),
+  if ("twoFactorRequired" in loginResult) {
+    return Response.json(
+      { twoFactorRequired: true },
       {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": await pendingAuthCookie.serialize(token.pendingToken),
-      },
+        headers: {
+          "Set-Cookie": await pendingAuthCookie.serialize(
+            loginResult.pendingToken,
+          ),
+        },
       },
     );
   }
 
   return redirect("/", {
     headers: {
-      "Set-Cookie": await authCookie.serialize(token),
+      "Set-Cookie": await authCookie.serialize(loginResult.token),
     },
   });
 }
@@ -111,11 +103,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [pendingToken, setPendingToken] = useState("");
-  const fetcher = useFetcher<SignInActionData>();
+  const actionData = useActionData<SignInActionData>();
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
-  const requiresTwoFactor = Boolean(fetcher.data?.twoFactorRequired);
+  const submit = useSubmit();
+  const isSubmitting = navigation.state !== "idle";
+  const requiresTwoFactor = Boolean(actionData?.twoFactorRequired);
 
   const {
     register,
@@ -127,19 +119,13 @@ export default function SignInPage() {
   });
 
   const submitSignIn = (values: SignInFormValues) => {
-    fetcher.submit(values, { method: "POST" });
+    submit(values, { method: "POST" });
   };
-
-  useEffect(() => {
-    if (fetcher.data?.pendingToken) {
-      setPendingToken(fetcher.data.pendingToken);
-    }
-  }, [fetcher.data]);
 
   const submitTwoFactor = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    fetcher.submit(
-      { step: "two_factor", code: twoFactorCode, pendingToken },
+    submit(
+      { step: "two_factor", code: twoFactorCode },
       { method: "POST" },
     );
   };
@@ -253,9 +239,9 @@ export default function SignInPage() {
             {isSubmitting ? "Logging in..." : "Login"}
           </button>
 
-          {fetcher.data?.error && (
+          {actionData?.error && (
             <p className="text-red-600 text-center text-sm mt-2">
-              {fetcher.data.error}
+              {actionData.error}
             </p>
           )}
 
@@ -271,9 +257,9 @@ export default function SignInPage() {
         </form>
         )}
 
-        {requiresTwoFactor && fetcher.data?.error && (
+        {requiresTwoFactor && actionData?.error && (
           <p className="text-red-600 text-center text-sm mt-2">
-            {fetcher.data.error}
+            {actionData.error}
           </p>
         )}
       </div>
