@@ -139,96 +139,131 @@ export default function SignInPage() {
       }}
     >
       <div className="px-5 md:px-10 py-10">
-        <h2 className="text-3xl font-bold text-black mb-3">Login</h2>
+        <h2 className="text-3xl font-bold text-black mb-3">
+          {requiresTwoFactor ? "Two-factor authentication" : "Login"}
+        </h2>
         <p className="mb-5 text-medium-gray max-w-[288px] text-sm">
           Welcome back! <br /> Login to view your dashboard.
         </p>
 
-        <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm mb-1 font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...register("email")}
-              autoComplete="email"
-              className={fieldClassName(Boolean(errors.email))}
-              placeholder="Enter your email"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm mb-1 font-medium"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                {...register("password")}
-                autoComplete="current-password"
-                className={`${fieldClassName(Boolean(errors.password))} pr-10`}
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                {showPassword ? (
-                  <Eye className="w-5 h-5 cursor-pointer" />
-                ) : (
-                  <EyeOff className="w-5 h-5 cursor-pointer" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity  cursor-pointer"
-          >
-            {isSubmitting ? "Logging in..." : "Login"}
-          </button>
-
-          {actionData?.error && (
-            <p className="text-red-600 text-center text-sm mt-2">
-              {actionData.error}
+        {requiresTwoFactor ? (
+          <form onSubmit={submitTwoFactor} className="space-y-5">
+            <p className="text-sm text-gray-600">
+              Enter the six-digit code from your authenticator app, or use a
+              recovery code.
             </p>
-          )}
-
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Don't have an account?
-            <Link
-              to="/auth/signup"
-              className="text-purple-600 ml-1 underline hover:text-purple-700"
+            <div>
+              <label
+                htmlFor="twoFactorCode"
+                className="block text-sm mb-1 font-medium"
+              >
+                Authentication code
+              </label>
+              <input
+                id="twoFactorCode"
+                value={twoFactorCode}
+                onChange={(event) => setTwoFactorCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                required
+                className={fieldClassName(false)}
+                placeholder="123456"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting || twoFactorCode.length < 6}
+              className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
             >
-              Create an account
-            </Link>
-          </p>
-        </form>
-        )}
+              {isSubmitting ? "Verifying..." : "Verify and continue"}
+            </button>
+            {actionData?.error && (
+              <p className="text-red-600 text-center text-sm mt-2">
+                {actionData.error}
+              </p>
+            )}
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm mb-1 font-medium">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...register("email")}
+                autoComplete="email"
+                className={fieldClassName(Boolean(errors.email))}
+                placeholder="Enter your email"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
 
-        {requiresTwoFactor && actionData?.error && (
-          <p className="text-red-600 text-center text-sm mt-2">
-            {actionData.error}
-          </p>
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm mb-1 font-medium"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                  autoComplete="current-password"
+                  className={`${fieldClassName(Boolean(errors.password))} pr-10`}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  {showPassword ? (
+                    <Eye className="w-5 h-5 cursor-pointer" />
+                  ) : (
+                    <EyeOff className="w-5 h-5 cursor-pointer" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity  cursor-pointer"
+            >
+              {isSubmitting ? "Logging in..." : "Login"}
+            </button>
+
+            {actionData?.error && (
+              <p className="text-red-600 text-center text-sm mt-2">
+                {actionData.error}
+              </p>
+            )}
+
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Don't have an account?
+              <Link
+                to="/auth/signup"
+                className="text-purple-600 ml-1 underline hover:text-purple-700"
+              >
+                Create an account
+              </Link>
+            </p>
+          </form>
         )}
       </div>
     </div>
