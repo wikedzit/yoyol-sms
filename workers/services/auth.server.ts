@@ -99,6 +99,110 @@ export default class AuthService {
     const passwordMatches = await verifyPassword(password, user.passwordHash);
     if (!passwordMatches) return null;
 
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
+      const pendingToken = await jwt.sign(
+        { purpose: 'two_factor_login', id: user.id, email: user.email },
+        this.jwtSecret,
+      );
+      return { twoFactorRequired: true, pendingToken };
+    }
+
+    return { token: await this.finishLogin(user) };
+  }
+
+  async completeTwoFactorLogin(
+    pendingToken: string,
+    code: string,
+  ): Promise<string | null> {
+    if (!pendingToken || pendingToken.split('.').length < 2) return null;
+
+    const validToken = await jwt.verify(pendingToken, this.jwtSecret);
+    if (!validToken) return null;
+
+    const payload = jwt.decode(pendingToken).payload as {
+      purpose?: string;
+      id?: number;
+      email?: string;
+    };
+    if (payload.purpose !== 'two_factor_login' || !payload.id) return null;
+
+    const user = await this.db.select().from(users).where(eq(users.id, payload.id)).get();
+    if (!user?.twoFactorSecret) return null;
+
+    const normalizedCode = code.replace(/\s|-/g, '').toUpperCase();
+    let verified = await verifyTotpCode(user.twoFactorSecret, normalizedCode);
+    if (!verified && user.twoFactorRecoveryCodes) {
+      const recoveryCodes = JSON.parse(user.twoFactorRecoveryCodes) as string[];
+      const codeHash = await hashRecoveryCode(normalizedCode);
+      const index = recoveryCodes.indexOf(codeHash);
+      if (index >= 0) {
+        recoveryCodes.splice(index, 1);
+        await this.db.update(users).set({
+          twoFactorRecoveryCodes: JSON.stringify(recoveryCodes),
+        }).where(eq(users.id, user.id));
+        verified = true;
+      }
+    }
+    if (!verified) return null;
+
+    return this.finishLogin(user);
+  }
+
+  async beginTwoFactorSetup(id: number): Promise<{ secret: string; uri: string } | null> {
+    const user = await this.db.select().from(users).where(eq(users.id, id)).get();
+    if (!user) return null;
+    const secret = createTotpSecret();
+    await this.db.update(users).set({
+      twoFactorSecret: secret,
+      twoFactorEnabled: false,
+      twoFactorConfirmedAt: null,
+      twoFactorRecoveryCodes: null,
+    }).where(eq(users.id, id));
+    return { secret, uri: createOtpAuthUri(secret, user.email) };
+  }
+
+  async confirmTwoFactorSetup(
+    id: number,
+    code: string,
+  ): Promise<{ recoveryCodes: string[] } | null> {
+    const user = await this.db.select().from(users).where(eq(users.id, id)).get();
+    if (!user?.twoFactorSecret || !(await verifyTotpCode(user.twoFactorSecret, code))) {
+      return null;
+    }
+
+    const recoveryCodes = createRecoveryCodes();
+    const hashes = await Promise.all(recoveryCodes.map(hashRecoveryCode));
+    await this.db.update(users).set({
+      twoFactorEnabled: true,
+      twoFactorConfirmedAt: Date.now(),
+      twoFactorRecoveryCodes: JSON.stringify(hashes),
+    }).where(eq(users.id, id));
+    return { recoveryCodes };
+  }
+
+  async disableTwoFactor(id: number, password: string): Promise<boolean> {
+    const user = await this.db.select().from(users).where(eq(users.id, id)).get();
+    if (!user || !(await verifyPassword(password, user.passwordHash))) return false;
+    await this.db.update(users).set({
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      twoFactorRecoveryCodes: null,
+      twoFactorConfirmedAt: null,
+    }).where(eq(users.id, id));
+    return true;
+  }
+
+  private async finishLogin(user: SelectUser): Promise<string> {
+    try {
+      await this.db
+        .update(users)
+        .set({ lastLoginAt: Date.now(), updatedAt: Date.now() })
+        .where(eq(users.id, user.id));
+    } catch (error) {
+      // Login should still succeed if this analytics column is missing.
+      console.error('Could not record last login time:', error);
+    }
+
     return this.createSessionToken(user);
   }
 

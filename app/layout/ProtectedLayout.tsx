@@ -25,8 +25,7 @@ export async function loader({ request, context }: any) {
     const cookieHeader = request.headers.get("Cookie");
     const token = await authCookie.parse(cookieHeader || "");
 
-    // No token found - redirect to login
-    if (!token) {
+    if (!token || typeof token !== "string") {
       console.log("No auth token found, redirecting to login");
       return redirect("/auth/login");
     }
