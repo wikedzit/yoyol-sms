@@ -95,6 +95,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
+    subject: SubjectService;
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
   };
@@ -157,9 +158,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
           subjectIds.map(Number).filter((id: number) => Number.isInteger(id))
         );
       }
-      return new Response(JSON.stringify({ success: true, teacher: created }), {
-        headers: { 'Content-Type': 'application/json' },
-      });
+
+      const assignedSubjects = created
+        ? await services.teacherSubject?.getSubjectsByTeacher(created.id)
+        : [];
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          teacher: created
+            ? { ...created, subjects: assignedSubjects || [] }
+            : created,
+        }),
+        {
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     if (method === 'PUT') {
