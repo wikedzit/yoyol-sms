@@ -8,8 +8,8 @@ import {
   useNavigation,
   type ActionFunctionArgs,
 } from "react-router";
-import { authCookie, pendingAuthCookie } from "workers/utils/cookies.server";
-import { useState, useEffect } from "react";
+import { authCookie } from "workers/utils/cookies.server";
+import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 const signInSchema = z.object({
@@ -21,11 +21,7 @@ const signInSchema = z.object({
 });
 
 type SignInFormValues = z.infer<typeof signInSchema>;
-type SignInActionData = {
-  error?: string;
-  twoFactorRequired?: boolean;
-  pendingToken?: string;
-};
+type SignInActionData = { error?: string };
 
 function jsonErrorResponse(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -44,27 +40,6 @@ function fieldClassName(hasError: boolean) {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const form = await request.formData();
-
-  if (form.get("step") === "two_factor") {
-    const pendingToken = String(
-      form.get("pendingToken") ||
-        (await pendingAuthCookie.parse(request.headers.get("Cookie") || "")) ||
-        "",
-    );
-    const token = await context.services.users.completeTwoFactorLogin(
-      String(pendingToken || ""),
-      String(form.get("code") || ""),
-    );
-    if (!token) return jsonErrorResponse("Invalid authentication code", 401);
-
-    return redirect("/", {
-      headers: [
-        ["Set-Cookie", await authCookie.serialize(token)],
-        ["Set-Cookie", await pendingAuthCookie.serialize("", { maxAge: 0 })],
-      ],
-    });
-  }
-
   const parsed = signInSchema.safeParse({
     email: String(form.get("email") ?? ""),
     password: String(form.get("password") ?? ""),
@@ -86,21 +61,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return jsonErrorResponse("Invalid email or password", 401);
   }
 
-  if ("twoFactorRequired" in token) {
-    return new Response(
-      JSON.stringify({
-        twoFactorRequired: true,
-        pendingToken: token.pendingToken,
-      }),
-      {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": await pendingAuthCookie.serialize(token.pendingToken),
-      },
-      },
-    );
-  }
-
   return redirect("/", {
     headers: {
       "Set-Cookie": await authCookie.serialize(token),
@@ -110,12 +70,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [pendingToken, setPendingToken] = useState("");
   const fetcher = useFetcher<SignInActionData>();
   const navigation = useNavigation();
-  const isSubmitting = fetcher.state === "submitting";
-  const requiresTwoFactor = Boolean(fetcher.data?.twoFactorRequired);
+  const isSubmitting = navigation.state === "submitting";
 
   const {
     register,
@@ -127,21 +84,7 @@ export default function SignInPage() {
   });
 
   const submitSignIn = (values: SignInFormValues) => {
-    fetcher.submit(values, { method: "POST", action: "/auth/login" });
-  };
-
-  useEffect(() => {
-    if (fetcher.data?.pendingToken) {
-      setPendingToken(fetcher.data.pendingToken);
-    }
-  }, [fetcher.data]);
-
-  const submitTwoFactor = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    fetcher.submit(
-      { step: "two_factor", code: twoFactorCode, pendingToken },
-      { method: "POST" },
-    );
+    fetcher.submit(values, { method: "POST" });
   };
 
   return (
@@ -153,43 +96,11 @@ export default function SignInPage() {
       }}
     >
       <div className="px-5 md:px-10 py-10">
-        <h2 className="text-3xl font-bold text-black mb-3">
-          {requiresTwoFactor ? "Two-factor authentication" : "Login"}
-        </h2>
+        <h2 className="text-3xl font-bold text-black mb-3">Login</h2>
         <p className="mb-5 text-medium-gray max-w-[288px] text-sm">
           Welcome back! <br /> Login to view your dashboard.
         </p>
 
-        {requiresTwoFactor ? (
-          <form onSubmit={submitTwoFactor} className="space-y-5">
-            <p className="text-sm text-gray-600">
-              Enter the six-digit code from your authenticator app, or use a recovery code.
-            </p>
-            <div>
-              <label htmlFor="twoFactorCode" className="block text-sm mb-1 font-medium">
-                Authentication code
-              </label>
-              <input
-                id="twoFactorCode"
-                value={twoFactorCode}
-                onChange={(event) => setTwoFactorCode(event.target.value)}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                autoFocus
-                required
-                className={fieldClassName(false)}
-                placeholder="123456"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={isSubmitting || twoFactorCode.length < 6}
-              className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
-            >
-              {isSubmitting ? "Verifying..." : "Verify and continue"}
-            </button>
-          </form>
-        ) : (
         <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
           <div>
             <label htmlFor="email" className="block text-sm mb-1 font-medium">
@@ -269,13 +180,6 @@ export default function SignInPage() {
             </Link>
           </p>
         </form>
-        )}
-
-        {requiresTwoFactor && fetcher.data?.error && (
-          <p className="text-red-600 text-center text-sm mt-2">
-            {fetcher.data.error}
-          </p>
-        )}
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { useLanguage } from "~/lib/i18n";
 
 type LogoutConfirmDialogProps = {
   trigger?: ReactNode;
@@ -24,6 +25,7 @@ export function LogoutConfirmDialog({
   onOpenChange,
 }: LogoutConfirmDialogProps) {
   const navigation = useNavigation();
+  const { t } = useLanguage();
   const isLoggingOut =
     navigation.state === "submitting" &&
     Boolean(navigation.formAction?.includes("/logout"));
@@ -34,16 +36,16 @@ export function LogoutConfirmDialog({
 
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Log out?</DialogTitle>
+          <DialogTitle>{t('logOutQuestion')}</DialogTitle>
           <DialogDescription>
-            You will need to sign in again to access the dashboard.
+            {t('logoutDescription')}
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter>
           <DialogClose asChild>
             <Button type="button" variant="outline" className="cursor-pointer">
-              Cancel
+              {t('cancel')}
             </Button>
           </DialogClose>
           <Form method="post" action="/logout">
@@ -52,7 +54,7 @@ export function LogoutConfirmDialog({
               variant="destructive"
               className="cursor-pointer"
             >
-              {isLoggingOut ? "Logging out..." : "Log out"}
+              {isLoggingOut ? t('loggingOut') : t('logOut')}
             </Button>
           </Form>
         </DialogFooter>

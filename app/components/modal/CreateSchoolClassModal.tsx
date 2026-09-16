@@ -17,7 +17,7 @@ import {
 } from '~/components/ui/select';
 import { useState, useEffect, useMemo } from 'react';
 import type { LevelType } from '~/type/shools';
-import { LEVEL_CONFIG, getFormsForLevel } from '~/config/academic-levels';
+import { LEVEL_CONFIG } from '~/config/academic-levels';
 
 interface Stream {
   id: number;
@@ -112,9 +112,6 @@ export default function CreateSchoolClassModal({
       return;
     }
 
-    // We need to get the form ID from the backend
-    // For now, we'll submit the form with the stream info and form number
-    // The backend will handle finding/creating the form
     const submitData = new FormData();
     submitData.append('_method', 'POST');
     submitData.append('name', name);
@@ -134,18 +131,19 @@ export default function CreateSchoolClassModal({
       <SheetContent
         side="right"
         className="
-          w-full max-w-full
-          sm:max-w-[90%]
-          md:max-w-[520px] md:w-[520px]
-          p-6 md:p-8
-          flex flex-col
+          w-full max-w-full 
+          sm:max-w-[420px] 
+          md:max-w-[500px] 
+          lg:!max-w-[573px] lg:!w-[573px]
+          p-6 md:p-10 flex flex-col
+          bg-card text-card-foreground border-border
         "
       >
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
           {/* HEADER */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
                 Add New Class
               </SheetTitle>
             </SheetHeader>
@@ -157,12 +155,16 @@ export default function CreateSchoolClassModal({
             </SheetClose>
           </div>
 
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+            Fill in the details below to register a new class.
+          </p>
+
           {/* FORM INPUTS */}
-          <div className="flex-1 space-y-5 overflow-y-auto">
+          <div className="flex-1 space-y-4 overflow-y-auto pr-1 md:pr-2">
             {/* Level Selection */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Academic Level <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Academic Level <span className="text-destructive">*</span>
               </label>
               <Select
                 value={selectedLevelType}
@@ -170,7 +172,7 @@ export default function CreateSchoolClassModal({
                   setSelectedLevelType(value as LevelType)
                 }
               >
-                <SelectTrigger className="h-11 w-full">
+                <SelectTrigger>
                   <SelectValue placeholder="Select a level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,15 +184,15 @@ export default function CreateSchoolClassModal({
 
             {/* Stream Selection */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Stream <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Stream <span className="text-destructive">*</span>
               </label>
               <Select
                 value={selectedStreamId}
                 onValueChange={setSelectedStreamId}
                 disabled={!selectedLevelType || filteredStreams.length === 0}
               >
-                <SelectTrigger className="h-11 w-full">
+                <SelectTrigger>
                   <SelectValue
                     placeholder={
                       !selectedLevelType
@@ -213,15 +215,15 @@ export default function CreateSchoolClassModal({
 
             {/* Form Selection */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Form <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Form <span className="text-destructive">*</span>
               </label>
               <Select
                 value={selectedFormNumber}
                 onValueChange={setSelectedFormNumber}
                 disabled={!selectedStreamId}
               >
-                <SelectTrigger className="h-11 w-full">
+                <SelectTrigger>
                   <SelectValue
                     placeholder={
                       !selectedStreamId
@@ -242,8 +244,8 @@ export default function CreateSchoolClassModal({
 
             {/* Class Name */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Class Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Class Name <span className="text-destructive">*</span>
               </label>
               <Input
                 name="name"
@@ -251,13 +253,12 @@ export default function CreateSchoolClassModal({
                 onChange={(e) => setName(e.target.value)}
                 placeholder={suggestedName || 'e.g., 1A, 1B, 2C'}
                 required
-                className="h-11"
               />
             </div>
 
             {/* Student Count */}
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Initial Student Count
               </label>
               <Input
@@ -267,25 +268,22 @@ export default function CreateSchoolClassModal({
                 value={studentCount}
                 onChange={(e) => setStudentCount(parseInt(e.target.value) || 0)}
                 placeholder="0"
-                className="h-11"
               />
             </div>
           </div>
 
           {/* FOOTER */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-6 mt-6">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
-    
               onClick={() => setOpen(false)}
-              className="h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white h-11 px-6 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
               disabled={
                 fetcher.state === 'submitting' ||
                 !name.trim() ||
@@ -293,6 +291,7 @@ export default function CreateSchoolClassModal({
                 !selectedStreamId ||
                 !selectedFormNumber
               }
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting' ? 'Creating...' : 'Create Class'}
             </Button>

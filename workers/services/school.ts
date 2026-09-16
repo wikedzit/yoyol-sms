@@ -62,9 +62,13 @@ const SchoolProfileSchema = z.object({
 });
 
 export type SchoolProfileInput =
-  z.infer<typeof SchoolProfileSchema>;
+  z.input<typeof SchoolProfileSchema>;
 
 export default class SchoolService {
+    async list(): Promise<SelectSchool[]> {
+  return this.getAll();
+}
+
   private db: DrizzleD1Database;
   private ownerUserId: number | null;
 
@@ -146,35 +150,31 @@ export default class SchoolService {
     }
   }
 
-  // Ongeza shule MPYA
   async create(
     data: SchoolProfileInput
   ): Promise<SelectSchool | null> {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      const validated =
-        SchoolProfileSchema.parse(data);
+      const validated = SchoolProfileSchema.parse(data);
+      const now = Date.now();
 
       const result = await this.db
         .insert(school)
         .values({
           ...validated,
           ownerUserId,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
+          createdAt: now,
+          updatedAt: now,
         })
         .returning();
 
-      return result[0] || null;
+      return result[0] ?? null;
     } catch (error) {
-      console.error(
-        'Error creating school:',
-        error
-      );
-
+      console.error('Error creating school:', error);
       return null;
     }
   }
+
 
   // Badilisha shule ILIYOPO
   async update(

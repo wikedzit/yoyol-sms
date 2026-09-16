@@ -16,6 +16,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
+import type { FetcherWithComponents } from 'react-router';
+
+interface Stream {
+  id: string | number;
+  name: string;
+  levelType?: string;
+}
+
+interface Subject {
+  id: string | number;
+  subjectName?: string;
+  code?: string;
+  stream?: string;
+  streamId?: string | number;
+  instructor?: string;
+  description?: string;
+}
+
+interface EditSubjectModalProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  fetcher: FetcherWithComponents<any>;
+  subject?: Subject | null;
+  streams?: Stream[];
+  id?: string;
+}
 
 export default function EditSubjectModal({
   open,
@@ -23,8 +49,7 @@ export default function EditSubjectModal({
   fetcher,
   subject,
   streams,
-  id,
-}: any) {
+}: EditSubjectModalProps) {
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
@@ -35,7 +60,7 @@ export default function EditSubjectModal({
   });
   const [error, setError] = useState<string | null>(null);
 
-  // 🧩 Pre-fill form data when modal opens
+  // Pre-fill form data when modal opens
   useEffect(() => {
     if (subject) {
       setFormData({
@@ -53,21 +78,19 @@ export default function EditSubjectModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Clear error when user starts typing
     if (error) setError(null);
   };
 
-  // ✅ Close modal on successful update
+  // Close modal on successful update or capture error response
   useEffect(() => {
     if (fetcher.data?.success) {
       setOpen(false);
       setError(null);
     }
-    // ✅ Handle error from server
     if (fetcher.data?.error) {
       setError(fetcher.data.error);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, setOpen]);
 
   if (!subject) return null;
 
@@ -76,12 +99,13 @@ export default function EditSubjectModal({
       <SheetContent
         side="right"
         className="
-      w-full max-w-full 
-      sm:max-w-[420px] 
-      md:max-w-[500px] 
-      lg:!max-w-[573px] lg:!w-[573px]
-      p-6 md:p-10 flex flex-col
-    "
+          w-full max-w-full 
+          sm:max-w-[420px] 
+          md:max-w-[500px] 
+          lg:!max-w-[573px] lg:!w-[573px]
+          p-6 md:p-10 flex flex-col justify-between
+          bg-card text-card-foreground border-border
+        "
       >
         <fetcher.Form
           method="post"
@@ -97,23 +121,23 @@ export default function EditSubjectModal({
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
                 Edit Subject
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={24} />
+              <X size={24} className="text-muted-foreground hover:text-foreground transition-colors" />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-6 md:mb-8">
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
             Update the information for this subject below.
           </p>
 
           {/* Error message */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
@@ -122,14 +146,14 @@ export default function EditSubjectModal({
             {/* Stream Select */}
             {streams && streams.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Stream
                 </label>
                 <Select
                   value={formData.streamId}
                   onValueChange={(value) => {
-                    const selectedStream = streams?.find(
-                      (s: any) => String(s.id) === String(value)
+                    const selectedStream = streams.find(
+                      (s) => String(s.id) === String(value)
                     );
                     setFormData({
                       ...formData,
@@ -142,9 +166,9 @@ export default function EditSubjectModal({
                     <SelectValue placeholder="Select stream" />
                   </SelectTrigger>
                   <SelectContent>
-                    {streams.map((stream: any) => (
+                    {streams.map((stream) => (
                       <SelectItem key={stream.id} value={String(stream.id)}>
-                        {stream.name} ({stream.levelType})
+                        {stream.name} {stream.levelType ? `(${stream.levelType})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -158,7 +182,7 @@ export default function EditSubjectModal({
               { label: 'Instructor', field: 'instructor', type: 'text' },
             ].map(({ label, field, type }) => (
               <div key={field}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {label}
                 </label>
                 <Input
@@ -173,7 +197,7 @@ export default function EditSubjectModal({
             ))}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Description
               </label>
               <textarea
@@ -181,24 +205,25 @@ export default function EditSubjectModal({
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Enter subject description"
-                className="w-full border rounded-md p-2"
+                rows={3}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex justify-end gap-3 border-t pt-4 mt-4 bg-white sticky bottom-0">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'
