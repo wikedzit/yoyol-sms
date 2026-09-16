@@ -1,6 +1,6 @@
 export function toTitleCase(s: string): string {
+  if (!s) return s;
   return s
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+    .toLowerCase()
+    .replace(/(?:^|[\s'-])([a-z])/g, (match) => match.toUpperCase());
 }

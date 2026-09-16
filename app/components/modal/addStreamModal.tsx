@@ -107,7 +107,7 @@ export function AddStreamModal({
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({
       ...prev,
-      name: toTitleCase(e.target.value),
+      name: e.target.value,
     }));
   };
 

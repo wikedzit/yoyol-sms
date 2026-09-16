@@ -106,7 +106,7 @@ export default function CreateClassModal({
               <Input
                 name="name"
                 value={className}
-                onChange={(e) => setClassName(toTitleCase(e.target.value))}
+                onChange={(e) => setClassName(e.target.value)}
                 placeholder="e.g. Form 1 Science A"
                 required
               />

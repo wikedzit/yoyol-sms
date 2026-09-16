@@ -27,9 +27,7 @@ export default function AddTeacherModal({ open, setOpen, fetcher }: any) {
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const formatted = ['firstName', 'lastName', 'subject'].includes(name) ? toTitleCase(value) : value;
-    setFormData({ ...formData, [name]: formatted });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   // Close modal & reset form after successful submission

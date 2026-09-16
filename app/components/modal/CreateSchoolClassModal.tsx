@@ -251,7 +251,7 @@ export default function CreateSchoolClassModal({
               <Input
                 name="name"
                 value={name}
-                onChange={(e) => setName(toTitleCase(e.target.value))}
+                onChange={(e) => setName(e.target.value)}
                 placeholder={suggestedName || 'e.g., 1A, 1B, 2C'}
                 required
               />

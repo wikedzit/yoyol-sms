@@ -62,9 +62,7 @@ export default function EditAcademicYearModal({
   }, [year, open]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const formatted = ['name'].includes(name) ? toTitleCase(value) : value;
-    setFormData({ ...formData, [name]: formatted });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
   };
 

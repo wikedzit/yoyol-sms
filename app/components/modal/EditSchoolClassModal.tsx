@@ -151,7 +151,7 @@ export default function EditSchoolClassModal({
                 name="name"
                 value={name}
                 onChange={(e) => {
-                  setName(toTitleCase(e.target.value));
+                  setName(e.target.value);
                   if (error) setError(null);
                 }}
                 placeholder={`e.g., ${editingClass.formNumber}A, ${editingClass.formNumber}B`}

@@ -71,9 +71,7 @@ export default function AddStudentModal({
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const formatted = ['firstName', 'lastName'].includes(name) ? toTitleCase(value) : value;
-    setFormData({ ...formData, [name]: formatted });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   // Close modal and reset form state after successful form submit

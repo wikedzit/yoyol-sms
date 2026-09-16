@@ -115,11 +115,7 @@ export default function EditProfileModal({
   }, [open, role, account, roleData, isTeacher, isStudent]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const formatted = ['firstName', 'lastName', 'name', 'subject', 'qualification'].includes(name)
-      ? toTitleCase(value)
-      : value;
-    setFormData({ ...formData, [name]: formatted });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
   };
 

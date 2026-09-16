@@ -118,7 +118,7 @@ export default function EditClassModal({
                 name="name"
                 value={name}
                 onChange={(e) => {
-                  setName(toTitleCase(e.target.value));
+                  setName(e.target.value);
                   if (error) setError(null);
                 }}
                 placeholder={

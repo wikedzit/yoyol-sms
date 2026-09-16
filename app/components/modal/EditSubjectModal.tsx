@@ -97,9 +97,7 @@ export default function EditSubjectModal({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const { name, value } = e.target;
-    const formatted = ['subjectName', 'instructor'].includes(name) ? toTitleCase(value) : value;
-    setFormData({ ...formData, [name]: formatted });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
     setFormData((prev) => ({
       ...prev,

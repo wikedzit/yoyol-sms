@@ -66,9 +66,7 @@ export default function EditTeacherModal({
   }, [fetcher.data, setOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const formatted = ['firstName', 'lastName', 'subject'].includes(name) ? toTitleCase(value) : value;
-    setFormData({ ...formData, [name]: formatted });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const formatLabel = (field: string) => {

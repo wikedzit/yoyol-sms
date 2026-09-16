@@ -60,12 +60,9 @@ export default function EditCampusModal({
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const { name, value } = event.target;
-    const formatted = ['name'].includes(name) ? toTitleCase(value) : value;
-
     setFormData((previous) => ({
       ...previous,
-      [name]: formatted,
+      [event.target.name]: event.target.value,
     }));
   };
 
