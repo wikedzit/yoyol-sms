@@ -31,31 +31,18 @@ export const DeleteStudentButton = ({
   const fetcher = externalFetcher || useFetcher();
 
   return (
-<<<<<<< HEAD
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       {showTrigger && (
         <AlertDialogTrigger asChild>
           <button
             type="button"
             className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-            title={t('delete')}
+            title="Delete"
           >
             <Trash2 className="w-5 h-5" />
           </button>
         </AlertDialogTrigger>
       )}
-=======
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button
-          type="button"
-          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-          title="Delete"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </AlertDialogTrigger>
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
 
       <AlertDialogContent>
         <AlertDialogHeader>

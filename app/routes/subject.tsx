@@ -12,15 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-<<<<<<< Updated upstream
-import { Plus, Search, Pencil, BookOpen, User } from 'lucide-react';
-=======
-<<<<<<< HEAD
 import { Plus, Search, Pencil, BookOpen, User, MoreVertical } from 'lucide-react';
-=======
-import { Plus, Search, Pencil, BookOpen, User } from 'lucide-react';
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
 import { toast } from 'sonner';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import {
@@ -140,14 +132,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
       return { success: true, action: 'assign_teachers' };
     }
-<<<<<<< HEAD
 
-=======
-    // CREATE
-<<<<<<< Updated upstream
-=======
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
     if (method === 'POST') {
       const streamIdRaw = form.get('streamId');
       const streamId = Number(streamIdRaw);
@@ -156,15 +141,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       if (!streamIdRaw || isNaN(streamId) || streamId < 1) {
         return { error: 'Please select a stream for this subject.' };
       }
-<<<<<<< Updated upstream
-      
-=======
-<<<<<<< HEAD
 
-=======
-      
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
@@ -186,14 +163,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, subject: created };
     }
 
-<<<<<<< Updated upstream
-    // UPDATE
-=======
-<<<<<<< HEAD
-=======
-    // UPDATE
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
     if (method === 'PUT') {
       const id = Number(form.get('id'));
       if (!id) return { error: 'Subject ID is required' };
@@ -249,14 +218,7 @@ export default function SubjectsPage() {
   const [isAssignTeachersModalOpen, setIsAssignTeachersModalOpen] =
     useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-  // NEW: controlled delete target for the mobile dropdown menu
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
-=======
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
 
   useEffect(() => {
     if (fetcher.state === 'submitting' && fetcher.formData) {
@@ -347,42 +309,17 @@ export default function SubjectsPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-<<<<<<< Updated upstream
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Subject Management
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-=======
-<<<<<<< HEAD
-            {/* FIXED: smaller, responsive heading size */}
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">
-              {t('subjectManagement')}
+              Subject Management
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-foreground font-medium">
-=======
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              Subject Management
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
               Manage and organize academic subjects
             </p>
           </div>
           <Button
             onClick={handleOpenAddDialog}
-<<<<<<< Updated upstream
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            <Plus className="h-4 w-4" /> Add Subject
-=======
-<<<<<<< HEAD
             className="w-full sm:w-auto bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            <Plus className="h-4 w-4" /> {t('addSubject')}
-=======
-            className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer">
             <Plus className="h-4 w-4" /> Add Subject
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
           </Button>
         </div>
 
@@ -394,18 +331,8 @@ export default function SubjectsPage() {
                 <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
               <div>
-<<<<<<< Updated upstream
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Subjects
-=======
-<<<<<<< HEAD
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  {t('totalSubjects')}
-=======
-                <p className="text-sm font-medium text-muted-foreground">
                   Total Subjects
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {subjects.length}
@@ -419,18 +346,8 @@ export default function SubjectsPage() {
                 <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
               <div>
-<<<<<<< Updated upstream
-                <p className="text-sm font-medium text-muted-foreground">
-                  Active subjects
-=======
-<<<<<<< HEAD
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  {t('activeSubjects')}
-=======
-                <p className="text-sm font-medium text-muted-foreground">
                   Active subjects
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {subjects.filter((s) => s.status === 'Active').length}
@@ -444,18 +361,8 @@ export default function SubjectsPage() {
                 <User className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
               </div>
               <div>
-<<<<<<< Updated upstream
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total students enrolled
-=======
-<<<<<<< HEAD
                 <p className="text-xs sm:text-sm font-medium text-muted-foreground">
-                  {t('studentsEnrolled')}
-=======
-                <p className="text-sm font-medium text-muted-foreground">
                   Total students enrolled
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
                 </p>
                 <p className="text-xl sm:text-2xl font-bold text-foreground">
                   {subjects.reduce(
@@ -483,18 +390,8 @@ export default function SubjectsPage() {
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-<<<<<<< Updated upstream
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
-=======
-<<<<<<< HEAD
               <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder={t('filterStatus')} />
-=======
-              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -510,48 +407,20 @@ export default function SubjectsPage() {
               <Table className="text-xs sm:text-sm">
                 <TableHeader>
                   <TableRow className="bg-gray-100">
-<<<<<<< Updated upstream
-                    <TableHead className="font-semibold">Code</TableHead>
-                    <TableHead className="font-semibold">
-                      Subject Name
-                    </TableHead>
-                    <TableHead className="font-semibold">Stream</TableHead>
-                    <TableHead className="font-semibold">
-                      Assigned Teachers
-=======
-<<<<<<< HEAD
-                    {/* FIXED: hidden on mobile, shown from md: up */}
                     <TableHead className="font-semibold hidden md:table-cell">
-                      {t('code')}
+                      Code
                     </TableHead>
-=======
-                    <TableHead className="font-semibold">Code</TableHead>
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
                     <TableHead className="font-semibold">
                       Subject Name
->>>>>>> Stashed changes
                     </TableHead>
-<<<<<<< HEAD
                     <TableHead className="font-semibold hidden lg:table-cell">
-                      {t('streams')}
+                      Stream
                     </TableHead>
-=======
-                    <TableHead className="font-semibold">Stream</TableHead>
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
                     <TableHead className="font-semibold">
-<<<<<<< Updated upstream
-                      Enrolled Students
-=======
                       Assigned Teachers
                     </TableHead>
-<<<<<<< HEAD
                     <TableHead className="font-semibold hidden md:table-cell">
-                      {t('enrolledStudents')}
-=======
-                    <TableHead className="font-semibold">
                       Enrolled Students
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
                     </TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="text-right font-semibold">
@@ -613,9 +482,7 @@ export default function SubjectsPage() {
                             {subject.status}
                           </Badge>
                         </TableCell>
-<<<<<<< HEAD
                         <TableCell className="text-right">
-                          {/* Desktop: unchanged, full buttons */}
                           <div className="hidden lg:flex justify-end gap-2">
                             <Button
                               className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
@@ -644,7 +511,6 @@ export default function SubjectsPage() {
                             />
                           </div>
 
-                          {/* Mobile/tablet: collapsed three-dot menu */}
                           <div className="flex lg:hidden justify-end">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -676,34 +542,6 @@ export default function SubjectsPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-=======
-                        <TableCell className="text-right flex justify-end gap-2">
-                          <Button
-                          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-                            variant="ghost"
-                            size="icon"
-                            title="Assign Teachers"
-                            onClick={() => {
-                              setSelectedSubject(subject);
-                              setIsAssignTeachersModalOpen(true);
-                            }}
-                          >
-                            <User className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                           className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditModalOpen(subject)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <DeleteStudentButton
-                            id={subject.id}
-                            name={subject.subjectName}
-                            fetcher={fetcher}
-                          />
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
                         </TableCell>
                       </TableRow>
                     ))

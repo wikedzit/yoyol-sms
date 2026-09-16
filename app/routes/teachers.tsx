@@ -356,43 +356,17 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
-<<<<<<< Updated upstream
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
-          <p className="text-muted-foreground mt-1">
-=======
-<<<<<<< HEAD
-      {/* Header section with text-foreground */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          {/* FIXED: smaller, responsive heading size */}
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Teachers
           </h1>
           <p className="text-foreground text-xs sm:text-sm font-medium mt-1">
-=======
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Teachers</h1>
-          <p className="text-muted-foreground mt-1">
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
             Manage and view all teacher records
           </p>
         </div>
         <Button
-<<<<<<< Updated upstream
-         className = " bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
-=======
-<<<<<<< HEAD
           className="w-full sm:w-auto bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
-=======
-         className = " bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer"
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -416,18 +390,8 @@ export default function Teachers() {
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-<<<<<<< Updated upstream
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by status" />
-=======
-<<<<<<< HEAD
               <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder={t('filterStatus')} />
-=======
-              <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Filter by status" />
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -445,49 +409,18 @@ export default function Teachers() {
             <Table className="text-xs sm:text-sm">
               <TableHeader>
                 <TableRow className="bg-gray-100">
-<<<<<<< Updated upstream
-                  <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">First name</TableHead>
-                  <TableHead className="font-semibold">Last name</TableHead>
-                  <TableHead className="font-semibold">
-                    Assigned Subjects
-                  </TableHead>
-                  <TableHead className="font-semibold">
-                    Assigned Classes
-                  </TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="font-semibold">Phone</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-=======
-<<<<<<< HEAD
-                  {/* FIXED: SN hidden on mobile, shown from md: up */}
                   <TableHead className="font-semibold hidden md:table-cell">SN</TableHead>
-                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
-                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
-                  <TableHead className="font-semibold hidden lg:table-cell">
-                    {t('assignedSubjects')}
-                  </TableHead>
-                  <TableHead className="font-semibold hidden lg:table-cell">
-                    {t('assignedClasses')}
-                  </TableHead>
-                  <TableHead className="font-semibold hidden md:table-cell">{t('email')}</TableHead>
-                  <TableHead className="font-semibold">{t('phone')}</TableHead>
-                  <TableHead className="font-semibold">{t('status')}</TableHead>
-=======
-                  <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">First name</TableHead>
                   <TableHead className="font-semibold">Last name</TableHead>
-                  <TableHead className="font-semibold">
+                  <TableHead className="font-semibold hidden lg:table-cell">
                     Assigned Subjects
                   </TableHead>
-                  <TableHead className="font-semibold">
+                  <TableHead className="font-semibold hidden lg:table-cell">
                     Assigned Classes
                   </TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold hidden md:table-cell">Email</TableHead>
                   <TableHead className="font-semibold">Phone</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
                   <TableHead className="text-right font-semibold">
                     Actions
                   </TableHead>
@@ -552,9 +485,7 @@ export default function Teachers() {
                         {teacher.status}
                       </Badge>
                     </TableCell>
-<<<<<<< HEAD
                     <TableCell className="text-right">
-                      {/* Desktop: unchanged, full buttons */}
                       <div className="hidden lg:flex justify-end gap-2">
                         <TeacherProfileModal teacher={teacher} />
                         <Button
@@ -599,7 +530,6 @@ export default function Teachers() {
                         />
                       </div>
 
-                      {/* Mobile/tablet: collapsed three-dot menu */}
                       <div className="flex lg:hidden justify-end">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -649,50 +579,6 @@ export default function Teachers() {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
-=======
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <TeacherProfileModal teacher={teacher} />
-                      <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        title="Assign Subjects"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setAssignSubjectsModalOpen(true);
-                        }}
-                      >
-                        <BookOpen className="h-4 w-4" />
-                      </Button>
-                      <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        title="Assign Classes"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setAssignClassesModalOpen(true);
-                        }}
-                      >
-                        <GraduationCap className="h-4 w-4" />
-                      </Button>
-                      <Button
-                       className ="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setEditModalOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <DeleteStudentButton
-                        id={teacher.id}
-                        name={`${teacher.firstName} ${teacher.lastName}`}
-                        fetcher={fetcher}
-                      />
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
                     </TableCell>
                   </TableRow>
                 ))}

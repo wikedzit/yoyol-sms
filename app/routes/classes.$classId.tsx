@@ -133,14 +133,6 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
       };
       const created = await services.student.create(studentData);
 
-<<<<<<< Updated upstream
-      // Update the formClass student count
-      if (created) {
-        const currentClass = await services.academicLevel.getFormClassById(
-          Number(classId)
-        );
-=======
-<<<<<<< HEAD
       if (!created) {
         return new Response(
           JSON.stringify({ error: 'Failed to add student to class.' }),
@@ -155,22 +147,6 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
         await services.academicLevel.updateFormClass(Number(classId), {
           studentCount: (currentClass.studentCount || 0) + 1,
         });
-=======
-      // Update the formClass student count
-      if (created) {
-        const currentClass = await services.academicLevel.getFormClassById(
-          Number(classId)
-        );
->>>>>>> Stashed changes
-        if (currentClass) {
-          await services.academicLevel.updateFormClass(Number(classId), {
-            studentCount: (currentClass.studentCount || 0) + 1,
-          });
-        }
-<<<<<<< Updated upstream
-=======
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
       }
 
       return new Response(JSON.stringify({ success: true, student: created }), {

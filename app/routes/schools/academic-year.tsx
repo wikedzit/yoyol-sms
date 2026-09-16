@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-import { useEffect, useRef, useState } from "react";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useEffect, useRef, useState } from 'react';
+import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
+import { useFetcher, useLoaderData } from 'react-router';
 import {
   CalendarRange,
   Plus,
@@ -11,27 +8,12 @@ import {
   ListTree,
   CheckCircle2,
   MoreVertical,
-} from "lucide-react";
-import { toast } from "sonner";
-import { PageHeader } from "~/components/ui/PageHeader";
-import { Button } from "~/components/ui/button";
-import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-=======
->>>>>>> Stashed changes
-import { useEffect, useRef, useState } from 'react';
-import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { useFetcher, useLoaderData } from 'react-router';
-import { CalendarRange, Plus, Pencil, ListTree, CheckCircle2 } from 'lucide-react';
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
-<<<<<<< Updated upstream
-=======
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
 import {
   Table,
   TableBody,
@@ -39,36 +21,20 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-} from "~/components/ui/table";
+} from '~/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import { DeleteStudentButton } from "~/components/DeleteStudentButton";
-import { PaginationControls } from "~/components/shared/PaginationControls";
-import { usePagination } from "~/hooks/usePagination";
-import AddAcademicYearModal from "~/components/modal/AddAcademicYearModal";
-import EditAcademicYearModal from "~/components/modal/EditAcademicYearModal";
-import ManageTermsModal from "~/components/modal/ManageTermsModal";
-=======
->>>>>>> Stashed changes
-} from '~/components/ui/table';
+} from '~/components/ui/dropdown-menu';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 import AddAcademicYearModal from '~/components/modal/AddAcademicYearModal';
 import EditAcademicYearModal from '~/components/modal/EditAcademicYearModal';
 import ManageTermsModal from '~/components/modal/ManageTermsModal';
-<<<<<<< Updated upstream
-=======
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
 
 import type AcademicYearService from 'workers/services/academic-years';
 
@@ -408,25 +374,15 @@ export default function AcademicYearPage() {
                   ) : (
                     paginatedYears.map((year: any) => (
                       <TableRow key={year.id}>
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
                         <TableCell className="font-medium">
                           {year.name}
                         </TableCell>
-                        {/* Matches hidden header above */}
                         <TableCell className="hidden md:table-cell">
                           {year.startDate}
                         </TableCell>
                         <TableCell className="hidden md:table-cell">
                           {year.endDate}
                         </TableCell>
-=======
->>>>>>> Stashed changes
-                        <TableCell className="font-medium">{year.name}</TableCell>
-                        <TableCell>{year.startDate}</TableCell>
-                        <TableCell>{year.endDate}</TableCell>
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
                         <TableCell>
                           <Badge variant={statusVariant[year.status] || 'outline'}>
                             {year.status}
@@ -436,30 +392,17 @@ export default function AcademicYearPage() {
                           {year.terms?.length || 0}
                         </TableCell>
                         <TableCell className="text-right">
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-                          {/* Desktop: unchanged, full buttons */}
                           <div className="hidden lg:flex justify-end gap-2">
                             <Button
                               className="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
-=======
->>>>>>> Stashed changes
-                          <div className="flex justify-end gap-2">
-                            <Button className  ="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
-  
-
-<<<<<<< Updated upstream
-=======
->>>>>>> 4bc06317f28f92d2256501ed8db2c98b9667d215
->>>>>>> Stashed changes
                               size="icon"
                               title="Manage terms"
                               onClick={() => handleManageTerms(year)}
                             >
                               <ListTree className="h-4 w-4" />
                             </Button>
-                     <Button  className="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
+                            <Button
+                              className="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
                               variant="ghost"
                               size="icon"
                               title="Edit"
