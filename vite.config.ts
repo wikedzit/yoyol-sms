@@ -1,17 +1,30 @@
+import { existsSync } from "node:fs";
 import { reactRouter } from "@react-router/dev/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { chooseCloudflareEnv } from "./workers/script/choose-cloudflare-env.mjs";
+import { BUILD_WRANGLER_CONFIG_PATH } from "./workers/script/write-build-wrangler-config.mjs";
 
 // The Cloudflare Vite plugin reads CLOUDFLARE_ENV when it flattens wrangler.jsonc.
-// Set it here so Workers CI still selects development even if pnpm exec drops the var.
+// Workers CI still drops that var, so the build wrapper also writes a one-env file.
 process.env.CLOUDFLARE_ENV = chooseCloudflareEnv();
+
+const wranglerConfigPath = existsSync(BUILD_WRANGLER_CONFIG_PATH)
+  ? BUILD_WRANGLER_CONFIG_PATH
+  : undefined;
+
+console.log(
+  `Vite Cloudflare env=${process.env.CLOUDFLARE_ENV} wranglerConfig=${wranglerConfigPath ?? "wrangler.jsonc"}`,
+);
 
 export default defineConfig({
   plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    cloudflare({
+      ...(wranglerConfigPath ? { configPath: wranglerConfigPath } : {}),
+      viteEnvironment: { name: "ssr" },
+    }),
     tailwindcss(),
     reactRouter(),
     tsconfigPaths(),

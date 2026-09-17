@@ -1,8 +1,12 @@
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { chooseCloudflareEnv } from './choose-cloudflare-env.mjs';
+import {
+  BUILD_WRANGLER_CONFIG_PATH,
+  writeBuildWranglerConfig,
+} from './write-build-wrangler-config.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -22,12 +26,14 @@ function expectedBinding(cloudflareEnv) {
     return {
       workerName: DEVELOPMENT_WORKER_NAME,
       databaseId: DEVELOPMENT_DATABASE_ID,
+      databaseName: 'yoyol-student-system-development',
     };
   }
 
   return {
     workerName: PRODUCTION_WORKER_NAME,
     databaseId: PRODUCTION_DATABASE_ID,
+    databaseName: 'yoyol-student-system',
   };
 }
 
@@ -46,6 +52,48 @@ function findFlattenedWranglerPath() {
   throw new Error(
     'Could not find flattened wrangler.json in build/server or dist/server.',
   );
+}
+
+/** @param {string} cloudflareEnv */
+function rewriteFlattenedBinding(cloudflareEnv) {
+  const wranglerPath = findFlattenedWranglerPath();
+  const flattenedConfig = JSON.parse(readFileSync(wranglerPath, 'utf8'));
+  const expected = expectedBinding(cloudflareEnv);
+  const actualDatabaseId = flattenedConfig.d1_databases?.[0]?.database_id;
+  const actualWorkerName = flattenedConfig.name;
+
+  if (
+    actualWorkerName === expected.workerName &&
+    actualDatabaseId === expected.databaseId
+  ) {
+    return;
+  }
+
+  console.warn(
+    `Vite flattened name=${actualWorkerName} database=${actualDatabaseId}; rewriting to ${expected.workerName} / ${expected.databaseId}`,
+  );
+
+  flattenedConfig.name = expected.workerName;
+  flattenedConfig.targetEnvironment = cloudflareEnv;
+
+  if (flattenedConfig.topLevelName) {
+    flattenedConfig.topLevelName = expected.workerName;
+  }
+
+  if (flattenedConfig.d1_databases?.[0]) {
+    flattenedConfig.d1_databases[0].database_id = expected.databaseId;
+    flattenedConfig.d1_databases[0].database_name = expected.databaseName;
+  }
+
+  writeFileSync(wranglerPath, `${JSON.stringify(flattenedConfig, null, '\t')}\n`);
+}
+
+function removeBuildWranglerConfig() {
+  const buildWranglerPath = path.join(process.cwd(), BUILD_WRANGLER_CONFIG_PATH);
+
+  if (existsSync(buildWranglerPath)) {
+    unlinkSync(buildWranglerPath);
+  }
 }
 
 /** @param {string} cloudflareEnv */
@@ -90,20 +138,28 @@ if (process.env.WORKERS_CI === '1') {
 
 console.log(`Building Cloudflare env: ${cloudflareEnv}`);
 
-const buildResult = spawnSync(
-  process.execPath,
-  [reactRouterCliPath(), 'build'],
-  {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      CLOUDFLARE_ENV: cloudflareEnv,
-    },
-  },
-);
+const buildWranglerPath = writeBuildWranglerConfig(cloudflareEnv);
+console.log(`Wrote single-env Wrangler config: ${buildWranglerPath}`);
 
-if (buildResult.status !== 0) {
-  process.exit(buildResult.status ?? 1);
+try {
+  const buildResult = spawnSync(
+    process.execPath,
+    [reactRouterCliPath(), 'build'],
+    {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        CLOUDFLARE_ENV: cloudflareEnv,
+      },
+    },
+  );
+
+  if (buildResult.status !== 0) {
+    process.exit(buildResult.status ?? 1);
+  }
+} finally {
+  removeBuildWranglerConfig();
 }
 
+rewriteFlattenedBinding(cloudflareEnv);
 assertFlattenedBinding(cloudflareEnv);
