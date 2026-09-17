@@ -7,6 +7,13 @@ import {
   hashPassword,
   verifyPassword,
 } from 'workers/utils/password.server';
+import {
+  createOtpAuthUri,
+  createRecoveryCodes,
+  createTotpSecret,
+  hashRecoveryCode,
+  verifyTotpCode,
+} from 'workers/utils/totp.server';
 
 const ACCOUNT_EXISTS_MESSAGE = 'An account with this email already exists';
 const SIGNUP_FAILED_MESSAGE = 'Could not create account. Please try again.';
@@ -22,6 +29,10 @@ export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 export type SignUpResult =
   | { token: string }
   | { error: string };
+
+export type LoginResult =
+  | { token: string }
+  | { twoFactorRequired: true; pendingToken: string };
 
 export default class AuthService {
   private db: DrizzleD1Database;
@@ -84,15 +95,15 @@ export default class AuthService {
       return { error: SIGNUP_FAILED_MESSAGE };
     }
 
-    const token = await this.login(normalizedEmail, password);
-    if (!token) {
+    const loginResult = await this.login(normalizedEmail, password);
+    if (!loginResult || !('token' in loginResult)) {
       return { error: SIGNUP_FAILED_MESSAGE };
     }
 
-    return { token };
+    return { token: loginResult.token };
   }
 
-  async login(email: string, password: string): Promise<string | null> {
+  async login(email: string, password: string): Promise<LoginResult | null> {
     const user = await this.findUserByEmail(this.normalizeEmail(email));
     if (!user) return null;
 

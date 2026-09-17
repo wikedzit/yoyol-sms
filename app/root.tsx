@@ -13,6 +13,7 @@ import { Toaster } from './components/ui/sonner';
 
 // added ThemeProvider to wrap the entire application, enabling theme toggling functionality
 import { ThemeProvider } from './components/ui/theme-toggle';
+import { LanguageProvider } from './lib/i18n';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -45,7 +46,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* added ThemeProvider to wrap the entire application, enabling theme toggling functionality */}
         <ThemeProvider>
-          {children}
+          <LanguageProvider>{children}</LanguageProvider>
         </ThemeProvider>
 
         <Toaster richColors position="top-right" />
