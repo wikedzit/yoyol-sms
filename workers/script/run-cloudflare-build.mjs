@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const PRODUCTION_WORKER_NAME = 'yoyol-students-system';
@@ -41,9 +41,26 @@ function expectedBinding(cloudflareEnv) {
   };
 }
 
+function findFlattenedWranglerPath() {
+  const buildPath = path.join(process.cwd(), 'build/server/wrangler.json');
+  const distPath = path.join(process.cwd(), 'dist/server/wrangler.json');
+
+  if (existsSync(buildPath)) {
+    return buildPath;
+  }
+
+  if (existsSync(distPath)) {
+    return distPath;
+  }
+
+  throw new Error(
+    'Could not find flattened wrangler.json in build/server or dist/server.',
+  );
+}
+
 /** @param {string} cloudflareEnv */
 function assertFlattenedBinding(cloudflareEnv) {
-  const wranglerPath = path.join(process.cwd(), 'dist/server/wrangler.json');
+  const wranglerPath = findFlattenedWranglerPath();
   const flattenedConfig = JSON.parse(readFileSync(wranglerPath, 'utf8'));
   const actualDatabaseId = flattenedConfig.d1_databases?.[0]?.database_id;
   const actualWorkerName = flattenedConfig.name;

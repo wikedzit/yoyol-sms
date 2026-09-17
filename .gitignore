@@ -6,6 +6,8 @@
 # React Router
 /.react-router/
 /build/
+/dist/
+.pnpm-store/
 
 # Cloudflare
 .mf
