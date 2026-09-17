@@ -9,6 +9,19 @@ import {
 } from './write-build-wrangler-config.mjs';
 
 const require = createRequire(import.meta.url);
+const BUILD_SCRIPT_MARKER = 'wrangler-env-v3';
+
+function currentGitCommit() {
+  const gitResult = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
+    encoding: 'utf8',
+  });
+
+  if (gitResult.status !== 0) {
+    return 'unknown';
+  }
+
+  return gitResult.stdout.trim();
+}
 
 const PRODUCTION_WORKER_NAME = 'yoyol-students-system';
 const DEVELOPMENT_WORKER_NAME = 'yoyol-students-system-development';
@@ -126,6 +139,10 @@ function assertFlattenedBinding(cloudflareEnv) {
   );
   process.exit(1);
 }
+
+console.log(
+  `Build script marker=${BUILD_SCRIPT_MARKER} commit=${currentGitCommit()}`,
+);
 
 const cloudflareEnv = chooseCloudflareEnv();
 process.env.CLOUDFLARE_ENV = cloudflareEnv;
