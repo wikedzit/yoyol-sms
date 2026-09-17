@@ -51,6 +51,9 @@ const mainNavigation = [
   { name: "Grades", href: "/grades", icon: GraduationCap },
 ];
 
+const activeMenuItemClass =
+  "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10";
+
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
 
@@ -113,25 +116,18 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
     <Link
       to={item.href}
       onClick={onNavigate}
-      /* 
-        ============================================================================
-        MODIFIED BY AI: 
-        - Active links now use 'bg-primary text-primary-foreground'
-        - Inactive links use 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-        ============================================================================
-      */
       className={cn(
         "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out",
         isActive
-          ? "bg-primary text-primary-foreground shadow-xs"
+          ? activeMenuItemClass
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
-      <item.icon className="h-5 w-5" />
+      <item.icon
+        className={cn("h-5 w-5", isActive ? "text-white" : undefined)}
+      />
       <span className="truncate">{item.name}</span>
-      {isActive && (
-        <ChevronRight className="ml-auto h-4 w-4 text-primary-foreground" />
-      )}
+      {isActive && <ChevronRight className="ml-auto h-4 w-4 text-white" />}
     </Link>
   );
 };
@@ -151,26 +147,22 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
     <div>
       <button
         onClick={() => setOpen(!open)}
-        /* 
-          ============================================================================
-          MODIFIED BY AI: 
-          - Active parent buttons use 'bg-primary text-primary-foreground'
-          - Inactive parent buttons use 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-          ============================================================================
-        */
         className={cn(
           "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition duration-200 cursor-pointer",
           isChildActive
-            ? "bg-primary text-primary-foreground shadow-xs"
+            ? activeMenuItemClass
             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         )}
       >
-        <item.icon className="h-5 w-5" />
+        <item.icon
+          className={cn("h-5 w-5", isChildActive ? "text-white" : undefined)}
+        />
         <span className="truncate">{item.name}</span>
 
         <ChevronDown
           className={cn(
             "ml-auto h-4 w-4 transition-transform",
+            isChildActive && "text-white",
             open && "rotate-180",
           )}
         />
@@ -185,16 +177,10 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                 key={child.name}
                 to={child.href}
                 onClick={onNavigate}
-                /* 
-                  ============================================================================
-                  MODIFIED BY AI: 
-                  - Sub-links use dynamic theme colors for active and hover states
-                  ============================================================================
-                */
                 className={cn(
                   "block px-3 py-2 text-sm rounded-md transition duration-150",
                   isActive
-                    ? "bg-primary text-primary-foreground font-medium"
+                    ? activeMenuItemClass
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
