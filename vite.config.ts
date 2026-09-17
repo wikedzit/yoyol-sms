@@ -3,6 +3,11 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { chooseCloudflareEnv } from "./workers/script/choose-cloudflare-env.mjs";
+
+// The Cloudflare Vite plugin reads CLOUDFLARE_ENV when it flattens wrangler.jsonc.
+// Set it here so Workers CI still selects development even if pnpm exec drops the var.
+process.env.CLOUDFLARE_ENV = chooseCloudflareEnv();
 
 export default defineConfig({
   plugins: [

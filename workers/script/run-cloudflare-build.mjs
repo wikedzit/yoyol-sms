@@ -1,29 +1,19 @@
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { chooseCloudflareEnv } from './choose-cloudflare-env.mjs';
+
+const require = createRequire(import.meta.url);
 
 const PRODUCTION_WORKER_NAME = 'yoyol-students-system';
 const DEVELOPMENT_WORKER_NAME = 'yoyol-students-system-development';
 const PRODUCTION_DATABASE_ID = '6923e920-0852-40ef-bc6b-49aa8bb4a7f4';
 const DEVELOPMENT_DATABASE_ID = '32375355-5046-4098-9719-553a036ab578';
 
-function chooseCloudflareEnv() {
-  if (process.env.CLOUDFLARE_ENV) {
-    return process.env.CLOUDFLARE_ENV;
-  }
-
-  // Workers Builds injects WORKERS_CI=1 and WORKERS_CI_BRANCH.
-  // Production ships from main; every other CI branch is the development Worker.
-  if (process.env.WORKERS_CI === '1') {
-    const branchName = process.env.WORKERS_CI_BRANCH ?? '';
-    const selectedEnv = branchName === 'main' ? 'production' : 'development';
-    console.log(
-      `Workers CI branch "${branchName || 'unknown'}" → ${selectedEnv}`,
-    );
-    return selectedEnv;
-  }
-
-  return 'production';
+function reactRouterCliPath() {
+  const packageJsonPath = require.resolve('@react-router/dev/package.json');
+  return path.join(path.dirname(packageJsonPath), 'bin.js');
 }
 
 /** @param {string} cloudflareEnv */
@@ -80,23 +70,37 @@ function assertFlattenedBinding(cloudflareEnv) {
     [
       'Flattened Worker config does not match CLOUDFLARE_ENV.',
       `CLOUDFLARE_ENV=${cloudflareEnv}`,
+      `targetEnvironment=${flattenedConfig.targetEnvironment ?? 'unset'}`,
       `expected name=${expected.workerName} database=${expected.databaseId}`,
       `actual   name=${actualWorkerName} database=${actualDatabaseId}`,
-      'Workers Builds must set CLOUDFLARE_ENV at build time (development or production).',
+      `wranglerPath=${wranglerPath}`,
     ].join('\n'),
   );
   process.exit(1);
 }
 
 const cloudflareEnv = chooseCloudflareEnv();
-const buildEnv = { ...process.env, CLOUDFLARE_ENV: cloudflareEnv };
+process.env.CLOUDFLARE_ENV = cloudflareEnv;
+
+if (process.env.WORKERS_CI === '1') {
+  console.log(
+    `Workers CI branch "${process.env.WORKERS_CI_BRANCH ?? 'unknown'}" → ${cloudflareEnv}`,
+  );
+}
 
 console.log(`Building Cloudflare env: ${cloudflareEnv}`);
 
-const buildResult = spawnSync('pnpm', ['exec', 'react-router', 'build'], {
-  stdio: 'inherit',
-  env: buildEnv,
-});
+const buildResult = spawnSync(
+  process.execPath,
+  [reactRouterCliPath(), 'build'],
+  {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      CLOUDFLARE_ENV: cloudflareEnv,
+    },
+  },
+);
 
 if (buildResult.status !== 0) {
   process.exit(buildResult.status ?? 1);
