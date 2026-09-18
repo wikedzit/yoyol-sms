@@ -466,8 +466,8 @@ export default function Grades() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline"
-              className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              <Button
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
               onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export

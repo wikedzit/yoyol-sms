@@ -38,6 +38,7 @@ import {
 import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type AcademicLevelService from 'workers/services/academic-levels';
+import type SchoolService from 'workers/services/school';
 import { usePagination } from '~/hooks/usePagination';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
@@ -77,6 +78,7 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     student: StudentService;
     academicLevel: AcademicLevelService;
     subject: SubjectService;
+    school: SchoolService;
   };
 
   const classInfo = await services.academicLevel.getFormClassByIdWithDetails(
@@ -96,10 +98,13 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
+  const schools = await services.school.getAll();
+
   return {
     students,
     classInfo,
     allSubjects,
+    schools,
   };
 }
 
@@ -116,14 +121,30 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
 
   try {
     if (method === 'POST') {
+      const schoolIdRaw = form.get('schoolId');
+      const schoolId = schoolIdRaw ? Number(schoolIdRaw) : undefined;
+      const genderRaw = String(form.get('gender') || 'Male').trim();
+      const gender =
+        genderRaw.charAt(0).toUpperCase() + genderRaw.slice(1).toLowerCase();
+
+      if (!schoolId) {
+        return new Response(
+          JSON.stringify({
+            error: 'Please select a school before adding a student.',
+          }),
+          { status: 400, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
       const studentData = {
         firstName: String(form.get('firstName') || ''),
         lastName: String(form.get('lastName') || ''),
-        gender: String(form.get('gender') || 'Male'),
+        gender,
         status:
           (String(form.get('status')) as 'Active' | 'Pending' | 'Inactive') ||
           'Active',
         formClassId: Number(classId),
+        schoolId,
         dob: form.get('dob') ? String(form.get('dob')) : undefined,
         email: form.get('email') ? String(form.get('email')) : undefined,
         phone: form.get('phone') ? String(form.get('phone')) : undefined,
@@ -220,10 +241,12 @@ export default function ClassDetails() {
     students: initialStudents,
     classInfo,
     allSubjects,
+    schools,
   } = useLoaderData() as {
     students: any[];
     classInfo: EnrichedFormClass;
     allSubjects: any[];
+    schools: Array<{ id: number; name: string }>;
   };
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
@@ -503,6 +526,7 @@ export default function ClassDetails() {
           setOpen={setAddStudentModalOpen}
           classInfo={classInfo}
           fetcher={fetcher}
+          schools={schools}
         />
       )}
       {editStudentModalOpen && selectedStudent && (

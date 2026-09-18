@@ -3,7 +3,6 @@ import { X } from "lucide-react";
 import type { FetcherWithComponents } from "react-router";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
-import { toTitleCase } from "~/utils/strings";
 import {
   Sheet,
   SheetContent,
@@ -24,12 +23,35 @@ interface SchoolOption {
   name: string;
 }
 
+interface CampusOption {
+  id: number;
+  name: string;
+  schoolId: number;
+}
+
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  classId: string | { id: string } | undefined;
+  classId?: string | { id: string } | undefined;
   fetcher: FetcherWithComponents<any>;
   schools?: SchoolOption[];
+  campuses?: CampusOption[];
+}
+
+function emptyStudentForm(defaultSchoolId = '') {
+  return {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    enrollmentDate: '',
+    dob: '',
+    address: '',
+    gender: 'Male',
+    status: 'Active',
+    schoolId: defaultSchoolId,
+    campusId: '',
+  };
 }
 
 export default function AddStudentModal({
@@ -38,20 +60,13 @@ export default function AddStudentModal({
   classId,
   fetcher,
   schools = [],
+  campuses = [],
 }: AddStudentModalProps) {
+  const hasCampuses = campuses.length > 0;
+  const defaultSchoolId =
+    schools.length === 1 ? String(schools[0].id) : '';
 
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    enrollmentDate: '',
-    dob: '',
-    address: '',
-    gender: '',
-    status: '',
-    schoolId: '',
-  });
+  const [formData, setFormData] = useState(emptyStudentForm(defaultSchoolId));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -59,38 +74,15 @@ export default function AddStudentModal({
 
   useEffect(() => {
     if (fetcher.state === 'idle' && fetcher.data?.success) {
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        enrollmentDate: '',
-        dob: '',
-        address: '',
-        gender: '',
-        status: '',
-        schoolId: '',
-      });
+      setFormData(emptyStudentForm(defaultSchoolId));
     }
-  }, [fetcher.state, fetcher.data]);
+  }, [fetcher.state, fetcher.data, defaultSchoolId]);
 
-  // Reset form when modal closes
   useEffect(() => {
     if (!open) {
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        enrollmentDate: '',
-        dob: '',
-        address: '',
-        gender: '',
-        status: '',
-        schoolId: '',
-      });
+      setFormData(emptyStudentForm(defaultSchoolId));
     }
-  }, [open]);
+  }, [open, defaultSchoolId]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -134,48 +126,100 @@ export default function AddStudentModal({
               Fill in the details below to register a new student.
             </p>
 
-            {/* Form fields */}
             <div className="space-y-4">
-              {/* School (dynamic, dropdown ya shule) - LAZIMA */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  School <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={formData.schoolId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, schoolId: value })
-                  }
-                  name="schoolId"
-                  required
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select school" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {schools.map((s) => (
-                      <SelectItem key={s.id} value={String(s.id)}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {schools.length === 0 && (
-                  <p className="text-xs text-red-500 mt-1">
-                    No schools available. Please add a school first.
-                  </p>
-                )}
-              </div>
+              {hasCampuses ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Campus <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.campusId}
+                    onValueChange={(value) => {
+                      const selectedCampus = campuses.find(
+                        (campus) => String(campus.id) === value,
+                      );
+                      setFormData({
+                        ...formData,
+                        campusId: value,
+                        schoolId: selectedCampus
+                          ? String(selectedCampus.schoolId)
+                          : '',
+                      });
+                    }}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select campus" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campuses.map((campus) => (
+                        <SelectItem key={campus.id} value={String(campus.id)}>
+                          {campus.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="hidden"
+                    name="campusId"
+                    value={formData.campusId}
+                  />
+                  <input
+                    type="hidden"
+                    name="schoolId"
+                    value={formData.schoolId}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    School <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.schoolId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, schoolId: value })
+                    }
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select school" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schools.map((ownedSchool) => (
+                        <SelectItem
+                          key={ownedSchool.id}
+                          value={String(ownedSchool.id)}
+                        >
+                          {ownedSchool.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="hidden"
+                    name="schoolId"
+                    value={formData.schoolId}
+                  />
+                  {schools.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      No schools available. Please add a school first.
+                    </p>
+                  )}
+                </div>
+              )}
 
-              {[
-                'firstName',
-                'lastName',
-                'email',
-                'phone',
-                'enrollmentDate',
-                'dob',
-                'address',
-              ].map((field) => (
+              {(
+                [
+                  'firstName',
+                  'lastName',
+                  'email',
+                  'phone',
+                  'enrollmentDate',
+                  'dob',
+                  'address',
+                ] as const
+              ).map((field) => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     {field === 'firstName'
@@ -193,7 +237,7 @@ export default function AddStudentModal({
                           : 'text'
                     }
                     name={field}
-                    value={(formData as any)[field]}
+                    value={formData[field]}
                     onChange={handleChange}
                     required
                   />
@@ -211,16 +255,16 @@ export default function AddStudentModal({
                     onValueChange={(value) =>
                       setFormData({ ...formData, gender: value })
                     }
-                    name="gender"
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="gender" value={formData.gender} />
                 </div>
 
                 {/* Status */}
@@ -233,7 +277,6 @@ export default function AddStudentModal({
                     onValueChange={(value) =>
                       setFormData({ ...formData, status: value })
                     }
-                    name="status"
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
@@ -244,6 +287,7 @@ export default function AddStudentModal({
                       <SelectItem value="Inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
+                  <input type="hidden" name="status" value={formData.status} />
                 </div>
               </div>
             </div>
@@ -262,6 +306,10 @@ export default function AddStudentModal({
             <Button
               type="submit"
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              disabled={
+                fetcher.state === 'submitting' ||
+                (hasCampuses ? !formData.campusId : !formData.schoolId)
+              }
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
             </Button>
@@ -271,4 +319,4 @@ export default function AddStudentModal({
     </Sheet>
   );
 }
-  
+ 

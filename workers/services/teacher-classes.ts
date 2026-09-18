@@ -2,9 +2,12 @@ import { eq, and, getTableColumns } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import {
   teacherClasses,
+  teacherFormClasses,
   teachers,
   classes,
+  formClasses,
   type SelectClass,
+  type SelectFormClass,
   type SelectTeacher,
 } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
@@ -144,6 +147,38 @@ export default class TeacherClassService {
       return results;
     } catch (error) {
       console.error('Error fetching classes for teacher:', error);
+      return [];
+    }
+  }
+
+  async getFormClassesByTeacher(teacherId: number): Promise<SelectFormClass[]> {
+    try {
+      return await this.db
+        .select({
+          id: formClasses.id,
+          name: formClasses.name,
+          formId: formClasses.formId,
+          streamId: formClasses.streamId,
+          levelId: formClasses.levelId,
+          studentCount: formClasses.studentCount,
+          ownerUserId: formClasses.ownerUserId,
+          createdAt: formClasses.createdAt,
+          updatedAt: formClasses.updatedAt,
+        })
+        .from(teacherFormClasses)
+        .innerJoin(
+          formClasses,
+          eq(teacherFormClasses.formClassId, formClasses.id),
+        )
+        .where(
+          and(
+            eq(teacherFormClasses.teacherId, teacherId),
+            eq(formClasses.ownerUserId, this.currentOwner()),
+          ),
+        )
+        .execute();
+    } catch (error) {
+      console.error('Error fetching form classes for teacher:', error);
       return [];
     }
   }
@@ -292,6 +327,52 @@ export default class TeacherClassService {
       return true;
     } catch (error) {
       console.error('Error replacing teacher classes:', error);
+      return false;
+    }
+  }
+
+  async replaceTeacherFormClasses(
+    teacherId: number,
+    formClassIds: number[],
+  ): Promise<boolean> {
+    try {
+      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      if (!teacherIsOwned) {
+        return false;
+      }
+
+      for (const formClassId of formClassIds) {
+        const formClass = await this.db
+          .select({ id: formClasses.id })
+          .from(formClasses)
+          .where(
+            and(
+              eq(formClasses.id, formClassId),
+              eq(formClasses.ownerUserId, this.currentOwner()),
+            ),
+          )
+          .get();
+        if (!formClass) return false;
+      }
+
+      await this.db
+        .delete(teacherFormClasses)
+        .where(eq(teacherFormClasses.teacherId, teacherId))
+        .execute();
+
+      if (formClassIds.length > 0) {
+        await this.db.insert(teacherFormClasses).values(
+          formClassIds.map((formClassId) => ({
+            teacherId,
+            formClassId,
+            assignedAt: Date.now(),
+          })),
+        ).execute();
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error replacing teacher form class assignments:', error);
       return false;
     }
   }

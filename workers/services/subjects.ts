@@ -1,7 +1,8 @@
 // --- Zod schemas for validation ---
-import { like, asc, desc, eq, and } from 'drizzle-orm';
+import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
 import { subject, type SelectSubject } from 'workers/database/subjects';
+import { studentSubjects } from 'workers/database/student-subjects';
 import { z } from 'zod';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
@@ -149,7 +150,26 @@ export default class SubjectService {
       }
 
       const results = await this.db
-        .select()
+        .select({
+          id: subject.id,
+          subjectName: subject.subjectName,
+          code: subject.code,
+          stream: subject.stream,
+          instructor: subject.instructor,
+          description: subject.description,
+          enrolledStudents: sql<number>`
+            (
+              SELECT COUNT(*)
+              FROM ${studentSubjects}
+              WHERE ${studentSubjects.subjectId} = ${subject.id}
+            )
+          `,
+          status: subject.status,
+          streamId: subject.streamId,
+          ownerUserId: subject.ownerUserId,
+          createdAt: subject.createdAt,
+          updatedAt: subject.updatedAt,
+        })
         .from(subject)
         .where(and(...filters))
         .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))

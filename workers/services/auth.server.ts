@@ -225,20 +225,34 @@ export default class AuthService {
   }
 
   // Account holders with no teacher/student record (Admin, Finance) store
-  // their name only on `users`.
-  async updateName(
+  // their name only on `users`. preferredLanguage and avatarUrl apply to
+  // every role, since those belong to the login account itself.
+  async updateProfile(
     id: number,
-    firstName: string,
-    lastName: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      phone?: string;
+      preferredLanguage?: string;
+      avatarUrl?: string;
+    },
   ): Promise<SelectUser | null> {
     const updatedUser = await this.db
       .update(users)
-      .set({ firstName, lastName, updatedAt: Date.now() })
+      .set({ ...data, updatedAt: Date.now() })
       .where(eq(users.id, id))
       .returning()
       .get();
 
     return updatedUser ?? null;
+  }
+
+  async updateName(
+    id: number,
+    firstName: string,
+    lastName: string,
+  ): Promise<SelectUser | null> {
+    return this.updateProfile(id, { firstName, lastName });
   }
 
   async changePassword(

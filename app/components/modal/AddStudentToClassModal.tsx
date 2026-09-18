@@ -35,11 +35,17 @@ interface ClassInfo {
   levelType: LevelType;
 }
 
+interface SchoolOption {
+  id: number;
+  name: string;
+}
+
 interface AddStudentToClassModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   classInfo: ClassInfo;
   fetcher: any;
+  schools?: SchoolOption[];
 }
 
 export default function AddStudentToClassModal({
@@ -47,7 +53,9 @@ export default function AddStudentToClassModal({
   setOpen,
   classInfo,
   fetcher,
+  schools = [],
 }: AddStudentToClassModalProps) {
+  const defaultSchoolId = schools.length === 1 ? String(schools[0].id) : '';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gender, setGender] = useState('Male');
@@ -56,6 +64,7 @@ export default function AddStudentToClassModal({
   const [dob, setDob] = useState('');
   const [enrollmentDate, setEnrollmentDate] = useState('');
   const [status, setStatus] = useState('Active');
+  const [schoolId, setSchoolId] = useState(defaultSchoolId);
 
   // Close modal on successful create
   useEffect(() => {
@@ -83,6 +92,7 @@ export default function AddStudentToClassModal({
     setDob('');
     setEnrollmentDate('');
     setStatus('Active');
+    setSchoolId(schools.length === 1 ? String(schools[0].id) : '');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -93,6 +103,7 @@ export default function AddStudentToClassModal({
     submitData.append('lastName', lastName);
     submitData.append('gender', gender);
     submitData.append('status', status);
+    submitData.append('schoolId', schoolId);
     if (email) submitData.append('email', email);
     if (phone) submitData.append('phone', phone);
     if (dob) submitData.append('dob', dob);
@@ -144,6 +155,32 @@ export default function AddStudentToClassModal({
 
           {/* FORM INPUTS */}
           <div className="flex-1 space-y-4 overflow-y-auto">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                School <span className="text-red-500">*</span>
+              </label>
+              <Select value={schoolId} onValueChange={setSchoolId}>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder="Select school" />
+                </SelectTrigger>
+                <SelectContent>
+                  {schools.map((ownedSchool) => (
+                    <SelectItem
+                      key={ownedSchool.id}
+                      value={String(ownedSchool.id)}
+                    >
+                      {ownedSchool.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {schools.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  No schools available. Please add a school first.
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">
@@ -272,7 +309,8 @@ export default function AddStudentToClassModal({
               disabled={
                 fetcher.state === 'submitting' ||
                 !firstName.trim() ||
-                !lastName.trim()
+                !lastName.trim() ||
+                !schoolId
               }
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
