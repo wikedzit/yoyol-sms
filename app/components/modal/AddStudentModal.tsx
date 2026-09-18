@@ -11,7 +11,6 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
-import { useState, useEffect } from 'react';
 import {
   Select,
   SelectTrigger,
@@ -19,7 +18,6 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
-import type { FetcherWithComponents } from 'react-router';
 
 interface SchoolOption {
   id: number;
