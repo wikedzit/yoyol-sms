@@ -1,4 +1,5 @@
 import { createCookie } from 'react-router';
+
 const isProd = import.meta.env.PROD;
 
 export const authCookie = createCookie('auth_token', {

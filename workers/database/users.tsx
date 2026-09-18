@@ -9,7 +9,7 @@ export const users = sqliteTable('users', {
   firstName: text('first_name'),
   lastName: text('last_name'),
   phone: text('phone'),
-  preferredLanguage: text('preferred_language').default('en'), // 'en' | 'sw'
+  preferredLanguage: text('preferred_language').default('en'),
   avatarUrl: text('avatar_url'),
   jobTitle: text('job_title'),
   staffId: text('staff_id'),

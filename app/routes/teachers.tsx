@@ -12,7 +12,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
-import { Plus, Search, Pencil, BookOpen, Feather } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen, Feather, MoreVertical, Eye } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -36,11 +36,19 @@ import { TeacherProfileModal } from '~/components/modal/TeacherProfileModal';
 import { toast } from 'sonner';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
-import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
 
 import { toTitleCase } from '~/utils/strings';
 // Loader – fetch teachers with their subjects and classes
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '~/components/ui/dropdown-menu';
+
+// 🧠 Loader – fetch teachers with their subjects and classes
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -48,9 +56,6 @@ export async function loader({ context }: LoaderFunctionArgs) {
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
     class: ClassService;
-    academicLevel: {
-      getAllFormClasses: () => Promise<any[]>;
-    };
   };
 
   const teachers = await services.teacher?.getAllTeachers({
@@ -67,14 +72,20 @@ export async function loader({ context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
-  const allClasses = await services.academicLevel.getAllFormClasses();
+  const allClasses = await services.class.getAll({
+    limit: 100,
+    offset: 0,
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
 
   const teachersWithSubjectsAndClasses = await Promise.all(
     teachers.map(async (teacher) => {
       const assignedSubjects =
         await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
-      const assignedClasses =
-        await services.teacherClass?.getFormClassesByTeacher(teacher.id);
+      const assignedClasses = await services.teacherClass?.getClassesByTeacher(
+        teacher.id
+      );
       return {
         ...teacher,
         subjects: assignedSubjects || [],
@@ -90,7 +101,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 
-// Action – handle create, update, delete, and subject/class assignments
+// ⚙️ Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     teacher: TeacherService;
@@ -126,7 +137,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         return { error: 'Teacher ID is required' };
       }
 
-      await services.teacherClass?.replaceTeacherFormClasses(teacherId, classIds);
+      await services.teacherClass?.replaceTeacherClasses(teacherId, classIds);
       return { success: true, action: 'assign_classes' };
     }
 
@@ -149,6 +160,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
       };
 
       const created = await services.teacher.createTeacher(data);
+      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+      if (created && Array.isArray(subjectIds)) {
+        await services.teacherSubject?.replaceTeacherSubjects(
+          created.id,
+          subjectIds.map(Number).filter((id: number) => Number.isInteger(id))
+        );
+      }
       return new Response(JSON.stringify({ success: true, teacher: created }), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -213,9 +231,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   }
 }
 
-// Teachers Table & Modals Component
+// 🧑‍🏫 UI – Teachers Table & Modals
 export default function Teachers() {
-  const { t } = useLanguage();
   const {
     teachers: initialTeachers,
     allSubjects,
@@ -238,10 +255,25 @@ export default function Teachers() {
   const [assignClassesModalOpen, setAssignClassesModalOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<any>(null);
 
+  // added state to hold the newly added teacher for the profile modal
   const [newTeacher, setNewTeacher] = useState<any>(null);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  // NEW: controlled delete target for the mobile dropdown menu
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  // NEW: controlled profile view target for the mobile dropdown menu
+  const [viewTarget, setViewTarget] = useState<any>(null);
 
-  const filteredStudents = initialTeachers?.filter((teacher) => {
+  useEffect(() => {
+    setTeachers(initialTeachers || []);
+  }, [initialTeachers]);
+
+  useEffect(() => {
+    if (listFetcher.data?.teachers) {
+      setTeachers(listFetcher.data.teachers);
+    }
+  }, [listFetcher.data]);
+
+  const filteredStudents = teachers.filter((teacher) => {
     const matchesSearch =
       teacher.firstName.toLowerCase().includes(search.toLowerCase()) ||
       teacher.lastName.toLowerCase().includes(search.toLowerCase()) ||
@@ -266,11 +298,12 @@ export default function Teachers() {
       lastMethod.current = method ?? (fetcher.formMethod || null);
     }
   }, [fetcher.formData, fetcher.state, fetcher.formMethod]);
-
+   // updated to use the new controlled modal approach for TeacherProfileModal
   useEffect(() => {
     if (fetcher.state !== 'idle' || !fetcher.data) return;
     const data = fetcher.data;
 
+    // Refresh list in background
     listFetcher.load(window.location.pathname);
 
     if (data.error) {
@@ -294,6 +327,7 @@ export default function Teachers() {
 
       switch (lastMethod.current) {
         case 'POST':
+          // added logic to set the new teacher and open the profile modal after adding a teacher
           if (data.teacher) {
             setNewTeacher(data.teacher);
             setAddModalOpen(false);
@@ -325,22 +359,21 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
-      {/* Header section with text-foreground */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Teachers
           </h1>
-          <p className="text-foreground text-sm font-medium mt-1">
+          <p className="text-foreground text-xs sm:text-sm font-medium mt-1">
             Manage and view all teacher records
           </p>
         </div>
         <Button
-          className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+          className="w-full sm:w-auto bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
           onClick={() => setAddModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {t('addTeacher')}
+          Add Teacher
         </Button>
       </div>
 
@@ -352,7 +385,7 @@ export default function Teachers() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder={t('searchTeachers')}
+                placeholder="Search teachers..."
                 className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -360,8 +393,8 @@ export default function Teachers() {
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t('filterStatus')} />
+              <SelectTrigger className="w-full md:w-[200px]">
+                <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -375,23 +408,24 @@ export default function Teachers() {
         {/* Table */}
         <CardContent>
           <div className="rounded-md border">
-            <Table>
+            {/* FIXED: smaller text on mobile, normal from sm: up */}
+            <Table className="text-xs sm:text-sm">
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
-                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
-                  <TableHead className="font-semibold">
-                    {t('assignedSubjects')}
+                  <TableHead className="font-semibold hidden md:table-cell">SN</TableHead>
+                  <TableHead className="font-semibold">First name</TableHead>
+                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold hidden lg:table-cell">
+                    Assigned Subjects
                   </TableHead>
-                  <TableHead className="font-semibold">
-                    {t('assignedClasses')}
+                  <TableHead className="font-semibold hidden lg:table-cell">
+                    Assigned Classes
                   </TableHead>
-                  <TableHead className="font-semibold">{t('email')}</TableHead>
-                  <TableHead className="font-semibold">{t('phone')}</TableHead>
-                  <TableHead className="font-semibold">{t('status')}</TableHead>
+                  <TableHead className="font-semibold hidden md:table-cell">Email</TableHead>
+                  <TableHead className="font-semibold">Phone</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right font-semibold">
-                    {t('actions')}
+                    Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -399,10 +433,12 @@ export default function Teachers() {
               <TableBody>
                 {paginatedStudentsList?.map((teacher, index) => (
                   <TableRow key={teacher.id}>
-                    <TableCell>{startIndex + index + 1}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {startIndex + index + 1}
+                    </TableCell>
                     <TableCell>{teacher.firstName}</TableCell>
                     <TableCell>{teacher.lastName}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <div className="flex items-center gap-2 flex-wrap">
                         {teacher.subjects?.length > 0 ? (
                           teacher.subjects.map((subject: any) => (
@@ -421,7 +457,7 @@ export default function Teachers() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       <div className="flex items-center gap-2 flex-wrap">
                         {teacher.classes?.length > 0 ? (
                           teacher.classes.map((classItem: any) => (
@@ -440,59 +476,112 @@ export default function Teachers() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{teacher.email}</TableCell>
+                    <TableCell className="hidden md:table-cell">{teacher.email}</TableCell>
                     <TableCell>{teacher.phone}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
                           teacher.status === 'Active' ? 'default' : 'outline'
                         }
+                        className="text-[10px] sm:text-xs"
                       >
                         {teacher.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <TeacherProfileModal teacher={teacher} />
-                      <Button
-                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        title="Assign Subjects"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setAssignSubjectsModalOpen(true);
-                        }}
-                      >
-                        <BookOpen className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        title="Assign Classes"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setAssignClassesModalOpen(true);
-                        }}
-                      >
-                        <GraduationCap className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setEditModalOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <DeleteStudentButton
-                        id={teacher.id}
-                        name={`${teacher.firstName} ${teacher.lastName}`}
-                        fetcher={fetcher}
-                      />
+                    <TableCell className="text-right">
+                      <div className="hidden lg:flex justify-end gap-2">
+                        <TeacherProfileModal teacher={teacher} />
+                        <Button
+                          className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                          variant="ghost"
+                          size="sm"
+                          title="Assign Subjects"
+                          onClick={() => {
+                            setSelectedTeacher(teacher);
+                            setAssignSubjectsModalOpen(true);
+                          }}
+                        >
+                          <BookOpen className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                          variant="ghost"
+                          size="sm"
+                          title="Assign Classes"
+                          onClick={() => {
+                            setSelectedTeacher(teacher);
+                            setAssignClassesModalOpen(true);
+                          }}
+                        >
+                          <GraduationCap className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTeacher(teacher);
+                            setEditModalOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <DeleteStudentButton
+                          id={teacher.id}
+                          name={`${teacher.firstName} ${teacher.lastName}`}
+                          fetcher={fetcher}
+                        />
+                      </div>
+
+                      <div className="flex lg:hidden justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="cursor-pointer">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setViewTarget(teacher)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTeacher(teacher);
+                                setAssignSubjectsModalOpen(true);
+                              }}
+                            >
+                              <BookOpen className="mr-2 h-4 w-4" />
+                              Assign Subjects
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTeacher(teacher);
+                                setAssignClassesModalOpen(true);
+                              }}
+                            >
+                              <GraduationCap className="mr-2 h-4 w-4" />
+                              Assign Classes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTeacher(teacher);
+                                setEditModalOpen(true);
+                              }}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              variant="destructive"
+                              onClick={() => setDeleteTarget(teacher)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -514,6 +603,7 @@ export default function Teachers() {
           open={addModalOpen}
           setOpen={setAddModalOpen}
           fetcher={fetcher}
+          subjects={allSubjects}
         />
       )}
 
@@ -550,13 +640,35 @@ export default function Teachers() {
           fetcher={fetcher}
         />
       )}
-
+      
       <TeacherProfileModal
         teacher={newTeacher}
         open={profileModalOpen}
         onOpenChange={setProfileModalOpen}
         showTrigger={false}
       />
+
+      {/* NEW: mobile dropdown "View Profile" target */}
+      {viewTarget && (
+        <TeacherProfileModal
+          teacher={viewTarget}
+          open={!!viewTarget}
+          onOpenChange={(open: boolean) => !open && setViewTarget(null)}
+          showTrigger={false}
+        />
+      )}
+
+      {/* NEW: controlled delete confirmation for mobile dropdown */}
+      {deleteTarget && (
+        <DeleteStudentButton
+          id={deleteTarget.id}
+          name={`${deleteTarget.firstName} ${deleteTarget.lastName}`}
+          fetcher={fetcher}
+          open={!!deleteTarget}
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          showTrigger={false}
+        />
+      )}
     </div>
   );
 }

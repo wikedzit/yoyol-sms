@@ -1,243 +1,280 @@
-import { useEffect, useState, useMemo } from 'react';
-import type { FetcherWithComponents } from 'react-router';
-import { BookOpen, Search, CheckSquare, Square } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Label } from '~/components/ui/label';
-import { Checkbox } from '~/components/ui/checkbox';
-import { Badge } from '~/components/ui/badge';
+import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
+import { Button } from '~/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from '~/components/ui/sheet';
+import { useState, useEffect } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import { useLanguage } from '~/lib/i18n';
 
-interface Subject {
-  id: number;
-  subjectName: string;
-  code: string;
-  status?: string;
-}
-
-interface AssignSubjectsModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  teacher: {
-    id: number;
-    firstName: string;
-    lastName: string;
-  };
-  availableSubjects: Subject[];
-  assignedSubjects: Subject[];
-  fetcher: FetcherWithComponents<any>;
-}
-
-export default function AssignSubjectsModal({
+export default function AddSubjectModal({
   open,
   setOpen,
-  teacher,
-  availableSubjects = [],
-  assignedSubjects = [],
   fetcher,
-}: AssignSubjectsModalProps) {
-  const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  streams,
+  teachers,
+  id,
+}: any) {
+  const { t } = useLanguage();
+  const [formData, setFormData] = useState({
+    subjectName: '',
+    code: '',
+    stream: '',
+    instructor: '',
+    teacherId: '',
+    status: 'Active',
+    streamId: id || '',
+  });
+  const [error, setError] = useState<string | null>(null);
 
-  const isSubmitting = fetcher.state === 'submitting';
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError(null);
+  };
 
-  // Synchronize assigned subjects on drawer/dialog open
   useEffect(() => {
-    if (open) {
-      setSelectedSubjects(assignedSubjects.map((s) => s.id));
-      setSearchQuery('');
+    if (open && id && streams) {
+      const selectedStream = streams.find(
+        (s: any) => String(s.id) === String(id)
+      );
+      if (selectedStream) {
+        setFormData((prev) => ({
+          ...prev,
+          streamId: String(id),
+          stream: selectedStream.name,
+        }));
+      }
     }
-  }, [open, assignedSubjects]);
+  }, [open, id, streams]);
 
-  // Handle auto-close upon successful submission
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.success) {
+    if (fetcher.data?.success) {
       setOpen(false);
+      setError(null);
+      setFormData({
+        subjectName: '',
+        code: '',
+        stream: '',
+        instructor: '',
+        teacherId: '',
+        status: 'Active',
+        streamId: id || '',
+      });
     }
-  }, [fetcher.state, fetcher.data, setOpen]);
-
-  // Filter subjects based on search query
-  const filteredSubjects = useMemo(() => {
-    if (!searchQuery.trim()) return availableSubjects;
-    const query = searchQuery.toLowerCase();
-    return availableSubjects.filter(
-      (s) =>
-        s.subjectName.toLowerCase().includes(query) ||
-        s.code.toLowerCase().includes(query)
-    );
-  }, [availableSubjects, searchQuery]);
-
-  const handleToggleSubject = (subjectId: number) => {
-    setSelectedSubjects((prev) =>
-      prev.includes(subjectId)
-        ? prev.filter((id) => id !== subjectId)
-        : [...prev, subjectId]
-    );
-  };
-
-  const handleSelectAllFiltered = () => {
-    const filteredIds = filteredSubjects.map((s) => s.id);
-    const allSelected = filteredIds.every((id) => selectedSubjects.includes(id));
-
-    if (allSelected) {
-      setSelectedSubjects((prev) => prev.filter((id) => !filteredIds.includes(id)));
-    } else {
-      setSelectedSubjects((prev) => Array.from(new Set([...prev, ...filteredIds])));
+    if (fetcher.data?.error) {
+      setError(fetcher.data.error);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('_method', 'POST');
-    formData.append('action', 'assign_subjects');
-    formData.append('teacherId', String(teacher.id));
-    formData.append('subjectIds', JSON.stringify(selectedSubjects));
-
-    // Append individual array items for backend framework compatibility
-    selectedSubjects.forEach((id) => {
-      formData.append('subjectIds[]', String(id));
-    });
-
-    fetcher.submit(formData, { method: 'post' });
-  };
+  }, [fetcher.data, id, setOpen]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[580px] bg-card text-card-foreground border-border p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetContent
+        side="right"
+        className="
+          w-full max-w-full               /* Mobile full-screen */
+          sm:max-w-[90%]                  /* Tablet */
+          md:max-w-[573px] md:w-[573px]   /* Desktop fixed width */
+          p-6 md:p-10
+          flex flex-col
+          bg-card text-card-foreground border-border
+        "
+      >
+        <fetcher.Form
+          method="post"
+          action="/subjects"
+          className="flex flex-col h-full"
+        >
+          <input type="hidden" name="_method" value="POST" />
+          <input type="hidden" name="_entity" value="subject" />
+          <input type="hidden" name="status" value={formData.status} />
+          <input type="hidden" name="streamId" value={formData.streamId} />
+          <input type="hidden" name="stream" value={formData.stream} />
+          <input type="hidden" name="teacherId" value={formData.teacherId} />
+          <input type="hidden" name="instructor" value={formData.instructor} />
+
           {/* HEADER */}
-          <DialogHeader className="space-y-1">
-            <DialogTitle className="text-xl font-semibold flex items-center gap-2 text-foreground">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Assign Subjects to {teacher.firstName} {teacher.lastName}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              Select or remove subjects assigned to this instructor.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="flex justify-between items-center mb-6 md:mb-8">
+            <SheetHeader className="p-0">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+                Add New Subject
+              </SheetTitle>
+            </SheetHeader>
 
-          {/* SEARCH & QUICK ACTION TOOLBAR */}
-          <div className="flex flex-col sm:flex-row gap-2 justify-between items-center pt-2">
-            <div className="relative w-full sm:w-auto flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search subjects or code..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-xs bg-background border-input"
-              />
-            </div>
-            
-            {filteredSubjects.length > 0 && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleSelectAllFiltered}
-                className="text-xs text-muted-foreground hover:text-foreground h-9 px-3 w-full sm:w-auto"
-              >
-                {filteredSubjects.every((s) => selectedSubjects.includes(s.id)) ? (
-                  <>
-                    <Square className="h-3.5 w-3.5 mr-1.5" />
-                    Deselect Visible
-                  </>
-                ) : (
-                  <>
-                    <CheckSquare className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                    Select Visible ({filteredSubjects.length})
-                  </>
-                )}
-              </Button>
-            )}
+            <SheetClose asChild className="cursor-pointer">
+              <X size={25} className="text-muted-foreground hover:text-foreground transition-colors" />
+            </SheetClose>
           </div>
 
-          {/* CHECKBOX LIST */}
-          <div className="max-h-[340px] overflow-y-auto space-y-2 pr-1 border border-border rounded-md p-2 bg-background/50">
-            {filteredSubjects.length === 0 ? (
-              <div className="text-center text-muted-foreground py-10 text-xs">
-                {searchQuery ? 'No matching subjects found.' : 'No subjects available.'}
-              </div>
-            ) : (
-              filteredSubjects.map((subject) => {
-                const isChecked = selectedSubjects.includes(subject.id);
-                return (
-                  <Label
-                    key={subject.id}
-                    htmlFor={`subject-${subject.id}`}
-                    className={`
-                      flex items-center space-x-3 p-3 rounded-lg border transition-colors cursor-pointer
-                      ${
-                        isChecked
-                          ? 'border-primary/50 bg-primary/5 dark:bg-primary/10'
-                          : 'border-border bg-card hover:bg-accent/40'
-                      }
-                    `}
-                  >
-                    <Checkbox
-                      id={`subject-${subject.id}`}
-                      checked={isChecked}
-                      onCheckedChange={() => handleToggleSubject(subject.id)}
-                    />
-                    <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="font-medium text-sm text-foreground truncate">
-                          {subject.subjectName}
-                        </span>
-                        <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
-                          {subject.code}
-                        </Badge>
-                      </div>
-                      {subject.status && (
-                        <Badge
-                          variant={subject.status === 'Active' ? 'default' : 'secondary'}
-                          className="text-[10px] px-2 py-0 shrink-0"
-                        >
-                          {subject.status}
-                        </Badge>
-                      )}
-                    </div>
-                  </Label>
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+            Fill in the details below to add a new subject.
+          </p>
+
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
+          {/* STREAM SELECT */}
+          <div className="mb-4 w-full">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Stream
+            </label>
+
+            <Select
+              value={formData.streamId}
+              onValueChange={(value) => {
+                const selectedStream = streams?.find(
+                  (s: any) => String(s.id) === String(value)
                 );
-              })
-            )}
+                setFormData({
+                  ...formData,
+                  streamId: value,
+                  stream: selectedStream?.name || '',
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={`${t('select')} ${t('streams').toLowerCase()}`} />
+              </SelectTrigger>
+
+              <SelectContent>
+                {!streams || streams.length === 0 ? (
+                  <SelectItem value="no-stream" disabled>
+                    {t('noStreams')}
+                  </SelectItem>
+                ) : (
+                  streams.map((stream: any) => (
+                    <SelectItem key={stream.id} value={String(stream.id)}>
+                      {stream.name} ({stream.levelType})
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* SELECTION SUMMARY & FOOTER ACTIONS */}
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 items-center justify-between pt-2">
-            <span className="text-xs text-muted-foreground">
-              Selected: <strong className="text-foreground">{selectedSubjects.length}</strong> subjects
-            </span>
+          {/* TEACHER SELECT */}
+          <div className="mb-4 w-full">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Teacher
+            </label>
 
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => setOpen(false)}
-                className="h-9 px-4 text-xs w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+            <Select
+              value={formData.teacherId}
+              onValueChange={(value) => {
+                const selectedTeacher = teachers?.find(
+                  (t: any) => String(t.id) === String(value)
+                );
+                setFormData({
+                  ...formData,
+                  teacherId: value,
+                  instructor: selectedTeacher
+                    ? `${selectedTeacher.firstName} ${selectedTeacher.lastName}`
+                    : '',
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select teacher" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {!teachers || teachers.length === 0 ? (
+                  <SelectItem value="no-teacher" disabled>
+                    No teachers available
+                  </SelectItem>
+                ) : (
+                  teachers.map((teacher: any) => (
+                    <SelectItem key={teacher.id} value={String(teacher.id)}>
+                      {teacher.firstName} {teacher.lastName}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* SCROLLABLE CONTENT */}
+          <div className="flex-1 overflow-y-auto pr-2">
+            {[
+              { label: 'Subject Name', field: 'subjectName', type: 'text' },
+              { label: 'Code', field: 'code', type: 'text' },
+            ].map(({ label, field, type }) => (
+              <div key={field} className="mb-4">
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {label}
+                </label>
+
+                <Input
+                  type={type}
+                  name={field}
+                  value={(formData as any)[field]}
+                  placeholder={`Enter ${label}`}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            ))}
+
+            {/* STATUS */}
+            <div className="mb-4 w-full">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Status
+              </label>
+
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, status: value })
+                }
               >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="h-9 px-4 text-xs w-full sm:w-auto hover:scale-105 transition cursor-pointer"
-              >
-                {isSubmitting ? 'Saving...' : 'Save Assignments'}
-              </Button>
+                <SelectTrigger>
+                  <SelectValue placeholder={t('selectStatus')} />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="Active">{t('active')}</SelectItem>
+                  <SelectItem value="Inactive">{t('inactive')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </div>
+
+          {/* FOOTER */}
+          <div className="flex justify-end gap-3 border-t border-border pt-4 mt-6 sticky bottom-0 bg-card z-10">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-105 transition cursor-pointer"
+            >
+              {t('cancel')}
+            </Button>
+
+            <Button
+              type="submit"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
+            >
+              {fetcher.state === 'submitting' ? t('adding') : t('addSubject')}
+            </Button>
+          </div>
+        </fetcher.Form>
+      </SheetContent>
+    </Sheet>
   );
 }

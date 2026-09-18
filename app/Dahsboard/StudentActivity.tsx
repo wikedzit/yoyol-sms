@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { UserPlus, UserCheck, UserX } from 'lucide-react';
-import { useLanguage } from '~/lib/i18n';
 
 interface Student {
   id: number;
@@ -20,7 +19,7 @@ interface StudentActivityProps {
   };
 }
 
-function formatTimeAgo(timestamp: number, t: (key: any) => string): string {
+function formatTimeAgo(timestamp: number): string {
   const now = Date.now();
   const diff = now - timestamp;
   const minutes = Math.floor(diff / (1000 * 60));
@@ -28,11 +27,11 @@ function formatTimeAgo(timestamp: number, t: (key: any) => string): string {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
   if (minutes < 60) {
-    return `${minutes} ${t('minutesAgo')}`;
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
   } else if (hours < 24) {
-    return `${hours} ${t('hoursAgo')}`;
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
   } else {
-    return `${days} ${t('daysAgo')}`;
+    return `${days} day${days !== 1 ? 's' : ''} ago`;
   }
 }
 
@@ -40,22 +39,21 @@ export function StudentActivity({
   recentStudents,
   activityStats,
 }: StudentActivityProps) {
-  const { t } = useLanguage();
   const stats = [
     {
-      label: t('newThisWeek'),
+      label: 'New This Week',
       value: activityStats.newThisWeek.toLocaleString(),
       icon: UserPlus,
       color: 'text-success',
     },
     {
-      label: t('activeStudents'),
+      label: 'Active Students',
       value: activityStats.activeStudents.toLocaleString(),
       icon: UserCheck,
       color: 'text-info',
     },
     {
-      label: t('inactive'),
+      label: 'Inactive',
       value: activityStats.inactiveStudents.toLocaleString(),
       icon: UserX,
       color: 'text-warning',
@@ -66,20 +64,20 @@ export function StudentActivity({
     type: 'registration' as const,
     student: `${student.firstName} ${student.lastName}`,
     detail: student.course
-      ? `${t('enrolledIn')} ${student.course}`
-      : t('newStudentRegistration'),
+      ? `Enrolled in ${student.course}`
+      : 'New student registration',
     time: student.createdAt
-      ? formatTimeAgo(student.createdAt, t)
-      : t('recently'),
+      ? formatTimeAgo(student.createdAt)
+      : 'Recently',
     icon: UserPlus,
   }));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('studentActivity')}</CardTitle>
+        <CardTitle>Student Activity</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {t('recentRegistrations')}
+          Recent registrations and updates
         </p>
       </CardHeader>
       <CardContent>
@@ -120,7 +118,7 @@ export function StudentActivity({
             ))
           ) : (
             <p className="text-sm text-muted-foreground text-center py-4">
-              {t('noRecentActivity')}
+              No recent student activity
             </p>
           )}
         </div>

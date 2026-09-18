@@ -22,7 +22,12 @@ export async function loader({ request, context }: any) {
   const cookieHeader = request.headers.get("Cookie");
   const token = await authCookie.parse(cookieHeader || "");
 
-  if (!token) {
+  // authCookie.parse() can return an empty object {} instead of
+  // null/undefined when the cookie value fails to decode (e.g. corrupted
+  // or stale cookie). An empty object is truthy, so a plain `if (!token)`
+  // check lets it slip through, and jwt.verify() then crashes with
+  // "token must be a string". Checking typeof closes that gap.
+  if (!token || typeof token !== "string") {
     return redirect("/auth/login");
   }
 
@@ -160,7 +165,6 @@ function DashboardContent({
 
           {/* Header & Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
-          
             <header className="bg-card/95 backdrop-blur-md border-b border-border h-[70px] flex items-center justify-between px-4 lg:px-8 flex-shrink-0 relative transition-colors">
               {/* LEFT: Hamburger menu, pinned to the far left */}
               <div className="flex-1 flex items-center">
@@ -222,7 +226,6 @@ function DashboardContent({
 
                     <DropdownMenuSeparator />
 
-                    
                     <DropdownMenuItem
                       className="flex items-center justify-between cursor-pointer focus:bg-accent focus:text-accent-foreground select-none"
                       onSelect={(e) => {

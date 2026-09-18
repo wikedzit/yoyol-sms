@@ -17,56 +17,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '~/components/ui/select';
-import type { FetcherWithComponents } from 'react-router';
-
-interface AcademicYear {
-  id: string | number;
-  name?: string;
-  startDate?: string;
-  endDate?: string;
-  status?: 'upcoming' | 'active' | 'archived' | string;
-}
-
-interface EditAcademicYearModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  fetcher: FetcherWithComponents<any>;
-  year: AcademicYear | null;
-}
 
 export default function EditAcademicYearModal({
   open,
   setOpen,
   fetcher,
   year,
-}: EditAcademicYearModalProps) {
+}: any) {
   const [formData, setFormData] = useState({
-    name: '',
-    startDate: '',
-    endDate: '',
-    status: 'upcoming',
+    name: year?.name || '',
+    startDate: year?.startDate || '',
+    endDate: year?.endDate || '',
+    status: year?.status || 'upcoming',
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Re-populate state when modal opens or year changes
   useEffect(() => {
-    if (year && open) {
+    if (year) {
       setFormData({
         name: year.name || '',
         startDate: year.startDate || '',
         endDate: year.endDate || '',
         status: year.status || 'upcoming',
       });
-      setError(null);
     }
-  }, [year, open]);
+  }, [year]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
   };
 
-  // Close modal on successful server action response
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data?.action === 'year_update') {
       setOpen(false);
@@ -75,11 +56,9 @@ export default function EditAcademicYearModal({
     if (fetcher.data?.error) {
       setError(fetcher.data.error);
     }
-  }, [fetcher.data, setOpen]);
+  }, [fetcher.data]);
 
-  if (!year) return null;
-
-  const statusChangedToActive = formData.status === 'active' && year.status !== 'active';
+  const statusChangedToActive = formData.status === 'active' && year?.status !== 'active';
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -90,8 +69,7 @@ export default function EditAcademicYearModal({
           sm:max-w-[90%]
           md:max-w-[500px] md:w-[500px]
           p-6 md:p-10
-          flex flex-col justify-between
-          bg-card text-card-foreground border-border
+          flex flex-col
         "
       >
         <fetcher.Form
@@ -101,32 +79,29 @@ export default function EditAcademicYearModal({
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="action" value="year_update" />
-          <input type="hidden" name="id" value={year.id} />
+          <input type="hidden" name="id" value={year?.id} />
           <input type="hidden" name="status" value={formData.status} />
 
-          {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+              <SheetTitle className="text-xl md:text-2xl font-semibold">
                 Edit Academic Year
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={24} className="text-muted-foreground hover:text-foreground transition-colors" />
+              <X size={25} />
             </SheetClose>
           </div>
 
-          {/* SERVER ERROR DISPLAY */}
           {error && (
-            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
-          {/* SCROLLABLE FORM BODY */}
-          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
+          <div className="flex-1 overflow-y-auto pr-2">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Year Name
               </label>
               <Input
@@ -134,13 +109,12 @@ export default function EditAcademicYearModal({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. 2025/2026"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Start Date
               </label>
               <Input
@@ -152,8 +126,8 @@ export default function EditAcademicYearModal({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 End Date
               </label>
               <Input
@@ -165,16 +139,15 @@ export default function EditAcademicYearModal({
               />
             </div>
 
-            <div className="w-full">
-              <label className="block text-sm font-medium text-foreground mb-1">
+            <div className="mb-4 w-full">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => {
-                  setFormData({ ...formData, status: value });
-                  if (error) setError(null);
-                }}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, status: value })
+                }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
@@ -186,26 +159,25 @@ export default function EditAcademicYearModal({
                 </SelectContent>
               </Select>
               {statusChangedToActive && (
-                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 font-medium">
+                <p className="text-xs text-amber-600 mt-1">
                   The currently active year (if any) will be archived automatically.
                 </p>
               )}
             </div>
           </div>
 
-          {/* STICKY FOOTER */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
+          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               {fetcher.state === 'submitting' ? 'Saving...' : 'Save Changes'}
             </Button>

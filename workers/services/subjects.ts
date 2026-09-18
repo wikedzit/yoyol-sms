@@ -1,28 +1,18 @@
-import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
+// --- Zod schemas for validation ---
+import { like, asc, desc, eq, and } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
-import {
-  subject,
-  type SelectSubject,
-} from 'workers/database/subjects';
-import { studentSubjects } from 'workers/database/student-subjects';
+import { subject, type SelectSubject } from 'workers/database/subjects';
 import { z } from 'zod';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
-
   subjectName: z.string().min(2).max(100),
-
   code: z.string().min(2).max(10),
-
   stream: z.string().min(2).max(100),
-
-  // Teacher is OPTIONAL
-  instructor: z.string().max(100).optional(),
-
+  instructor: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
-
   status: z.enum(['Active', 'Inactive']).default('Active'),
-
   streamId: z.number().min(1),
 });
 
@@ -137,74 +127,43 @@ export default class SubjectService {
     }
   }
 
-  // Get all subjects with pagination, search, sorting,
-// and REAL number of students enrolled
-async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
-  try {
-    const ownerUserId = requireOwnerUserId(this.ownerUserId);
+  // Get all subjects with pagination, search, and sorting
+  async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
+    try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const { limit, offset, sortBy, sortOrder, search } =
+        getSubjectsSchema.parse(options || {});
 
-    const { limit, offset, sortBy, sortOrder, search } =
-      getSubjectsSchema.parse(options || {});
+      const sortColumn =
+        sortBy === 'subjectName'
+          ? subject.subjectName
+          : sortBy === 'code'
+          ? subject.code
+          : sortBy === 'createdAt'
+          ? subject.createdAt
+          : subject.updatedAt;
 
-    const sortColumn =
-      sortBy === 'subjectName'
-        ? subject.subjectName
-        : sortBy === 'code'
-        ? subject.code
-        : sortBy === 'createdAt'
-        ? subject.createdAt
-        : subject.updatedAt;
+      const filters = [eq(subject.ownerUserId, ownerUserId)];
+      if (search) {
+        filters.push(like(subject.subjectName, `%${search}%`));
+      }
 
-    const filters = [eq(subject.ownerUserId, ownerUserId)];
+      const results = await this.db
+        .select()
+        .from(subject)
+        .where(and(...filters))
+        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit)
+        .offset(offset ?? 0)
+        .execute();
 
-    if (search) {
-      filters.push(like(subject.subjectName, `%${search}%`));
+      return results;
+    } catch (error) {
+      console.error('Error fetching all subjects:', error);
+      return [];
     }
-
-    const results = await this.db
-      .select({
-        id: subject.id,
-        subjectName: subject.subjectName,
-        code: subject.code,
-        stream: subject.stream,
-        instructor: subject.instructor,
-        description: subject.description,
-
-        // 🔥 REAL student count
-        enrolledStudents: sql<number>`
-          (
-            SELECT COUNT(*)
-            FROM ${studentSubjects}
-            WHERE ${studentSubjects.subjectId} = ${subject.id}
-          )
-        `,
-
-        status: subject.status,
-        streamId: subject.streamId,
-        ownerUserId: subject.ownerUserId,
-        createdAt: subject.createdAt,
-        updatedAt: subject.updatedAt,
-      })
-      .from(subject)
-      .where(and(...filters))
-      .orderBy(
-        sortOrder === 'asc'
-          ? asc(sortColumn)
-          : desc(sortColumn)
-      )
-      .limit(limit)
-      .offset(offset ?? 0)
-      .execute();
-
-    return results.map((item) => ({
-      ...item,
-      enrolledStudents: Number(item.enrolledStudents ?? 0),
-    })) as SelectSubject[];
-  } catch (error) {
-    console.error('Error fetching all subjects:', error);
-    return [];
   }
-}
+
   // Update a subject
   async updateSubject(
     id: number,

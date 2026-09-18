@@ -58,7 +58,7 @@ export async function generateTotpCode(secret: string, timestamp = Date.now()): 
 
   const key = await crypto.subtle.importKey(
     'raw',
-    base32Decode(secret),
+    base32Decode(secret) as BufferSource,
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign'],

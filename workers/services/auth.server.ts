@@ -204,10 +204,15 @@ export default class AuthService {
   }
 
   private async finishLogin(user: SelectUser): Promise<string> {
-    await this.db
-      .update(users)
-      .set({ lastLoginAt: Date.now(), updatedAt: Date.now() })
-      .where(eq(users.id, user.id));
+    try {
+      await this.db
+        .update(users)
+        .set({ lastLoginAt: Date.now(), updatedAt: Date.now() })
+        .where(eq(users.id, user.id));
+    } catch (error) {
+      // Login should still succeed if this analytics column is missing.
+      console.error('Could not record last login time:', error);
+    }
 
     return this.createSessionToken(user);
   }
@@ -219,31 +224,21 @@ export default class AuthService {
     return payload;
   }
 
-  // UPDATE PROFILE (used for account holders with no linked teacher/
-  // student record — e.g. Admin, Finance — whose only name lives on
-  // `users`. preferredLanguage applies to every role, since it's a UI
-  // preference tied to the login account itself.)
-  async updateProfile(
+  // Account holders with no teacher/student record (Admin, Finance) store
+  // their name only on `users`.
+  async updateName(
     id: number,
-    data: {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-      preferredLanguage?: string;
-      avatarUrl?: string;
-      jobTitle?: string;
-      staffId?: string;
-      bio?: string;
-    }
-  ) {
-    const result = await this.db
+    firstName: string,
+    lastName: string,
+  ): Promise<SelectUser | null> {
+    const updatedUser = await this.db
       .update(users)
-      .set({ ...data, updatedAt: Date.now() })
+      .set({ firstName, lastName, updatedAt: Date.now() })
       .where(eq(users.id, id))
       .returning()
       .get();
 
-    return result ?? null;
+    return updatedUser ?? null;
   }
 
   async changePassword(

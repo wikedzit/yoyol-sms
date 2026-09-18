@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Progress } from '~/components/ui/progress';
 import { cn } from '~/lib/utils';
-import { useLanguage } from '~/lib/i18n';
 
 interface StreamInsight {
   name: string;
@@ -38,19 +37,18 @@ interface StreamInsightsProps {
 // };
 
 export function StreamInsights({ data }: StreamInsightsProps) {
-  const { t } = useLanguage();
   if (!data || data.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('streamDistribution')}</CardTitle>
+          <CardTitle>Stream Distribution</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {t('streamDistributionDescription')}
+            Student distribution across academic streams
           </p>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            {t('noStreamData')}
+            No stream data available
           </p>
         </CardContent>
       </Card>
@@ -60,9 +58,9 @@ export function StreamInsights({ data }: StreamInsightsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('streamDistribution')}</CardTitle>
+        <CardTitle>Stream Distribution</CardTitle>
         <p className="text-sm text-muted-foreground">
-          {t('streamDistributionDescription')}
+          Student distribution across academic streams
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -82,7 +80,7 @@ export function StreamInsights({ data }: StreamInsightsProps) {
                   </span>
                 </div>
                 <span className="text-muted-foreground">
-                  {stream.students} {t('students')}
+                  {stream.students} students
                 </span>
               </div>
               <div className="relative h-2 w-full overflow-hidden rounded-full bg-muted">

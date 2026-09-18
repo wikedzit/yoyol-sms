@@ -42,11 +42,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return { error: 'Failed to create school' };
   }
 
-  return redirect(`/schools/${created.id}/campuses/new_campus`);
+  // Baada ya kuunda, elekeza moja kwa moja kwenye profile ya shule mpya
+  return redirect(`/schools/${created.id}`);
 }
 
 export default function NewSchoolPage() {
-  const { t } = useLanguage();
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSaving = navigation.state === 'submitting';
@@ -54,15 +54,15 @@ export default function NewSchoolPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('addSchool')} description={t('registerNewSchool')} />
+      <PageHeader title="Add School" description="Register a new school" />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
-            {t('schoolDetails')}
+            School Details
           </CardTitle>
-          <CardDescription>{t('fillSchoolInfo')}</CardDescription>
+          <CardDescription>Fill in the new school's information.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form method="post" className="space-y-4">
@@ -78,27 +78,27 @@ export default function NewSchoolPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="registrationNumber">{t('registrationNumber')}</Label>
+                <Label htmlFor="registrationNumber">Registration Number</Label>
                 <Input id="registrationNumber" name="registrationNumber" />
               </div>
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="address">{t('address')}</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input id="address" name="address" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">{t('phone')}</Label>
+                <Label htmlFor="phone">Phone</Label>
                 <Input id="phone" name="phone" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">{t('email')}</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="motto">{t('motto')}</Label>
+                <Label htmlFor="motto">Motto</Label>
                 <Input id="motto" name="motto" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="logoUrl">{t('logoUrl')}</Label>
+                <Label htmlFor="logoUrl">Logo URL</Label>
                 <Input id="logoUrl" name="logoUrl" />
               </div>
             </div>
@@ -109,7 +109,7 @@ export default function NewSchoolPage() {
 
             <Button type="submit" disabled={isSaving} className="bg-primary-gradient text-white flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer">
               <Save size={16} />
-              {isSaving ? t('saving') : t('saveSchool')}
+              {isSaving ? 'Saving...' : 'Save School'}
             </Button>
           </Form>
         </CardContent>

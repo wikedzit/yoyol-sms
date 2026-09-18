@@ -30,6 +30,8 @@ export default function EditCampusModal({
     name: '',
     code: '',
     address: '',
+    phone: '',
+    email: '',
   });
 
   // Populate form when campus changes or modal opens
@@ -39,6 +41,8 @@ export default function EditCampusModal({
         name: campus.name || '',
         code: campus.code || '',
         address: campus.address || '',
+        phone: campus.phone || '',
+        email: campus.email || '',
       });
     }
   }, [campus, open]);
@@ -75,6 +79,8 @@ export default function EditCampusModal({
         name: campus?.name || '',
         code: campus?.code || '',
         address: campus?.address || '',
+        phone: campus?.phone || '',
+        email: campus?.email || '',
       });
     }
   };
@@ -206,6 +212,46 @@ export default function EditCampusModal({
                   value={formData.address}
                   onChange={handleChange}
                   disabled={isSubmitting}
+                />
+              </div>
+
+              {/* Phone */}
+              <div>
+                <label
+                  htmlFor="campus-phone"
+                  className="mb-1 block text-sm font-medium"
+                >
+                  Phone
+                </label>
+
+                <Input
+                  id="campus-phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  placeholder="Enter campus phone number"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="campus-email"
+                  className="mb-1 block text-sm font-medium"
+                >
+                  Email
+                </label>
+
+                <Input
+                  id="campus-email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                  placeholder="Enter campus email address"
                 />
               </div>
 
