@@ -271,8 +271,20 @@ export default function EditSubjectModal({
               </label>
 
               <Select
-                value={formData.teacherId}
+                value={formData.teacherId || 'none'}
                 onValueChange={(value) => {
+                  if (value === 'none') {
+                    setFormData((prev) => ({
+                      ...prev,
+                      teacherId: '',
+                      instructor: '',
+                    }));
+                    if (error) {
+                      setError(null);
+                    }
+                    return;
+                  }
+
                   const selectedTeacher = teachers.find(
                     (teacher) =>
                       String(teacher.id) === String(value)
@@ -292,10 +304,11 @@ export default function EditSubjectModal({
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select teacher" />
+                  <SelectValue placeholder="Select teacher (optional)" />
                 </SelectTrigger>
 
                 <SelectContent>
+                  <SelectItem value="none">Not Assigned</SelectItem>
                   {teachers.length > 0 ? (
                     teachers.map((teacher) => (
                       <SelectItem

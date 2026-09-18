@@ -33,6 +33,24 @@ import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import AssignTeachersModal from '~/components/modal/AssignTeachersModal';
 import ViewSubjectModal from '~/components/modal/ViewSubjectModal';
+
+const UNASSIGNED_TEACHERS_LABEL = 'Not Assigned';
+
+function readOptionalTeacherId(
+  raw: FormDataEntryValue | null,
+): number | undefined {
+  const value = String(raw ?? '').trim();
+  if (!value || value === 'none') {
+    return undefined;
+  }
+
+  const teacherId = Number(value);
+  if (!Number.isInteger(teacherId) || teacherId < 1) {
+    return undefined;
+  }
+
+  return teacherId;
+}
 import {
   Select,
   SelectContent,
@@ -142,8 +160,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         return { error: 'Please select a stream for this subject.' };
       }
 
-      const teacherIdRaw = form.get('teacherId');
-      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+      const teacherId = readOptionalTeacherId(form.get('teacherId'));
 
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
@@ -175,8 +192,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const id = Number(form.get('id'));
       if (!id) return { error: 'Subject ID is required' };
 
-      const teacherIdRaw = form.get('teacherId');
-      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+      const teacherId = readOptionalTeacherId(form.get('teacherId'));
 
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
@@ -478,7 +494,7 @@ export default function SubjectsPage() {
                               ))
                             ) : (
                               <span className="text-[10px] sm:text-xs text-muted-foreground">
-                                No teachers
+                                {UNASSIGNED_TEACHERS_LABEL}
                               </span>
                             )}
                           </div>

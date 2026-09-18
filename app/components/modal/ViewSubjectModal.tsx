@@ -152,7 +152,7 @@ export default function ViewSubjectModal({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                No teachers assigned
+                Not Assigned
               </p>
             )}
           </div>

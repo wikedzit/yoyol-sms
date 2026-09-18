@@ -29,19 +29,38 @@ interface CampusOption {
   schoolId: number;
 }
 
+interface StreamOption {
+  id: number;
+  name: string;
+}
+
+interface FormOption {
+  id: number;
+  name: string;
+  streamId: number;
+}
+
+type AddStudentResult = {
+  success?: boolean;
+  error?: string;
+};
+
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   classId?: string | { id: string } | undefined;
-  fetcher: FetcherWithComponents<any>;
+  fetcher: FetcherWithComponents<AddStudentResult>;
   schools?: SchoolOption[];
   campuses?: CampusOption[];
+  streams?: StreamOption[];
+  forms?: FormOption[];
 }
 
 function emptyStudentForm(defaultSchoolId = '') {
   return {
     firstName: '',
     lastName: '',
+    admissionNumber: '',
     email: '',
     phone: '',
     enrollmentDate: '',
@@ -51,8 +70,12 @@ function emptyStudentForm(defaultSchoolId = '') {
     status: 'Active',
     schoolId: defaultSchoolId,
     campusId: '',
+    streamId: '',
+    formId: '',
   };
 }
+
+type StudentFormFields = ReturnType<typeof emptyStudentForm>;
 
 export default function AddStudentModal({
   open,
@@ -61,6 +84,8 @@ export default function AddStudentModal({
   fetcher,
   schools = [],
   campuses = [],
+  streams = [],
+  forms = [],
 }: AddStudentModalProps) {
   const hasCampuses = campuses.length > 0;
   const defaultSchoolId =
@@ -68,8 +93,15 @@ export default function AddStudentModal({
 
   const [formData, setFormData] = useState(emptyStudentForm(defaultSchoolId));
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const formsInSelectedStream = formData.streamId
+    ? forms.filter(
+        (academicForm) => String(academicForm.streamId) === formData.streamId,
+      )
+    : [];
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fieldName = event.target.name as keyof StudentFormFields;
+    setFormData({ ...formData, [fieldName]: event.target.value });
   };
 
   useEffect(() => {
@@ -84,14 +116,22 @@ export default function AddStudentModal({
     }
   }, [open, defaultSchoolId]);
 
+  const canSubmit =
+    formData.firstName.trim().length > 0 &&
+    formData.lastName.trim().length > 0 &&
+    formData.admissionNumber.trim().length > 0 &&
+    formData.streamId.length > 0 &&
+    formData.formId.length > 0 &&
+    (hasCampuses ? formData.campusId.length > 0 : formData.schoolId.length > 0);
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
         className="
-          w-full max-w-full              /* Mobile full-screen */
-          sm:max-w-[90%]                 /* Tablet */
-          md:max-w-[573px] md:w-[573px]  /* Desktop fixed width */
+          w-full max-w-full
+          sm:max-w-[90%]
+          md:max-w-[573px] md:w-[573px]
           p-6 md:p-10
           flex flex-col justify-between
         "
@@ -108,9 +148,7 @@ export default function AddStudentModal({
             }
           />
 
-          {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
                 <SheetTitle className="text-xl md:text-2xl font-semibold">
@@ -209,23 +247,57 @@ export default function AddStudentModal({
                 </div>
               )}
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Admission Number <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  type="text"
+                  name="admissionNumber"
+                  value={formData.admissionNumber}
+                  onChange={handleChange}
+                  placeholder="Enter admission number"
+                  required
+                />
+              </div>
+
               {(
-                [
-                  'firstName',
-                  'lastName',
-                  'email',
-                  'phone',
-                  'enrollmentDate',
-                  'dob',
-                  'address',
-                ] as const
+                ['email', 'phone', 'enrollmentDate', 'dob', 'address'] as const
               ).map((field) => (
                 <div key={field}>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {field === 'firstName'
-                      ? 'First Name'
-                      : field === 'lastName'
-                        ? 'Last Name'
+                    {field === 'enrollmentDate'
+                      ? 'Enrollment Date'
+                      : field === 'dob'
+                        ? 'Date of Birth'
                         : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <Input
@@ -239,13 +311,86 @@ export default function AddStudentModal({
                     name={field}
                     value={formData[field]}
                     onChange={handleChange}
-                    required
                   />
                 </div>
               ))}
 
               <div className="flex flex-col sm:flex-row gap-4">
-                {/* Gender */}
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stream <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.streamId}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        streamId: value,
+                        formId: '',
+                      })
+                    }
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select stream" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {streams.map((stream) => (
+                        <SelectItem key={stream.id} value={String(stream.id)}>
+                          {stream.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="hidden"
+                    name="streamId"
+                    value={formData.streamId}
+                  />
+                  {streams.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      No streams available. Please add a stream first.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Form <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.formId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, formId: value })
+                    }
+                    disabled={!formData.streamId}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          formData.streamId
+                            ? 'Select form'
+                            : 'Select stream first'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formsInSelectedStream.map((academicForm) => (
+                        <SelectItem
+                          key={academicForm.id}
+                          value={String(academicForm.id)}
+                        >
+                          {academicForm.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="formId" value={formData.formId} />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Gender
@@ -267,7 +412,6 @@ export default function AddStudentModal({
                   <input type="hidden" name="gender" value={formData.gender} />
                 </div>
 
-                {/* Status */}
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Status
@@ -293,7 +437,6 @@ export default function AddStudentModal({
             </div>
           </div>
 
-          {/* Sticky Footer */}
           <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
@@ -306,10 +449,7 @@ export default function AddStudentModal({
             <Button
               type="submit"
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
-              disabled={
-                fetcher.state === 'submitting' ||
-                (hasCampuses ? !formData.campusId : !formData.schoolId)
-              }
+              disabled={fetcher.state === 'submitting' || !canSubmit}
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
             </Button>
@@ -319,4 +459,3 @@ export default function AddStudentModal({
     </Sheet>
   );
 }
- 

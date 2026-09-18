@@ -288,6 +288,13 @@
       "when": 1789126326697,
       "tag": "0040_chubby_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1789730400000,
+      "tag": "0041_add_student_admission_number",
+      "breakpoints": true
     }
   ]
 }

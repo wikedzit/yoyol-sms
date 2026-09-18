@@ -41,6 +41,7 @@ import type StudentService from "workers/services/student";
 import type SubjectService from "workers/services/subjects";
 import type StudentSubjectService from "workers/services/student-subjects";
 import type SchoolService from "workers/services/school";
+import type AcademicLevelService from "workers/services/academic-levels";
 import { toast } from "sonner";
 import { usePagination } from "~/hooks/usePagination";
 import { PaginationControls } from "~/components/shared/PaginationControls";
@@ -52,6 +53,18 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
+async function findSingleClassIdForForm(
+  academicLevel: AcademicLevelService,
+  formId: number,
+): Promise<number | undefined> {
+  const classesForForm = await academicLevel.getFormClassesByFormId(formId);
+  if (classesForForm.length !== 1) {
+    return undefined;
+  }
+
+  return classesForForm[0].id;
+}
+
 // 🧠 Loader – fetch students with their assigned subjects + schools list
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
@@ -60,6 +73,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
     studentSubjects: StudentSubjectService;
     school: SchoolService;
     campus: CampusService;
+    academicLevel: AcademicLevelService;
   };
 
   const students = await services.student.getAll({
@@ -108,11 +122,16 @@ export async function loader({ context }: LoaderFunctionArgs) {
     }),
   );
 
+  const streams = await services.academicLevel.getAllStreams();
+  const forms = await services.academicLevel.getAllForms();
+
   return {
     students: studentsWithSubjects,
     allSubjects: subjects,
     schools,
     campuses,
+    streams,
+    forms,
   };
 }
 
@@ -122,6 +141,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     student: StudentService;
     studentSubjects: StudentSubjectService;
     campus: CampusService;
+    academicLevel: AcademicLevelService;
   };
   const form = await request.formData();
   const method = (form.get("_method") as string) || request.method;
@@ -158,6 +178,40 @@ export async function action({ request, context }: ActionFunctionArgs) {
         }
       }
 
+      if (!schoolId) {
+        return {
+          error: "Please select a school or campus before adding a student.",
+        };
+      }
+
+      const admissionNumber = String(
+        form.get("admissionNumber") ?? "",
+      ).trim();
+      const streamIdRaw = form.get("streamId")
+        ? Number(form.get("streamId"))
+        : undefined;
+      const formIdRaw = form.get("formId")
+        ? Number(form.get("formId"))
+        : undefined;
+
+      if (!admissionNumber) {
+        return { error: "Admission number is required." };
+      }
+
+      if (!streamIdRaw || !formIdRaw) {
+        return { error: "Please select a stream and form." };
+      }
+
+      const selectedForm = await services.academicLevel.getFormById(formIdRaw);
+      if (!selectedForm || selectedForm.streamId !== streamIdRaw) {
+        return { error: "Please select a valid stream and form." };
+      }
+
+      const formClassId = await findSingleClassIdForForm(
+        services.academicLevel,
+        formIdRaw,
+      );
+
       const data = {
         firstName: toTitleCase(String(form.get("firstName") ?? "")),
         lastName: toTitleCase(String(form.get("lastName") ?? "")),
@@ -179,7 +233,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrollmentDate: form.get("enrollmentDate")
           ? String(form.get("enrollmentDate"))
           : undefined,
+        admissionNumber,
         classId: form.get("classId") ? Number(form.get("classId")) : undefined,
+        formClassId,
         schoolId,
         status: String(form.get("status") ?? "Active") as
           | "Active"
@@ -187,7 +243,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
           | "Inactive",
       };
 
-      const created = await services.student.create(data as any);
+      const created = await services.student.create(data);
 
       if (!created) {
         return new Response(
@@ -197,6 +253,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
           }),
           { status: 400, headers: { "Content-Type": "application/json" } },
         );
+      }
+
+      if (formClassId) {
+        const currentClass =
+          await services.academicLevel.getFormClassById(formClassId);
+        if (currentClass) {
+          await services.academicLevel.updateFormClass(formClassId, {
+            studentCount: (currentClass.studentCount || 0) + 1,
+          });
+        }
       }
 
       return new Response(JSON.stringify({ success: true, student: created }), {
@@ -300,11 +366,15 @@ export default function Students() {
     allSubjects,
     schools,
     campuses,
+    streams,
+    forms,
   } = useLoaderData() as {
     students: any[];
     allSubjects: any[];
     schools: any[];
     campuses: Array<{ id: number; name: string; schoolId: number }>;
+    streams: Array<{ id: number; name: string }>;
+    forms: Array<{ id: number; name: string; streamId: number }>;
   };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
@@ -673,6 +743,8 @@ export default function Students() {
           fetcher={fetcher}
           schools={schools}
           campuses={campuses}
+          streams={streams}
+          forms={forms}
         />
       )}
 
