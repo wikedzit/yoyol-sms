@@ -429,11 +429,10 @@ export default function ClassesRoute() {
                   </div>
                 </div>
 
-                {/* Student Count */}
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <Users size={14} /> {c.studentCount} students
-                  </div>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground pt-1">
+                  <Users size={14} />
+                  <span>{c.studentCount}</span>
+                  <span>{c.studentCount === 1 ? "Student" : "Students"}</span>
                 </div>
               </Link>
 
