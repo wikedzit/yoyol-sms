@@ -132,22 +132,23 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
       return { success: true, action: 'assign_teachers' };
     }
-
-    if (method === 'POST') {
+    // CREATE
+       if (method === 'POST') {
       const streamIdRaw = form.get('streamId');
       const streamId = Number(streamIdRaw);
-      
-      // Validate required fields
+
       if (!streamIdRaw || isNaN(streamId) || streamId < 1) {
         return { error: 'Please select a stream for this subject.' };
       }
+
+      const teacherIdRaw = form.get('teacherId');
+      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
 
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
         stream: String(form.get('stream') ?? ''),
         instructor: String(form.get('instructor') ?? ''),
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
         status: String(form.get('status') ?? '') as 'Active' | 'Inactive',
         description: form.get('description')
           ? String(form.get('description'))
@@ -160,12 +161,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
           error: 'Failed to create subject. Please check all required fields.',
         };
       }
+
+      // Auto-assign the chosen teacher so they show up under "Assigned Teachers"
+      if (teacherId) {
+        await services.teacherSubject.assignSubjectToTeacher(teacherId, created.id);
+      }
+
       return { success: true, subject: created };
     }
 
-    if (method === 'PUT') {
+       if (method === 'PUT') {
       const id = Number(form.get('id'));
       if (!id) return { error: 'Subject ID is required' };
+
+      const teacherIdRaw = form.get('teacherId');
+      const teacherId = teacherIdRaw ? Number(teacherIdRaw) : undefined;
+
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
@@ -174,9 +185,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
       };
       const updated = await services.subject.updateSubject(id, data);
+
+      if (teacherId) {
+        await services.teacherSubject.assignSubjectToTeacher(teacherId, id);
+      }
 
       return { success: true, subject: updated };
     }
@@ -559,25 +573,27 @@ export default function SubjectsPage() {
       </div>
 
       {/* Modals */}
-      {isAddModalOpen && (
-        <AddSubjectModal
-          open={isAddModalOpen}
-          setOpen={setIsAddModalOpen}
-          fetcher={fetcher}
-          streams={streams}
-        />
-      )}
+     {isAddModalOpen && (
+  <AddSubjectModal
+    open={isAddModalOpen}
+    setOpen={setIsAddModalOpen}
+    fetcher={fetcher}
+    streams={streams}
+    teachers={allTeachers}
+  />
+)}
 
-      {isEditModalOpen && selectedSubject && (
-        <EditSubjectModal
-          open={isEditModalOpen}
-          setOpen={setIsEditModalOpen}
-          fetcher={fetcher}
-          subject={selectedSubject}
-          streams={streams}
-        />
-      )}
-
+{isEditModalOpen && selectedSubject && (
+  <EditSubjectModal
+    open={isEditModalOpen}
+    setOpen={setIsEditModalOpen}
+    fetcher={fetcher}
+    subject={selectedSubject}
+    streams={streams}
+    teachers={allTeachers}
+  />
+)}
+      {/* Assign Teachers Modal */}
       {isAssignTeachersModalOpen && selectedSubject && (
         <AssignTeachersModal
           open={isAssignTeachersModalOpen}
