@@ -174,12 +174,25 @@ export default function AddSubjectModal({
             <label className="block text-sm font-medium text-foreground mb-1">
               Teacher
             </label>
+            <p className="text-xs text-muted-foreground mb-1">
+              Optional. Leave unassigned if you will add a teacher later.
+            </p>
 
             <Select
-              value={formData.teacherId}
+              value={formData.teacherId || 'none'}
               onValueChange={(value) => {
+                if (value === 'none') {
+                  setFormData({
+                    ...formData,
+                    teacherId: '',
+                    instructor: '',
+                  });
+                  return;
+                }
+
                 const selectedTeacher = teachers?.find(
-                  (t: any) => String(t.id) === String(value)
+                  (teacher: { id: number; firstName: string; lastName: string }) =>
+                    String(teacher.id) === String(value),
                 );
                 setFormData({
                   ...formData,
@@ -191,20 +204,27 @@ export default function AddSubjectModal({
               }}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select teacher" />
+                <SelectValue placeholder="Select teacher (optional)" />
               </SelectTrigger>
 
               <SelectContent>
+                <SelectItem value="none">Not Assigned</SelectItem>
                 {!teachers || teachers.length === 0 ? (
                   <SelectItem value="no-teacher" disabled>
                     No teachers available
                   </SelectItem>
                 ) : (
-                  teachers.map((teacher: any) => (
-                    <SelectItem key={teacher.id} value={String(teacher.id)}>
-                      {teacher.firstName} {teacher.lastName}
-                    </SelectItem>
-                  ))
+                  teachers.map(
+                    (teacher: {
+                      id: number;
+                      firstName: string;
+                      lastName: string;
+                    }) => (
+                      <SelectItem key={teacher.id} value={String(teacher.id)}>
+                        {teacher.firstName} {teacher.lastName}
+                      </SelectItem>
+                    ),
+                  )
                 )}
               </SelectContent>
             </Select>

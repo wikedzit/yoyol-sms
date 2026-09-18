@@ -30,6 +30,14 @@ const CreateStudentSchema = z.object({
   course: z.string().optional(),
   grade: z.string().optional(),
   enrollmentDate: z.string().optional(), // YYYY-MM-DD
+  admissionNumber: z.preprocess((value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const trimmedAdmissionNumber = value.trim();
+    return trimmedAdmissionNumber.length > 0 ? trimmedAdmissionNumber : undefined;
+  }, z.string().max(50).optional()),
   // Legacy: old university-style class reference
   classId: z.preprocess(
     (v) => (v ? Number(v) : undefined),
@@ -97,6 +105,15 @@ export default class StudentService {
         return null;
       }
 
+      if (validated.admissionNumber) {
+        const existingAdmission = await this.findByAdmissionNumber(
+          validated.admissionNumber,
+        );
+        if (existingAdmission) {
+          throw new Error('This admission number is already in use.');
+        }
+      }
+
       const result = await this.db
         .insert(students)
         .values({
@@ -109,6 +126,12 @@ export default class StudentService {
 
       return result[0] || null;
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'This admission number is already in use.'
+      ) {
+        throw error;
+      }
       console.error('Error creating student:', error);
       return null;
     }
@@ -127,6 +150,28 @@ export default class StudentService {
       return result || null;
     } catch (error) {
       console.error('Error fetching student:', error);
+      return null;
+    }
+  }
+
+  async findByAdmissionNumber(
+    admissionNumber: string,
+  ): Promise<SelectStudent | null> {
+    try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const result = await this.db
+        .select()
+        .from(students)
+        .where(
+          and(
+            eq(students.admissionNumber, admissionNumber),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        )
+        .get();
+      return result ?? null;
+    } catch (error) {
+      console.error('Error fetching student by admission number:', error);
       return null;
     }
   }
