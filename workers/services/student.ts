@@ -40,11 +40,10 @@ const CreateStudentSchema = z.object({
     (v) => (v ? Number(v) : undefined),
     z.number().optional()
   ),
-  // Which school this student belongs to — OPTIONAL, since students added
-  // via the O-Level/A-Level formClass flow have no school relationship
+  // Which school this student belongs to — REQUIRED for new students
   schoolId: z.preprocess(
     (v) => (v ? Number(v) : undefined),
-    z.number().optional()
+    z.number({ required_error: 'Please select a school' })
   ),
   status: z.enum(['Active', 'Pending', 'Inactive']).default('Active'),
 });
@@ -83,24 +82,19 @@ export default class StudentService {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = CreateStudentSchema.parse(data);
 
-      // Only check school ownership if a schoolId was actually provided.
-      // Students added through the formClass (O-Level/A-Level) flow have
-      // no schoolId at all, so this check simply doesn't apply to them.
-      if (validated.schoolId) {
-        const ownedSchool = await this.db
-          .select({ id: school.id })
-          .from(school)
-          .where(
-            and(
-              eq(school.id, validated.schoolId),
-              eq(school.ownerUserId, ownerUserId),
-            ),
-          )
-          .get();
+      const ownedSchool = await this.db
+        .select({ id: school.id })
+        .from(school)
+        .where(
+          and(
+            eq(school.id, validated.schoolId),
+            eq(school.ownerUserId, ownerUserId),
+          ),
+        )
+        .get();
 
-        if (!ownedSchool) {
-          return null;
-        }
+      if (!ownedSchool) {
+        return null;
       }
 
       const result = await this.db

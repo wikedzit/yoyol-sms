@@ -5,6 +5,7 @@ import type { FetcherWithComponents } from 'react-router';
 
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -96,6 +97,8 @@ export default function EditSubjectModal({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError(null);
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,

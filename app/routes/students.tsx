@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLoaderData, useFetcher } from 'react-router';
-import { Card, CardContent, CardHeader } from '~/components/ui/card';
-import type CampusService from 'workers/services/campus';
-import type AcademicLevelService from 'workers/services/academic-levels';
+import { useEffect, useRef, useState } from "react";
+import { useLoaderData, useFetcher } from "react-router";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import type CampusService from "workers/services/campus";
+import { toTitleCase } from "~/utils/strings";
 import {
   Table,
   TableBody,
@@ -33,14 +33,11 @@ import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type StudentSubjectService from 'workers/services/student-subjects';
 import type SchoolService from 'workers/services/school';
-// ✅ ADDED: needed to fetch streams/forms
-import type AcademicLevelService from 'workers/services/academic-levels';
 import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
-import { useLanguage } from '~/lib/i18n';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 
-// 🧠 Loader – fetch students with their assigned subjects + schools + campuses
+// 🧠 Loader – fetch students with their assigned subjects + schools list
 export async function loader({ context }: LoaderFunctionArgs) {
   const services = context.services as {
     student: StudentService;
@@ -48,46 +45,44 @@ export async function loader({ context }: LoaderFunctionArgs) {
     studentSubjects: StudentSubjectService;
     school: SchoolService;
     campus: CampusService;
-    // ✅ ADDED: type for the academicLevel service
-    academicLevel: AcademicLevelService;
   };
 
-  const students = await services.student?.getAll({
+  const students = await services.student.getAll({
     limit: 100,
     offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'asc',
   });
 
-  const subjects = await services.subject?.getAllSubjects({
+  const subjects = await services.subject.getAllSubjects({
     limit: 100,
     offset: 0,
     sortBy: 'subjectName',
     sortOrder: 'asc',
   });
 
-  const schools = await services.school?.getAll();
-
-  const campusesBySchool = await Promise.all(
-    (schools ?? []).map((s: any) => services.campus.getBySchoolId(s.id))
-  );
-  const campuses = campusesBySchool.flat();
-
-  const defaultSchoolId = schools?.[0]?.id ?? null;
-
-  // Fetch streams and forms for the "Add Student" modal
-  const streams = await services.academicLevel.getAllStreams();
-  const forms = await services.academicLevel.getAllForms();
+  const schools = await services.school.getAll();
+  const campuses = (
+    await Promise.all(
+      schools.map((ownedSchool) =>
+        services.campus.getBySchoolId(ownedSchool.id),
+      ),
+    )
+  ).flat();
 
   const studentsWithSubjects = await Promise.all(
     students.map(async (student) => {
       const assignedSubjects =
-        await services.studentSubjects?.getSubjectsByStudent(student.id);
-      const school = schools?.find(
-        (school) => String(school.id) === String(student.schoolId)
+        await services.studentSubjects.getSubjectsByStudent(student.id);
+      const school = schools.find(
+        (ownedSchool) => String(ownedSchool.id) === String(student.schoolId),
       );
+      const studentWithCampus = student as typeof student & {
+        campusId?: number | string | null;
+      };
       const studentCampus = campuses.find(
-        (c: any) => String(c.id) === String(student.campusId)
+        (ownedCampus) =>
+          String(ownedCampus.id) === String(studentWithCampus.campusId),
       );
       return {
         ...student,
@@ -95,7 +90,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
         schoolName: school?.name || 'Not assigned',
         campusName: studentCampus?.name || 'Not assigned',
       };
-    })
+    }),
   );
 
   return {
@@ -103,16 +98,14 @@ export async function loader({ context }: LoaderFunctionArgs) {
     allSubjects: subjects,
     schools,
     campuses,
-    defaultSchoolId,
-    streams,
-    forms,
   };
 }
+
+// ⚙️ Action – handle create, update, delete, and subject assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     student: StudentService;
     studentSubjects: StudentSubjectService;
-    school: SchoolService;
     campus: CampusService;
   };
   const form = await request.formData();
@@ -136,52 +129,18 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     if (method === 'POST') {
-      const campusIdRaw = form.get('campusId') ? Number(form.get('campusId')) : undefined;
-
-      // If a campus was selected, derive the school from it.
-      // Otherwise, fall back to the owner's default (first) school.
-      let schoolId: number | undefined;
-      let campusId: number | undefined;
-
-      if (campusIdRaw) {
-        const selectedCampus = await services.campus.getById(campusIdRaw);
-        if (!selectedCampus) {
-          return new Response(
-            JSON.stringify({ error: 'Selected campus was not found' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-          );
-        }
-        schoolId = selectedCampus.schoolId;
-        campusId = selectedCampus.id;
-      } else {
-        const schools = await services.school.getAll();
-        schoolId = schools?.[0]?.id;
-      }
-
-      if (!schoolId) {
-        return new Response(
-          JSON.stringify({
-            error: 'No school found. Please register a school first.',
-          }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        gender: String(form.get('gender') ?? 'Select gender') as
-          | 'Male'
-          | 'Female',
-        dob: String(form.get('dob') ?? ''),
-        email: form.get('email') ? String(form.get('email')) : undefined,
-        phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        address: form.get('address') ? String(form.get('address')) : undefined,
-        guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
-          : undefined,
-        guardianPhone: form.get('guardianPhone')
-          ? String(form.get('guardianPhone'))
+        firstName: toTitleCase(String(form.get("firstName") ?? "")),
+        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        gender: String(form.get("gender") ?? "Select gender") as
+          | "Male"
+          | "Female",
+        dob: String(form.get("dob") ?? ""),
+        email: form.get("email") ? String(form.get("email")) : undefined,
+        phone: form.get("phone") ? String(form.get("phone")) : undefined,
+        address: form.get("address") ? String(form.get("address")) : undefined,
+        guardianName: form.get("guardianName")
+          ? toTitleCase(String(form.get("guardianName")))
           : undefined,
         photoUrl: form.get('photoUrl')
           ? String(form.get('photoUrl'))
@@ -191,21 +150,23 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrollmentDate: form.get('enrollmentDate')
           ? String(form.get('enrollmentDate'))
           : undefined,
-        classId: form.get('classId') ? String(form.get('classId')) : undefined,
-        schoolId: String(schoolId),
-        campusId: campusId ? String(campusId) : undefined,
-        status: String(form.get('status') ?? 'Active') as
-          | 'Active'
-          | 'Pending'
-          | 'Inactive',
+        classId: form.get('classId') ? Number(form.get('classId')) : undefined,
+        schoolId: form.get('schoolId')
+          ? Number(form.get('schoolId'))
+          : undefined,
+        status: String(form.get("status") ?? "Active") as
+          | "Active"
+          | "Pending"
+          | "Inactive",
       };
 
-      const created = await services.student.create(data);
+      const created = await services.student.create(data as any);
 
       if (!created) {
         return new Response(
           JSON.stringify({
-            error: 'Failed to add student. Please try again.',
+            error:
+              'Failed to add student. Please make sure a school is selected.',
           }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
@@ -228,35 +189,34 @@ export async function action({ request, context }: ActionFunctionArgs) {
         );
       }
 
-      const campusIdRaw = form.get('campusId') ? Number(form.get('campusId')) : undefined;
-      let schoolId: string | undefined;
+      const campusIdRaw = form.get("campusId")
+        ? Number(form.get("campusId"))
+        : undefined;
+      let schoolId: number | undefined;
       let campusId: string | undefined;
 
       if (campusIdRaw) {
         const selectedCampus = await services.campus.getById(campusIdRaw);
         if (selectedCampus) {
-          schoolId = String(selectedCampus.schoolId);
+          schoolId = selectedCampus.schoolId;
           campusId = String(selectedCampus.id);
         }
-      } else if (form.get('schoolId')) {
-        schoolId = String(form.get('schoolId'));
+      } else if (form.get("schoolId")) {
+        schoolId = Number(form.get("schoolId"));
       }
 
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        gender: String(form.get('gender') ?? 'Select gender') as
-          | 'Male'
-          | 'Female',
-        dob: String(form.get('dob') ?? ''),
-        email: form.get('email') ? String(form.get('email')) : undefined,
-        phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        address: form.get('address') ? String(form.get('address')) : undefined,
-        guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
-          : undefined,
-        guardianPhone: form.get('guardianPhone')
-          ? String(form.get('guardianPhone'))
+        firstName: toTitleCase(String(form.get("firstName") ?? "")),
+        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        gender: String(form.get("gender") ?? "Select gender") as
+          | "Male"
+          | "Female",
+        dob: String(form.get("dob") ?? ""),
+        email: form.get("email") ? String(form.get("email")) : undefined,
+        phone: form.get("phone") ? String(form.get("phone")) : undefined,
+        address: form.get("address") ? String(form.get("address")) : undefined,
+        guardianName: form.get("guardianName")
+          ? toTitleCase(String(form.get("guardianName")))
           : undefined,
         photoUrl: form.get('photoUrl')
           ? String(form.get('photoUrl'))
@@ -267,15 +227,19 @@ export async function action({ request, context }: ActionFunctionArgs) {
           ? String(form.get('enrollmentDate'))
           : undefined,
         classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        schoolId: form.get('schoolId')
+          ? String(form.get('schoolId'))
+          : undefined,
+        classId: form.get("classId") ? Number(form.get("classId")) : undefined,
         schoolId,
         campusId,
-        status: String(form.get('status') ?? 'Active') as
-          | 'Active'
-          | 'Pending'
-          | 'Inactive',
+        status: String(form.get("status") ?? "Active") as
+          | "Active"
+          | "Pending"
+          | "Inactive",
       };
 
-      const updated = await services.student.update(String(id), data);
+      const updated = await services.student.update(String(id), data as any);
       return { success: true, student: updated };
     }
 
@@ -308,24 +272,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function Students() {
-  const { t } = useLanguage();
- const {
-  students: initialStudents,
-  allSubjects,
-  schools,
-  campuses,
-  defaultSchoolId,
-  streams,
-  forms,
-} = useLoaderData() as {
-  students: any[];
-  allSubjects: any[];
-  schools: any[];
-  campuses: any[];
-  defaultSchoolId: number | null;
-  streams: any[];
-  forms: any[];
-};
+  const {
+    students: initialStudents,
+    allSubjects,
+    schools,
+  } = useLoaderData() as {
+    students: any[];
+    allSubjects: any[];
+    schools: any[];
+  };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
@@ -335,6 +290,7 @@ export default function Students() {
   const [editStudentModalOpen, setEditStudentModalOpen] = useState(false);
   const [assignSubjectsModalOpen, setAssignSubjectsModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+
 
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [newStudent, setNewStudent] = useState<any>(null);
@@ -385,22 +341,19 @@ export default function Students() {
           case 'POST':
             toast.success('Student added successfully!');
             listFetcher.load(window.location.pathname);
+            
+       const selectedSchool = schools.find(
+    (school: any) =>
+      String(school.id) === String(data.student.schoolId)
+  );
 
-            const selectedSchool = schools.find(
-              (school: any) => String(school.id) === String(data.student.schoolId)
-            );
-            const selectedCampus = campuses.find(
-              (c: any) => String(c.id) === String(data.student.campusId)
-            );
-
-            setNewStudent({
-              ...data.student,
-              schoolName: selectedSchool?.name || 'Not assigned',
-              campusName: selectedCampus?.name || 'Not assigned',
-            });
-
-            setAddStudentModalOpen(false);
-            setProfileModalOpen(true);
+  setNewStudent({
+    ...data.student,
+    schoolName: selectedSchool?.name || 'Not assigned',
+  });
+             
+             setAddStudentModalOpen(false);
+             setProfileModalOpen(true);
             break;
           case 'PUT':
             toast.success('Student updated successfully!');
@@ -421,10 +374,11 @@ export default function Students() {
 
   return (
     <div className="space-y-2 h-min-screen">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Students</h1>
-          <p className="mt-1 text-sm text-foreground font-medium">
+          <h1 className="text-3xl font-bold tracking-tight">Students</h1>
+          <p className="text-muted-foreground mt-1">
             Manage and view all student records
           </p>
         </div>
@@ -433,10 +387,11 @@ export default function Students() {
           onClick={() => setAddStudentModalOpen(true)}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {t('addStudent')}
+          Add Student
         </Button>
       </div>
 
+      {/* Search & Filter */}
       <Card className="border-none shadow-none ">
         <CardHeader>
           <div className="flex flex-col md:flex-row items-center gap-4">
@@ -444,7 +399,7 @@ export default function Students() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder={t('searchStudents')}
+                placeholder="Search students..."
                 className="pl-10 bg-muted/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -453,7 +408,7 @@ export default function Students() {
 
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t('filterCourseGrade')} />
+                <SelectValue placeholder="Filter by course/grade" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
@@ -465,22 +420,23 @@ export default function Students() {
           </div>
         </CardHeader>
 
+        {/* Table */}
         <CardContent>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">SN</TableHead>
-                  <TableHead className="font-semibold">{t('firstName')}</TableHead>
-                  <TableHead className="font-semibold">{t('lastName')}</TableHead>
-                  <TableHead className="font-semibold">{t('email')}</TableHead>
+                  <TableHead className="font-semibold">First name</TableHead>
+                  <TableHead className="font-semibold">Last name</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
                   <TableHead className="font-semibold">
-                    {t('assignedSubjects')}
+                    Assigned Subjects
                   </TableHead>
-                  <TableHead className="font-semibold">{t('enrolled')}</TableHead>
-                  <TableHead className="font-semibold">{t('status')}</TableHead>
+                  <TableHead className="font-semibold">Enrolled</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="text-right font-semibold">
-                    {t('actions')}
+                    Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -557,7 +513,7 @@ export default function Students() {
                       </Button>
                       <DeleteStudentButton
                         id={student.id}
-                        name={student.name}
+                        name={`${student.firstName} ${student.lastName}`}
                         fetcher={fetcher}
                       />
                     </TableCell>
@@ -574,17 +530,17 @@ export default function Students() {
         </CardContent>
       </Card>
 
-    {addStudentModalOpen && (
-  <AddStudentModal
-    open={addStudentModalOpen}
-    setOpen={setAddStudentModalOpen}
-    fetcher={fetcher}
-    campuses={campuses}
-    streams={streams}
-    forms={forms}
-  />
-)}
+      {/* Add Student Modal */}
+      {addStudentModalOpen && (
+        <AddStudentModal
+          open={addStudentModalOpen}
+          setOpen={setAddStudentModalOpen}
+          fetcher={fetcher}
+          schools={schools}
+        />
+      )}
 
+      {/* Edit Student Modal */}
       {editStudentModalOpen && selectedStudent && (
         <EditStudentModal
           open={editStudentModalOpen}
@@ -594,6 +550,7 @@ export default function Students() {
         />
       )}
 
+      {/* Assign Subjects Modal */}
       {assignSubjectsModalOpen && selectedStudent && (
         <AssignSubjectsToStudentModal
           open={assignSubjectsModalOpen}
@@ -605,7 +562,8 @@ export default function Students() {
         />
       )}
 
-      <StudentProfilesModal
+      
+       <StudentProfilesModal
         student={newStudent}
         open={profileModalOpen}
         onOpenChange={setProfileModalOpen}

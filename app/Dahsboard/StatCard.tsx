@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '~/components/ui/card';
 import { cn } from '~/lib/utils';
-import { useLanguage } from '~/lib/i18n';
 
 interface StatCardProps {
   title: string;
@@ -22,17 +21,6 @@ export default function StatCard({
   icon: Icon,
   iconColor = 'text-primary',
 }: StatCardProps) {
-  const { t, language } = useLanguage();
-  const translatedStatus = language === 'en' || !status
-    ? status
-    : status === 'available'
-      ? t('available')
-      : status === 'just now'
-        ? t('justNow')
-        : status.replace(/^(\d+) mins? ago$/, `$1 ${t('minutesAgo')}`)
-          .replace(/^(\d+) hours? ago$/, `$1 ${t('hoursAgo')}`)
-          .replace(/^(\d+) days? ago$/, `$1 ${t('daysAgo')}`);
-
   return (
     <Card className="border-none shadow-none">
       <CardContent className="p-6">
@@ -54,7 +42,7 @@ export default function StatCard({
             )}
             {status && (
               <p className="text-xs text-muted-foreground mt-2">
-                {translatedStatus}
+                {status}
               </p>
             )}
           </div>

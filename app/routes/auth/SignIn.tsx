@@ -4,11 +4,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Link,
   redirect,
-  useFetcher,
+  useActionData,
   useNavigation,
+  useSubmit,
   type ActionFunctionArgs,
 } from "react-router";
-import { authCookie } from "workers/utils/cookies.server";
+import { authCookie, pendingAuthCookie } from "workers/utils/cookies.server";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -21,14 +22,10 @@ const signInSchema = z.object({
 });
 
 type SignInFormValues = z.infer<typeof signInSchema>;
-type SignInActionData = { error?: string };
-
-function jsonErrorResponse(message: string, status: number) {
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
-}
+type SignInActionData = {
+  error?: string;
+  twoFactorRequired?: boolean;
+};
 
 function fieldClassName(hasError: boolean) {
   const ringColor = hasError
@@ -40,39 +37,77 @@ function fieldClassName(hasError: boolean) {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const form = await request.formData();
+
+  if (form.get("step") === "two_factor") {
+    const pendingToken = String(
+      form.get("pendingToken") ||
+        (await pendingAuthCookie.parse(request.headers.get("Cookie") || "")) ||
+        "",
+    );
+    const sessionToken = await context.services.users.completeTwoFactorLogin(
+      pendingToken,
+      String(form.get("code") || ""),
+    );
+    if (!sessionToken) {
+      return { error: "Invalid authentication code", twoFactorRequired: true };
+    }
+
+    return redirect("/", {
+      headers: [
+        ["Set-Cookie", await authCookie.serialize(sessionToken)],
+        ["Set-Cookie", await pendingAuthCookie.serialize("", { maxAge: 0 })],
+      ],
+    });
+  }
+
   const parsed = signInSchema.safeParse({
     email: String(form.get("email") ?? ""),
     password: String(form.get("password") ?? ""),
   });
 
   if (!parsed.success) {
-    return jsonErrorResponse(
-      parsed.error.issues[0]?.message ?? "Invalid input",
-      400,
-    );
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid input",
+    };
   }
 
-  const token = await context.services.users.login(
+  const loginResult = await context.services.users.login(
     parsed.data.email,
     parsed.data.password,
   );
 
-  if (!token) {
-    return jsonErrorResponse("Invalid email or password", 401);
+  if (!loginResult) {
+    return { error: "Invalid email or password" };
+  }
+
+  if ("twoFactorRequired" in loginResult) {
+    return Response.json(
+      { twoFactorRequired: true },
+      {
+        headers: {
+          "Set-Cookie": await pendingAuthCookie.serialize(
+            loginResult.pendingToken,
+          ),
+        },
+      },
+    );
   }
 
   return redirect("/", {
     headers: {
-      "Set-Cookie": await authCookie.serialize(token),
+      "Set-Cookie": await authCookie.serialize(loginResult.token),
     },
   });
 }
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
-  const fetcher = useFetcher<SignInActionData>();
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const actionData = useActionData<SignInActionData>();
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
+  const submit = useSubmit();
+  const isSubmitting = navigation.state !== "idle";
+  const requiresTwoFactor = Boolean(actionData?.twoFactorRequired);
 
   const {
     register,
@@ -84,7 +119,15 @@ export default function SignInPage() {
   });
 
   const submitSignIn = (values: SignInFormValues) => {
-    fetcher.submit(values, { method: "POST" });
+    submit(values, { method: "POST" });
+  };
+
+  const submitTwoFactor = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    submit(
+      { step: "two_factor", code: twoFactorCode },
+      { method: "POST" },
+    );
   };
 
   return (
@@ -96,90 +139,132 @@ export default function SignInPage() {
       }}
     >
       <div className="px-5 md:px-10 py-10">
-        <h2 className="text-3xl font-bold text-black mb-3">Login</h2>
+        <h2 className="text-3xl font-bold text-black mb-3">
+          {requiresTwoFactor ? "Two-factor authentication" : "Login"}
+        </h2>
         <p className="mb-5 text-medium-gray max-w-[288px] text-sm">
           Welcome back! <br /> Login to view your dashboard.
         </p>
 
-        <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm mb-1 font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              {...register("email")}
-              autoComplete="email"
-              className={fieldClassName(Boolean(errors.email))}
-              placeholder="Enter your email"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm mb-1 font-medium"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                {...register("password")}
-                autoComplete="current-password"
-                className={`${fieldClassName(Boolean(errors.password))} pr-10`}
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                {showPassword ? (
-                  <Eye className="w-5 h-5 cursor-pointer" />
-                ) : (
-                  <EyeOff className="w-5 h-5 cursor-pointer" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity  cursor-pointer"
-          >
-            {isSubmitting ? "Logging in..." : "Login"}
-          </button>
-
-          {fetcher.data?.error && (
-            <p className="text-red-600 text-center text-sm mt-2">
-              {fetcher.data.error}
+        {requiresTwoFactor ? (
+          <form onSubmit={submitTwoFactor} className="space-y-5">
+            <p className="text-sm text-gray-600">
+              Enter the six-digit code from your authenticator app, or use a
+              recovery code.
             </p>
-          )}
-
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Don't have an account?
-            <Link
-              to="/auth/signup"
-              className="text-purple-600 ml-1 underline hover:text-purple-700"
+            <div>
+              <label
+                htmlFor="twoFactorCode"
+                className="block text-sm mb-1 font-medium"
+              >
+                Authentication code
+              </label>
+              <input
+                id="twoFactorCode"
+                value={twoFactorCode}
+                onChange={(event) => setTwoFactorCode(event.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                required
+                className={fieldClassName(false)}
+                placeholder="123456"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting || twoFactorCode.length < 6}
+              className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer"
             >
-              Create an account
-            </Link>
-          </p>
-        </form>
+              {isSubmitting ? "Verifying..." : "Verify and continue"}
+            </button>
+            {actionData?.error && (
+              <p className="text-red-600 text-center text-sm mt-2">
+                {actionData.error}
+              </p>
+            )}
+          </form>
+        ) : (
+          <form onSubmit={handleSubmit(submitSignIn)} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm mb-1 font-medium">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                {...register("email")}
+                autoComplete="email"
+                className={fieldClassName(Boolean(errors.email))}
+                placeholder="Enter your email"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm mb-1 font-medium"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                  autoComplete="current-password"
+                  className={`${fieldClassName(Boolean(errors.password))} pr-10`}
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  {showPassword ? (
+                    <Eye className="w-5 h-5 cursor-pointer" />
+                  ) : (
+                    <EyeOff className="w-5 h-5 cursor-pointer" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary-gradient text-white py-2 rounded-[8px] hover:opacity-90 disabled:opacity-50 transition-opacity  cursor-pointer"
+            >
+              {isSubmitting ? "Logging in..." : "Login"}
+            </button>
+
+            {actionData?.error && (
+              <p className="text-red-600 text-center text-sm mt-2">
+                {actionData.error}
+              </p>
+            )}
+
+            <p className="text-center text-sm text-gray-500 mt-4">
+              Don't have an account?
+              <Link
+                to="/auth/signup"
+                className="text-purple-600 ml-1 underline hover:text-purple-700"
+              >
+                Create an account
+              </Link>
+            </p>
+          </form>
+        )}
       </div>
     </div>
   );

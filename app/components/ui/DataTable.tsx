@@ -3,7 +3,6 @@ import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { cn } from '~/lib/utils';
-import { useLanguage, translateText } from '~/lib/i18n';
 
 interface Column<T> {
   key: string;
@@ -35,7 +34,6 @@ export function DataTable<T extends { id: string }>({
   onRowClick,
   className,
 }: DataTableProps<T>) {
-  const { language } = useLanguage();
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -57,7 +55,7 @@ export function DataTable<T extends { id: string }>({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={translateText(searchPlaceholder, language)}
+            placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -81,12 +79,12 @@ export function DataTable<T extends { id: string }>({
                       col.className
                     )}
                   >
-                    {translateText(col.header, language)}
+                    {col.header}
                   </th>
                 ))}
                 {actions && (
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {translateText('Actions', language)}
+                    Actions
                   </th>
                 )}
               </tr>
@@ -98,7 +96,7 @@ export function DataTable<T extends { id: string }>({
                     colSpan={columns.length + (actions ? 1 : 0)}
                     className="px-4 py-12 text-center text-muted-foreground"
                   >
-                    {translateText(emptyMessage, language)}
+                    {emptyMessage}
                   </td>
                 </tr>
               ) : (
@@ -138,8 +136,8 @@ export function DataTable<T extends { id: string }>({
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-muted/30">
             <p className="text-sm text-muted-foreground">
-              {translateText('Showing', language)} {(currentPage - 1) * pageSize + 1} {translateText('to', language)}{' '}
-              {Math.min(currentPage * pageSize, filteredData.length)} {translateText('of', language)}{' '}
+              Showing {(currentPage - 1) * pageSize + 1} to{' '}
+              {Math.min(currentPage * pageSize, filteredData.length)} of{' '}
               {filteredData.length}
             </p>
             <div className="flex items-center gap-1">

@@ -274,6 +274,20 @@
       "when": 1788936618062,
       "tag": "0038_smiling_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1789061046691,
+      "tag": "0039_skinny_karnak",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1789126326697,
+      "tag": "0040_chubby_lady_bullseye",
+      "breakpoints": true
     }
   ]
 }
