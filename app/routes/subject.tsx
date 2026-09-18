@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { Plus, Search, Pencil, BookOpen, User, MoreVertical } from 'lucide-react';
+import { Plus, Search, Pencil, BookOpen, User, MoreVertical, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import {
@@ -32,6 +32,7 @@ import type ClassSubjectService from 'workers/services/class-subjects';
 import AddSubjectModal from '~/components/modal/AddSubjectModal';
 import EditSubjectModal from '~/components/modal/EditSubjectModal';
 import AssignTeachersModal from '~/components/modal/AssignTeachersModal';
+import ViewSubjectModal from '~/components/modal/ViewSubjectModal';
 import {
   Select,
   SelectContent,
@@ -232,6 +233,7 @@ export default function SubjectsPage() {
   const [isAssignTeachersModalOpen, setIsAssignTeachersModalOpen] =
     useState(false);
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [isViewSubjectModalOpen, setIsViewSubjectModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   useEffect(() => {
@@ -499,6 +501,18 @@ export default function SubjectsPage() {
                         <TableCell className="text-right">
                           <div className="hidden lg:flex justify-end gap-2">
                             <Button
+                              className="text-gray-600 hover:scale-110 hover:text-blue-600 transition cursor-pointer"
+                              variant="ghost"
+                              size="icon"
+                              title="View Subject"
+                              onClick={() => {
+                                setSelectedSubject(subject);
+                                setIsViewSubjectModalOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
                               className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
                               variant="ghost"
                               size="icon"
@@ -533,6 +547,15 @@ export default function SubjectsPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedSubject(subject);
+                                    setIsViewSubjectModalOpen(true);
+                                  }}
+                                >
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedSubject(subject);
@@ -580,6 +603,14 @@ export default function SubjectsPage() {
     fetcher={fetcher}
     streams={streams}
     teachers={allTeachers}
+  />
+)}
+
+{isViewSubjectModalOpen && selectedSubject && (
+  <ViewSubjectModal
+    open={isViewSubjectModalOpen}
+    setOpen={setIsViewSubjectModalOpen}
+    subject={selectedSubject}
   />
 )}
 

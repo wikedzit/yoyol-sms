@@ -1,5 +1,6 @@
-import { X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { X, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { toTitleCase } from '~/utils/strings';
@@ -10,6 +11,55 @@ import {
   SheetTitle,
   SheetClose,
 } from '~/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '~/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '~/components/ui/tooltip';
+import { useLanguage } from '~/lib/i18n';
+
+type ProfileActionResult = {
+  success?: boolean;
+  error?: string;
+  action?: string;
+};
+
+type AccountFields = {
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  preferredLanguage?: string | null;
+  avatarUrl?: string | null;
+};
+
+type RoleFields = {
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  qualification?: string | null;
+  guardianName?: string | null;
+  guardianPhone?: string | null;
+};
+
+const TITLE_CASE_FIELDS = new Set(['firstName', 'lastName', 'guardianName']);
+
+type EditProfileModalProps = {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  fetcher: FetcherWithComponents<ProfileActionResult>;
+  role: string;
+  account?: AccountFields;
+  roleData?: RoleFields;
+  onLanguageChange?: (value: string) => void;
+};
 
 export default function EditProfileModal({
   open,
@@ -18,35 +68,102 @@ export default function EditProfileModal({
   role,
   account,
   roleData,
-}: any) {
+  onLanguageChange,
+}: EditProfileModalProps) {
+  const { t } = useLanguage();
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    firstName: (isTeacher || isStudent ? roleData?.firstName : account?.firstName) || '',
-    lastName: (isTeacher || isStudent ? roleData?.lastName : account?.lastName) || '',
-    phone: roleData?.phone || '',
-    address: roleData?.address || '',
-    qualification: (isTeacher && roleData?.qualification) || '',
-    guardianName: (isStudent && roleData?.guardianName) || '',
-    guardianPhone: (isStudent && roleData?.guardianPhone) || '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    accountPhone: '',
+    address: '',
+    qualification: '',
+    guardianName: '',
+    guardianPhone: '',
+    preferredLanguage: 'en',
+    avatarUrl: '',
   });
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (!open) return;
+
+    setFormData({
+      firstName:
+        (isTeacher || isStudent ? roleData?.firstName : account?.firstName) ||
+        '',
+      lastName:
+        (isTeacher || isStudent ? roleData?.lastName : account?.lastName) || '',
+      phone: roleData?.phone || '',
+      accountPhone: account?.phone || '',
+      address: roleData?.address || '',
+      qualification: (isTeacher && roleData?.qualification) || '',
+      guardianName: (isStudent && roleData?.guardianName) || '',
+      guardianPhone: (isStudent && roleData?.guardianPhone) || '',
+      preferredLanguage: account?.preferredLanguage || 'en',
+      avatarUrl: account?.avatarUrl || '',
+    });
+    setError(null);
+  }, [open, role, account, roleData, isTeacher, isStudent]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    const nextValue = TITLE_CASE_FIELDS.has(name) ? toTitleCase(value) : value;
+    setFormData({ ...formData, [name]: nextValue });
+    if (error) setError(null);
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setError(t('pictureHelp'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 320;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        setFormData((current) => ({
+          ...current,
+          avatarUrl: canvas.toDataURL('image/jpeg', 0.82),
+        }));
+        setError(null);
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setFormData((current) => ({ ...current, avatarUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     if (error) setError(null);
   };
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data?.action === 'update_profile') {
+      onLanguageChange?.(formData.preferredLanguage);
       setOpen(false);
       setError(null);
     }
     if (fetcher.data?.error && fetcher.data?.action === 'update_profile') {
       setError(fetcher.data.error);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, formData.preferredLanguage, onLanguageChange, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -57,7 +174,8 @@ export default function EditProfileModal({
           sm:max-w-[90%]
           md:max-w-[500px] md:w-[500px]
           p-6 md:p-10
-          flex flex-col
+          flex flex-col justify-between
+          bg-card text-card-foreground border-border
         "
       >
         <fetcher.Form
@@ -67,28 +185,85 @@ export default function EditProfileModal({
         >
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="action" value="update_profile" />
+          <input type="hidden" name="avatarUrl" value={formData.avatarUrl} />
 
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
-                Edit Profile
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+                {t('editProfile')}
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={25} />
+              <X
+                size={24}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              />
             </SheetClose>
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-20 overflow-hidden rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary shrink-0">
+                {formData.avatarUrl ? (
+                  <img
+                    src={formData.avatarUrl}
+                    alt={t('profilePicture')}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  (formData.firstName || formData.lastName || 'U')
+                    .charAt(0)
+                    .toUpperCase()
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                <label className="block text-sm font-medium text-foreground">
+                  {t('profilePicture')}
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={handleAvatarChange}
+                    className="flex-1"
+                  />
+                  {formData.avatarUrl && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleRemoveAvatar}
+                          className="shrink-0 px-3 py-2 rounded-[8px] text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 cursor-pointer"
+                          aria-label={t('removePicture')}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        sideOffset={6}
+                        className="z-[60]"
+                      >
+                        {t('removePicture')}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">{t('pictureHelp')}</p>
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                First Name
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('firstName')}
               </label>
               <Input
                 type="text"
@@ -100,8 +275,8 @@ export default function EditProfileModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Last Name
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('lastName')}
               </label>
               <Input
                 type="text"
@@ -112,11 +287,25 @@ export default function EditProfileModal({
               />
             </div>
 
+            {!isTeacher && !isStudent && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {t('phone')}
+                </label>
+                <Input
+                  type="text"
+                  name="accountPhone"
+                  value={formData.accountPhone}
+                  onChange={handleChange}
+                />
+              </div>
+            )}
+
             {(isTeacher || isStudent) && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {t('phone')}
                   </label>
                   <Input
                     type="text"
@@ -127,8 +316,8 @@ export default function EditProfileModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Address
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {t('address')}
                   </label>
                   <Input
                     type="text"
@@ -142,8 +331,8 @@ export default function EditProfileModal({
 
             {isTeacher && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Qualification
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {t('qualification')}
                 </label>
                 <Input
                   type="text"
@@ -157,8 +346,8 @@ export default function EditProfileModal({
             {isStudent && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Guardian Name
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {t('guardianName')}
                   </label>
                   <Input
                     type="text"
@@ -169,8 +358,8 @@ export default function EditProfileModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Guardian Phone
+                  <label className="block text-sm font-medium text-foreground mb-1">
+                    {t('guardianPhone')}
                   </label>
                   <Input
                     type="text"
@@ -182,26 +371,50 @@ export default function EditProfileModal({
               </>
             )}
 
-            <p className="text-xs text-muted-foreground">
-              Email can&apos;t be changed here since it&apos;s tied to your
-              login. Contact your school admin if it needs to change.
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('preferredLanguage')}
+              </label>
+              <Select
+                value={formData.preferredLanguage}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, preferredLanguage: value })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('selectLanguage')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">{t('english')}</SelectItem>
+                  <SelectItem value="sw">{t('swahili')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <input
+                type="hidden"
+                name="preferredLanguage"
+                value={formData.preferredLanguage}
+              />
+            </div>
+
+            <p className="text-xs text-muted-foreground pt-2">
+              {t('emailCannotChange')}
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]  hover:scale-110 hover:text-white-600 transition cursor-pointer">
-            
-              {fetcher.state === 'submitting' ? 'Saving...' : 'Save Changes'}
+              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+            >
+              {fetcher.state === 'submitting' ? t('saving') : t('saveChanges')}
             </Button>
           </div>
         </fetcher.Form>
