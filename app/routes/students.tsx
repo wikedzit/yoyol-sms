@@ -44,39 +44,51 @@ export async function loader({ context }: LoaderFunctionArgs) {
     subject: SubjectService;
     studentSubjects: StudentSubjectService;
     school: SchoolService;
+    campus: CampusService;
   };
 
-  const students = await services.student?.getAll({
+  const students = await services.student.getAll({
     limit: 100,
     offset: 0,
     sortBy: 'createdAt',
     sortOrder: 'asc',
   });
 
-  const subjects = await services.subject?.getAllSubjects({
+  const subjects = await services.subject.getAllSubjects({
     limit: 100,
     offset: 0,
     sortBy: 'subjectName',
     sortOrder: 'asc',
   });
 
-  const schools = await services.school?.getAll();
+  const schools = await services.school.getAll();
+  const campuses = (
+    await Promise.all(
+      schools.map((ownedSchool) =>
+        services.campus.getBySchoolId(ownedSchool.id),
+      ),
+    )
+  ).flat();
 
   const studentsWithSubjects = await Promise.all(
     students.map(async (student) => {
       const assignedSubjects =
-        await services.studentSubjects?.getSubjectsByStudent(student.id);
-      const school = schools?.find(
-        (school) => String(school.id) === String(student.schoolId),
+        await services.studentSubjects.getSubjectsByStudent(student.id);
+      const school = schools.find(
+        (ownedSchool) => String(ownedSchool.id) === String(student.schoolId),
       );
+      const studentWithCampus = student as typeof student & {
+        campusId?: number | string | null;
+      };
       const studentCampus = campuses.find(
-        (c: any) => String(c.id) === String((student as any).campusId),
+        (ownedCampus) =>
+          String(ownedCampus.id) === String(studentWithCampus.campusId),
       );
       return {
         ...student,
         subjects: assignedSubjects || [],
-        schoolName: school?.name || "Not assigned",
-        campusName: studentCampus?.name || "Not assigned",
+        schoolName: school?.name || 'Not assigned',
+        campusName: studentCampus?.name || 'Not assigned',
       };
     }),
   );
@@ -85,6 +97,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
     students: studentsWithSubjects,
     allSubjects: subjects,
     schools,
+    campuses,
   };
 }
 
@@ -93,6 +106,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
     student: StudentService;
     studentSubjects: StudentSubjectService;
+    campus: CampusService;
   };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
@@ -136,13 +150,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
         enrollmentDate: form.get('enrollmentDate')
           ? String(form.get('enrollmentDate'))
           : undefined,
-        classId: form.get('classId') ? String(form.get('classId')) : undefined,
+        classId: form.get('classId') ? Number(form.get('classId')) : undefined,
         schoolId: form.get('schoolId')
-          ? String(form.get('schoolId'))
+          ? Number(form.get('schoolId'))
           : undefined,
-        classId: form.get("classId") ? Number(form.get("classId")) : undefined,
-        schoolId: schoolId ? Number(schoolId) : undefined,
-        campusId: campusId ? String(campusId) : undefined,
         status: String(form.get("status") ?? "Active") as
           | "Active"
           | "Pending"
