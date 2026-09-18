@@ -336,6 +336,10 @@ export default function Grades() {
     ? forms.filter((f) => f.streamId === parseInt(selectedStream))
     : forms;
 
+  // Columns that are hidden on small screens and only shown from md breakpoint up.
+  // Student Name, Subject, Score, Grade (and Actions) always remain visible.
+  const collapsibleColClass = 'hidden md:table-cell';
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -482,7 +486,9 @@ export default function Grades() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
+          {/* Wrap in overflow-x-auto so the table scrolls horizontally on very small
+              screens instead of breaking the page layout */}
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
@@ -490,10 +496,10 @@ export default function Grades() {
                   <TableHead>Subject</TableHead>
                   <TableHead>Score</TableHead>
                   <TableHead>Grade</TableHead>
-                  <TableHead>Remarks</TableHead>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Stream</TableHead>
-                  <TableHead>Form</TableHead>
+                  <TableHead className={collapsibleColClass}>Remarks</TableHead>
+                  <TableHead className={collapsibleColClass}>Teacher</TableHead>
+                  <TableHead className={collapsibleColClass}>Stream</TableHead>
+                  <TableHead className={collapsibleColClass}>Form</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -526,19 +532,23 @@ export default function Grades() {
                           />
                         </TableCell>
 
-                        <TableCell className="max-w-xs truncate">
+                        <TableCell className={`max-w-xs truncate ${collapsibleColClass}`}>
                           {grade.remarks || '—'}
                         </TableCell>
 
-                        <TableCell>
+                        <TableCell className={collapsibleColClass}>
                           {grade.teacher
                             ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
                             : '—'}
                         </TableCell>
 
-                        <TableCell>{grade.stream?.name || '—'}</TableCell>
+                        <TableCell className={collapsibleColClass}>
+                          {grade.stream?.name || '—'}
+                        </TableCell>
 
-                        <TableCell>{grade.form?.name || '—'}</TableCell>
+                        <TableCell className={collapsibleColClass}>
+                          {grade.form?.name || '—'}
+                        </TableCell>
 
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">

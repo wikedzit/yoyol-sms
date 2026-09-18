@@ -79,26 +79,28 @@ export function SchoolProfileView({
 
   return (
     <div className="min-h-screen space-y-6 pb-8">
+      {/* FIXED: actions now stack vertically on mobile and go full-width,
+          preventing overflow/squishing of the two header buttons */}
       <PageHeader
         title={t('aboutSchool')}
         actions={
-          <>
-            <Link to={`/schools/${school.id}`}>
-              <Button className="flex items-center gap-2 bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white-600 hover:scale-110 cursor-pointer transition-all duration-300">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Link to={`/schools/${school.id}`} className="w-full sm:w-auto">
+              <Button className="flex items-center justify-center gap-2 w-full sm:w-auto bg-primary-gradient text-white transition-colors hover:bg-purple hover:text-white-600 hover:scale-110 cursor-pointer transition-all duration-300">
                 <Pencil className="h-4 w-4" />
                 {t('editSchool')}
               </Button>
             </Link>
             <Button
               asChild
-              className="flex items-center gap-2 bg-primary-gradient text-white hover:scale-110 hover:text-white-600 cursor-pointer transition-all duration-300"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto bg-primary-gradient text-white hover:scale-110 hover:text-white-600 cursor-pointer transition-all duration-300"
             >
               <Link to={campusAddPath(school.id, addCampusReturnTo)}>
                 <Plus size={18} />
                 <span className="font-medium">{t('addCampus')}</span>
               </Link>
             </Button>
-          </>
+          </div>
         }
       />
 
@@ -223,7 +225,9 @@ export function SchoolProfileView({
                   key={campus.id}
                   className="rounded-lg border border-border px-4 py-3"
                 >
-                  <div className="flex items-center justify-between gap-4">
+                  {/* FIXED: stacks vertically on mobile instead of forcing
+                      campus info + 3 action icons into one cramped row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{campus.name}</p>
@@ -242,11 +246,12 @@ export function SchoolProfileView({
                         {campus.address || t('notProvided')}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="flex shrink-0 items-center gap-1 self-end sm:self-auto">
                       <ViewCampusModal campus={campus} />
 
                       <EditCampusModal campus={campus} />
 
+                      {/* Preserved: prevents deleting a school's main campus */}
                       {!campus.isMain && (
                         <DeleteButton
                           id={campus.id}
@@ -280,30 +285,39 @@ export function SchoolProfileView({
             <CardDescription>{schoolMotto}</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* FIXED: reduced oversized text-2xl values to a responsive
+                text-lg sm:text-xl, and added break-words so long values
+                (long names, reg numbers) can't force horizontal overflow */}
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   {t('schoolName')}
                 </p>
-                <p className="text-2xl font-semibold">{school.name}</p>
+                <p className="text-lg sm:text-xl font-semibold break-words">
+                  {school.name}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   {t('motto')}
                 </p>
-                <p className="text-2xl">{school.motto || t('notProvided')}</p>
+                <p className="text-lg sm:text-xl break-words">
+                  {school.motto || t('notProvided')}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   {t('registrationNumber')}
                 </p>
-                <p className="text-2xl">{registrationNumber}</p>
+                <p className="text-lg sm:text-xl break-words">
+                  {registrationNumber}
+                </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   School ID
                 </p>
-                <p className="text-2xl">{school.id}</p>
+                <p className="text-lg sm:text-xl break-words">{school.id}</p>
               </div>
             </div>
           </CardContent>

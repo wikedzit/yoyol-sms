@@ -11,11 +11,14 @@ export async function getCurrentUserId(
   request: Request,
   jwtSecret: string,
 ): Promise<number | null> {
-  const cookieHeader = request.headers.get('Cookie');
-  const token = await authCookie.parse(cookieHeader || '');
-  if (typeof token !== 'string' || token.length === 0) return null;
-
   try {
+    const cookieHeader = request.headers.get('Cookie');
+    const token = await authCookie.parse(cookieHeader || '');
+
+    if (!token || typeof token !== 'string') {
+      return null;
+    }
+
     const isValid = await jwt.verify(token, jwtSecret);
     if (!isValid) return null;
 
@@ -23,7 +26,8 @@ export async function getCurrentUserId(
     const payload = decoded.payload as SessionPayload;
 
     return typeof payload?.id === 'number' ? payload.id : null;
-  } catch {
+  } catch (error) {
+    console.error('getCurrentUserId failed:', error);
     return null;
   }
 }
