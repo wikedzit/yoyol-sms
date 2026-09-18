@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLoaderData, useFetcher } from 'react-router';
-import { Card, CardContent, CardHeader } from '~/components/ui/card';
+import { useEffect, useRef, useState } from "react";
+import { useLoaderData, useFetcher } from "react-router";
+import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import type CampusService from "workers/services/campus";
+import { toTitleCase } from "~/utils/strings";
 import {
   Table,
   TableBody,
@@ -61,19 +63,23 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const schools = await services.school?.getAll();
 
   const studentsWithSubjects = await Promise.all(
-  students.map(async (student) => {
-    const assignedSubjects =  
-      await services.studentSubjects?.getSubjectsByStudent(student.id);
-    const school = schools?.find(
-      (school) => String(school.id) === String(student.schoolId)
-    );
-    return {
-      ...student,
-      subjects: assignedSubjects || [],
-      schoolName: school?.name || 'Not assigned',
-    };
-  })
-);
+    students.map(async (student) => {
+      const assignedSubjects =
+        await services.studentSubjects?.getSubjectsByStudent(student.id);
+      const school = schools?.find(
+        (school) => String(school.id) === String(student.schoolId),
+      );
+      const studentCampus = campuses.find(
+        (c: any) => String(c.id) === String((student as any).campusId),
+      );
+      return {
+        ...student,
+        subjects: assignedSubjects || [],
+        schoolName: school?.name || "Not assigned",
+        campusName: studentCampus?.name || "Not assigned",
+      };
+    }),
+  );
 
   return {
     students: studentsWithSubjects,
@@ -110,20 +116,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (method === 'POST') {
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        gender: String(form.get('gender') ?? 'Select gender') as
-          | 'Male'
-          | 'Female',
-        dob: String(form.get('dob') ?? ''),
-        email: form.get('email') ? String(form.get('email')) : undefined,
-        phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        address: form.get('address') ? String(form.get('address')) : undefined,
-        guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
-          : undefined,
-        guardianPhone: form.get('guardianPhone')
-          ? String(form.get('guardianPhone'))
+        firstName: toTitleCase(String(form.get("firstName") ?? "")),
+        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        gender: String(form.get("gender") ?? "Select gender") as
+          | "Male"
+          | "Female",
+        dob: String(form.get("dob") ?? ""),
+        email: form.get("email") ? String(form.get("email")) : undefined,
+        phone: form.get("phone") ? String(form.get("phone")) : undefined,
+        address: form.get("address") ? String(form.get("address")) : undefined,
+        guardianName: form.get("guardianName")
+          ? toTitleCase(String(form.get("guardianName")))
           : undefined,
         photoUrl: form.get('photoUrl')
           ? String(form.get('photoUrl'))
@@ -137,13 +140,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
         schoolId: form.get('schoolId')
           ? String(form.get('schoolId'))
           : undefined,
-        status: String(form.get('status') ?? 'Active') as
-          | 'Active'
-          | 'Pending'
-          | 'Inactive',
+        classId: form.get("classId") ? Number(form.get("classId")) : undefined,
+        schoolId: schoolId ? Number(schoolId) : undefined,
+        campusId: campusId ? String(campusId) : undefined,
+        status: String(form.get("status") ?? "Active") as
+          | "Active"
+          | "Pending"
+          | "Inactive",
       };
 
-      const created = await services.student.create(data);
+      const created = await services.student.create(data as any);
 
       if (!created) {
         return new Response(
@@ -172,21 +178,34 @@ export async function action({ request, context }: ActionFunctionArgs) {
         );
       }
 
+      const campusIdRaw = form.get("campusId")
+        ? Number(form.get("campusId"))
+        : undefined;
+      let schoolId: number | undefined;
+      let campusId: string | undefined;
+
+      if (campusIdRaw) {
+        const selectedCampus = await services.campus.getById(campusIdRaw);
+        if (selectedCampus) {
+          schoolId = selectedCampus.schoolId;
+          campusId = String(selectedCampus.id);
+        }
+      } else if (form.get("schoolId")) {
+        schoolId = Number(form.get("schoolId"));
+      }
+
       const data = {
-        firstName: String(form.get('firstName') ?? ''),
-        lastName: String(form.get('lastName') ?? ''),
-        gender: String(form.get('gender') ?? 'Select gender') as
-          | 'Male'
-          | 'Female',
-        dob: String(form.get('dob') ?? ''),
-        email: form.get('email') ? String(form.get('email')) : undefined,
-        phone: form.get('phone') ? String(form.get('phone')) : undefined,
-        address: form.get('address') ? String(form.get('address')) : undefined,
-        guardianName: form.get('guardianName')
-          ? String(form.get('guardianName'))
-          : undefined,
-        guardianPhone: form.get('guardianPhone')
-          ? String(form.get('guardianPhone'))
+        firstName: toTitleCase(String(form.get("firstName") ?? "")),
+        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        gender: String(form.get("gender") ?? "Select gender") as
+          | "Male"
+          | "Female",
+        dob: String(form.get("dob") ?? ""),
+        email: form.get("email") ? String(form.get("email")) : undefined,
+        phone: form.get("phone") ? String(form.get("phone")) : undefined,
+        address: form.get("address") ? String(form.get("address")) : undefined,
+        guardianName: form.get("guardianName")
+          ? toTitleCase(String(form.get("guardianName")))
           : undefined,
         photoUrl: form.get('photoUrl')
           ? String(form.get('photoUrl'))
@@ -200,13 +219,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
         schoolId: form.get('schoolId')
           ? String(form.get('schoolId'))
           : undefined,
-        status: String(form.get('status') ?? 'Active') as
-          | 'Active'
-          | 'Pending'
-          | 'Inactive',
+        classId: form.get("classId") ? Number(form.get("classId")) : undefined,
+        schoolId,
+        campusId,
+        status: String(form.get("status") ?? "Active") as
+          | "Active"
+          | "Pending"
+          | "Inactive",
       };
 
-      const updated = await services.student.update(String(id), data);
+      const updated = await services.student.update(String(id), data as any);
       return { success: true, student: updated };
     }
 
@@ -480,7 +502,7 @@ export default function Students() {
                       </Button>
                       <DeleteStudentButton
                         id={student.id}
-                        name={student.name}
+                        name={`${student.firstName} ${student.lastName}`}
                         fetcher={fetcher}
                       />
                     </TableCell>

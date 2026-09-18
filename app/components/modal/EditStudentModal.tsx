@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -22,7 +23,7 @@ interface EditStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   student: any;
-  classId: string | undefined;
+  classId?: string | undefined;
   fetcher: FetcherWithComponents<any>;
 }
 

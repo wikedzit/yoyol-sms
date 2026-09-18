@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
