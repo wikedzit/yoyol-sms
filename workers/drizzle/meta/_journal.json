@@ -295,6 +295,13 @@
       "when": 1789730400000,
       "tag": "0041_add_student_admission_number",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1790013928478,
+      "tag": "0042_neat_star_brand",
+      "breakpoints": true
     }
   ]
 }

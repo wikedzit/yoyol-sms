@@ -48,7 +48,7 @@ export const DeleteButton = ({
           <AlertDialogDescription>
             Are you sure you want to delete{' '}
             <strong className="font-semibold">{name}</strong>? This action
-            cannot be undone.
+            cannot be undone and it will delete all its related data.
           </AlertDialogDescription>
         </AlertDialogHeader>
 

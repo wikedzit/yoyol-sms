@@ -1,4 +1,4 @@
-import {Building2, Eye, Hash, Mail, MapPin, Phone,
+import {Building2, Eye, Hash, Mail, MapPin, Phone,Users,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -22,6 +22,7 @@ interface Campus {
   phone?: string | null;
   email?: string | null;
   isMain?: boolean;
+  totalStudents?: number;
 }
 
 interface ViewCampusModalProps {
@@ -40,13 +41,18 @@ export default function ViewCampusModal({
   const [internalOpen, setInternalOpen] = useState(false);
 
   const isControlled = open !== undefined;
+
   const dialogOpen = isControlled ? open : internalOpen;
 
   const setDialogOpen = isControlled
     ? onOpenChange ?? (() => {})
     : setInternalOpen;
 
-  if (!campus) return null;
+  if (!campus) {
+    return null;
+  }
+
+  const totalStudents = campus.totalStudents ?? 0;
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -83,9 +89,8 @@ export default function ViewCampusModal({
           </div>
         </DialogHeader>
 
-        {/* Details Form */}
         <div className="mt-6 space-y-4">
-          {/* Row 1 */}
+          {/* Campus information */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Campus Name */}
             <div className="rounded-lg border bg-muted/20 p-4">
@@ -110,7 +115,7 @@ export default function ViewCampusModal({
             </div>
           </div>
 
-          {/* Row 2 */}
+          {/* Contact information */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Phone */}
             <div className="rounded-lg border bg-muted/20 p-4">
@@ -161,7 +166,7 @@ export default function ViewCampusModal({
             </div>
           </div>
 
-          {/* Row 3 */}
+          {/* Location and type */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Address */}
             <div className="rounded-lg border bg-muted/20 p-4">
@@ -204,7 +209,7 @@ export default function ViewCampusModal({
             </div>
           </div>
 
-          {/* Row 4 */}
+          {/* Campus statistics */}
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Campus ID */}
             <div className="rounded-lg border bg-muted/20 p-4">
@@ -219,6 +224,27 @@ export default function ViewCampusModal({
               <p className="font-mono font-medium">
                 {campus.id}
               </p>
+            </div>
+
+            {/* Total Students */}
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Total Students
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <p className="text-2xl font-semibold">
+                  {totalStudents}
+                </p>
+
+                <span className="text-sm text-muted-foreground">
+                  {totalStudents === 1 ? 'student' : 'students'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
