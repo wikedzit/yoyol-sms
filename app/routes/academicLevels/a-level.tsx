@@ -15,7 +15,6 @@ import { LevelBadge } from '~/components/ui/LevelBadge';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { AddStreamModal } from '~/components/modal/addStreamModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
-import { useLanguage } from '~/lib/i18n';
 import type { LevelType } from '~/type/shools';
 import { LEVEL_CONFIG } from '~/config/academic-levels';
 
@@ -157,7 +156,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // --- A-Level Page Component ---
 export default function ALevelPage() {
-  const { t } = useLanguage();
   const { level, streams: initialStreams } = useLoaderData<{
     level: {
       id: number;
@@ -264,7 +262,7 @@ export default function ALevelPage() {
             className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
           >
             <Plus size={18} />
-            <span className="font-medium">{t('addStream')}</span>
+            <span className="font-medium">Add Stream</span>
           </Button>
         }
       />
@@ -278,7 +276,7 @@ export default function ALevelPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                {t('totalStreams')}
+                Total Streams
               </p>
               <p className="text-2xl font-bold text-foreground">
                 {streams.length}
@@ -294,7 +292,7 @@ export default function ALevelPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                {t('totalForms')}
+                Total Forms
               </p>
               <p className="text-2xl font-bold text-foreground">
                 {streams.reduce((sum, s) => sum + (s.formCount || 0), 0)}
@@ -312,9 +310,9 @@ export default function ALevelPage() {
               <GraduationCap className="h-8 w-8 text-muted-foreground" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">{t('noStreams')}</h3>
+              <h3 className="text-lg font-semibold">No streams yet</h3>
               <p className="text-muted-foreground mt-1">
-                {t('getStartedStream')} (e.g., PCM, PCB, HGL)
+                Get started by adding your first stream (e.g., PCM, PCB, HGL)
               </p>
             </div>
             <Button
@@ -322,7 +320,7 @@ export default function ALevelPage() {
               className="bg-primary-gradient text-white mt-2  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               <Plus size={16} className="mr-2" />
-              {t('addFirstStream')}
+              Add First Stream
             </Button>
           </div>
         </Card>
@@ -357,7 +355,7 @@ export default function ALevelPage() {
                   to={`/levels/a-level/${stream.id}`}
                   className="text-sm font-medium text-primary hover:underline"
                 >
-                  {t('viewForms')} →
+                  View Forms →
                 </Link>
                 <div className="flex items-center gap-1">
                   <Button

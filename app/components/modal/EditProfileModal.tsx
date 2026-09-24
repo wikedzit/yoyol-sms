@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -24,33 +25,41 @@ import {
 } from '~/components/ui/tooltip';
 import { useLanguage } from '~/lib/i18n';
 
-interface EditProfileModalProps {
+type ProfileActionResult = {
+  success?: boolean;
+  error?: string;
+  action?: string;
+};
+
+type AccountFields = {
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  preferredLanguage?: string | null;
+  avatarUrl?: string | null;
+};
+
+type RoleFields = {
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  qualification?: string | null;
+  guardianName?: string | null;
+  guardianPhone?: string | null;
+};
+
+const TITLE_CASE_FIELDS = new Set(['firstName', 'lastName', 'guardianName']);
+
+type EditProfileModalProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
-  fetcher: FetcherWithComponents<{
-    success?: boolean;
-    error?: string;
-    action?: string;
-  }>;
+  fetcher: FetcherWithComponents<ProfileActionResult>;
   role: string;
-  account?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    phone?: string | null;
-    preferredLanguage?: string | null;
-    avatarUrl?: string | null;
-  };
-  roleData?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    phone?: string | null;
-    address?: string | null;
-    qualification?: string | null;
-    guardianName?: string | null;
-    guardianPhone?: string | null;
-  };
+  account?: AccountFields;
+  roleData?: RoleFields;
   onLanguageChange?: (value: string) => void;
-}
+};
 
 export default function EditProfileModal({
   open,
@@ -64,7 +73,6 @@ export default function EditProfileModal({
   const { t } = useLanguage();
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -102,13 +110,15 @@ export default function EditProfileModal({
     setError(null);
   }, [open, role, account, roleData, isTeacher, isStudent]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    const nextValue = TITLE_CASE_FIELDS.has(name) ? toTitleCase(value) : value;
+    setFormData({ ...formData, [name]: nextValue });
     if (error) setError(null);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
       setError(t('pictureHelp'));
@@ -138,9 +148,6 @@ export default function EditProfileModal({
 
   const handleRemoveAvatar = () => {
     setFormData((current) => ({ ...current, avatarUrl: '' }));
-    // Clear the file input's selection too, so choosing the same file
-    // again still fires onChange (otherwise the browser treats it as
-    // "no change" and handleAvatarChange never runs).
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

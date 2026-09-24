@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -79,6 +80,14 @@ export default function EditSubjectModal({
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+
+    if (error) {
+      setError(null);
+    }
   };
 
   // Close modal on successful update or capture error response
@@ -176,6 +185,80 @@ export default function EditSubjectModal({
               </div>
             )}
 
+            {/* Teacher */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Teacher
+              </label>
+
+              <Select
+                value={formData.teacherId || 'none'}
+                onValueChange={(value) => {
+                  if (value === 'none') {
+                    setFormData((prev) => ({
+                      ...prev,
+                      teacherId: '',
+                      instructor: '',
+                    }));
+                    if (error) {
+                      setError(null);
+                    }
+                    return;
+                  }
+
+                  const selectedTeacher = teachers.find(
+                    (teacher) =>
+                      String(teacher.id) === String(value)
+                  );
+
+                  setFormData((prev) => ({
+                    ...prev,
+                    teacherId: value,
+                    instructor: selectedTeacher
+                      ? `${selectedTeacher.firstName} ${selectedTeacher.lastName}`
+                      : '',
+                  }));
+
+                  if (error) {
+                    setError(null);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select teacher (optional)" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="none">Not Assigned</SelectItem>
+                  {teachers.length > 0 ? (
+                    teachers.map((teacher) => (
+                      <SelectItem
+                        key={teacher.id}
+                        value={String(teacher.id)}
+                      >
+                        {teacher.firstName}{' '}
+                        {teacher.lastName}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem
+                      value="no-teachers"
+                      disabled
+                    >
+                      No teachers available
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+
+              <input
+                type="hidden"
+                name="instructor"
+                value={formData.instructor}
+              />
+            </div>
+
+            {/* Subject Name and Code */}
             {[
               { label: 'Subject Name', field: 'subjectName', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },

@@ -30,6 +30,14 @@ const CreateStudentSchema = z.object({
   course: z.string().optional(),
   grade: z.string().optional(),
   enrollmentDate: z.string().optional(), // YYYY-MM-DD
+  admissionNumber: z.preprocess((value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const trimmedAdmissionNumber = value.trim();
+    return trimmedAdmissionNumber.length > 0 ? trimmedAdmissionNumber : undefined;
+  }, z.string().max(50).optional()),
   // Legacy: old university-style class reference
   classId: z.preprocess(
     (v) => (v ? Number(v) : undefined),
@@ -40,11 +48,10 @@ const CreateStudentSchema = z.object({
     (v) => (v ? Number(v) : undefined),
     z.number().optional()
   ),
-  // Which school this student belongs to — OPTIONAL, since students added
-  // via the O-Level/A-Level formClass flow have no school relationship
+  // Which school this student belongs to — REQUIRED for new students
   schoolId: z.preprocess(
     (v) => (v ? Number(v) : undefined),
-    z.number().optional()
+    z.number({ required_error: 'Please select a school' })
   ),
   status: z.enum(['Active', 'Pending', 'Inactive']).default('Active'),
 });
@@ -83,23 +90,27 @@ export default class StudentService {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = CreateStudentSchema.parse(data);
 
-      // Only check school ownership if a schoolId was actually provided.
-      // Students added through the formClass (O-Level/A-Level) flow have
-      // no schoolId at all, so this check simply doesn't apply to them.
-      if (validated.schoolId) {
-        const ownedSchool = await this.db
-          .select({ id: school.id })
-          .from(school)
-          .where(
-            and(
-              eq(school.id, validated.schoolId),
-              eq(school.ownerUserId, ownerUserId),
-            ),
-          )
-          .get();
+      const ownedSchool = await this.db
+        .select({ id: school.id })
+        .from(school)
+        .where(
+          and(
+            eq(school.id, validated.schoolId),
+            eq(school.ownerUserId, ownerUserId),
+          ),
+        )
+        .get();
 
-        if (!ownedSchool) {
-          return null;
+      if (!ownedSchool) {
+        return null;
+      }
+
+      if (validated.admissionNumber) {
+        const existingAdmission = await this.findByAdmissionNumber(
+          validated.admissionNumber,
+        );
+        if (existingAdmission) {
+          throw new Error('This admission number is already in use.');
         }
       }
 
@@ -115,6 +126,12 @@ export default class StudentService {
 
       return result[0] || null;
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message === 'This admission number is already in use.'
+      ) {
+        throw error;
+      }
       console.error('Error creating student:', error);
       return null;
     }
@@ -133,6 +150,28 @@ export default class StudentService {
       return result || null;
     } catch (error) {
       console.error('Error fetching student:', error);
+      return null;
+    }
+  }
+
+  async findByAdmissionNumber(
+    admissionNumber: string,
+  ): Promise<SelectStudent | null> {
+    try {
+      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const result = await this.db
+        .select()
+        .from(students)
+        .where(
+          and(
+            eq(students.admissionNumber, admissionNumber),
+            eq(students.ownerUserId, ownerUserId),
+          ),
+        )
+        .get();
+      return result ?? null;
+    } catch (error) {
+      console.error('Error fetching student by admission number:', error);
       return null;
     }
   }

@@ -336,7 +336,10 @@ export default class TeacherClassService {
     formClassIds: number[],
   ): Promise<boolean> {
     try {
-      if (!(await this.teacherBelongsToOwner(teacherId))) return false;
+      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      if (!teacherIsOwned) {
+        return false;
+      }
 
       for (const formClassId of formClassIds) {
         const formClass = await this.db

@@ -17,38 +17,23 @@ import {
   SelectValue,
 } from '../ui/select';
 import { useLanguage } from '~/lib/i18n';
-import type { FetcherWithComponents } from 'react-router';
-
-interface Stream {
-  id: string | number;
-  name: string;
-  levelType?: string;
-}
-
-interface AddSubjectModalProps {
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  fetcher: FetcherWithComponents<any>;
-  streams: Stream[];
-  id?: string | number;
-}
-
 export default function AddSubjectModal({
   open,
   setOpen,
   fetcher,
-  streams = [],
+  streams,
+  teachers,
   id,
-}: AddSubjectModalProps) {
+}: any) {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
     stream: '',
     instructor: '',
-    enrolledStudents: 0,
+    teacherId: '',
     status: 'Active',
-    streamId: id ? String(id) : '',
+    streamId: id || '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -60,9 +45,9 @@ export default function AddSubjectModal({
   };
 
   useEffect(() => {
-    if (open && id && streams.length > 0) {
+    if (open && id && streams) {
       const selectedStream = streams.find(
-        (s) => String(s.id) === String(id)
+        (s: any) => String(s.id) === String(id)
       );
       if (selectedStream) {
         setFormData((prev) => ({
@@ -83,9 +68,9 @@ export default function AddSubjectModal({
         code: '',
         stream: '',
         instructor: '',
-        enrolledStudents: 0,
+        teacherId: '',
         status: 'Active',
-        streamId: id ? String(id) : '',
+        streamId: id || '',
       });
     }
     if (fetcher.data?.error) {
@@ -97,7 +82,14 @@ export default function AddSubjectModal({
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
-        className="w-full max-w-full sm:max-w-[90%] md:max-w-[573px] md:w-[573px] p-6 md:p-10 flex flex-col bg-card text-card-foreground border-border"
+        className="
+          w-full max-w-full               /* Mobile full-screen */
+          sm:max-w-[90%]                  /* Tablet */
+          md:max-w-[573px] md:w-[573px]   /* Desktop fixed width */
+          p-6 md:p-10
+          flex flex-col
+          bg-card text-card-foreground border-border
+        "
       >
         <fetcher.Form
           method="post"
@@ -109,7 +101,10 @@ export default function AddSubjectModal({
           <input type="hidden" name="status" value={formData.status} />
           <input type="hidden" name="streamId" value={formData.streamId} />
           <input type="hidden" name="stream" value={formData.stream} />
+          <input type="hidden" name="teacherId" value={formData.teacherId} />
+          <input type="hidden" name="instructor" value={formData.instructor} />
 
+          {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
               <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
@@ -126,12 +121,14 @@ export default function AddSubjectModal({
             Fill in the details below to add a new subject.
           </p>
 
+          {/* ERROR MESSAGE */}
           {error && (
             <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
+          {/* STREAM SELECT */}
           <div className="mb-4 w-full">
             <label className="block text-sm font-medium text-foreground mb-1">
               Stream
@@ -140,14 +137,14 @@ export default function AddSubjectModal({
             <Select
               value={formData.streamId}
               onValueChange={(value) => {
-                const selectedStream = streams.find(
-                  (s) => String(s.id) === String(value)
+                const selectedStream = streams?.find(
+                  (s: any) => String(s.id) === String(value)
                 );
-                setFormData((prev) => ({
-                  ...prev,
+                setFormData({
+                  ...formData,
                   streamId: value,
                   stream: selectedStream?.name || '',
-                }));
+                });
               }}
             >
               <SelectTrigger className="w-full">
@@ -156,13 +153,13 @@ export default function AddSubjectModal({
 
               <SelectContent>
                 {!streams || streams.length === 0 ? (
-                  <div className="p-2 text-xs text-muted-foreground text-center">
+                  <SelectItem value="no-stream" disabled>
                     {t('noStreams')}
-                  </div>
+                  </SelectItem>
                 ) : (
-                  streams.map((stream) => (
+                  streams.map((stream: any) => (
                     <SelectItem key={stream.id} value={String(stream.id)}>
-                      {stream.name} {stream.levelType ? `(${stream.levelType})` : ''}
+                      {stream.name} ({stream.levelType})
                     </SelectItem>
                   ))
                 )}
@@ -170,16 +167,52 @@ export default function AddSubjectModal({
             </Select>
           </div>
 
+          {/* TEACHER SELECT */}
+          <div className="mb-4 w-full">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Teacher
+            </label>
+
+            <Select
+              value={formData.teacherId}
+              onValueChange={(value) => {
+                const selectedTeacher = teachers?.find(
+                  (t: any) => String(t.id) === String(value)
+                );
+                setFormData({
+                  ...formData,
+                  teacherId: value,
+                  instructor: selectedTeacher
+                    ? `${selectedTeacher.firstName} ${selectedTeacher.lastName}`
+                    : '',
+                });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select teacher" />
+              </SelectTrigger>
+
+              <SelectContent>
+                {!teachers || teachers.length === 0 ? (
+                  <SelectItem value="no-teacher" disabled>
+                    No teachers available
+                  </SelectItem>
+                ) : (
+                  teachers.map((teacher: any) => (
+                    <SelectItem key={teacher.id} value={String(teacher.id)}>
+                      {teacher.firstName} {teacher.lastName}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto pr-2">
             {[
               { label: 'Subject Name', field: 'subjectName', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Instructor', field: 'instructor', type: 'text' },
-              {
-                label: 'Enrolled Students',
-                field: 'enrolledStudents',
-                type: 'number',
-              },
             ].map(({ label, field, type }) => (
               <div key={field} className="mb-4">
                 <label className="block text-sm font-medium text-foreground mb-1">
@@ -189,7 +222,7 @@ export default function AddSubjectModal({
                 <Input
                   type={type}
                   name={field}
-                  value={(formData as Record<string, any>)[field]}
+                  value={(formData as any)[field]}
                   placeholder={`Enter ${label}`}
                   onChange={handleChange}
                   required
@@ -197,6 +230,7 @@ export default function AddSubjectModal({
               </div>
             ))}
 
+            {/* STATUS */}
             <div className="mb-4 w-full">
               <label className="block text-sm font-medium text-foreground mb-1">
                 Status
@@ -205,7 +239,7 @@ export default function AddSubjectModal({
               <Select
                 value={formData.status}
                 onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, status: value }))
+                  setFormData({ ...formData, status: value })
                 }
               >
                 <SelectTrigger>
@@ -220,6 +254,7 @@ export default function AddSubjectModal({
             </div>
           </div>
 
+          {/* FOOTER */}
           <div className="flex justify-end gap-3 border-t border-border pt-4 mt-6 sticky bottom-0 bg-card z-10">
             <Button
               type="button"
@@ -232,7 +267,6 @@ export default function AddSubjectModal({
 
             <Button
               type="submit"
-              disabled={fetcher.state === 'submitting'}
               className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting' ? t('adding') : t('addSubject')}

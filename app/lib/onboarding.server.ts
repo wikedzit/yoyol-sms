@@ -2,6 +2,7 @@ import type { SelectCampus } from 'workers/database/campuses';
 import type { SelectSchool } from 'workers/database/school';
 import type CampusService from 'workers/services/campus';
 import type SchoolService from 'workers/services/school';
+export { isAdminRole } from '~/lib/permissions';
 
 export type OnboardingStep = 'school' | 'campus' | 'complete';
 

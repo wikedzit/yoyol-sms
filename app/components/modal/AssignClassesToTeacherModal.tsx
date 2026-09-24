@@ -24,17 +24,15 @@ interface AssignClassesToTeacherModalProps {
   availableClasses: Array<{
     id: number;
     name: string;
-    formId: number;
-    streamId: number;
-    levelId: number;
-    studentCount: number;
+    EducationalLevel: string;
+    section: string;
+    year: number;
   }>;
   assignedClasses: Array<{
     id: number;
     name: string;
-    formId: number;
-    streamId: number;
-    levelId: number;
+    EducationalLevel: string;
+    section: string;
   }>;
   fetcher: FetcherWithComponents<any>;
 }
@@ -109,8 +107,8 @@ export default function AssignClassesToTeacherModal({
                   >
                     <div className="font-medium">{classItem.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      Form {classItem.formId} • Stream {classItem.streamId} •
-                      Level {classItem.levelId}
+                      {classItem.EducationalLevel} • Section {classItem.section}{' '}
+                      • Year {classItem.year}
                     </div>
                   </Label>
                 </div>

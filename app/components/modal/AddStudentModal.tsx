@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import type { FetcherWithComponents } from 'react-router';
-import { Input } from '~/components/ui/input';
-import { Button } from '~/components/ui/button';
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import type { FetcherWithComponents } from "react-router";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -17,373 +17,441 @@ import {
   SelectContent,
   SelectItem,
 } from '~/components/ui/select';
-import { useLanguage } from '~/lib/i18n';
 
-interface Stream {
+interface SchoolOption {
   id: number;
   name: string;
-}
-
-interface FormClass {
-  id: number;
-  name: string;
-  streamId: number;
 }
 
 interface CampusOption {
   id: number;
   name: string;
+  schoolId: number;
 }
+
+interface StreamOption {
+  id: number;
+  name: string;
+}
+
+interface FormOption {
+  id: number;
+  name: string;
+  streamId: number;
+}
+
+type AddStudentResult = {
+  success?: boolean;
+  error?: string;
+};
 
 interface AddStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  streams?: Stream[];
-  forms?: FormClass[];
-  fetcher: FetcherWithComponents<any>;
+  classId?: string | { id: string } | undefined;
+  fetcher: FetcherWithComponents<AddStudentResult>;
+  schools?: SchoolOption[];
   campuses?: CampusOption[];
+  streams?: StreamOption[];
+  forms?: FormOption[];
 }
 
-export default function AddStudentModal({
-  open,
-  setOpen,
-  streams = [],
-  forms = [],
-  fetcher,
-  campuses = [],
-}: AddStudentModalProps) {
-  const { t } = useLanguage();
-  const hasCampuses = campuses.length > 0;
-
-  const [formData, setFormData] = useState({
+function emptyStudentForm(defaultSchoolId = '') {
+  return {
     firstName: '',
     lastName: '',
     admissionNumber: '',
     email: '',
     phone: '',
-    dateOfBirth: '',
+    enrollmentDate: '',
+    dob: '',
+    address: '',
+    gender: 'Male',
+    status: 'Active',
+    schoolId: defaultSchoolId,
+    campusId: '',
     streamId: '',
     formId: '',
-    campusId: '',
-    gender: '',
-    status: 'Active',
-  });
+  };
+}
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+type StudentFormFields = ReturnType<typeof emptyStudentForm>;
+
+export default function AddStudentModal({
+  open,
+  setOpen,
+  classId,
+  fetcher,
+  schools = [],
+  campuses = [],
+  streams = [],
+  forms = [],
+}: AddStudentModalProps) {
+  const hasCampuses = campuses.length > 0;
+  const defaultSchoolId =
+    schools.length === 1 ? String(schools[0].id) : '';
+
+  const [formData, setFormData] = useState(emptyStudentForm(defaultSchoolId));
+
+  const formsInSelectedStream = formData.streamId
+    ? forms.filter(
+        (academicForm) => String(academicForm.streamId) === formData.streamId,
+      )
+    : [];
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const fieldName = event.target.name as keyof StudentFormFields;
+    setFormData({ ...formData, [fieldName]: event.target.value });
   };
 
-  // Close modal and reset form state after successful form submit
   useEffect(() => {
-    if (fetcher.data?.success) {
-      setOpen(false);
-      setFormData({
-        firstName: '',
-        lastName: '',
-        admissionNumber: '',
-        email: '',
-        phone: '',
-        dateOfBirth: '',
-        streamId: '',
-        formId: '',
-        campusId: '',
-        gender: '',
-        status: 'Active',
-      });
+    if (fetcher.state === 'idle' && fetcher.data?.success) {
+      setFormData(emptyStudentForm(defaultSchoolId));
     }
-  }, [fetcher.data, setOpen]);
+  }, [fetcher.state, fetcher.data, defaultSchoolId]);
 
-  // Filter forms according to selected stream
-  const filteredForms = formData.streamId
-    ? forms.filter((f) => f.streamId === parseInt(formData.streamId, 10))
-    : forms;
+  useEffect(() => {
+    if (!open) {
+      setFormData(emptyStudentForm(defaultSchoolId));
+    }
+  }, [open, defaultSchoolId]);
+
+  const canSubmit =
+    formData.firstName.trim().length > 0 &&
+    formData.lastName.trim().length > 0 &&
+    formData.admissionNumber.trim().length > 0 &&
+    formData.streamId.length > 0 &&
+    formData.formId.length > 0 &&
+    (hasCampuses ? formData.campusId.length > 0 : formData.schoolId.length > 0);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
         side="right"
         className="
-          w-full max-w-full 
-          sm:max-w-[420px] 
-          md:max-w-[500px] 
-          lg:!max-w-[573px] lg:!w-[573px]
-          p-6 md:p-10 flex flex-col
-          bg-card text-card-foreground border-border
+          w-full max-w-full
+          sm:max-w-[90%]
+          md:max-w-[573px] md:w-[573px]
+          p-6 md:p-10
+          flex flex-col justify-between
         "
       >
-        <fetcher.Form
-          method="post"
-          action="/students"
-          className="flex flex-col h-full"
-        >
+        <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="POST" />
-          <input type="hidden" name="_entity" value="student" />
+          <input
+            type="hidden"
+            name="classId"
+            value={
+              classId && typeof classId === 'object' && 'id' in classId
+                ? classId.id
+                : classId ?? ''
+            }
+          />
 
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6 md:mb-8">
-            <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
-                Add New Student
-              </SheetTitle>
-            </SheetHeader>
-            <SheetClose asChild className="cursor-pointer">
-              <X size={24} className="text-muted-foreground hover:text-foreground" />
-            </SheetClose>
-          </div>
+          <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
+              <SheetHeader className="p-0">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
+                  Add New Student
+                </SheetTitle>
+              </SheetHeader>
+              <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
+                <X size={24} />
+              </SheetClose>
+            </div>
 
-          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
-            Fill in the details below to register a new student.
-          </p>
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
+              Fill in the details below to register a new student.
+            </p>
 
-          {/* Scrollable Form Content */}
-          <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
-            {/* Campus — required only if at least one campus exists */}
-            {hasCampuses ? (
+            <div className="space-y-4">
+              {hasCampuses ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Campus <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.campusId}
+                    onValueChange={(value) => {
+                      const selectedCampus = campuses.find(
+                        (campus) => String(campus.id) === value,
+                      );
+                      setFormData({
+                        ...formData,
+                        campusId: value,
+                        schoolId: selectedCampus
+                          ? String(selectedCampus.schoolId)
+                          : '',
+                      });
+                    }}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select campus" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campuses.map((campus) => (
+                        <SelectItem key={campus.id} value={String(campus.id)}>
+                          {campus.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="hidden"
+                    name="campusId"
+                    value={formData.campusId}
+                  />
+                  <input
+                    type="hidden"
+                    name="schoolId"
+                    value={formData.schoolId}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    School <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.schoolId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, schoolId: value })
+                    }
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select school" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schools.map((ownedSchool) => (
+                        <SelectItem
+                          key={ownedSchool.id}
+                          value={String(ownedSchool.id)}
+                        >
+                          {ownedSchool.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="hidden"
+                    name="schoolId"
+                    value={formData.schoolId}
+                  />
+                  {schools.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      No schools available. Please add a school first.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Campus <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={formData.campusId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, campusId: value })
-                  }
-                  name="campusId"
-                  required
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select campus" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campuses.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input type="hidden" name="campusId" value={formData.campusId} />
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
-                No campus added yet — this student will be added to your default school.
-              </p>
-            )}
-
-            {/* First Name */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                First Name *
-              </label>
-              <Input
-                type="text"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="Enter First Name"
-                required
-              />
-            </div>
-
-            {/* Last Name */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Last Name *
-              </label>
-              <Input
-                type="text"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Enter Last Name"
-                required
-              />
-            </div>
-
-            {/* Admission Number */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Admission Number *
-              </label>
-              <Input
-                type="text"
-                name="admissionNumber"
-                value={formData.admissionNumber}
-                onChange={handleChange}
-                placeholder="Enter Admission Number"
-                required
-              />
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Email Address
-              </label>
-              <Input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter Email Address"
-              />
-            </div>
-
-            {/* Phone & Date of Birth */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Phone Number
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
                   onChange={handleChange}
-                  placeholder="Enter Phone Number"
+                  placeholder="Enter first name"
+                  required
                 />
               </div>
 
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Date of Birth
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
                   onChange={handleChange}
+                  placeholder="Enter last name"
+                  required
                 />
               </div>
-            </div>
 
-            {/* Stream & Form Class Selects */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Stream *
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Admission Number <span className="text-red-500">*</span>
                 </label>
-                <Select
-                  value={formData.streamId}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, streamId: val, formId: '' })
-                  }
-                  name="streamId"
+                <Input
+                  type="text"
+                  name="admissionNumber"
+                  value={formData.admissionNumber}
+                  onChange={handleChange}
+                  placeholder="Enter admission number"
                   required
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select stream" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {streams.map((stream) => (
-                      <SelectItem key={stream.id} value={String(stream.id)}>
-                        {stream.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input type="hidden" name="streamId" value={formData.streamId} />
+                />
               </div>
 
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Form *
-                </label>
-                <Select
-                  value={formData.formId}
-                  onValueChange={(val) =>
-                    setFormData({ ...formData, formId: val })
-                  }
-                  name="formId"
-                  disabled={!formData.streamId}
-                  required
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue
-                      placeholder={
-                        formData.streamId ? 'Select form' : 'Select stream first'
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredForms.map((f) => (
-                      <SelectItem key={f.id} value={String(f.id)}>
-                        {f.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input type="hidden" name="formId" value={formData.formId} />
-              </div>
-            </div>
+              {(
+                ['email', 'phone', 'enrollmentDate', 'dob', 'address'] as const
+              ).map((field) => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field === 'enrollmentDate'
+                      ? 'Enrollment Date'
+                      : field === 'dob'
+                        ? 'Date of Birth'
+                        : field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <Input
+                    type={
+                      field === 'email'
+                        ? 'email'
+                        : ['enrollmentDate', 'dob'].includes(field)
+                          ? 'date'
+                          : 'text'
+                    }
+                    name={field}
+                    value={formData[field]}
+                    onChange={handleChange}
+                  />
+                </div>
+              ))}
 
-            {/* Gender & Status Selects */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Gender *
-                </label>
-                <Select
-                  value={formData.gender}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, gender: value })
-                  }
-                  name="gender"
-                  required
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-                <input type="hidden" name="gender" value={formData.gender} />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Stream <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.streamId}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        streamId: value,
+                        formId: '',
+                      })
+                    }
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select stream" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {streams.map((stream) => (
+                        <SelectItem key={stream.id} value={String(stream.id)}>
+                          {stream.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="hidden"
+                    name="streamId"
+                    value={formData.streamId}
+                  />
+                  {streams.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">
+                      No streams available. Please add a stream first.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Form <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.formId}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, formId: value })
+                    }
+                    disabled={!formData.streamId}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          formData.streamId
+                            ? 'Select form'
+                            : 'Select stream first'
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formsInSelectedStream.map((academicForm) => (
+                        <SelectItem
+                          key={academicForm.id}
+                          value={String(academicForm.id)}
+                        >
+                          {academicForm.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="formId" value={formData.formId} />
+                </div>
               </div>
 
-              <div className="w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Status
-                </label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, status: value })
-                  }
-                  name="status"
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Suspended">Suspended</SelectItem>
-                  </SelectContent>
-                </Select>
-                <input type="hidden" name="status" value={formData.status} />
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Gender
+                  </label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, gender: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="gender" value={formData.gender} />
+                </div>
+
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, status: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="status" value={formData.status} />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Sticky Footer - Theme Adaptive */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
-              {t('cancel')}
+              Cancel
             </Button>
             <Button
               type="submit"
-              disabled={fetcher.state === 'submitting'}
-              className="bg-primary-gradient text-white py-2 px-6 md:px-8 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              disabled={fetcher.state === 'submitting' || !canSubmit}
             >
-              {fetcher.state === 'submitting' ? t('adding') : t('addStudent')}
+              {fetcher.state === 'submitting' ? 'Adding...' : 'Add Student'}
             </Button>
           </div>
         </fetcher.Form>

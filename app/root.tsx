@@ -10,6 +10,8 @@ import {
 import type { Route } from './+types/root';
 import './app.css';
 import { Toaster } from './components/ui/sonner';
+
+// added ThemeProvider to wrap the entire application, enabling theme toggling functionality
 import { ThemeProvider } from './components/ui/theme-toggle';
 import { LanguageProvider } from './lib/i18n';
 
@@ -42,6 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* added bg-background and text-foreground classes to ensure the body respects the theme state from ThemeProvider */}
       <body className="bg-background text-foreground antialiased min-h-screen">
 
+        {/* added ThemeProvider to wrap the entire application, enabling theme toggling functionality */}
         <ThemeProvider>
           <LanguageProvider>{children}</LanguageProvider>
         </ThemeProvider>

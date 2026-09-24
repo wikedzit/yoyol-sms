@@ -1,4 +1,4 @@
-import { useState } from 'react'; 
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,10 +6,9 @@ import {
   DialogTitle,
   DialogDescription,
   DialogTrigger,
-} from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Eye } from 'lucide-react';
-
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Eye } from "lucide-react";
 
 interface StudentProfilesModalProps {
   student: any;
@@ -22,7 +21,7 @@ export function StudentProfilesModal({
   student,
   open,
   onOpenChange,
-  showTrigger = true, 
+  showTrigger = true,
 }: StudentProfilesModalProps) {
   // new
   const [internalOpen, setInternalOpen] = useState(false);
@@ -32,12 +31,12 @@ export function StudentProfilesModal({
   const dialogOpen = isControlled ? open : internalOpen;
   const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
 
-  // 
+  //
   if (!student) return null;
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      {showTrigger && ( 
+      {showTrigger && (
         <DialogTrigger asChild>
           <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4" />
@@ -56,11 +55,11 @@ export function StudentProfilesModal({
             <img
               src={
                 student.photoUrl ||
-                (student.gender === 'male'
-                  ? '/assets/male-avatar.png'
-                  : '/assets/female-avatar.png')
+                (student.gender === "male"
+                  ? "/assets/male-avatar.png"
+                  : "/assets/female-avatar.png")
               }
-              alt={student.photoUrl ? 'Student Photo' : 'Default Avatar'}
+              alt={student.photoUrl ? "Student Photo" : "Default Avatar"}
               className="w-16 h-16 rounded-full object-cover border"
             />
           </div>
@@ -88,7 +87,7 @@ export function StudentProfilesModal({
               <strong>Address:</strong> {student.address}
             </p>
             <p>
-                <strong>School:</strong> {student.schoolName}
+              <strong>campus:</strong> {student.schoolName}
             </p>
           </div>
         </div>

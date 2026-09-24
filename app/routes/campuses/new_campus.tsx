@@ -14,6 +14,8 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
+import { useState } from 'react';
+import { toTitleCase } from '~/utils/strings';
 
 import {
   Card,
@@ -121,6 +123,7 @@ export default function NewCampusPage() {
   const navigation = useNavigation();
 
   const isSaving = navigation.state === 'submitting';
+  const [name, setName] = useState('');
 
   return (
     <div className="space-y-6">
@@ -172,6 +175,8 @@ export default function NewCampusPage() {
                 <Input
                   id="name"
                   name="name"
+                  value={name}
+                  onChange={(e) => setName(toTitleCase(e.target.value))}
                   placeholder="e.g. Mikocheni Campus"
                   required
                 />

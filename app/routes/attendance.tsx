@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '~/components/ui/table';
-import { useLanguage } from '~/lib/i18n';
 
 const attendance = [
   {
@@ -64,42 +63,41 @@ const attendance = [
 ];
 
 export default function Attendance() {
-  const { t } = useLanguage();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('attendance')}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
           <p className="text-muted-foreground mt-1">
-            {t('trackAttendance')}
+            Track student attendance records
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className=" hover:scale-110 hover:text-white-600 transition cursor-pointer">
             <Calendar className="h-4 w-4 mr-2" />
-            {t('selectDate')}
+            Select Date
           </Button>
           <Button className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] cursor-pointer duration-300 hover:bg-[var(--color-purple)] focus:ring-2 focus:ring-[var(--color-purple)] disabled:opacity-50 disabled:cursor-not-allowed">
             <Download className="h-4 w-4 mr-2" />
-            {t('export')}
+            Export
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('attendanceRecords')}</CardTitle>
+          <CardTitle>Attendance Records</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t('student')}</TableHead>
-                <TableHead>{t('course')}</TableHead>
-                <TableHead className="text-center">{t('present')}</TableHead>
-                <TableHead className="text-center">{t('absent')}</TableHead>
-                <TableHead className="text-center">{t('rate')}</TableHead>
-                <TableHead className="text-center">{t('status')}</TableHead>
+                <TableHead>Student</TableHead>
+                <TableHead>Course</TableHead>
+                <TableHead className="text-center">Present</TableHead>
+                <TableHead className="text-center">Absent</TableHead>
+                <TableHead className="text-center">Rate</TableHead>
+                <TableHead className="text-center">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,10 +127,10 @@ export default function Attendance() {
                       }
                     >
                       {record.rate >= 90
-                        ? t('excellent')
+                        ? 'Excellent'
                         : record.rate >= 75
-                        ? t('good')
-                        : t('poor')}
+                        ? 'Good'
+                        : 'Poor'}
                     </Badge>
                   </TableCell>
                 </TableRow>

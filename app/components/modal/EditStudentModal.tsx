@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
+import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -22,7 +23,7 @@ interface EditStudentModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   student: any;
-  classId: string | undefined;
+  classId?: string | undefined;
   fetcher: FetcherWithComponents<any>;
 }
 
@@ -33,20 +34,11 @@ export default function EditStudentModal({
   classId,
   fetcher,
 }: EditStudentModalProps) {
-  const [formData, setFormData] = useState<{
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    enrollmentDate: string;
-    dob: string;
-    address: string;
-    gender?: string;
-    status: string;
-  }>({
+  const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    // course: '',
     phone: '',
     enrollmentDate: '',
     dob: '',
@@ -61,6 +53,7 @@ export default function EditStudentModal({
         firstName: student.firstName || '',
         lastName: student.lastName || '',
         email: student.email || '',
+        // course: student.course || '',
         phone: student.phone || '',
         enrollmentDate: student.enrollmentDate || '',
         dob: student.dob || '',
@@ -75,12 +68,6 @@ export default function EditStudentModal({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const formatLabel = (field: string) => {
-    return field
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, (str) => str.toUpperCase());
-  };
-
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetContent
@@ -91,31 +78,28 @@ export default function EditStudentModal({
           md:max-w-[573px] md:w-[573px]  /* Desktop fixed width */
           p-6 md:p-10
           flex flex-col justify-between
-          bg-card text-card-foreground border-border
         "
       >
         <fetcher.Form method="post" className="flex flex-col h-full">
           <input type="hidden" name="_method" value="PUT" />
-          <input type="hidden" name="id" value={student?.id || ''} />
+          <input type="hidden" name="id" value={student?.id} />
           <input type="hidden" name="classId" value={classId ?? ''} />
-          <input type="hidden" name="gender" value={formData.gender || ''} />
-          <input type="hidden" name="status" value={formData.status} />
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8">
               <SheetHeader className="p-0">
-                <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
+                <SheetTitle className="text-xl md:text-2xl font-semibold">
                   Edit Student
                 </SheetTitle>
               </SheetHeader>
               <SheetClose asChild className="cursor-pointer mt-2 md:mt-0">
-                <X size={24} className="text-muted-foreground hover:text-foreground transition-colors" />
+                <X size={24} />
               </SheetClose>
             </div>
 
-            <p className="text-sm text-muted-foreground mb-6 md:mb-8">
+            <p className="text-sm text-[#898989] mb-6 md:mb-8">
               Update the student information below.
             </p>
 
@@ -125,14 +109,15 @@ export default function EditStudentModal({
                 'firstName',
                 'lastName',
                 'email',
+                // 'course',
                 'phone',
                 'enrollmentDate',
                 'dob',
                 'address',
               ].map((field) => (
                 <div key={field}>
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    {formatLabel(field)}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <Input
                     type={
@@ -157,7 +142,7 @@ export default function EditStudentModal({
               {/* Gender & Status */}
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-foreground mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Gender
                   </label>
                   <Select
@@ -165,6 +150,7 @@ export default function EditStudentModal({
                     onValueChange={(value) =>
                       setFormData({ ...formData, gender: value })
                     }
+                    name="gender"
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select gender" />
@@ -177,7 +163,7 @@ export default function EditStudentModal({
                 </div>
 
                 <div className="flex-1">
-                  <label className="block text-sm font-medium text-foreground mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Status
                   </label>
                   <Select
@@ -185,6 +171,7 @@ export default function EditStudentModal({
                     onValueChange={(value) =>
                       setFormData({ ...formData, status: value })
                     }
+                    name="status"
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
@@ -201,18 +188,18 @@ export default function EditStudentModal({
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t border-border pt-4 mt-4 bg-card sticky bottom-0 z-10">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 border-t pt-4 mt-4 bg-white">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               {fetcher.state === 'submitting'
                 ? 'Updating...'

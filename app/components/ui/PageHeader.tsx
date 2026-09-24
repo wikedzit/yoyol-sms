@@ -1,6 +1,5 @@
-import type { ReactNode } from "react";
-import { cn } from "~/lib/utils";
-import { useLanguage, translateText } from "~/lib/i18n";
+import type { ReactNode } from 'react';
+import { cn } from '~/lib/utils';
 
 interface PageHeaderProps {
   title: string;
@@ -17,26 +16,21 @@ export function PageHeader({
   actions,
   className,
 }: PageHeaderProps) {
-  const { language } = useLanguage();
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8",
-        className,
+        'flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8',
+        className
       )}
     >
       <div className="space-y-1">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-            {translateText(title, language)}
+            {title}
           </h1>
           {badge}
         </div>
-        {description && (
-          <p className="text-foreground">
-            {translateText(description, language)}
-          </p>
-        )}
+        {description && <p className="text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
