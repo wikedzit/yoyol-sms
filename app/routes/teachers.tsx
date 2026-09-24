@@ -26,7 +26,7 @@ import type TeacherService from 'workers/services/teachers';
 import type SubjectService from 'workers/services/subjects';
 import type TeacherSubjectService from 'workers/services/teacher-subjects';
 import type TeacherClassService from 'workers/services/teacher-classes';
-import type ClassService from 'workers/services/class';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import AddTeacherModal from '~/components/modal/AddTeacherModal';
 import EditTeacherModal from '~/components/modal/EditTeacherModal';
 import AssignSubjectsModal from '~/components/modal/AssignSubjectsModal';
@@ -49,58 +49,52 @@ import {
 } from '~/components/ui/dropdown-menu';
 
 // 🧠 Loader – fetch teachers with their subjects and classes
-export async function loader({ context }: LoaderFunctionArgs) {
-  const services = context.services as {
-    teacher: TeacherService;
-    subject: SubjectService;
-    teacherSubject: TeacherSubjectService;
-    teacherClass: TeacherClassService;
-    class: ClassService;
-  };
-
-  const teachers = await services.teacher?.getAllTeachers({
-    limit: 100,
-    offset: 0,
-    sortBy: 'createdAt',
-    sortOrder: 'asc',
-  });
-
-  const subjects = await services.subject?.getAllSubjects({
-    limit: 100,
-    offset: 0,
-    sortBy: 'subjectName',
-    sortOrder: 'asc',
-  });
-
-  const allClasses = await services.class.getAll({
-    limit: 100,
-    offset: 0,
-    sortBy: 'name',
-    sortOrder: 'asc',
-  });
-
-  const teachersWithSubjectsAndClasses = await Promise.all(
-    teachers.map(async (teacher) => {
-      const assignedSubjects =
-        await services.teacherSubject?.getSubjectsByTeacher(teacher.id);
-      const assignedClasses = await services.teacherClass?.getClassesByTeacher(
-        teacher.id
-      );
-      return {
-        ...teacher,
-        subjects: assignedSubjects || [],
-        classes: assignedClasses || [],
-      };
-    })
-  );
-
-  return {
-    teachers: teachersWithSubjectsAndClasses,
-    allSubjects: subjects,
-    allClasses: allClasses,
-  };
+export async function loader({ context }: LoaderFunctionArgs) { 
+  const services = context.services as { 
+    teacher: TeacherService; 
+    subject: SubjectService; 
+    teacherSubject: TeacherSubjectService; 
+    teacherClass: TeacherClassService; 
+    academicLevel: AcademicLevelService; 
+  }; 
+ 
+  const teachers = await services.teacher?.getAllTeachers({ 
+    limit: 100, 
+    offset: 0, 
+    sortBy: 'createdAt', 
+    sortOrder: 'asc', 
+  }); 
+ 
+  const subjects = await services.subject?.getAllSubjects({ 
+    limit: 100, 
+    offset: 0, 
+    sortBy: 'subjectName', 
+    sortOrder: 'asc', 
+  }); 
+ 
+  const allClasses = await services.academicLevel.getAllFormClasses();
+ 
+  const teachersWithSubjectsAndClasses = await Promise.all( 
+    teachers.map(async (teacher) => { 
+      const assignedSubjects = 
+        await services.teacherSubject?.getSubjectsByTeacher(teacher.id); 
+      const assignedClasses = await services.teacherClass?.getClassesByTeacher( 
+        teacher.id 
+      ); 
+      return { 
+        ...teacher, 
+        subjects: assignedSubjects || [], 
+        classes: assignedClasses || [], 
+      }; 
+    }) 
+  ); 
+ 
+  return { 
+    teachers: teachersWithSubjectsAndClasses, 
+    allSubjects: subjects, 
+    allClasses: allClasses, 
+  }; 
 }
-
 // ⚙️ Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as {
@@ -447,7 +441,7 @@ export default function Teachers() {
                               variant="secondary"
                               className="text-xs"
                             >
-                              {subject.code}
+                               {subject.subjectName}
                             </Badge>
                           ))
                         ) : (

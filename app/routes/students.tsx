@@ -556,7 +556,7 @@ export default function Students() {
                               variant="secondary"
                               className="text-xs"
                             >
-                              {subject.code}
+                              {subject.subjectName}
                             </Badge>
                           ))
                         ) : (
