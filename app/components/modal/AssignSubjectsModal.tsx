@@ -11,43 +11,6 @@ import {
 } from '~/components/ui/dialog';
 
 import { Button } from '~/components/ui/button';
-<<<<<<< Updated upstream
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from '~/components/ui/sheet';
-import { useState, useEffect } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
-import { useLanguage } from '~/lib/i18n';
-export default function AddSubjectModal({
-  open,
-  setOpen,
-  fetcher,
-  streams,
-  teachers,
-  id,
-}: any) {
-  const { t } = useLanguage();
-  const [formData, setFormData] = useState({
-    subjectName: '',
-    code: '',
-    stream: '',
-    instructor: '',
-    teacherId: '',
-    status: 'Active',
-    streamId: id || '',
-  });
-  const [error, setError] = useState<string | null>(null);
-=======
 import { Label } from '~/components/ui/label';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Badge } from '~/components/ui/badge';
@@ -55,7 +18,6 @@ import { Badge } from '~/components/ui/badge';
 interface AssignSubjectsModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
->>>>>>> Stashed changes
 
   teacher: {
     id: number;
