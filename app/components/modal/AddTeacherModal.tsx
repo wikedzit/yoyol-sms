@@ -266,17 +266,6 @@ export default function AddTeacherModal({
                 </label>
 
                 <Input
-                  type={field === 'email' ? 'email' : 'text'}
-                  {['firstName', 'lastName'].includes(
-                    field
-                  ) && (
-                    <span className="text-red-500">
-                      *
-                    </span>
-                  )}
-                </label>
-
-                <Input
                   type={
                     field === 'email'
                       ? 'email'

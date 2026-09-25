@@ -1005,7 +1005,7 @@ export default function Students() {
                       />
                     </TableCell>
                   </TableRow>
-                )}
+                ))}
               </TableBody>
             </Table>
           </div>
