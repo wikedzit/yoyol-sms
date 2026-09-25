@@ -137,16 +137,11 @@ export default function AddTeacherModal({
       <SheetContent
         side="right"
         className="
-          w-full
-          max-w-full
+          w-full max-w-full
           sm:max-w-[420px]
           md:max-w-[500px]
-          lg:!max-w-[573px]
-          lg:!w-[573px]
-          p-6
-          md:p-10
-          flex
-          flex-col
+          lg:!max-w-[573px] lg:!w-[573px]
+          p-6 md:p-10 flex flex-col
         "
       >
         <fetcher.Form
@@ -255,7 +250,6 @@ export default function AddTeacherModal({
               'email',
               'phone',
               'address',
-              'qualification',
               'experience',
             ].map((field) => (
               <div key={field}>
@@ -267,6 +261,12 @@ export default function AddTeacherModal({
                       : field.charAt(0).toUpperCase() +
                         field.slice(1)}
 
+                  <span className="text-red-500">*</span>
+                
+                </label>
+
+                <Input
+                  type={field === 'email' ? 'email' : 'text'}
                   {['firstName', 'lastName'].includes(
                     field
                   ) && (
@@ -303,6 +303,41 @@ export default function AddTeacherModal({
             ))}
 
             {/* Subjects */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Qualification
+
+                <span className="text-red-500">*</span>
+              </label>
+
+              <Select
+                value={formData.qualification}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    qualification: value,
+                  })
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select qualification" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="Diploma">Diploma</SelectItem>
+                  <SelectItem value="Degree">Degree</SelectItem>
+                  <SelectItem value="Masters">Master's</SelectItem>
+                  <SelectItem value="PhD">PhD</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <input
+                type="hidden"
+                name="qualification"
+                value={formData.qualification}
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Subjects
