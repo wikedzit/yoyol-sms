@@ -38,6 +38,11 @@ interface CampusOption {
   name: string;
 }
 
+interface SchoolOption {
+  id: number;
+  name: string;
+}
+
 interface CampusOption {
   id: number;
   name: string;
@@ -94,8 +99,7 @@ function emptyStudentForm(defaultSchoolId = "") {
 export default function AddStudentModal({
   open,
   setOpen,
-  streams = [],
-  forms = [],
+  classId,
   fetcher,
   schools = [],
   campuses = [],
