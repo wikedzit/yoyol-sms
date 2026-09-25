@@ -531,7 +531,42 @@ export default function Grades() {
                         />
                       </TableCell>
 
-                      <TableCell className={`max-w-xs truncate ${collapsibleColClass}`}>
+                      <TableCell className="max-w-xs truncate">
+                        {grade.remarks || "—"}
+                      </TableCell>
+
+                      <TableCell>
+                        {grade.teacher
+                          ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
+                          : "—"}
+                      </TableCell>
+
+                      <TableCell>{grade.stream?.name || "—"}</TableCell>
+
+                      <TableCell>{grade.form?.name || "—"}</TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            className="hover:scale-105 transition cursor-pointer"
+                            size="icon"
+                            onClick={() => handleEdit(grade)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <DeleteButton
+                            id={grade.id}
+                            name={
+                              grade.student
+                                ? `${grade.student.firstName} ${grade.student.lastName}`
+                                : "Grade"
+                            }
+                            fetcher={fetcher}
+                          />
+                        </TableCell>
+
+                        <TableCell className={`max-w-xs truncate ${collapsibleColClass}`}>
                           {grade.remarks || '—'}
                         </TableCell>
 
@@ -571,7 +606,8 @@ export default function Grades() {
                           </div>
                         </TableCell>
                       </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
