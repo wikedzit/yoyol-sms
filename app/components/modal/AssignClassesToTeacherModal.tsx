@@ -24,15 +24,10 @@ interface AssignClassesToTeacherModalProps {
   availableClasses: Array<{
     id: number;
     name: string;
-    EducationalLevel: string;
-    section: string;
-    year: number;
   }>;
   assignedClasses: Array<{
     id: number;
     name: string;
-    EducationalLevel: string;
-    section: string;
   }>;
   fetcher: FetcherWithComponents<any>;
 }
@@ -110,10 +105,6 @@ const handleSubmit = () => {
                     className="cursor-pointer"
                   >
                     <div className="font-medium">{classItem.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {classItem.EducationalLevel} • Section {classItem.section}{' '}
-                      • Year {classItem.year}
-                    </div>
                   </Label>
                 </div>
               </div>

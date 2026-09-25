@@ -46,7 +46,7 @@ import type TeacherService from 'workers/services/teachers';
 import type SubjectService from 'workers/services/subjects';
 import type TeacherSubjectService from 'workers/services/teacher-subjects';
 import type TeacherClassService from 'workers/services/teacher-classes';
-import type ClassService from 'workers/services/class';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import type CampusService from 'workers/services/campus';
 import type SchoolService from 'workers/services/school';
 
@@ -80,7 +80,7 @@ export async function loader({
     subject: SubjectService;
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
-    class: ClassService;
+    academicLevel: AcademicLevelService;
     campus: CampusService;
     school: SchoolService;
   };
@@ -114,12 +114,7 @@ export async function loader({
   // ------------------------------------------------
 
   const allClasses =
-    await services.class.getAll({
-      limit: 100,
-      offset: 0,
-      sortBy: 'name',
-      sortOrder: 'asc',
-    });
+    await services.academicLevel.getAllFormClasses();
 
   // ------------------------------------------------
   // School
@@ -155,7 +150,7 @@ export async function loader({
             );
 
           const assignedClasses =
-            await services.teacherClass?.getClassesByTeacher(
+            await services.teacherClass?.getFormClassesByTeacher(
               teacher.id
             );
 
@@ -298,7 +293,7 @@ export async function action({
         );
       }
 
-      await services.teacherClass?.replaceTeacherClasses(
+      await services.teacherClass?.replaceTeacherFormClasses(
         teacherId,
         Array.isArray(classIds)
           ? classIds
