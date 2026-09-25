@@ -18,25 +18,33 @@ export const DeleteStudentButton = ({
   id,
   name,
   fetcher: externalFetcher,
+  open,
+  onOpenChange,
+  showTrigger = true,
 }: {
   id: string;
   name: string;
   fetcher?: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showTrigger?: boolean;
 }) => {
   const fetcher = externalFetcher || useFetcher();
   const { t } = useLanguage();
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button
-          type="button"
-          className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
-          title={t('delete')}
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {showTrigger && (
+        <AlertDialogTrigger asChild>
+          <button
+            type="button"
+            className="text-gray-600 hover:scale-110 hover:text-red-600 transition cursor-pointer"
+            title="Delete"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </AlertDialogTrigger>
+      )}
 
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -44,7 +52,7 @@ export const DeleteStudentButton = ({
           <AlertDialogDescription>
             {t('deleteConfirmation')}{' '}
             <strong className="font-semibold">{name}</strong>? This action
-            {t('cannotUndo')}
+            cannot be undone and it will delete all its related data.
           </AlertDialogDescription>
         </AlertDialogHeader>
 

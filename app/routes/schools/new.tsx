@@ -19,6 +19,8 @@ import {
 } from '~/components/ui/card';
 import type SchoolService from 'workers/services/school';
 import { useLanguage } from '~/lib/i18n';
+import { useState } from 'react';
+import { toTitleCase } from '~/utils/strings';
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { school: SchoolService };
@@ -48,6 +50,7 @@ export default function NewSchoolPage() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSaving = navigation.state === 'submitting';
+  const [name, setName] = useState('');
 
   return (
     <div className="space-y-6">
@@ -66,7 +69,13 @@ export default function NewSchoolPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">{t('schoolName')} *</Label>
-                <Input id="name" name="name" required />
+                <Input
+                  id="name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(toTitleCase(e.target.value))}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="registrationNumber">{t('registrationNumber')}</Label>

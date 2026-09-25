@@ -44,6 +44,9 @@ const mainNavigation = [
   { name: "Grades", href: "/grades", icon: GraduationCap },
 ];
 
+const activeMenuItemClass =
+  "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10";
+
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
   const { t } = useLanguage();
@@ -104,22 +107,14 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
       className={cn(
         "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group",
         isActive
-          ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
-          : "text-app-body hover:bg-accent hover:text-app-text",
+          ? activeMenuItemClass
+          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
       )}
     >
       <item.icon
-        className={cn(
-          "h-5 w-5 transition-transform duration-200",
-          isActive
-            ? "text-white scale-105"
-            : "text-app-body group-hover:scale-105",
-        )}
+        className={cn("h-5 w-5", isActive ? "text-white" : undefined)}
       />
-
       <span className="truncate">{item.name}</span>
-
-      {/* Subtle indicator icon for active route */}
       {isActive && <ChevronRight className="ml-auto h-4 w-4 text-white" />}
     </Link>
   );
@@ -148,24 +143,19 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
         className={cn(
           "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group",
           isChildActive
-            ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
-            : "text-app-body hover:bg-accent hover:text-app-text",
+            ? activeMenuItemClass
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
         )}
       >
         <item.icon
-          className={cn(
-            "h-5 w-5 transition-transform duration-200",
-            isChildActive
-              ? "text-white scale-105"
-              : "text-app-body group-hover:scale-105",
-          )}
+          className={cn("h-5 w-5", isChildActive ? "text-white" : undefined)}
         />
         <span className="truncate">{item.name}</span>
 
         <ChevronDown
           className={cn(
-            "ml-auto h-4 w-4 transition-transform duration-200",
-            isChildActive ? "text-white" : "text-app-body",
+            "ml-auto h-4 w-4 transition-transform",
+            isChildActive && "text-white",
             open && "rotate-180",
           )}
         />
@@ -184,8 +174,8 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                 className={cn(
                   "relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200",
                   isActive
-                    ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
-                    : "text-app-body hover:bg-accent hover:text-app-text font-medium",
+                    ? activeMenuItemClass
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
                 <span className="truncate">{child.name}</span>

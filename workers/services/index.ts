@@ -58,7 +58,7 @@ export default class ServiceContainer {
     this.academicLevel = new AcademicLevelService(this.db, ownerUserId);
     this.school = new SchoolService(this.db, ownerUserId);
     this.academicYear = new AcademicYearService(this.db, ownerUserId);
-    this.campus = new CampusService(this.db,ownerUserId);
+    this.campus = new CampusService(this.db, ownerUserId);
   }
 
   /**

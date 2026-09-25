@@ -46,7 +46,7 @@ export const DeleteSchoolButton = ({
           <AlertDialogDescription>
             {t('deleteConfirmation')}{' '}
             <strong className="font-semibold">{name}</strong>? This action
-            {t('cannotUndo')}
+            cannot be undone and it will delete all its related data.
           </AlertDialogDescription>
         </AlertDialogHeader>
 

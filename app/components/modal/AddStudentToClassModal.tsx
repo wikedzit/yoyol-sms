@@ -36,11 +36,17 @@ interface ClassInfo {
   levelType: LevelType;
 }
 
+interface SchoolOption {
+  id: number;
+  name: string;
+}
+
 interface AddStudentToClassModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   classInfo: ClassInfo;
-  fetcher: FetcherWithComponents<any>;
+  fetcher: any;
+  schools?: SchoolOption[];
 }
 
 export default function AddStudentToClassModal({
@@ -48,7 +54,9 @@ export default function AddStudentToClassModal({
   setOpen,
   classInfo,
   fetcher,
+  schools = [],
 }: AddStudentToClassModalProps) {
+  const defaultSchoolId = schools.length === 1 ? String(schools[0].id) : '';
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [gender, setGender] = useState('Male');
@@ -57,6 +65,7 @@ export default function AddStudentToClassModal({
   const [dob, setDob] = useState('');
   const [enrollmentDate, setEnrollmentDate] = useState('');
   const [status, setStatus] = useState('Active');
+  const [schoolId, setSchoolId] = useState(defaultSchoolId);
 
   const isSubmitting = fetcher.state === 'submitting';
 
@@ -70,6 +79,7 @@ export default function AddStudentToClassModal({
     setDob('');
     setEnrollmentDate('');
     setStatus('Active');
+    setSchoolId(schools.length === 1 ? String(schools[0].id) : '');
   };
 
   // Close modal on successful server action
@@ -98,9 +108,9 @@ export default function AddStudentToClassModal({
     submitData.append('lastName', lastName.trim());
     submitData.append('gender', gender);
     submitData.append('status', status);
-    
-    if (email.trim()) submitData.append('email', email.trim());
-    if (phone.trim()) submitData.append('phone', phone.trim());
+    submitData.append('schoolId', schoolId);
+    if (email) submitData.append('email', email);
+    if (phone) submitData.append('phone', phone);
     if (dob) submitData.append('dob', dob);
     if (enrollmentDate) submitData.append('enrollmentDate', enrollmentDate);
 
@@ -149,8 +159,34 @@ export default function AddStudentToClassModal({
             </p>
           </div>
 
-          {/* FORM INPUTS SCROLL CONTAINER */}
-          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+          {/* FORM INPUTS */}
+          <div className="flex-1 space-y-4 overflow-y-auto">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1.5">
+                School <span className="text-red-500">*</span>
+              </label>
+              <Select value={schoolId} onValueChange={setSchoolId}>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue placeholder="Select school" />
+                </SelectTrigger>
+                <SelectContent>
+                  {schools.map((ownedSchool) => (
+                    <SelectItem
+                      key={ownedSchool.id}
+                      value={String(ownedSchool.id)}
+                    >
+                      {ownedSchool.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {schools.length === 0 && (
+                <p className="text-xs text-red-500 mt-1">
+                  No schools available. Please add a school first.
+                </p>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1.5">
@@ -279,7 +315,8 @@ export default function AddStudentToClassModal({
               disabled={
                 isSubmitting ||
                 !firstName.trim() ||
-                !lastName.trim()
+                !lastName.trim() ||
+                !schoolId
               }
               className="h-10 px-6 w-full sm:w-auto hover:scale-105 transition cursor-pointer"
             >

@@ -1,15 +1,18 @@
-import { useState, useEffect } from "react";
-import { redirect } from "react-router";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useSearchParams } from "react-router";
-import jwt from "@tsndr/cloudflare-worker-jwt";
-import { toast } from "sonner";
-import { Eye, EyeOff } from "lucide-react";
-import { authCookie } from "workers/utils/cookies.server";
-import { PageHeader } from "~/components/ui/PageHeader";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { redirect } from 'react-router';
+import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
+import { useFetcher, useLoaderData, useSearchParams } from 'react-router';
+import jwt from '@tsndr/cloudflare-worker-jwt';
+import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
+import { authCookie } from 'workers/utils/cookies.server';
+import type ServiceContainer from 'workers/services';
+import type { SelectStudent, SelectTeacher } from 'workers/database';
+import type { GradeWithRelations } from 'workers/services/grades';
+import { PageHeader } from '~/components/ui/PageHeader';
+import { Button } from '~/components/ui/button';
+import { Input } from '~/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '~/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -17,16 +20,34 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/components/ui/table";
-import EditProfileModal from "~/components/modal/EditProfileModal";
-import { SchoolProfileView } from "~/components/school/SchoolProfileView";
-import { isAdminRole } from "~/lib/roles";
+} from '~/components/ui/table';
+import EditProfileModal from '~/components/modal/EditProfileModal';
+import { SchoolProfileView } from '~/components/school/SchoolProfileView';
+import { isAdminRole } from '~/lib/roles';
 import {
   emptySchoolProfile,
   loadSchoolProfile,
   type SchoolProfileData,
-} from "~/lib/school-profile.server";
-import { useLanguage } from "~/lib/i18n";
+} from '~/lib/school-profile.server';
+import { useLanguage } from '~/lib/i18n';
+import { toTitleCase } from '~/utils/strings';
+
+type AuthPayload = {
+  id: number;
+  email: string;
+  role: string;
+};
+
+type ProfileActionResult = {
+  success?: boolean;
+  error?: string;
+  action?: string;
+};
+
+type AssignedClassChip = {
+  id: string;
+  name: string;
+};
 
 type ProfileLoaderData = {
   account: {
@@ -41,23 +62,19 @@ type ProfileLoaderData = {
     createdAt: number;
   } | null;
   role: string;
-  roleData: Record<string, any> | null;
+  roleData: SelectTeacher | SelectStudent | null;
   teacherSubjects: { id: number; subjectName: string }[];
-  teacherClasses: { id: number; name: string }[];
-  recentGrades: Array<{
-    id: number;
-    score: number;
-    grade: string;
-    createdAt: number;
-    subject: { subjectName: string };
-    student: { firstName: string; lastName: string };
-  }>;
+  teacherClasses: AssignedClassChip[];
+  recentGrades: GradeWithRelations[];
 } & SchoolProfileData;
 
-async function getAuthPayload(request: Request, context: any) {
-  const cookieHeader = request.headers.get("Cookie");
-  const token = await authCookie.parse(cookieHeader || "");
-  if (!token) return null;
+async function getAuthPayload(
+  request: Request,
+  context: LoaderFunctionArgs['context'],
+): Promise<AuthPayload | null> {
+  const cookieHeader = request.headers.get('Cookie');
+  const token = await authCookie.parse(cookieHeader || '');
+  if (!token || typeof token !== 'string') return null;
 
   const isValid = await jwt.verify(
     token,
@@ -66,53 +83,76 @@ async function getAuthPayload(request: Request, context: any) {
   if (!isValid) return null;
 
   const decoded = jwt.decode(token);
-  return decoded.payload as { id: number; email: string; role: string };
+  return decoded.payload as AuthPayload;
 }
 
-// --- Loader ---
+function servicesFrom(context: LoaderFunctionArgs['context']): ServiceContainer {
+  return context.services as ServiceContainer;
+}
+
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const payload = await getAuthPayload(request, context);
   if (!payload) return redirect("/auth/login");
 
-  const services = context.services as any;
-
+  const services = servicesFrom(context);
   const account = await services.users.findUserByEmail(payload.email);
 
-  let roleData: Record<string, any> | null = null;
+  let roleData: SelectTeacher | SelectStudent | null = null;
   let teacherSubjects: { id: number; subjectName: string }[] = [];
-  let teacherClasses: { id: number; name: string }[] = [];
-  let recentGrades: any[] = [];
+  let teacherClasses: AssignedClassChip[] = [];
+  let recentGrades: GradeWithRelations[] = [];
 
-  if (payload.role === "teacher") {
+  if (payload.role === 'teacher') {
     roleData = await services.teacher.getTeacherByEmail(payload.email);
     if (roleData) {
-      teacherSubjects = await services.teacherSubject.getSubjectsByTeacher(
+      const assignedSubjects = await services.teacherSubject.getSubjectsByTeacher(
         roleData.id,
       );
-      teacherClasses = await services.teacherClass.getFormClassesByTeacher(
+      teacherSubjects = assignedSubjects.map((subject) => ({
+        id: subject.id,
+        subjectName: subject.subjectName,
+      }));
+
+      const formClasses = await services.teacherClass.getFormClassesByTeacher(
         roleData.id,
       );
+      const legacyClasses = await services.teacherClass.getClassesByTeacher(
+        roleData.id,
+      );
+      teacherClasses = [
+        ...formClasses.map((formClass) => ({
+          id: `form-${formClass.id}`,
+          name: formClass.name,
+        })),
+        ...legacyClasses.map((legacyClass) => ({
+          id: `class-${legacyClass.id}`,
+          name: legacyClass.name,
+        })),
+      ];
+
       recentGrades = await services.grade.getAll({
         teacherId: roleData.id,
         limit: 5,
-        sortBy: "createdAt",
-        sortOrder: "desc",
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
       });
     }
-  } else if (payload.role === "student") {
+  } else if (payload.role === 'student') {
     roleData = await services.student.getByEmail(payload.email);
     if (roleData) {
       recentGrades = await services.grade.getAll({
         studentId: roleData.id,
         limit: 5,
-        sortBy: "createdAt",
-        sortOrder: "desc",
+        offset: 0,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
       });
     }
   }
 
   const schoolProfile = isAdminRole(payload.role)
-    ? await loadSchoolProfile(context.services)
+    ? await loadSchoolProfile(services)
     : emptySchoolProfile;
 
   return {
@@ -138,39 +178,36 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   };
 }
 
-// --- Action ---
 export async function action({ request, context }: ActionFunctionArgs) {
   const payload = await getAuthPayload(request, context);
   if (!payload) return redirect("/auth/login");
 
-  const services = context.services as any;
+  const services = servicesFrom(context);
   const form = await request.formData();
   const actionType = form.get("action") as string | null;
 
   try {
-    if (actionType === "update_profile") {
-      const preferredLanguage = String(form.get("preferredLanguage") ?? "en");
-      const avatarUrl = String(form.get("avatarUrl") ?? "");
+    if (actionType === 'update_profile') {
+      const preferredLanguage = String(form.get('preferredLanguage') ?? 'en');
+      const avatarUrl = String(form.get('avatarUrl') ?? '');
+      const firstName = toTitleCase(String(form.get('firstName') ?? ''));
+      const lastName = toTitleCase(String(form.get('lastName') ?? ''));
 
-      if (payload.role === "teacher") {
-        const roleData = await services.teacher.getTeacherByEmail(
-          payload.email,
-        );
+      if (payload.role === 'teacher') {
+        const roleData = await services.teacher.getTeacherByEmail(payload.email);
         if (!roleData) {
           return {
-            error: "No teacher record linked to your account.",
-            action: "update_profile",
+            error: 'No teacher record linked to your account.',
+            action: 'update_profile',
           };
         }
         const updated = await services.teacher.updateTeacherById(roleData.id, {
-          firstName: String(form.get("firstName") ?? ""),
-          lastName: String(form.get("lastName") ?? ""),
-          phone: String(form.get("phone") ?? ""),
-          address: String(form.get("address") ?? ""),
-          qualification: String(form.get("qualification") ?? ""),
+          firstName,
+          lastName,
+          phone: String(form.get('phone') ?? ''),
+          address: String(form.get('address') ?? ''),
+          qualification: String(form.get('qualification') ?? ''),
         });
-        // preferredLanguage is an account-level preference, so it lives on
-        // `users` even for roles whose name/contact info lives elsewhere.
         await services.users.updateProfile(payload.id, {
           preferredLanguage,
           avatarUrl,
@@ -188,17 +225,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
         const roleData = await services.student.getByEmail(payload.email);
         if (!roleData) {
           return {
-            error: "No student record linked to your account.",
-            action: "update_profile",
+            error: 'No student record linked to your account.',
+            action: 'update_profile',
           };
         }
-        const updated = await services.student.update(roleData.id, {
-          firstName: String(form.get("firstName") ?? ""),
-          lastName: String(form.get("lastName") ?? ""),
-          phone: String(form.get("phone") ?? ""),
-          address: String(form.get("address") ?? ""),
-          guardianName: String(form.get("guardianName") ?? ""),
-          guardianPhone: String(form.get("guardianPhone") ?? ""),
+        const updated = await services.student.update(String(roleData.id), {
+          firstName,
+          lastName,
+          phone: String(form.get('phone') ?? ''),
+          address: String(form.get('address') ?? ''),
+          guardianName: toTitleCase(String(form.get('guardianName') ?? '')),
+          guardianPhone: String(form.get('guardianPhone') ?? ''),
         });
         await services.users.updateProfile(payload.id, {
           preferredLanguage,
@@ -213,11 +250,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
         return { success: true, action: "update_profile" };
       }
 
-      // Admin / Finance / Parent: name, phone, and language all live on `users`.
       const updated = await services.users.updateProfile(payload.id, {
-        firstName: String(form.get("firstName") ?? ""),
-        lastName: String(form.get("lastName") ?? ""),
-        phone: String(form.get("accountPhone") ?? ""),
+        firstName,
+        lastName,
+        phone: String(form.get('accountPhone') ?? ''),
         preferredLanguage,
         avatarUrl,
       });
@@ -227,40 +263,35 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return { success: true, action: "update_profile" };
     }
 
-    // Dedicated action for the inline language dropdown on the Account
-    // Information card. Kept separate from `update_profile` so that
-    // changing just the language never touches firstName/lastName/phone
-    // (the update_profile branches above pull those from the form too,
-    // and would overwrite them with empty strings if reused here).
-    if (actionType === "update_language") {
-      const preferredLanguage = String(form.get("preferredLanguage") ?? "en");
+    if (actionType === 'update_language') {
+      const preferredLanguage = String(form.get('preferredLanguage') ?? 'en');
       const updated = await services.users.updateProfile(payload.id, {
         preferredLanguage,
       });
       if (!updated) {
         return {
-          error: "Failed to update language.",
-          action: "update_language",
+          error: 'Failed to update language.',
+          action: 'update_language',
         };
       }
-      return { success: true, action: "update_language" };
+      return { success: true, action: 'update_language' };
     }
 
-    if (actionType === "change_password") {
-      const currentPassword = String(form.get("currentPassword") ?? "");
-      const newPassword = String(form.get("newPassword") ?? "");
-      const confirmPassword = String(form.get("confirmPassword") ?? "");
+    if (actionType === 'change_password') {
+      const currentPassword = String(form.get('currentPassword') ?? '');
+      const newPassword = String(form.get('newPassword') ?? '');
+      const confirmPassword = String(form.get('confirmPassword') ?? '');
 
       if (newPassword.length < 8) {
         return {
-          error: "New password must be at least 8 characters.",
-          action: "change_password",
+          error: 'New password must be at least 8 characters.',
+          action: 'change_password',
         };
       }
       if (newPassword !== confirmPassword) {
         return {
-          error: "New password and confirmation do not match.",
-          action: "change_password",
+          error: 'New password and confirmation do not match.',
+          action: 'change_password',
         };
       }
 
@@ -269,20 +300,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
         currentPassword,
         newPassword,
       );
-      if (result.error) {
-        return { error: result.error, action: "change_password" };
+      if ('error' in result) {
+        return { error: result.error, action: 'change_password' };
       }
       return { success: true, action: "change_password" };
     }
 
-    return { error: "Unknown action" };
-  } catch (err: any) {
-    console.error("profile action error:", err);
-    return { error: err?.message || "Server error" };
+    return { error: 'Unknown action' };
+  } catch (error) {
+    console.error('profile action error:', error);
+    const message = error instanceof Error ? error.message : 'Server error';
+    return { error: message };
   }
 }
 
-// --- Helpers ---
 function roleLabel(role: string): string {
   const labels: Record<string, string> = {
     admin: "Administrator",
@@ -307,10 +338,8 @@ function FieldBox({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <p className="text-xs font-medium text-gray-500 mb-1.5">{label}</p>
-      {/* No border here — signals "display only" at a glance, in contrast
-          with the bordered, white-background Preferred Language <select>. */}
       <div className="min-h-[38px] flex items-center rounded-lg bg-gray-50 px-3.5 py-2 text-sm font-medium text-foreground">
-        {value ?? "—"}
+        {value ?? '—'}
       </div>
     </div>
   );
@@ -346,7 +375,20 @@ function SectionPanel({
   );
 }
 
-// --- Page ---
+function isTeacherRecord(
+  role: string,
+  roleData: SelectTeacher | SelectStudent | null,
+): roleData is SelectTeacher {
+  return role === 'teacher' && roleData !== null;
+}
+
+function isStudentRecord(
+  role: string,
+  roleData: SelectTeacher | SelectStudent | null,
+): roleData is SelectStudent {
+  return role === 'student' && roleData !== null;
+}
+
 export default function ProfilePage() {
   const {
     account,
@@ -360,15 +402,15 @@ export default function ProfilePage() {
     totalTeachers,
     totalStudents,
   } = useLoaderData<ProfileLoaderData>();
-  const fetcher = useFetcher<any>();
-  const passwordFetcher = useFetcher<any>();
-  const languageFetcher = useFetcher<any>();
+  const fetcher = useFetcher<ProfileActionResult>();
+  const passwordFetcher = useFetcher<ProfileActionResult>();
+  const languageFetcher = useFetcher<ProfileActionResult>();
   const { setLanguage, t } = useLanguage();
   const [searchParams] = useSearchParams();
   const initialTab =
-    isAdminRole(role) && searchParams.get("tab") === "school"
-      ? "school"
-      : "profile";
+    isAdminRole(role) && searchParams.get('tab') === 'school'
+      ? 'school'
+      : 'profile';
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
@@ -377,25 +419,22 @@ export default function ProfilePage() {
     confirmPassword: "",
   });
   const [preferredLanguage, setPreferredLanguage] = useState(
-    account?.preferredLanguage ?? "en",
+    account?.preferredLanguage ?? 'en',
   );
-
-  // Independent visibility toggles so revealing one password field
-  // doesn't reveal the others.
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const isTeacher = role === "teacher";
-  const isStudent = role === "student";
+  const isTeacher = isTeacherRecord(role, roleData);
+  const isStudent = isStudentRecord(role, roleData);
   const isAdmin = isAdminRole(role);
-  const hasRoleData = (isTeacher || isStudent) && roleData;
+  const hasRoleData = isTeacher || isStudent;
 
   const fullName = hasRoleData
     ? `${roleData.firstName} ${roleData.lastName}`
     : account?.firstName || account?.lastName
-      ? `${account?.firstName ?? ""} ${account?.lastName ?? ""}`.trim()
-      : (account?.email ?? "Unknown user");
+      ? `${account?.firstName ?? ''} ${account?.lastName ?? ''}`.trim()
+      : (account?.email ?? 'Unknown user');
 
   const initial = fullName.charAt(0).toUpperCase();
 
@@ -408,11 +447,11 @@ export default function ProfilePage() {
   useEffect(() => {
     if (passwordFetcher.state === "idle" && passwordFetcher.data) {
       if (passwordFetcher.data.success) {
-        toast.success("Password changed successfully.");
+        toast.success('Password changed successfully.');
         setPasswordForm({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
         });
         setShowCurrentPassword(false);
         setShowNewPassword(false);
@@ -425,16 +464,14 @@ export default function ProfilePage() {
   }, [passwordFetcher.state, passwordFetcher.data]);
 
   useEffect(() => {
-    if (languageFetcher.state === "idle" && languageFetcher.data) {
+    if (languageFetcher.state === 'idle' && languageFetcher.data) {
       if (languageFetcher.data.success) {
-        setLanguage(preferredLanguage === "sw" ? "sw" : "en");
-        toast.success(t("languageUpdated"));
+        setLanguage(preferredLanguage === 'sw' ? 'sw' : 'en');
+        toast.success(t('languageUpdated'));
       }
       if (languageFetcher.data.error) {
         toast.error(languageFetcher.data.error);
-        // Revert the dropdown to the last known-good value from the server
-        // since the save failed.
-        setPreferredLanguage(account?.preferredLanguage ?? "en");
+        setPreferredLanguage(account?.preferredLanguage ?? 'en');
       }
     }
   }, [
@@ -446,82 +483,79 @@ export default function ProfilePage() {
     t,
   ]);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const fd = new FormData();
-    fd.set("_method", "PUT");
-    fd.set("action", "change_password");
-    fd.set("currentPassword", passwordForm.currentPassword);
-    fd.set("newPassword", passwordForm.newPassword);
-    fd.set("confirmPassword", passwordForm.confirmPassword);
-    passwordFetcher.submit(fd, { method: "post", action: "/profile" });
+  const handlePasswordSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    const formData = new FormData();
+    formData.set('_method', 'PUT');
+    formData.set('action', 'change_password');
+    formData.set('currentPassword', passwordForm.currentPassword);
+    formData.set('newPassword', passwordForm.newPassword);
+    formData.set('confirmPassword', passwordForm.confirmPassword);
+    passwordFetcher.submit(formData, { method: 'post', action: '/profile' });
   };
 
   const handleLanguageChange = (value: string) => {
     setPreferredLanguage(value);
-    const fd = new FormData();
-    fd.set("action", "update_language");
-    fd.set("preferredLanguage", value);
-    languageFetcher.submit(fd, { method: "post", action: "/profile" });
+    const formData = new FormData();
+    formData.set('action', 'update_language');
+    formData.set('preferredLanguage', value);
+    languageFetcher.submit(formData, { method: 'post', action: '/profile' });
   };
 
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
         <div className="max-w-2xl">
-        <PageHeader title="My Profile" description="Your account information" />
+          <PageHeader title="My Profile" description="Your account information" />
 
-        {/* Hero header */}
-        <div className="rounded-2xl border border-border shadow-sm overflow-hidden width-full">
-          <div
-            className="px-6 py-7 sm:px-8"
-            style={{ background: "var(--gradient-purple-light)" }}
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div
-                  className="h-20 w-20 flex items-center justify-center rounded-full text-white text-2xl font-bold shadow-lg ring-4 ring-white shrink-0 overflow-hidden"
-                  style={{ background: "var(--primary-gradient)" }}
+          <div className="rounded-2xl border border-border shadow-sm overflow-hidden width-full">
+            <div
+              className="px-6 py-7 sm:px-8"
+              style={{ background: 'var(--gradient-purple-light)' }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="h-20 w-20 flex items-center justify-center rounded-full text-white text-2xl font-bold shadow-lg ring-4 ring-white shrink-0 overflow-hidden"
+                    style={{ background: 'var(--primary-gradient)' }}
+                  >
+                    {account?.avatarUrl ? (
+                      <img
+                        src={account.avatarUrl}
+                        alt={fullName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      initial
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xl font-bold text-foreground">{fullName}</p>
+                    <span className="inline-block mt-1.5 rounded-full bg-purple/10 text-muted-foreground text-xs font-semibold px-3 py-1">
+                      {roleLabel(role)}
+                    </span>
+                    {hasRoleData && (roleData.gender || roleData.address) && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {[
+                          roleData.gender,
+                          isStudent && roleData.dob && `Born ${roleData.dob}`,
+                          roleData.address,
+                        ]
+                          .filter(Boolean)
+                          .join(' • ')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setIsEditOpen(true)}
+                  className="hover:scale-110 hover:text-white-600 transition bg-primary-gradient text-white shadow-md py-2 px-4 rounded-[8px] cursor-pointer shrink-0"
                 >
-                  {account?.avatarUrl ? (
-                    <img
-                      src={account.avatarUrl}
-                      alt={fullName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    initial
-                  )}
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-foreground">
-                    {fullName}
-                  </p>
-                  <span className="inline-block mt-1.5 rounded-full bg-purple/10 text-muted-foreground text-xs font-semibold px-3 py-1">
-                    {roleLabel(role)}
-                  </span>
-                  {hasRoleData && (roleData.gender || roleData.address) && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {[
-                        roleData.gender,
-                        isStudent && roleData.dob && `Born ${roleData.dob}`,
-                        roleData.address,
-                      ]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </p>
-                  )}
-                </div>
+                  Edit Profile
+                </Button>
               </div>
-              <Button
-                onClick={() => setIsEditOpen(true)}
-                className="hover:scale-110 hover:text-white-600 transition bg-primary-gradient text-white shadow-md py-2 px-4 rounded-[8px] cursor-pointer shrink-0"
-              >
-                Edit Profile
-              </Button>
             </div>
           </div>
-        </div>
         </div>
 
         <Tabs defaultValue={initialTab}>
@@ -531,7 +565,7 @@ export default function ProfilePage() {
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="school" className="cursor-pointer">
-                {t("schoolTab")}
+                {t('schoolTab')}
               </TabsTrigger>
             )}
             <TabsTrigger value="security" className="cursor-pointer">
@@ -546,21 +580,24 @@ export default function ProfilePage() {
                 <FieldBox label="Role" value={roleLabel(role)} />
                 <FieldBox
                   label="Phone"
-                  value={roleData?.phone || account?.phone}
+                  value={
+                    (isTeacher || isStudent ? roleData.phone : account?.phone) ||
+                    account?.phone
+                  }
                 />
 
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-1.5">
-                    {t("preferredLanguage")}
+                    {t('preferredLanguage')}
                   </p>
                   <select
-                    value={preferredLanguage ?? "en"}
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                    disabled={languageFetcher.state === "submitting"}
+                    value={preferredLanguage ?? 'en'}
+                    onChange={(event) => handleLanguageChange(event.target.value)}
+                    disabled={languageFetcher.state === 'submitting'}
                     className="min-h-[38px] w-full rounded-lg border border-border bg-white px-3.5 py-2 text-sm font-medium text-foreground cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <option value="en">{t("english")}</option>
-                    <option value="sw">{t("swahili")}</option>
+                    <option value="en">{t('english')}</option>
+                    <option value="sw">{t('swahili')}</option>
                   </select>
                 </div>
 
@@ -571,7 +608,7 @@ export default function ProfilePage() {
               </div>
             </SectionPanel>
 
-            {isTeacher && roleData && (
+            {isTeacher && (
               <SectionPanel title="Teacher Details">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                   <FieldBox label="Subject" value={roleData.subject} />
@@ -582,7 +619,7 @@ export default function ProfilePage() {
                   <FieldBox
                     label="Experience"
                     value={
-                      roleData.experience ? `${roleData.experience} years` : "—"
+                      roleData.experience ? `${roleData.experience} years` : '—'
                     }
                   />
                   <FieldBox label="Status" value={roleData.status} />
@@ -593,8 +630,8 @@ export default function ProfilePage() {
                   </p>
                   {teacherSubjects.length > 0 ? (
                     <div className="flex flex-wrap">
-                      {teacherSubjects.map((s) => (
-                        <Chip key={s.id}>{s.subjectName}</Chip>
+                      {teacherSubjects.map((subject) => (
+                        <Chip key={subject.id}>{subject.subjectName}</Chip>
                       ))}
                     </div>
                   ) : (
@@ -609,8 +646,8 @@ export default function ProfilePage() {
                   </p>
                   {teacherClasses.length > 0 ? (
                     <div className="flex flex-wrap">
-                      {teacherClasses.map((c) => (
-                        <Chip key={c.id}>{c.name}</Chip>
+                      {teacherClasses.map((assignedClass) => (
+                        <Chip key={assignedClass.id}>{assignedClass.name}</Chip>
                       ))}
                     </div>
                   ) : (
@@ -622,7 +659,7 @@ export default function ProfilePage() {
               </SectionPanel>
             )}
 
-            {isTeacher && roleData && (
+            {isTeacher && (
               <SectionPanel title="Recent Results Recorded">
                 {recentGrades.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4">
@@ -641,15 +678,15 @@ export default function ProfilePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {recentGrades.map((g) => (
-                          <TableRow key={g.id}>
+                        {recentGrades.map((grade) => (
+                          <TableRow key={grade.id}>
                             <TableCell>
-                              {g.student.firstName} {g.student.lastName}
+                              {grade.student.firstName} {grade.student.lastName}
                             </TableCell>
-                            <TableCell>{g.subject.subjectName}</TableCell>
-                            <TableCell>{g.score}</TableCell>
-                            <TableCell>{g.grade}</TableCell>
-                            <TableCell>{formatDate(g.createdAt)}</TableCell>
+                            <TableCell>{grade.subject.subjectName}</TableCell>
+                            <TableCell>{grade.score}</TableCell>
+                            <TableCell>{grade.grade}</TableCell>
+                            <TableCell>{formatDate(grade.createdAt)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -658,7 +695,8 @@ export default function ProfilePage() {
                 )}
               </SectionPanel>
             )}
-            {isTeacher && !roleData && (
+
+            {role === 'teacher' && !roleData && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
                 <p className="text-sm text-amber-700">
                   We couldn&apos;t find a teacher record linked to your account
@@ -667,7 +705,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {isStudent && roleData && (
+            {isStudent && (
               <SectionPanel title="Student Details">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FieldBox label="Guardian" value={roleData.guardianName} />
@@ -684,7 +722,8 @@ export default function ProfilePage() {
                 </div>
               </SectionPanel>
             )}
-            {isStudent && !roleData && (
+
+            {role === 'student' && !roleData && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-6">
                 <p className="text-sm text-amber-700">
                   We couldn&apos;t find a student record linked to your account
@@ -693,7 +732,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {isStudent && roleData && (
+            {isStudent && (
               <SectionPanel
                 title="Recent Academic Performance"
                 description="Your most recent results. Results aren't linked to a specific term yet, so this shows the latest overall."
@@ -714,12 +753,12 @@ export default function ProfilePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {recentGrades.map((g) => (
-                          <TableRow key={g.id}>
-                            <TableCell>{g.subject.subjectName}</TableCell>
-                            <TableCell>{g.score}</TableCell>
-                            <TableCell>{g.grade}</TableCell>
-                            <TableCell>{formatDate(g.createdAt)}</TableCell>
+                        {recentGrades.map((grade) => (
+                          <TableRow key={grade.id}>
+                            <TableCell>{grade.subject.subjectName}</TableCell>
+                            <TableCell>{grade.score}</TableCell>
+                            <TableCell>{grade.grade}</TableCell>
+                            <TableCell>{formatDate(grade.createdAt)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -729,7 +768,7 @@ export default function ProfilePage() {
               </SectionPanel>
             )}
 
-            {role === "parent" && (
+            {role === 'parent' && (
               <div className="rounded-xl border border-blue-200 bg-blue-50 p-6">
                 <p className="text-sm text-blue-700">
                   No student records are linked to your account yet. This
@@ -766,12 +805,12 @@ export default function ProfilePage() {
                   </label>
                   <div className="relative">
                     <Input
-                      type={showCurrentPassword ? "text" : "password"}
+                      type={showCurrentPassword ? 'text' : 'password'}
                       value={passwordForm.currentPassword}
-                      onChange={(e) =>
+                      onChange={(event) =>
                         setPasswordForm({
                           ...passwordForm,
-                          currentPassword: e.target.value,
+                          currentPassword: event.target.value,
                         })
                       }
                       required
@@ -779,11 +818,11 @@ export default function ProfilePage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowCurrentPassword((v) => !v)}
+                      onClick={() => setShowCurrentPassword((visible) => !visible)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                       tabIndex={-1}
                       aria-label={
-                        showCurrentPassword ? "Hide password" : "Show password"
+                        showCurrentPassword ? 'Hide password' : 'Show password'
                       }
                     >
                       {showCurrentPassword ? (
@@ -800,12 +839,12 @@ export default function ProfilePage() {
                   </label>
                   <div className="relative">
                     <Input
-                      type={showNewPassword ? "text" : "password"}
+                      type={showNewPassword ? 'text' : 'password'}
                       value={passwordForm.newPassword}
-                      onChange={(e) =>
+                      onChange={(event) =>
                         setPasswordForm({
                           ...passwordForm,
-                          newPassword: e.target.value,
+                          newPassword: event.target.value,
                         })
                       }
                       required
@@ -814,18 +853,14 @@ export default function ProfilePage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowNewPassword((v) => !v)}
+                      onClick={() => setShowNewPassword((visible) => !visible)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                       tabIndex={-1}
                       aria-label={
-                        showNewPassword ? "Hide password" : "Show password"
+                        showNewPassword ? 'Hide password' : 'Show password'
                       }
                     >
-                      {showNewPassword ? (
-                        <EyeOff size={18} />
-                      ) : (
-                        <Eye size={18} />
-                      )}
+                      {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
                 </div>
@@ -835,12 +870,12 @@ export default function ProfilePage() {
                   </label>
                   <div className="relative">
                     <Input
-                      type={showConfirmPassword ? "text" : "password"}
+                      type={showConfirmPassword ? 'text' : 'password'}
                       value={passwordForm.confirmPassword}
-                      onChange={(e) =>
+                      onChange={(event) =>
                         setPasswordForm({
                           ...passwordForm,
-                          confirmPassword: e.target.value,
+                          confirmPassword: event.target.value,
                         })
                       }
                       required
@@ -849,11 +884,13 @@ export default function ProfilePage() {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      onClick={() =>
+                        setShowConfirmPassword((visible) => !visible)
+                      }
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                       tabIndex={-1}
                       aria-label={
-                        showConfirmPassword ? "Hide password" : "Show password"
+                        showConfirmPassword ? 'Hide password' : 'Show password'
                       }
                     >
                       {showConfirmPassword ? (
@@ -868,9 +905,9 @@ export default function ProfilePage() {
                   type="submit"
                   className="bg-primary-gradient text-white py-2 px-4 rounded-[8px]"
                 >
-                  {passwordFetcher.state === "submitting"
-                    ? "Updating..."
-                    : "Update Password"}
+                  {passwordFetcher.state === 'submitting'
+                    ? 'Updating...'
+                    : 'Update Password'}
                 </Button>
               </form>
             </SectionPanel>
@@ -884,11 +921,11 @@ export default function ProfilePage() {
           setOpen={setIsEditOpen}
           fetcher={fetcher}
           role={role}
-          account={account}
-          roleData={roleData}
+          account={account ?? undefined}
+          roleData={roleData ?? undefined}
           onLanguageChange={(value: string) => {
             setPreferredLanguage(value);
-            setLanguage(value === "sw" ? "sw" : "en");
+            setLanguage(value === 'sw' ? 'sw' : 'en');
           }}
         />
       )}
