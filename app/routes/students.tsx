@@ -929,111 +929,80 @@ export default function Students() {
               </TableHeader>
 
               <TableBody>
-                {paginatedStudentsList.length > 0 ? (
-                  paginatedStudentsList.map((student, index) => (
-                    <TableRow key={student.id}>
-                      <TableCell className="font-medium">
-                        {startIndex + index + 1}
-                      </TableCell>
-
-                      <TableCell>{student.firstName}</TableCell>
-
-                      <TableCell>{student.lastName}</TableCell>
-
-                      <TableCell>
-                        {student.admissionNumber || "—"}
-                      </TableCell>
-
-                      <TableCell className="text-muted-foreground">
-                        {student.email || "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {student.subjects && student.subjects.length > 0 ? (
-                            student.subjects.map((subject: any) => (
-                              <Badge
-                                key={subject.id}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {subject.code}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              No subjects
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-
-                      <TableCell>
-                        {student.enrollmentDate || "—"}
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge
-                          variant={
-                            student.status === "Active"
-                              ? "default"
-                              : student.status === "Pending"
-                                ? "secondary"
-                                : "outline"
-                          }
-                        >
-                          {student.status || "Active"}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <StudentProfilesModal student={student} />
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Assign Subjects"
-                            className="hover:scale-110 transition cursor-pointer"
-                            onClick={() => {
-                              setSelectedStudent(student);
-
-                              setAssignSubjectsModalOpen(true);
-                            }}
-                          >
-                            <BookOpen className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            title="Edit Student"
-                            className="hover:scale-110 transition cursor-pointer"
-                            onClick={() => {
-                              setSelectedStudent(student);
-
-                              setEditStudentModalOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-
-                          <DeleteStudentButton
-                            id={String(student.id)}
-                            name={`${student.firstName} ${student.lastName}`}
-                            fetcher={fetcher}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={9}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No students found.
+                {paginatedStudentsList?.map((student, index) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">
+                      {startIndex + index + 1}
+                    </TableCell>
+                    <TableCell>{student.firstName}</TableCell>
+                    <TableCell>{student.lastName}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {student.email}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {student.subjects?.length > 0 ? (
+                          student.subjects.map((subject: any) => (
+                            <Badge
+                              key={subject.id}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                              {subject.subjectName}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No subjects
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{student.enrollmentDate}</TableCell>
+                    <TableCell className="border-none">
+                      <Badge
+                        variant={
+                          student.status === "Active"
+                            ? "default"
+                            : student.status === "Pending"
+                              ? "secondary"
+                              : "outline"
+                        }
+                        className="border-none"
+                      >
+                        {student.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right flex justify-end gap-2">
+                      <StudentProfilesModal student={student} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        title="Assign Subjects"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setAssignSubjectsModalOpen(true);
+                        }}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setEditStudentModalOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <DeleteStudentButton
+                        id={student.id}
+                        name={`${student.firstName} ${student.lastName}`}
+                        fetcher={fetcher}
+                      />
                     </TableCell>
                   </TableRow>
                 )}

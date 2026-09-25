@@ -46,6 +46,7 @@ import type TeacherService from 'workers/services/teachers';
 import type SubjectService from 'workers/services/subjects';
 import type TeacherSubjectService from 'workers/services/teacher-subjects';
 import type TeacherClassService from 'workers/services/teacher-classes';
+import type AcademicLevelService from 'workers/services/academic-levels';
 import type ClassService from 'workers/services/class';
 import type CampusService from 'workers/services/campus';
 import type SchoolService from 'workers/services/school';
@@ -72,6 +73,55 @@ import {
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
 
+// 🧠 Loader – fetch teachers with their subjects and classes
+export async function loader({ context }: LoaderFunctionArgs) { 
+  const services = context.services as { 
+    teacher: TeacherService; 
+    subject: SubjectService; 
+    teacherSubject: TeacherSubjectService; 
+    teacherClass: TeacherClassService; 
+    academicLevel: AcademicLevelService; 
+  }; 
+ 
+  const teachers = await services.teacher?.getAllTeachers({ 
+    limit: 100, 
+    offset: 0, 
+    sortBy: 'createdAt', 
+    sortOrder: 'asc', 
+  }); 
+ 
+  const subjects = await services.subject?.getAllSubjects({ 
+    limit: 100, 
+    offset: 0, 
+    sortBy: 'subjectName', 
+    sortOrder: 'asc', 
+  }); 
+ 
+  const allClasses = await services.academicLevel.getAllFormClasses();
+ 
+  const teachersWithSubjectsAndClasses = await Promise.all( 
+    teachers.map(async (teacher) => { 
+      const assignedSubjects = 
+        await services.teacherSubject?.getSubjectsByTeacher(teacher.id); 
+      const assignedClasses = await services.teacherClass?.getClassesByTeacher( 
+        teacher.id 
+      ); 
+      return { 
+        ...teacher, 
+        subjects: assignedSubjects || [], 
+        classes: assignedClasses || [], 
+      }; 
+    }) 
+  ); 
+ 
+  return { 
+    teachers: teachersWithSubjectsAndClasses, 
+    allSubjects: subjects, 
+    allClasses: allClasses, 
+  }; 
+}
+// ⚙️ Action – handle create, update, delete, and subject/class assignments
+export async function action({ request, context }: ActionFunctionArgs) {
 // --------------------------------------------------
 // Loader
 // --------------------------------------------------
@@ -1137,6 +1187,57 @@ export default function Teachers() {
               </TableHeader>
 
               <TableBody>
+                {paginatedStudentsList?.map((teacher, index) => (
+                  <TableRow key={teacher.id}>
+                    <TableCell className="hidden md:table-cell">
+                      {startIndex + index + 1}
+                    </TableCell>
+                    <TableCell>{teacher.firstName}</TableCell>
+                    <TableCell>{teacher.lastName}</TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {teacher.subjects?.length > 0 ? (
+                          teacher.subjects.map((subject: any) => (
+                            <Badge
+                              key={subject.id}
+                              variant="secondary"
+                              className="text-xs"
+                            >
+                               {subject.subjectName}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No subjects
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {teacher.classes?.length > 0 ? (
+                          teacher.classes.map((classItem: any) => (
+                            <Badge
+                              key={classItem.id}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {classItem.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            No classes
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{teacher.email}</TableCell>
+                    <TableCell>{teacher.phone}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          teacher.status === 'Active' ? 'default' : 'outline'
                 {paginatedTeachersList?.map(
                   (
                     teacher,
