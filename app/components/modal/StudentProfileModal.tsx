@@ -94,7 +94,7 @@ export function StudentProfilesModal({
               <strong>Address:</strong> {show(student.address)}
             </p>
             <p>
-              <strong>campus:</strong> {student.schoolName}
+              <strong>Campus:</strong> {show(student.campusName)}
             </p>
           </div>
 

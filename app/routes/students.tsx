@@ -287,7 +287,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       }
 
       const admissionNumber = String(form.get("admissionNumber") ?? "").trim();
-      const streamIdRaw = form.get("streamId")
+      const streamId = form.get("streamId")
         ? Number(form.get("streamId"))
         : undefined;
 
@@ -361,6 +361,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         formClassId,
 
         schoolId,
+        campusId: Number(selectedCampus.id),
         status: String(form.get("status") ?? "Active") as
           "Active" | "Pending" | "Inactive",
       };
