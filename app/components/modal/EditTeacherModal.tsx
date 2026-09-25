@@ -74,12 +74,12 @@ export default function EditTeacherModal({
       <SheetContent
         side="right"
         className="
-      w-full max-w-full 
-      sm:max-w-[420px] 
-      md:max-w-[500px] 
-      lg:!max-w-[573px] lg:!w-[573px]
+          w-full max-w-full
+          sm:max-w-[420px]
+          md:max-w-[500px]
+          lg:!max-w-[573px] lg:!w-[573px]
       p-6 md:p-10 flex flex-col justify-between
-    "
+        "
       >
         <fetcher.Form
           method="post"
@@ -115,7 +115,6 @@ export default function EditTeacherModal({
               'email',
               'phone',
               'address',
-              'qualification',
               'experience',
             ].map((field) => (
               <div key={field} className="mb-4">
@@ -143,6 +142,52 @@ export default function EditTeacherModal({
                 />
               </div>
             ))}
+
+            {/* Qualification */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Qualification
+              </label>
+
+              <Select
+                value={formData.qualification}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    qualification: value,
+                  }))
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select qualification" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="Diploma">
+                    Diploma
+                  </SelectItem>
+
+                  <SelectItem value="Degree">
+                    Degree
+                  </SelectItem>
+
+                  <SelectItem value="Masters">
+                    Master's
+                  </SelectItem>
+
+                  <SelectItem value="PhD">
+                    PhD
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Make sure qualification is submitted */}
+              <input
+                type="hidden"
+                name="qualification"
+                value={formData.qualification}
+              />
+            </div>
 
             {/* Gender & Status */}
             <div className="flex flex-col sm:flex-row gap-4">

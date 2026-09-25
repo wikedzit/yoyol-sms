@@ -87,7 +87,7 @@ export function StudentProfilesModal({
               <strong>Address:</strong> {student.address}
             </p>
             <p>
-              <strong>campus:</strong> {student.schoolName}
+              <strong>Campus:</strong> {student.campusName || student.campus?.name}
             </p>
           </div>
         </div>
