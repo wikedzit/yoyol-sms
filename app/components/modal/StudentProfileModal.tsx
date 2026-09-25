@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eye } from "lucide-react";
 
@@ -34,6 +35,12 @@ export function StudentProfilesModal({
   //
   if (!student) return null;
 
+  const subjects: any[] = student.subjects ?? [];
+  const isMale = student.gender?.toLowerCase() === "male";
+  // show a dash instead of leaving empty fields blank
+  const show = (value?: string | null) =>
+    value && String(value).trim() ? value : "—";
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {showTrigger && (
@@ -44,7 +51,7 @@ export function StudentProfilesModal({
         </DialogTrigger>
       )}
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{student.name}</DialogTitle>
           <DialogDescription>Student Profile Details</DialogDescription>
@@ -55,7 +62,7 @@ export function StudentProfilesModal({
             <img
               src={
                 student.photoUrl ||
-                (student.gender === "male"
+                (isMale
                   ? "/assets/male-avatar.png"
                   : "/assets/female-avatar.png")
               }
@@ -72,23 +79,50 @@ export function StudentProfilesModal({
               <strong>Gender:</strong> {student.gender}
             </p>
             <p>
-              <strong>DOB:</strong> {student.dob}
+              <strong>DOB:</strong> {show(student.dob)}
             </p>
             <p>
-              <strong>Course:</strong> {student.course}
+              <strong>Course:</strong> {show(student.course)}
             </p>
             <p>
-              <strong>Email:</strong> {student.email}
+              <strong>Email:</strong> {show(student.email)}
             </p>
             <p>
-              <strong>Phone:</strong> {student.phone}
+              <strong>Phone:</strong> {show(student.phone)}
             </p>
             <p>
-              <strong>Address:</strong> {student.address}
+              <strong>Address:</strong> {show(student.address)}
             </p>
             <p>
-              <strong>Campus:</strong> {student.campusName || student.campus?.name}
+              <strong>campus:</strong> {student.schoolName}
             </p>
+          </div>
+
+          {/* Assigned subjects (plain list, always visible) */}
+          <div className="border-t pt-3">
+            <p className="text-sm font-semibold">
+              Assigned Subjects ({subjects.length})
+            </p>
+
+            {subjects.length > 0 ? (
+              <ul className="mt-2 space-y-1">
+                {subjects.map((subject: any) => (
+                  <li
+                    key={subject.id}
+                    className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm"
+                  >
+                    <Badge variant="secondary" className="text-xs">
+                      {subject.code}
+                    </Badge>
+                    <span>{subject.subjectName ?? subject.name}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No subjects assigned
+              </p>
+            )}
           </div>
         </div>
       </DialogContent>
