@@ -903,8 +903,11 @@ export default function Students() {
                     </TableCell>
                     <TableCell>{student.firstName}</TableCell>
                     <TableCell>{student.lastName}</TableCell>
+                    <TableCell>
+                      {student.admissionNumber || "—"}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {student.email}
+                      {student.email || "—"}
                     </TableCell>
                     <TableCell>
                       {student.subjects?.length > 0 ? (
