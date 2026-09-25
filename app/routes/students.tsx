@@ -286,17 +286,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
         };
       }
 
-      const admissionNumber = String(
-        form.get("admissionNumber") || "",
-      ).trim();
-
-      if (!admissionNumber) {
-        return {
-          error: "Admission number is required.",
-        };
-      }
-
-      const streamId = form.get("streamId")
+      const admissionNumber = String(form.get("admissionNumber") ?? "").trim();
+      const streamIdRaw = form.get("streamId")
         ? Number(form.get("streamId"))
         : undefined;
 
@@ -325,26 +316,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
 
       const data = {
-        firstName: toTitleCase(
-          String(form.get("firstName") || "").trim(),
-        ),
-
-        lastName: toTitleCase(
-          String(form.get("lastName") || "").trim(),
-        ),
-
-        gender: String(form.get("gender") || "Male") as
-          | "Male"
-          | "Female",
-
-        dob: String(form.get("dob") || ""),
-
-        enrollmentDate: form.get("enrollmentDate")
-          ? String(form.get("enrollmentDate"))
-          : new Date().toISOString().split("T")[0],
-
-        email: form.get("email")
-          ? String(form.get("email")).trim()
+        firstName: toTitleCase(String(form.get("firstName") ?? "")),
+        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        gender: String(form.get("gender") ?? "Select gender") as
+          "Male" | "Female",
+        dob: String(form.get("dob") ?? ""),
+        email: form.get("email") ? String(form.get("email")) : undefined,
+        phone: form.get("phone") ? String(form.get("phone")) : undefined,
+        address: form.get("address") ? String(form.get("address")) : undefined,
+        guardianName: form.get("guardianName")
+          ? toTitleCase(String(form.get("guardianName")))
           : undefined,
 
         phone: form.get("phone")
@@ -380,13 +361,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
         formClassId,
 
         schoolId,
-
-        campusId: Number(selectedCampus.id),
-
-        status: String(form.get("status") || "Active") as
-          | "Active"
-          | "Pending"
-          | "Inactive",
+        status: String(form.get("status") ?? "Active") as
+          "Active" | "Pending" | "Inactive",
       };
 
       const created = await services.student.create(data as any);
@@ -498,22 +474,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
       }
 
       const data = {
-        firstName: toTitleCase(
-          String(form.get("firstName") || "").trim(),
-        ),
-
-        lastName: toTitleCase(
-          String(form.get("lastName") || "").trim(),
-        ),
-
-        gender: String(form.get("gender") || "Male") as
-          | "Male"
-          | "Female",
-
-        dob: String(form.get("dob") || ""),
-
-        email: form.get("email")
-          ? String(form.get("email")).trim()
+        firstName: toTitleCase(String(form.get("firstName") ?? "")),
+        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        gender: String(form.get("gender") ?? "Select gender") as
+          "Male" | "Female",
+        dob: String(form.get("dob") ?? ""),
+        email: form.get("email") ? String(form.get("email")) : undefined,
+        phone: form.get("phone") ? String(form.get("phone")) : undefined,
+        address: form.get("address") ? String(form.get("address")) : undefined,
+        guardianName: form.get("guardianName")
+          ? toTitleCase(String(form.get("guardianName")))
           : undefined,
 
         phone: form.get("phone")
@@ -558,11 +528,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
         schoolId,
         campusId,
-
-        status: String(form.get("status") || "Active") as
-          | "Active"
-          | "Pending"
-          | "Inactive",
+        status: String(form.get("status") ?? "Active") as
+          "Active" | "Pending" | "Inactive",
       };
 
       const updated = await services.student.update(
@@ -940,23 +907,18 @@ export default function Students() {
                       {student.email}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {student.subjects?.length > 0 ? (
-                          student.subjects.map((subject: any) => (
-                            <Badge
-                              key={subject.id}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {subject.subjectName}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            No subjects
-                          </span>
-                        )}
-                      </div>
+                      {student.subjects?.length > 0 ? (
+                        <Badge variant="secondary" className="text-xs">
+                          {student.subjects.length}{" "}
+                          {student.subjects.length === 1
+                            ? "Subject"
+                            : "Subjects"}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          No subjects
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell>{student.enrollmentDate}</TableCell>
                     <TableCell className="border-none">
