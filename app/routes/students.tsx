@@ -134,7 +134,13 @@ async function findSingleClassIdForForm(
   return classes[0].id;
 }
 
-// ===============================================
+// ======================================================
+// LOADER
+// ======================================================
+
+export async function loader({ context }: LoaderFunctionArgs) {
+  const services = context.services as Services;
+
   const students = await services.student.getAll({
     limit: 100,
     offset: 0,
@@ -165,17 +171,6 @@ async function findSingleClassIdForForm(
       }),
     )
   ).flat();
-
-  const campusesBySchool = await Promise.all(
-    (schools ?? []).map((s: any) => services.campus.getBySchoolId(s.id))
-  );
-  const campuses = campusesBySchool.flat();
-
-  const defaultSchoolId = schools?.[0]?.id ?? null;
-
-  // Fetch streams and forms for the "Add Student" modal
-  const streams = await services.academicLevel.getAllStreams();
-  const forms = await services.academicLevel.getAllForms();
 
   const studentsWithSubjects = await Promise.all(
     students.map(async (student: any) => {
@@ -214,7 +209,14 @@ async function findSingleClassIdForForm(
   };
 }
 
-// ===============================================  const form = await request.formData();
+// ======================================================
+// ACTION
+// ======================================================
+
+export async function action({ request, context }: ActionFunctionArgs) {
+  const services = context.services as Services;
+
+  const form = await request.formData();
 
   const method = String(form.get("_method") || request.method).toUpperCase();
 
@@ -247,7 +249,82 @@ async function findSingleClassIdForForm(
       };
     }
 
-    // ===========================================      const data = {
+    // ==================================================
+    // CREATE STUDENT
+    // ==================================================
+
+    if (method === "POST") {
+      const campusIdValue = form.get("campusId");
+
+      if (!campusIdValue) {
+        return {
+          error: "Please select a campus.",
+        };
+      }
+
+      const campusId = Number(campusIdValue);
+
+      if (!Number.isFinite(campusId)) {
+        return {
+          error: "Invalid campus.",
+        };
+      }
+
+      const selectedCampus = await services.campus.getById(campusId);
+
+      if (!selectedCampus) {
+        return {
+          error: "Selected campus was not found.",
+        };
+      }
+
+      const schoolId = selectedCampus.schoolId;
+
+      if (!schoolId) {
+        return {
+          error: "The selected campus is not associated with a school.",
+        };
+      }
+
+      const admissionNumber = String(
+        form.get("admissionNumber") || "",
+      ).trim();
+
+      if (!admissionNumber) {
+        return {
+          error: "Admission number is required.",
+        };
+      }
+
+      const streamId = form.get("streamId")
+        ? Number(form.get("streamId"))
+        : undefined;
+
+      const formId = form.get("formId")
+        ? Number(form.get("formId"))
+        : undefined;
+
+      if (!streamId || !formId) {
+        return {
+          error: "Please select a stream and form.",
+        };
+      }
+
+      const selectedForm =
+        await services.academicLevel.getFormById(formId);
+
+      if (!selectedForm || selectedForm.streamId !== streamId) {
+        return {
+          error: "Please select a valid stream and form.",
+        };
+      }
+
+      const formClassId = await findSingleClassIdForForm(
+        services.academicLevel,
+        formId,
+      );
+
+      const data = {
         firstName: toTitleCase(
           String(form.get("firstName") || "").trim(),
         ),

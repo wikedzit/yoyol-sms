@@ -159,33 +159,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
         ? subject.createdAt
         : subject.updatedAt;
 
-      const results = await this.db
-        .select({
-          id: subject.id,
-          subjectName: subject.subjectName,
-          code: subject.code,
-          stream: subject.stream,
-          instructor: subject.instructor,
-          description: subject.description,
-          enrolledStudents: sql<number>`
-            (
-              SELECT COUNT(*)
-              FROM ${studentSubjects}
-              WHERE ${studentSubjects.subjectId} = ${subject.id}
-            )
-          `,
-          status: subject.status,
-          streamId: subject.streamId,
-          ownerUserId: subject.ownerUserId,
-          createdAt: subject.createdAt,
-          updatedAt: subject.updatedAt,
-        })
-        .from(subject)
-        .where(and(...filters))
-        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
-        .limit(limit)
-        .offset(offset ?? 0)
-        .execute();
+    const filters = [eq(subject.ownerUserId, ownerUserId)];
 
     if (search) {
       filters.push(like(subject.subjectName, `%${search}%`));
