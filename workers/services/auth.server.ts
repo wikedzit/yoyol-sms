@@ -7,13 +7,6 @@ import {
   hashPassword,
   verifyPassword,
 } from 'workers/utils/password.server';
-import {
-  createOtpAuthUri,
-  createRecoveryCodes,
-  createTotpSecret,
-  hashRecoveryCode,
-  verifyTotpCode,
-} from 'workers/utils/totp.server';
 
 const ACCOUNT_EXISTS_MESSAGE = 'An account with this email already exists';
 const SIGNUP_FAILED_MESSAGE = 'Could not create account. Please try again.';
@@ -29,10 +22,6 @@ export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 export type SignUpResult =
   | { token: string }
   | { error: string };
-
-export type LoginResult =
-  | { token: string }
-  | { twoFactorRequired: true; pendingToken: string };
 
 export default class AuthService {
   private db: DrizzleD1Database;
@@ -95,15 +84,15 @@ export default class AuthService {
       return { error: SIGNUP_FAILED_MESSAGE };
     }
 
-    const loginResult = await this.login(normalizedEmail, password);
-    if (!loginResult || !('token' in loginResult)) {
+    const token = await this.login(normalizedEmail, password);
+    if (!token) {
       return { error: SIGNUP_FAILED_MESSAGE };
     }
 
-    return { token: loginResult.token };
+    return { token };
   }
 
-  async login(email: string, password: string): Promise<LoginResult | null> {
+  async login(email: string, password: string): Promise<string | null> {
     const user = await this.findUserByEmail(this.normalizeEmail(email));
     if (!user) return null;
 
@@ -120,9 +109,10 @@ export default class AuthService {
     return payload;
   }
 
-  // Account holders with no teacher/student record (Admin, Finance) store
-  // their name only on `users`. preferredLanguage and avatarUrl apply to
-  // every role, since those belong to the login account itself.
+  // UPDATE PROFILE (used for account holders with no linked teacher/
+  // student record — e.g. Admin, Finance — whose only name lives on
+  // `users`. preferredLanguage applies to every role, since it's a UI
+  // preference tied to the login account itself.)
   async updateProfile(
     id: number,
     data: {
@@ -131,9 +121,9 @@ export default class AuthService {
       phone?: string;
       preferredLanguage?: string;
       avatarUrl?: string;
-    },
-  ): Promise<SelectUser | null> {
-    const updatedUser = await this.db
+    }
+  ) {
+    const result = await this.db
       .update(users)
       .set({ ...data, updatedAt: Date.now() })
       .where(eq(users.id, id))
@@ -141,14 +131,6 @@ export default class AuthService {
       .get();
 
     return result ?? null;
-  }
-
-  async updateName(
-    id: number,
-    firstName: string,
-    lastName: string,
-  ): Promise<SelectUser | null> {
-    return this.updateProfile(id, { firstName, lastName });
   }
 
   async changePassword(

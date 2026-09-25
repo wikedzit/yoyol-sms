@@ -12,7 +12,7 @@ import { Button } from '~/components/ui/button';
 import { Label } from '~/components/ui/label';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Badge } from '~/components/ui/badge';
-import { toast } from 'sonner';
+
 interface AssignClassesToTeacherModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -62,21 +62,17 @@ export default function AssignClassesToTeacherModal({
     );
   };
 
-const handleSubmit = () => {
-  if (selectedClasses.length === 0) {
-    toast.error('Please select at least one class');
-    return;
-  }
+  const handleSubmit = () => {
+    const formData = new FormData();
+    formData.append('_method', 'POST');
+    formData.append('action', 'assign_classes');
+    formData.append('teacherId', String(teacher.id));
+    formData.append('classIds', JSON.stringify(selectedClasses));
 
-  const formData = new FormData();
-  formData.append('_method', 'POST');
-  formData.append('action', 'assign_classes');
-  formData.append('teacherId', String(teacher.id));
-  formData.append('classIds', JSON.stringify(selectedClasses));
+    fetcher.submit(formData, { method: 'post' });
+    setOpen(false);
+  };
 
-  fetcher.submit(formData, { method: 'post' });
-  setOpen(false);
-};
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[600px]">

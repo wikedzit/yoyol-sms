@@ -1,32 +1,22 @@
-// --- Zod schemas for validation ---
 import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
-import { subject, type SelectSubject } from 'workers/database/subjects';
+import {
+  subject,
+  type SelectSubject,
+} from 'workers/database/subjects';
 import { studentSubjects } from 'workers/database/student-subjects';
 import { z } from 'zod';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-
-export const UNASSIGNED_INSTRUCTOR = 'Not Assigned';
-
-function instructorOrUnassigned(value: unknown): string {
-  if (typeof value !== 'string') {
-    return UNASSIGNED_INSTRUCTOR;
-  }
-
-  const trimmedInstructor = value.trim();
-  return trimmedInstructor.length >= 2
-    ? trimmedInstructor
-    : UNASSIGNED_INSTRUCTOR;
-}
-
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
   code: z.string().min(2).max(10),
-  stream: z.string().min(2).max(100),
-  instructor: z.preprocess(instructorOrUnassigned, z.string().min(2).max(100)),
+  stream: z.string().min(2).max(100), // Stream name (Science, Arts, Business)
+  instructor: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
+  enrolledStudents: z.number().min(0).optional(),
   status: z.enum(['Active', 'Inactive']).default('Active'),
+  // Foreign key to academic streams (required)
   streamId: z.number().min(1),
 });
 
@@ -159,33 +149,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
         ? subject.createdAt
         : subject.updatedAt;
 
-      const results = await this.db
-        .select({
-          id: subject.id,
-          subjectName: subject.subjectName,
-          code: subject.code,
-          stream: subject.stream,
-          instructor: subject.instructor,
-          description: subject.description,
-          enrolledStudents: sql<number>`
-            (
-              SELECT COUNT(*)
-              FROM ${studentSubjects}
-              WHERE ${studentSubjects.subjectId} = ${subject.id}
-            )
-          `,
-          status: subject.status,
-          streamId: subject.streamId,
-          ownerUserId: subject.ownerUserId,
-          createdAt: subject.createdAt,
-          updatedAt: subject.updatedAt,
-        })
-        .from(subject)
-        .where(and(...filters))
-        .orderBy(sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn))
-        .limit(limit)
-        .offset(offset ?? 0)
-        .execute();
+    const filters = [eq(subject.ownerUserId, ownerUserId)];
 
     if (search) {
       filters.push(like(subject.subjectName, `%${search}%`));
