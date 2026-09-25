@@ -22,7 +22,18 @@ import {
 
 import type { FetcherWithComponents } from "react-router";
 
-interface SchoolOption {
+interface Stream {
+  id: number;
+  name: string;
+}
+
+interface FormClass {
+  id: number;
+  name: string;
+  streamId: number;
+}
+
+interface CampusOption {
   id: number;
   name: string;
 }
@@ -83,7 +94,8 @@ function emptyStudentForm(defaultSchoolId = "") {
 export default function AddStudentModal({
   open,
   setOpen,
-  classId,
+  streams = [],
+  forms = [],
   fetcher,
   schools = [],
   campuses = [],
@@ -547,7 +559,7 @@ export default function AddStudentModal({
               onClick={() => setOpen(false)}
               disabled={fetcher.state === "submitting"}
             >
-              Cancel
+              {t('cancel')}
             </Button>
 
             <Button

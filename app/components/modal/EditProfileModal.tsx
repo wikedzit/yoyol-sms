@@ -75,6 +75,8 @@ export default function EditProfileModal({
   const isStudent = role === 'student';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -148,6 +150,46 @@ export default function EditProfileModal({
 
   const handleRemoveAvatar = () => {
     setFormData((current) => ({ ...current, avatarUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    if (error) setError(null);
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setError(t('pictureHelp'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 320;
+        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        setFormData((current) => ({
+          ...current,
+          avatarUrl: canvas.toDataURL('image/jpeg', 0.82),
+        }));
+        setError(null);
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setFormData((current) => ({ ...current, avatarUrl: '' }));
+    // Clear the file input's selection too, so choosing the same file
+    // again still fires onChange (otherwise the browser treats it as
+    // "no change" and handleAvatarChange never runs).
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }

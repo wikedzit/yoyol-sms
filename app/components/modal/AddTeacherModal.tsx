@@ -1,4 +1,5 @@
-import { ChevronDown, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { toTitleCase } from '~/utils/strings';
@@ -164,7 +165,7 @@ export default function AddTeacherModal({
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
                 Add New Teacher
               </SheetTitle>
             </SheetHeader>
@@ -253,7 +254,7 @@ export default function AddTeacherModal({
               'experience',
             ].map((field) => (
               <div key={field}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {field === 'firstName'
                     ? 'First Name'
                     : field === 'lastName'
@@ -395,7 +396,7 @@ export default function AddTeacherModal({
 
               {/* Gender */}
               <div className="mb-4 w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Gender
                 </label>
 
@@ -436,7 +437,7 @@ export default function AddTeacherModal({
 
               {/* Status */}
               <div className="mb-4 w-full sm:w-1/2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Status
                 </label>
 

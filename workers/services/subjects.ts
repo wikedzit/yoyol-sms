@@ -141,26 +141,23 @@ export default class SubjectService {
     }
   }
 
-  // Get all subjects with pagination, search, and sorting
-  async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
-    try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      const { limit, offset, sortBy, sortOrder, search } =
-        getSubjectsSchema.parse(options || {});
+  // Get all subjects with pagination, search, sorting,
+// and REAL number of students enrolled
+async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
+  try {
+    const ownerUserId = requireOwnerUserId(this.ownerUserId);
 
-      const sortColumn =
-        sortBy === 'subjectName'
-          ? subject.subjectName
-          : sortBy === 'code'
-          ? subject.code
-          : sortBy === 'createdAt'
-          ? subject.createdAt
-          : subject.updatedAt;
+    const { limit, offset, sortBy, sortOrder, search } =
+      getSubjectsSchema.parse(options || {});
 
-      const filters = [eq(subject.ownerUserId, ownerUserId)];
-      if (search) {
-        filters.push(like(subject.subjectName, `%${search}%`));
-      }
+    const sortColumn =
+      sortBy === 'subjectName'
+        ? subject.subjectName
+        : sortBy === 'code'
+        ? subject.code
+        : sortBy === 'createdAt'
+        ? subject.createdAt
+        : subject.updatedAt;
 
       const results = await this.db
         .select({
@@ -190,13 +187,54 @@ export default class SubjectService {
         .offset(offset ?? 0)
         .execute();
 
-      return results;
-    } catch (error) {
-      console.error('Error fetching all subjects:', error);
-      return [];
+    if (search) {
+      filters.push(like(subject.subjectName, `%${search}%`));
     }
-  }
 
+    const results = await this.db
+      .select({
+        id: subject.id,
+        subjectName: subject.subjectName,
+        code: subject.code,
+        stream: subject.stream,
+        instructor: subject.instructor,
+        description: subject.description,
+
+        // 🔥 REAL student count
+        enrolledStudents: sql<number>`
+          (
+            SELECT COUNT(*)
+            FROM ${studentSubjects}
+            WHERE ${studentSubjects.subjectId} = ${subject.id}
+          )
+        `,
+
+        status: subject.status,
+        streamId: subject.streamId,
+        ownerUserId: subject.ownerUserId,
+        createdAt: subject.createdAt,
+        updatedAt: subject.updatedAt,
+      })
+      .from(subject)
+      .where(and(...filters))
+      .orderBy(
+        sortOrder === 'asc'
+          ? asc(sortColumn)
+          : desc(sortColumn)
+      )
+      .limit(limit)
+      .offset(offset ?? 0)
+      .execute();
+
+    return results.map((item) => ({
+      ...item,
+      enrolledStudents: Number(item.enrolledStudents ?? 0),
+    })) as SelectSubject[];
+  } catch (error) {
+    console.error('Error fetching all subjects:', error);
+    return [];
+  }
+}
   // Update a subject
   async updateSubject(
     id: number,

@@ -1,27 +1,20 @@
 import {
   LayoutDashboard,
   Users,
-  BookOpen,
   DoorOpen,
   ChevronRight,
   ChevronDown,
   Building2,
-  GitBranch,
   FileText,
   GraduationCap,
   LogOut,
 } from "lucide-react";
 
-/* 
-  ============================================================================
-  MODIFIED BY AI: Changed import from 'react-router-dom' to 'react-router'
-  to match React Router v7 / React Router framework setups.
-  ============================================================================
-*/
 import { Link, useLocation } from "react-router";
 import { cn } from "~/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
+import { useLanguage } from "~/lib/i18n";
 
 const mainNavigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -56,18 +49,12 @@ const activeMenuItemClass =
 
 export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
-    /* 
-      ============================================================================
-      MODIFIED BY AI: 
-      - Replaced 'bg-white' with 'bg-card'
-      - Replaced 'border-sidebar-border' with 'border-border'
-      ============================================================================
-    */
-    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card transition-colors duration-200">
-      {/* --- Top Navigation --- */}
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+    <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card/95 backdrop-blur-lg transition-colors duration-200">
+      {/* Main Navigation List */}
+      <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
         {mainNavigation.map((item) =>
           item.children ? (
             <SidebarParent
@@ -86,18 +73,19 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           ),
         )}
 
+        {/* Logout trigger button */}
         <LogoutConfirmDialog
           trigger={
             <button
               type="button"
               onClick={onNavigate}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out cursor-pointer",
-                "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                "w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out cursor-pointer",
+                "text-app-body hover:bg-accent hover:text-app-text",
               )}
             >
               <LogOut className="h-5 w-5" />
-              <span className="truncate">Logout</span>
+              <span className="truncate">{t("logout")}</span>
             </button>
           }
         />
@@ -107,7 +95,7 @@ export const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 };
 
 /* ----------------------------------------
-   NORMAL LINK (no children)
+   SINGLE STREAMLINED SIDEBAR LINK
 ---------------------------------------- */
 const SidebarLink = ({ item, location, onNavigate }: any) => {
   const isActive = location.pathname === item.href;
@@ -117,7 +105,7 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
       to={item.href}
       onClick={onNavigate}
       className={cn(
-        "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition-colors duration-200 ease-in-out",
+        "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group",
         isActive
           ? activeMenuItemClass
           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -133,22 +121,27 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
 };
 
 /* ----------------------------------------
-   PARENT LINK (with children)
+   SINGLE STREAMLINED PARENT COMPONENT
 ---------------------------------------- */
 const SidebarParent = ({ item, location, onNavigate }: any) => {
-  const [open, setOpen] = useState(false);
-
-  // Is any child active?
   const isChildActive = item.children.some(
     (child: any) => location.pathname === child.href,
   );
 
+  const [open, setOpen] = useState(isChildActive);
+
+  useEffect(() => {
+    if (isChildActive) {
+      setOpen(true);
+    }
+  }, [isChildActive]);
+
   return (
-    <div>
+    <div className="space-y-1">
       <button
         onClick={() => setOpen(!open)}
         className={cn(
-          "w-full flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-[7px] transition duration-200 cursor-pointer",
+          "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group",
           isChildActive
             ? activeMenuItemClass
             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -168,8 +161,9 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
         />
       </button>
 
+      {/* Nested Sub-navigation */}
       {open && (
-        <div className="ml-8 mt-1 space-y-1">
+        <div className="ml-5 pl-3 border-l border-border space-y-1 mt-1">
           {item.children.map((child: any) => {
             const isActive = location.pathname === child.href;
             return (
@@ -178,13 +172,13 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                 to={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  "block px-3 py-2 text-sm rounded-md transition duration-150",
+                  "relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200",
                   isActive
                     ? activeMenuItemClass
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
-                {child.name}
+                <span className="truncate">{child.name}</span>
               </Link>
             );
           })}

@@ -61,6 +61,7 @@ import {
 import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
+import { useLanguage } from '~/lib/i18n';
 
 //Loader — fetch subjects with their teachers and classes from DB
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -228,6 +229,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 // 🎓 Subject Management Page
 export default function SubjectsPage() {
+  const { t } = useLanguage();
   const {
     subjects: initialSubjects,
     streams,
@@ -338,7 +340,7 @@ export default function SubjectsPage() {
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header section with text-foreground */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground">
@@ -414,7 +416,7 @@ export default function SubjectsPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search subjects..."
+                placeholder={t('searchSubjects')}
                 className="pl-10 bg-muted/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -426,9 +428,9 @@ export default function SubjectsPage() {
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">{t('all')}</SelectItem>
+                <SelectItem value="active">{t('active')}</SelectItem>
+                <SelectItem value="inactive">{t('inactive')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -443,20 +445,20 @@ export default function SubjectsPage() {
                       Code
                     </TableHead>
                     <TableHead className="font-semibold">
-                      Subject Name
+                      {t('subjectName')}
                     </TableHead>
                     <TableHead className="font-semibold hidden lg:table-cell">
                       Stream
                     </TableHead>
                     <TableHead className="font-semibold">
-                      Assigned Teachers
+                      {t('assignedTeachers')}
                     </TableHead>
                     <TableHead className="font-semibold hidden md:table-cell">
                       Enrolled Students
                     </TableHead>
-                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">{t('status')}</TableHead>
                     <TableHead className="text-right font-semibold">
-                      Actions
+                      {t('actions')}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -465,7 +467,7 @@ export default function SubjectsPage() {
                     <TableRow>
                       <TableCell colSpan={7} className="h-24 text-center">
                         <p className="text-muted-foreground">
-                          No subjects found.
+                          {t('noSubjects')}
                         </p>
                       </TableCell>
                     </TableRow>

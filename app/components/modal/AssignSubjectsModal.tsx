@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import type { FetcherWithComponents } from 'react-router';
 import { toast } from 'sonner';
 import {
@@ -14,6 +14,14 @@ import { Button } from '~/components/ui/button';
 import { Label } from '~/components/ui/label';
 import { Checkbox } from '~/components/ui/checkbox';
 import { Badge } from '~/components/ui/badge';
+import { Input } from '~/components/ui/input';
+
+interface Subject {
+  id: number;
+  subjectName: string;
+  code: string;
+  status?: string;
+}
 
 interface AssignSubjectsModalProps {
   open: boolean;
@@ -44,11 +52,12 @@ export default function AssignSubjectsModal({
   open,
   setOpen,
   teacher,
-  availableSubjects,
-  assignedSubjects,
+  availableSubjects = [],
+  assignedSubjects = [],
   fetcher,
 }: AssignSubjectsModalProps) {
   const [selectedSubjects, setSelectedSubjects] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Load subjects ambazo teacher tayari amepewa
   useEffect(() => {

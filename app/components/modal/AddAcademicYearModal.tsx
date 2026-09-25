@@ -40,7 +40,7 @@ export default function AddAcademicYearModal({
     if (fetcher.data?.error) {
       setError(fetcher.data.error);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, setOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -52,6 +52,7 @@ export default function AddAcademicYearModal({
           md:max-w-[500px] md:w-[500px]
           p-6 md:p-10
           flex flex-col
+          bg-card text-card-foreground border-border
         "
       >
         <fetcher.Form
@@ -67,30 +68,33 @@ export default function AddAcademicYearModal({
             value={formData.makeActive ? 'active' : 'upcoming'}
           />
 
+          {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
             <SheetHeader className="p-0">
-              <SheetTitle className="text-xl md:text-2xl font-semibold">
+              <SheetTitle className="text-xl md:text-2xl font-semibold text-foreground">
                 Add Academic Year
               </SheetTitle>
             </SheetHeader>
             <SheetClose asChild className="cursor-pointer">
-              <X size={25} />
+              <X size={25} className="text-muted-foreground hover:text-foreground transition-colors" />
             </SheetClose>
           </div>
 
-          <p className="text-sm text-[#898989] mb-6 md:mb-8">
+          <p className="text-sm text-muted-foreground mb-6 md:mb-8">
             Define a new academic year with its start and end dates.
           </p>
 
+          {/* Error Notice */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          {/* Form Fields */}
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Year Name
               </label>
               <Input
@@ -103,8 +107,8 @@ export default function AddAcademicYearModal({
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Start Date
               </label>
               <Input
@@ -116,8 +120,8 @@ export default function AddAcademicYearModal({
               />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
                 End Date
               </label>
               <Input
@@ -129,35 +133,37 @@ export default function AddAcademicYearModal({
               />
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-700 mb-4">
+            <label className="flex items-center gap-2 text-sm text-foreground my-4 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.makeActive}
                 onChange={(e) =>
                   setFormData({ ...formData, makeActive: e.target.checked })
                 }
+                className="rounded border-border text-primary focus:ring-ring"
               />
               Make this the active academic year
             </label>
             {formData.makeActive && (
-              <p className="text-xs text-amber-600 -mt-2 mb-4">
+              <p className="text-xs text-amber-600 dark:text-amber-400 -mt-2 mb-4">
                 The currently active year (if any) will be archived automatically.
               </p>
             )}
           </div>
 
-          <div className="flex justify-end gap-3 border-t pt-4 mt-6 sticky bottom-0 bg-white">
+          {/* Sticky Footer */}
+          <div className="flex justify-end gap-3 border-t border-border pt-4 mt-6 sticky bottom-0 bg-card z-10">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="py-2 px-10 md:px-16 rounded-[8px] hover:scale-105 transition cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
             >
               {fetcher.state === 'submitting' ? 'Adding...' : 'Add Academic Year'}
             </Button>

@@ -92,7 +92,7 @@ function servicesFrom(context: LoaderFunctionArgs['context']): ServiceContainer 
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const payload = await getAuthPayload(request, context);
-  if (!payload) return redirect('/auth/login');
+  if (!payload) return redirect("/auth/login");
 
   const services = servicesFrom(context);
   const account = await services.users.findUserByEmail(payload.email);
@@ -180,11 +180,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const payload = await getAuthPayload(request, context);
-  if (!payload) return redirect('/auth/login');
+  if (!payload) return redirect("/auth/login");
 
   const services = servicesFrom(context);
   const form = await request.formData();
-  const actionType = form.get('action') as string | null;
+  const actionType = form.get("action") as string | null;
 
   try {
     if (actionType === 'update_profile') {
@@ -213,12 +213,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
           avatarUrl,
         });
         if (!updated) {
-          return { error: 'Failed to update profile.', action: 'update_profile' };
+          return {
+            error: "Failed to update profile.",
+            action: "update_profile",
+          };
         }
-        return { success: true, action: 'update_profile' };
+        return { success: true, action: "update_profile" };
       }
 
-      if (payload.role === 'student') {
+      if (payload.role === "student") {
         const roleData = await services.student.getByEmail(payload.email);
         if (!roleData) {
           return {
@@ -239,9 +242,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
           avatarUrl,
         });
         if (!updated) {
-          return { error: 'Failed to update profile.', action: 'update_profile' };
+          return {
+            error: "Failed to update profile.",
+            action: "update_profile",
+          };
         }
-        return { success: true, action: 'update_profile' };
+        return { success: true, action: "update_profile" };
       }
 
       const updated = await services.users.updateProfile(payload.id, {
@@ -252,9 +258,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
         avatarUrl,
       });
       if (!updated) {
-        return { error: 'Failed to update profile.', action: 'update_profile' };
+        return { error: "Failed to update profile.", action: "update_profile" };
       }
-      return { success: true, action: 'update_profile' };
+      return { success: true, action: "update_profile" };
     }
 
     if (actionType === 'update_language') {
@@ -297,7 +303,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       if ('error' in result) {
         return { error: result.error, action: 'change_password' };
       }
-      return { success: true, action: 'change_password' };
+      return { success: true, action: "change_password" };
     }
 
     return { error: 'Unknown action' };
@@ -310,21 +316,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
 function roleLabel(role: string): string {
   const labels: Record<string, string> = {
-    admin: 'Administrator',
-    teacher: 'Teacher',
-    student: 'Student',
-    parent: 'Parent / Guardian',
-    finance: 'Finance',
+    admin: "Administrator",
+    teacher: "Teacher",
+    student: "Student",
+    parent: "Parent / Guardian",
+    finance: "Finance",
   };
   return labels[role] || role;
 }
 
 function formatDate(timestamp?: number | null): string {
-  if (!timestamp) return '—';
-  return new Date(timestamp).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  if (!timestamp) return "—";
+  return new Date(timestamp).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 }
 
@@ -408,9 +414,9 @@ export default function ProfilePage() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [preferredLanguage, setPreferredLanguage] = useState(
     account?.preferredLanguage ?? 'en',
@@ -433,13 +439,13 @@ export default function ProfilePage() {
   const initial = fullName.charAt(0).toUpperCase();
 
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.success) {
-      toast.success('Profile updated.');
+    if (fetcher.state === "idle" && fetcher.data?.success) {
+      toast.success("Profile updated.");
     }
   }, [fetcher.state, fetcher.data]);
 
   useEffect(() => {
-    if (passwordFetcher.state === 'idle' && passwordFetcher.data) {
+    if (passwordFetcher.state === "idle" && passwordFetcher.data) {
       if (passwordFetcher.data.success) {
         toast.success('Password changed successfully.');
         setPasswordForm({

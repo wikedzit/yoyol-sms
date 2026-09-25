@@ -12,6 +12,7 @@ import {
 } from '~/components/ui/alert-dialog';
 import { Trash2 } from 'lucide-react';
 import { useFetcher } from 'react-router-dom';
+import { useLanguage } from '~/lib/i18n';
 
 export const DeleteStudentButton = ({
   id,
@@ -29,6 +30,7 @@ export const DeleteStudentButton = ({
   showTrigger?: boolean;
 }) => {
   const fetcher = externalFetcher || useFetcher();
+  const { t } = useLanguage();
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -46,16 +48,16 @@ export const DeleteStudentButton = ({
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete</AlertDialogTitle>
+          <AlertDialogTitle>{t('delete')}</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete{' '}
+            {t('deleteConfirmation')}{' '}
             <strong className="font-semibold">{name}</strong>? This action
             cannot be undone and it will delete all its related data.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
 
           <fetcher.Form method="post">
             <input type="hidden" name="_method" value="DELETE" />
@@ -64,7 +66,7 @@ export const DeleteStudentButton = ({
               type="submit"
               className="bg-red-500 text-white hover:bg-red-600"
             >
-              {fetcher.state === 'submitting' ? 'Deleting...' : 'Delete'}
+              {fetcher.state === 'submitting' ? t('deleting') : t('delete')}
             </AlertDialogAction>
           </fetcher.Form>
         </AlertDialogFooter>

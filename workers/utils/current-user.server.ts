@@ -22,8 +22,8 @@ export async function getCurrentUserId(
     const isValid = await jwt.verify(token, jwtSecret);
     if (!isValid) return null;
 
-    const decoded = jwt.decode(token);
-    const payload = decoded.payload as SessionPayload;
+  const decoded = jwt.decode(token);
+  const payload = decoded.payload as SessionPayload;
 
     return typeof payload?.id === 'number' ? payload.id : null;
   } catch (error) {

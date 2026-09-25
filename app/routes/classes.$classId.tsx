@@ -314,9 +314,12 @@ export default function ClassDetails() {
         toast.success('Student removed from class successfully!');
       }
 
+      // Re-runs the loader so `initialStudents` reflects the latest data
       revalidator.revalidate();
     }
 
+    // FIX: this now actually fires correctly once the action returns a real
+    // error instead of always reporting success.
     if (fetcher.data.error) {
       toast.error(fetcher.data.error || 'An error occurred');
     }
