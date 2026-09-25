@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import type { FetcherWithComponents } from 'react-router';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
-import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,
@@ -25,41 +24,33 @@ import {
 } from '~/components/ui/tooltip';
 import { useLanguage } from '~/lib/i18n';
 
-type ProfileActionResult = {
-  success?: boolean;
-  error?: string;
-  action?: string;
-};
-
-type AccountFields = {
-  firstName?: string | null;
-  lastName?: string | null;
-  phone?: string | null;
-  preferredLanguage?: string | null;
-  avatarUrl?: string | null;
-};
-
-type RoleFields = {
-  firstName?: string | null;
-  lastName?: string | null;
-  phone?: string | null;
-  address?: string | null;
-  qualification?: string | null;
-  guardianName?: string | null;
-  guardianPhone?: string | null;
-};
-
-const TITLE_CASE_FIELDS = new Set(['firstName', 'lastName', 'guardianName']);
-
-type EditProfileModalProps = {
+interface EditProfileModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
-  fetcher: FetcherWithComponents<ProfileActionResult>;
+  fetcher: FetcherWithComponents<{
+    success?: boolean;
+    error?: string;
+    action?: string;
+  }>;
   role: string;
-  account?: AccountFields;
-  roleData?: RoleFields;
+  account?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+    preferredLanguage?: string | null;
+    avatarUrl?: string | null;
+  };
+  roleData?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+    address?: string | null;
+    qualification?: string | null;
+    guardianName?: string | null;
+    guardianPhone?: string | null;
+  };
   onLanguageChange?: (value: string) => void;
-};
+}
 
 export default function EditProfileModal({
   open,
@@ -73,7 +64,6 @@ export default function EditProfileModal({
   const { t } = useLanguage();
   const isTeacher = role === 'teacher';
   const isStudent = role === 'student';
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,47 +102,8 @@ export default function EditProfileModal({
     setError(null);
   }, [open, role, account, roleData, isTeacher, isStudent]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    const nextValue = TITLE_CASE_FIELDS.has(name) ? toTitleCase(value) : value;
-    setFormData({ ...formData, [name]: nextValue });
-    if (error) setError(null);
-  };
-
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
-      setError(t('pictureHelp'));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const image = new Image();
-      image.onload = () => {
-        const maxSize = 320;
-        const scale = Math.min(1, maxSize / Math.max(image.width, image.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(image.width * scale));
-        canvas.height = Math.max(1, Math.round(image.height * scale));
-        canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
-        setFormData((current) => ({
-          ...current,
-          avatarUrl: canvas.toDataURL('image/jpeg', 0.82),
-        }));
-        setError(null);
-      };
-      image.src = String(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveAvatar = () => {
-    setFormData((current) => ({ ...current, avatarUrl: '' }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError(null);
   };
 

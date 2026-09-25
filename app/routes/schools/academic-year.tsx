@@ -1,19 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { useFetcher, useLoaderData } from 'react-router';
+import { useEffect, useRef, useState } from "react";
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import {
   CalendarRange,
   Plus,
   Pencil,
   ListTree,
   CheckCircle2,
-  MoreVertical,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { PageHeader } from '~/components/ui/PageHeader';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
+} from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader } from "~/components/ui/PageHeader";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -21,20 +20,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '~/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu';
-import { DeleteStudentButton } from '~/components/DeleteStudentButton';
-import { PaginationControls } from '~/components/shared/PaginationControls';
-import { usePagination } from '~/hooks/usePagination';
-import AddAcademicYearModal from '~/components/modal/AddAcademicYearModal';
-import EditAcademicYearModal from '~/components/modal/EditAcademicYearModal';
-import ManageTermsModal from '~/components/modal/ManageTermsModal';
+} from "~/components/ui/table";
+import { DeleteStudentButton } from "~/components/DeleteStudentButton";
+import { PaginationControls } from "~/components/shared/PaginationControls";
+import { usePagination } from "~/hooks/usePagination";
+import AddAcademicYearModal from "~/components/modal/AddAcademicYearModal";
+import EditAcademicYearModal from "~/components/modal/EditAcademicYearModal";
+import ManageTermsModal from "~/components/modal/ManageTermsModal";
 
 import type AcademicYearService from "workers/services/academic-years";
 
@@ -184,9 +176,6 @@ export default function AcademicYearPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<any>(null);
-  // NEW: controlled delete target, so the dropdown item and the
-  // confirmation dialog stay decoupled (avoids Radix overlay conflicts)
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   // Track which action is in flight so we know how to react on completion.
   useEffect(() => {
@@ -286,11 +275,9 @@ export default function AcademicYearPage() {
           title="Academic Year"
           description="Configure academic years, terms, and active periods"
           actions={
-            // FIXED: full-width on mobile so it doesn't feel cramped next
-            // to the title on narrow screens
             <Button
               onClick={() => setIsAddOpen(true)}
-              className="w-full sm:w-auto bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               <Plus className="h-4 w-4" /> Add Academic Year
             </Button>
@@ -358,18 +345,10 @@ export default function AcademicYearPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="font-semibold">Name</TableHead>
-                    {/* FIXED: hidden on mobile, shown from md: up */}
-                    <TableHead className="font-semibold hidden md:table-cell">
-                      Start Date
-                    </TableHead>
-                    <TableHead className="font-semibold hidden md:table-cell">
-                      End Date
-                    </TableHead>
+                    <TableHead className="font-semibold">Start Date</TableHead>
+                    <TableHead className="font-semibold">End Date</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
-                    {/* FIXED: hidden until desktop */}
-                    <TableHead className="font-semibold ">
-                      Terms
-                    </TableHead>
+                    <TableHead className="font-semibold">Terms</TableHead>
                     <TableHead className="text-right font-semibold">
                       Actions
                     </TableHead>
@@ -390,12 +369,8 @@ export default function AcademicYearPage() {
                         <TableCell className="font-medium">
                           {year.name}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {year.startDate}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {year.endDate}
-                        </TableCell>
+                        <TableCell>{year.startDate}</TableCell>
+                        <TableCell>{year.endDate}</TableCell>
                         <TableCell>
                           <Badge
                             variant={statusVariant[year.status] || "outline"}
@@ -403,11 +378,9 @@ export default function AcademicYearPage() {
                             {year.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="lg:table-cell">
-                          {year.terms?.length || 0}
-                        </TableCell>
+                        <TableCell>{year.terms?.length || 0}</TableCell>
                         <TableCell className="text-right">
-                          <div className="hidden lg:flex justify-end gap-2">
+                          <div className="flex justify-end gap-2">
                             <Button
                               className="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
                               size="icon"
@@ -430,34 +403,6 @@ export default function AcademicYearPage() {
                               name={year.name}
                               fetcher={fetcher}
                             />
-                          </div>
-
-                          {/* Mobile/tablet: collapsed three-dot menu */}
-                          <div className="flex lg:hidden justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="cursor-pointer">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleManageTerms(year)}>
-                                  <ListTree className="mr-2 h-4 w-4" />
-                                  Manage Terms
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEdit(year)}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onClick={() => setDeleteTarget(year)}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -498,18 +443,6 @@ export default function AcademicYearPage() {
           setOpen={setIsTermsOpen}
           fetcher={fetcher}
           year={selectedYear}
-        />
-      )}
-
-      {/* NEW: controlled delete confirmation, triggered from the mobile dropdown */}
-      {deleteTarget && (
-        <DeleteStudentButton
-          id={deleteTarget.id}
-          name={deleteTarget.name}
-          fetcher={fetcher}
-          open={!!deleteTarget}
-          onOpenChange={(open) => !open && setDeleteTarget(null)}
-          showTrigger={false}
         />
       )}
     </div>

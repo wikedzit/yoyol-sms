@@ -190,7 +190,7 @@ const translations = {
     deleting: 'Deleting...',
     deleteSchool: 'Delete School',
     deleteConfirmation: 'Are you sure you want to delete',
-    cannotUndo: 'This action cannot be undone and it will delete all its related data.',
+    cannotUndo: 'This action cannot be undone.',
     profilePicture: 'Profile picture',
     removePicture: 'Remove Profile Picture',
     choosePicture: 'Choose a picture',

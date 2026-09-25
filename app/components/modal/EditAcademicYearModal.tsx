@@ -2,7 +2,6 @@ import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
-import { toTitleCase } from '~/utils/strings';
 import {
   Sheet,
   SheetContent,

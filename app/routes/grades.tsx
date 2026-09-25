@@ -341,10 +341,6 @@ export default function Grades() {
     ? forms.filter((f) => f.streamId === parseInt(selectedStream, 10))
     : forms;
 
-  // Columns that are hidden on small screens and only shown from md breakpoint up.
-  // Student Name, Subject, Score, Grade (and Actions) always remain visible.
-  const collapsibleColClass = 'hidden md:table-cell';
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -467,8 +463,9 @@ export default function Grades() {
             </div>
             <div className="flex gap-2">
               <Button
-              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
-              onClick={handleExport}>
+                onClick={handleExport}
+                className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-105 transition cursor-pointer"
+              >
                 <Download className="mr-2 h-4 w-4" />
                 {t("exportGrades")}
               </Button>
@@ -486,21 +483,21 @@ export default function Grades() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Wrap in overflow-x-auto so the table scrolls horizontally on very small
-              screens instead of breaking the page layout */}
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-100">
-                  <TableHead>Student Name</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Score</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead className={collapsibleColClass}>Remarks</TableHead>
-                  <TableHead className={collapsibleColClass}>Teacher</TableHead>
-                  <TableHead className={collapsibleColClass}>Stream</TableHead>
-                  <TableHead className={collapsibleColClass}>Form</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>
+                    {t("student")} {t("name")}
+                  </TableHead>
+                  <TableHead>{t("subjects")}</TableHead>
+                  <TableHead>{t("score")}</TableHead>
+                  <TableHead>{t("grade")}</TableHead>
+                  <TableHead>{t("remarks")}</TableHead>
+                  <TableHead>{t("teachers")}</TableHead>
+                  <TableHead>{t("streams")}</TableHead>
+                  <TableHead>{t("forms")}</TableHead>
+                  <TableHead className="text-right">{t("actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -564,50 +561,10 @@ export default function Grades() {
                             }
                             fetcher={fetcher}
                           />
-                        </TableCell>
-
-                        <TableCell className={`max-w-xs truncate ${collapsibleColClass}`}>
-                          {grade.remarks || '—'}
-                        </TableCell>
-
-                        <TableCell className={collapsibleColClass}>
-                          {grade.teacher
-                            ? `${grade.teacher.firstName} ${grade.teacher.lastName}`
-                            : '—'}
-                        </TableCell>
-
-                        <TableCell className={collapsibleColClass}>
-                          {grade.stream?.name || '—'}
-                        </TableCell>
-
-                        <TableCell className={collapsibleColClass}>
-                          {grade.form?.name || '—'}
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                              size="icon"
-                              onClick={() => handleEdit(grade)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <DeleteButton
-                              id={grade.id}
-                              name={
-                                grade.student
-                                  ? `${grade.student.firstName} ${grade.student.lastName}`
-                                  : 'Grade'
-                              }
-                              fetcher={fetcher}
-                            />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
