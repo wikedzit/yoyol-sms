@@ -430,25 +430,41 @@ export async function action({
           )
         );
 
-      if (
-        created &&
+      const selectedSubjectIds =
         Array.isArray(subjectIds)
-      ) {
+          ? subjectIds
+              .map(Number)
+              .filter(
+                (id: number) =>
+                  Number.isInteger(id)
+              )
+          : [];
+
+      if (created) {
         await services.teacherSubject?.replaceTeacherSubjects(
           created.id,
-          subjectIds
-            .map(Number)
-            .filter(
-              (id: number) =>
-                Number.isInteger(id)
-            )
+          selectedSubjectIds
         );
       }
+
+      // The profile card reads teacher.subjects, not the legacy subject text.
+      const assignedSubjects =
+        created
+          ? (await services.teacherSubject?.getSubjectsByTeacher(
+              created.id
+            )) ?? []
+          : [];
 
       return new Response(
         JSON.stringify({
           success: true,
-          teacher: created,
+          teacher: created
+            ? {
+                ...created,
+                subjects:
+                  assignedSubjects,
+              }
+            : created,
         }),
         {
           headers: {
