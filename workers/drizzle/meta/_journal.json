@@ -302,6 +302,13 @@
       "when": 1790013928478,
       "tag": "0042_neat_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1790342400000,
+      "tag": "0043_add_campus_id",
+      "breakpoints": true
     }
   ]
 }
