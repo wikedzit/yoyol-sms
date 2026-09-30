@@ -1198,33 +1198,18 @@ export default function Teachers() {
                         {/* Subjects */}
 
                         <TableCell>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {teacher.subjects
-                              ?.length >
-                            0 ? (
-                              teacher.subjects.map(
-                                (
-                                  subject: any
-                                ) => (
-                                  <Badge
-                                    key={
-                                      subject.id
-                                    }
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {
-                                      subject.code
-                                    }
-                                  </Badge>
-                                )
-                              )
-                            ) : (
-                              <span className="text-xs text-muted-foreground">
-                                No subjects
-                              </span>
-                            )}
-                          </div>
+                          {teacher.subjects?.length > 0 ? (
+                            <Badge variant="secondary" className="text-xs">
+                              {teacher.subjects.length}{" "}
+                              {teacher.subjects.length === 1
+                                ? "Subject"
+                                : "Subjects"}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              No subjects
+                            </span>
+                          )}
                         </TableCell>
 
                         {/* Classes */}
