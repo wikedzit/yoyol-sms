@@ -8,6 +8,8 @@ import {
 } from '../database/campuses';
 
 import { school } from '../database/school';
+import { students } from '../database/students';
+import { teachers } from '../database/teachers';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export default class CampusService {
@@ -277,6 +279,27 @@ async delete(
       );
       return false;
     }
+
+    // Students and teachers belong to this campus. Remove them
+    // before the campus row, because the database link only
+    // clears campus_id and would otherwise leave the people behind.
+    await this.db
+      .delete(students)
+      .where(
+        and(
+          eq(students.campusId, id),
+          eq(students.ownerUserId, ownerUserId),
+        ),
+      );
+
+    await this.db
+      .delete(teachers)
+      .where(
+        and(
+          eq(teachers.campusId, id),
+          eq(teachers.ownerUserId, ownerUserId),
+        ),
+      );
 
     await this.db
       .delete(campus)
