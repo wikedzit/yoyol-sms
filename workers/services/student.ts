@@ -248,7 +248,9 @@ export default class StudentService {
             .get();
 
         if (!ownedCampus) {
-          return null;
+          throw new Error(
+            'Selected campus was not found.',
+          );
         }
       }
 
@@ -295,7 +297,12 @@ export default class StudentService {
         error,
       );
 
-      return null;
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Failed to add student.';
+
+      throw new Error(message);
     }
   }
 

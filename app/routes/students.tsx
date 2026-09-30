@@ -369,18 +369,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const created = await services.student.create(data as any);
 
       if (!created) {
-        return new Response(
-          JSON.stringify({
-            error:
-              "Failed to add student. Please make sure all required fields are valid.",
-          }),
-          {
-            status: 400,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
+        return {
+          error:
+            "Failed to add student. Please make sure all required fields are valid.",
+        };
       }
 
       if (formClassId) {
@@ -394,17 +386,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
         }
       }
 
-      return new Response(
-        JSON.stringify({
-          success: true,
-          student: created,
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      return {
+        success: true,
+        student: created,
+      };
     }
 
     // ==================================================
@@ -600,17 +585,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
   } catch (error: any) {
     console.error("students.action error:", error);
 
-    return new Response(
-      JSON.stringify({
-        error: error?.message || "Server error.",
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
+    return {
+      error: error?.message || "Server error.",
+    };
   }
 }
 
