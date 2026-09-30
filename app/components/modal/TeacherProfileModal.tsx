@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
+import { Badge } from '~/components/ui/badge';
 import { Eye } from 'lucide-react';
 import { useState } from 'react';
 
@@ -34,15 +35,7 @@ export function TeacherProfileModal({
 
   if (!teacher) return null;
 
-  const subjectNames = Array.isArray(teacher.subjects)
-    ? teacher.subjects
-        .map((subject: any) => subject?.subjectName || subject?.name || subject?.code)
-        .filter(Boolean)
-    : teacher.subject
-      ? [teacher.subject]
-      : [];
-
-  const subjectDisplay = subjectNames.length ? subjectNames.join(', ') : 'Not assigned';
+  const subjects: any[] = teacher.subjects ?? [];
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -58,7 +51,7 @@ export function TeacherProfileModal({
         </DialogTrigger>
       )}
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {teacher.firstName} {teacher.lastName}
@@ -103,9 +96,6 @@ export function TeacherProfileModal({
               <strong>Address:</strong> {teacher.address}
             </p>
             <p>
-              <strong>Subject:</strong> {subjectDisplay}
-            </p>
-            <p>
               <strong>Status:</strong>{' '}
               <span
                 className={`${
@@ -119,6 +109,32 @@ export function TeacherProfileModal({
                 {teacher.status}
               </span>
             </p>
+          </div>
+
+          <div className="border-t pt-3">
+            <p className="text-sm font-semibold">
+              Assigned Subjects ({subjects.length})
+            </p>
+
+            {subjects.length > 0 ? (
+              <ul className="mt-2 space-y-1">
+                {subjects.map((subject: any) => (
+                  <li
+                    key={subject.id}
+                    className="flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-sm"
+                  >
+                    <Badge variant="secondary" className="text-xs">
+                      {subject.code}
+                    </Badge>
+                    <span>{subject.subjectName ?? subject.name}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                No subjects assigned
+              </p>
+            )}
           </div>
         </div>
       </DialogContent>
