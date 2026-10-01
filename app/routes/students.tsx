@@ -114,6 +114,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     studentSubjects: StudentSubjectService;
     school: SchoolService;
     campus: CampusService;
+    academicLevel: AcademicLevelService;
   };
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
@@ -188,6 +189,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
         };
       }
 
+      const formClasses =
+        await services.academicLevel.getFormClassesByFormId(formId);
+      const formClassId =
+        formClasses.length === 1 ? formClasses[0].id : undefined;
+
       const data = {
         firstName: toTitleCase(String(form.get("firstName") ?? "")),
         lastName: toTitleCase(String(form.get("lastName") ?? "")),
@@ -233,7 +239,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         formClassId,
 
         schoolId,
-        campusId: Number(selectedCampus.id),
+        campusId,
         status: String(form.get("status") ?? "Active") as
           "Active" | "Pending" | "Inactive",
       };
@@ -343,19 +349,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (err: any) {
-    console.error('students.action error:', err);
-    return new Response(
-      JSON.stringify({
-        error: "Unknown method.",
-      }),
-      {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
   } catch (error: any) {
     console.error("students.action error:", error);
 
