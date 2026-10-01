@@ -1,4 +1,3 @@
-// app/components/modal/TeacherProfileModal.tsx
 import {
   Dialog,
   DialogContent,
@@ -25,8 +24,6 @@ export function TeacherProfileModal({
   onOpenChange,
   showTrigger = true,
 }: TeacherProfileModalProps) {
-  
-  // added internal state to manage the modal's open state when not controlled
   const [internalOpen, setInternalOpen] = useState(false);
 
   const isControlled = open !== undefined;
@@ -41,11 +38,7 @@ export function TeacherProfileModal({
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       {showTrigger && (
         <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-          >
+          <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4" />
           </Button>
         </DialogTrigger>

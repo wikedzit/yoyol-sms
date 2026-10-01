@@ -231,54 +231,45 @@ export default class CampusService {
     }
   }
 
-/**
- * Delete a campus.
- *
- * Security:
+  /**
+   * Delete a campus.
+   *
+   * Security:
    * The campus must belong to a school
    * owned by the current user.
- */
-async delete(
-  id: number
-): Promise<boolean> {
-  try {
-    const ownerUserId = 
-      requireOwnerUserId(this.ownerUserId);
+   */
+  async delete(
+    id: number
+  ): Promise<boolean> {
+    try {
+      const ownerUserId =
+        requireOwnerUserId(this.ownerUserId);
 
       // Verify ownership first.
-    const existingCampus = 
-      await this.db
-         .select({
-           id: campus.id,
-           isMain: campus.isMain,
-      })
-      .from(campus)
-      .innerJoin(
-        school,
-        eq(campus.schoolId, school.id)
-      )
-      .where(
-        and(
-          eq(campus.id, id),
-          eq(
-            school.ownerUserId, 
-            ownerUserId
+      const existingCampus =
+        await this.db
+          .select({
+            id: campus.id,
+          })
+          .from(campus)
+          .innerJoin(
+            school,
+            eq(campus.schoolId, school.id)
           )
-        )
-      )
-      .get();
+          .where(
+            and(
+              eq(campus.id, id),
+              eq(
+                school.ownerUserId,
+                ownerUserId
+              )
+            )
+          )
+          .get();
 
-    if (!existingCampus) {
-      return false;
-    }
-    
-    // Main campus cannot be deleted.
-    if (existingCampus.isMain) {
-      console.warn(
-        `Attempted to delete main campus: ${id}`
-      );
-      return false;
-    }
+      if (!existingCampus) {
+        return false;
+      }
 
     // Students and teachers belong to this campus. Remove them
     // before the campus row, because the database link only
@@ -307,14 +298,14 @@ async delete(
         eq(campus.id, id)
       );
 
-    return true;
-  } catch (error) {
-    console.error(
-      'Error deleting campus:',
-      error
-    );
+      return true;
+    } catch (error) {
+      console.error(
+        'Error deleting campus:',
+        error
+      );
 
-    return false;
+      return false;
+    }
   }
-}
 }

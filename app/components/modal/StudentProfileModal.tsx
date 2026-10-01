@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react'; 
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ export function StudentProfilesModal({
   student,
   open,
   onOpenChange,
-  showTrigger = true,
+  showTrigger = true, 
 }: StudentProfilesModalProps) {
   // new
   const [internalOpen, setInternalOpen] = useState(false);
@@ -32,7 +32,7 @@ export function StudentProfilesModal({
   const dialogOpen = isControlled ? open : internalOpen;
   const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
 
-  //
+  // 
   if (!student) return null;
 
   const subjects: any[] = student.subjects ?? [];
@@ -43,7 +43,7 @@ export function StudentProfilesModal({
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-      {showTrigger && (
+      {showTrigger && ( 
         <DialogTrigger asChild>
           <Button variant="ghost" size="sm">
             <Eye className="h-4 w-4" />
@@ -66,7 +66,7 @@ export function StudentProfilesModal({
                   ? "/assets/male-avatar.png"
                   : "/assets/female-avatar.png")
               }
-              alt={student.photoUrl ? "Student Photo" : "Default Avatar"}
+              alt={student.photoUrl ? 'Student Photo' : 'Default Avatar'}
               className="w-16 h-16 rounded-full object-cover border"
             />
           </div>

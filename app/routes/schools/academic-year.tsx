@@ -1,19 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
-import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
-import { useFetcher, useLoaderData } from 'react-router';
+import { useEffect, useRef, useState } from "react";
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import {
   CalendarRange,
   Plus,
   Pencil,
   ListTree,
   CheckCircle2,
-  MoreVertical,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { PageHeader } from '~/components/ui/PageHeader';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
+} from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader } from "~/components/ui/PageHeader";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -21,22 +20,15 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '~/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/components/ui/dropdown-menu';
-import { DeleteStudentButton } from '~/components/DeleteStudentButton';
-import { PaginationControls } from '~/components/shared/PaginationControls';
-import { usePagination } from '~/hooks/usePagination';
-import AddAcademicYearModal from '~/components/modal/AddAcademicYearModal';
-import EditAcademicYearModal from '~/components/modal/EditAcademicYearModal';
-import ManageTermsModal from '~/components/modal/ManageTermsModal';
+} from "~/components/ui/table";
+import { DeleteStudentButton } from "~/components/DeleteStudentButton";
+import { PaginationControls } from "~/components/shared/PaginationControls";
+import { usePagination } from "~/hooks/usePagination";
+import AddAcademicYearModal from "~/components/modal/AddAcademicYearModal";
+import EditAcademicYearModal from "~/components/modal/EditAcademicYearModal";
+import ManageTermsModal from "~/components/modal/ManageTermsModal";
 
-import type AcademicYearService from 'workers/services/academic-years';
+import type AcademicYearService from "workers/services/academic-years";
 
 // --- Loader ---
 export async function loader({ context }: LoaderFunctionArgs) {
@@ -50,121 +42,130 @@ export async function loader({ context }: LoaderFunctionArgs) {
 export async function action({ request, context }: ActionFunctionArgs) {
   const services = context.services as { academicYear: AcademicYearService };
   const form = await request.formData();
-  const method = (form.get('_method') as string) || request.method;
-  const actionType = form.get('action') as string | null;
+  const method = (form.get("_method") as string) || request.method;
+  const actionType = form.get("action") as string | null;
 
   try {
     // ---- ACADEMIC YEAR ----
-    if (actionType === 'year_create') {
+    if (actionType === "year_create") {
       const data = {
-        name: String(form.get('name') ?? ''),
-        startDate: String(form.get('startDate') ?? ''),
-        endDate: String(form.get('endDate') ?? ''),
-        status: (String(form.get('status') ?? 'upcoming') as
-          | 'upcoming'
-          | 'active'
-          | 'archived'),
+        name: String(form.get("name") ?? ""),
+        startDate: String(form.get("startDate") ?? ""),
+        endDate: String(form.get("endDate") ?? ""),
+        status: String(form.get("status") ?? "upcoming") as
+          | "upcoming"
+          | "active"
+          | "archived",
       };
       const created = await services.academicYear.createYear(data);
       if (!created) {
-        return { error: 'Failed to create academic year. Check the name and dates.' };
+        return {
+          error: "Failed to create academic year. Check the name and dates.",
+        };
       }
-      return { success: true, action: 'year_create', year: created };
+      return { success: true, action: "year_create", year: created };
     }
 
-    if (actionType === 'year_update') {
-      const id = Number(form.get('id'));
-      if (!id) return { error: 'Academic year ID is required' };
+    if (actionType === "year_update") {
+      const id = Number(form.get("id"));
+      if (!id) return { error: "Academic year ID is required" };
       const data = {
-        name: form.get('name') ? String(form.get('name')) : undefined,
-        startDate: form.get('startDate') ? String(form.get('startDate')) : undefined,
-        endDate: form.get('endDate') ? String(form.get('endDate')) : undefined,
-        status: form.get('status')
-          ? (String(form.get('status')) as 'upcoming' | 'active' | 'archived')
+        name: form.get("name") ? String(form.get("name")) : undefined,
+        startDate: form.get("startDate")
+          ? String(form.get("startDate"))
+          : undefined,
+        endDate: form.get("endDate") ? String(form.get("endDate")) : undefined,
+        status: form.get("status")
+          ? (String(form.get("status")) as "upcoming" | "active" | "archived")
           : undefined,
       };
       const updated = await services.academicYear.updateYear(id, data);
-      if (!updated) return { error: 'Failed to update academic year.' };
-      return { success: true, action: 'year_update', year: updated };
+      if (!updated) return { error: "Failed to update academic year." };
+      return { success: true, action: "year_update", year: updated };
     }
 
-    if (actionType === 'year_set_active') {
-      const id = Number(form.get('id'));
-      if (!id) return { error: 'Academic year ID is required' };
+    if (actionType === "year_set_active") {
+      const id = Number(form.get("id"));
+      if (!id) return { error: "Academic year ID is required" };
       const result = await services.academicYear.setActiveYear(id);
-      if (!result) return { error: 'Failed to set the active academic year.' };
-      return { success: true, action: 'year_set_active', year: result };
+      if (!result) return { error: "Failed to set the active academic year." };
+      return { success: true, action: "year_set_active", year: result };
     }
 
-    if (actionType === 'year_delete' || (method === 'DELETE' && !actionType)) {
-      const id = Number(form.get('id'));
-      if (!id) return { error: 'Academic year ID is required' };
+    if (actionType === "year_delete" || (method === "DELETE" && !actionType)) {
+      const id = Number(form.get("id"));
+      if (!id) return { error: "Academic year ID is required" };
       const ok = await services.academicYear.deleteYear(id);
-      if (!ok) return { error: 'Failed to delete academic year.' };
-      return { success: true, action: 'year_delete', id };
+      if (!ok) return { error: "Failed to delete academic year." };
+      return { success: true, action: "year_delete", id };
     }
 
     // ---- TERMS ----
-    if (actionType === 'term_create') {
+    if (actionType === "term_create") {
       const data = {
-        academicYearId: Number(form.get('academicYearId')),
-        name: String(form.get('name') ?? ''),
-        termNumber: Number(form.get('termNumber') ?? 1),
-        startDate: String(form.get('startDate') ?? ''),
-        endDate: String(form.get('endDate') ?? ''),
+        academicYearId: Number(form.get("academicYearId")),
+        name: String(form.get("name") ?? ""),
+        termNumber: Number(form.get("termNumber") ?? 1),
+        startDate: String(form.get("startDate") ?? ""),
+        endDate: String(form.get("endDate") ?? ""),
         isCurrent: false,
       };
       const created = await services.academicYear.createTerm(data);
-      if (!created) return { error: 'Failed to create term.' };
-      if ('error' in created) return { error: created.error };
-      return { success: true, action: 'term_create', term: created };
+      if (!created) return { error: "Failed to create term." };
+      if ("error" in created) return { error: created.error };
+      return { success: true, action: "term_create", term: created };
     }
 
-    if (actionType === 'term_update') {
-      const id = Number(form.get('id'));
-      if (!id) return { error: 'Term ID is required' };
+    if (actionType === "term_update") {
+      const id = Number(form.get("id"));
+      if (!id) return { error: "Term ID is required" };
       const data = {
-        name: form.get('name') ? String(form.get('name')) : undefined,
-        termNumber: form.get('termNumber') ? Number(form.get('termNumber')) : undefined,
-        startDate: form.get('startDate') ? String(form.get('startDate')) : undefined,
-        endDate: form.get('endDate') ? String(form.get('endDate')) : undefined,
+        name: form.get("name") ? String(form.get("name")) : undefined,
+        termNumber: form.get("termNumber")
+          ? Number(form.get("termNumber"))
+          : undefined,
+        startDate: form.get("startDate")
+          ? String(form.get("startDate"))
+          : undefined,
+        endDate: form.get("endDate") ? String(form.get("endDate")) : undefined,
       };
       const updated = await services.academicYear.updateTerm(id, data);
-      if (!updated) return { error: 'Failed to update term.' };
-      if ('error' in updated) return { error: updated.error };
-      return { success: true, action: 'term_update', term: updated };
+      if (!updated) return { error: "Failed to update term." };
+      if ("error" in updated) return { error: updated.error };
+      return { success: true, action: "term_update", term: updated };
     }
 
-    if (actionType === 'term_set_current') {
-      const id = Number(form.get('id'));
-      if (!id) return { error: 'Term ID is required' };
+    if (actionType === "term_set_current") {
+      const id = Number(form.get("id"));
+      if (!id) return { error: "Term ID is required" };
       const result = await services.academicYear.setCurrentTerm(id);
-      if (!result) return { error: 'Failed to set the current term.' };
-      if ('error' in result) return { error: result.error };
-      return { success: true, action: 'term_set_current', term: result };
+      if (!result) return { error: "Failed to set the current term." };
+      if ("error" in result) return { error: result.error };
+      return { success: true, action: "term_set_current", term: result };
     }
 
-    if (actionType === 'term_delete') {
-      const id = Number(form.get('id'));
-      if (!id) return { error: 'Term ID is required' };
+    if (actionType === "term_delete") {
+      const id = Number(form.get("id"));
+      if (!id) return { error: "Term ID is required" };
       const ok = await services.academicYear.deleteTerm(id);
-      if (!ok) return { error: 'Failed to delete term.' };
-      return { success: true, action: 'term_delete', id };
+      if (!ok) return { error: "Failed to delete term." };
+      return { success: true, action: "term_delete", id };
     }
 
-    return { error: 'Unknown action' };
+    return { error: "Unknown action" };
   } catch (err: any) {
-    console.error('academic-year action error:', err);
-    return { error: err?.message || 'Server error' };
+    console.error("academic-year action error:", err);
+    return { error: err?.message || "Server error" };
   }
 }
 
 // --- Page ---
 export default function AcademicYearPage() {
-  const { years: initialYears, currentTerm: initialCurrentTerm } = useLoaderData<{
-    years: any[];
-    currentTerm: any;
-  }>();
+  const { years: initialYears, currentTerm: initialCurrentTerm } =
+    useLoaderData<{
+      years: any[];
+      currentTerm: any;
+    }>();
 
   const fetcher = useFetcher<any>();
   const listMethod = useFetcher<any>();
@@ -175,27 +176,24 @@ export default function AcademicYearPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState<any>(null);
-  // NEW: controlled delete target, so the dropdown item and the
-  // confirmation dialog stay decoupled (avoids Radix overlay conflicts)
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
 
   // Track which action is in flight so we know how to react on completion.
   useEffect(() => {
-    if (fetcher.state === 'submitting' && fetcher.formData) {
-      lastAction.current = (fetcher.formData.get('action') as string) || null;
+    if (fetcher.state === "submitting" && fetcher.formData) {
+      lastAction.current = (fetcher.formData.get("action") as string) || null;
     }
   }, [fetcher.state, fetcher.formData]);
 
   // React to top-level (year) mutations. Term mutations are handled inside
   // ManageTermsModal itself, since it owns the terms list for one year.
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
+    if (fetcher.state === "idle" && fetcher.data) {
       const data = fetcher.data;
 
       if (data.error) {
         // Only surface as a page-level toast for year actions; term errors
         // are shown inline inside ManageTermsModal.
-        if (lastAction.current?.startsWith('year_')) {
+        if (lastAction.current?.startsWith("year_")) {
           toast.error(data.error);
         }
         return;
@@ -203,25 +201,25 @@ export default function AcademicYearPage() {
 
       if (data.success) {
         switch (data.action) {
-          case 'year_create':
-            toast.success('Academic year added.');
+          case "year_create":
+            toast.success("Academic year added.");
             listMethod.load(window.location.pathname);
             break;
-          case 'year_update':
-            toast.success('Academic year updated.');
+          case "year_update":
+            toast.success("Academic year updated.");
             listMethod.load(window.location.pathname);
             break;
-          case 'year_set_active':
+          case "year_set_active":
             toast.success(`${data.year.name} is now the active academic year.`);
             listMethod.load(window.location.pathname);
             break;
-          case 'year_delete':
-            toast.success('Academic year deleted.');
+          case "year_delete":
+            toast.success("Academic year deleted.");
             setYears((prev) => prev.filter((y) => y.id !== data.id));
             break;
           default:
             // term_* actions: keep the years list in sync silently.
-            if (data.action?.startsWith('term_')) {
+            if (data.action?.startsWith("term_")) {
               listMethod.load(window.location.pathname);
             }
         }
@@ -232,11 +230,11 @@ export default function AcademicYearPage() {
 
   // Refresh local state whenever we reload the list.
   useEffect(() => {
-    if (listMethod.state === 'idle' && listMethod.data?.years) {
+    if (listMethod.state === "idle" && listMethod.data?.years) {
       setYears(listMethod.data.years);
       if (selectedYear) {
         const refreshed = listMethod.data.years.find(
-          (y: any) => y.id === selectedYear.id
+          (y: any) => y.id === selectedYear.id,
         );
         if (refreshed) setSelectedYear(refreshed);
       }
@@ -244,7 +242,7 @@ export default function AcademicYearPage() {
   }, [listMethod.state, listMethod.data]);
 
   const currentTerm = listMethod.data?.currentTerm ?? initialCurrentTerm;
-  const activeYear = years.find((y) => y.status === 'active');
+  const activeYear = years.find((y) => y.status === "active");
   const totalTerms = years.reduce((sum, y) => sum + (y.terms?.length || 0), 0);
 
   const handleEdit = (year: any) => {
@@ -257,13 +255,17 @@ export default function AcademicYearPage() {
     setIsTermsOpen(true);
   };
 
-  const { currentPage, totalPages, paginatedItems: paginatedYears, goToPage } =
-    usePagination(years, 10);
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems: paginatedYears,
+    goToPage,
+  } = usePagination(years, 10);
 
-  const statusVariant: Record<string, 'default' | 'secondary' | 'outline'> = {
-    active: 'default',
-    upcoming: 'secondary',
-    archived: 'outline',
+  const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
+    active: "default",
+    upcoming: "secondary",
+    archived: "outline",
   };
 
   return (
@@ -273,11 +275,9 @@ export default function AcademicYearPage() {
           title="Academic Year"
           description="Configure academic years, terms, and active periods"
           actions={
-            // FIXED: full-width on mobile so it doesn't feel cramped next
-            // to the title on narrow screens
             <Button
               onClick={() => setIsAddOpen(true)}
-              className="w-full sm:w-auto bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
+              className="bg-primary-gradient text-white py-2 px-4 rounded-[8px] hover:scale-110 hover:text-white-600 transition cursor-pointer"
             >
               <Plus className="h-4 w-4" /> Add Academic Year
             </Button>
@@ -295,8 +295,8 @@ export default function AcademicYearPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Active Year
                 </p>
-               <p className="text-2xl font-bold text-foreground">
-                  {activeYear ? activeYear.name : 'None set'}
+                <p className="text-2xl font-bold text-foreground">
+                  {activeYear ? activeYear.name : "None set"}
                 </p>
               </div>
             </div>
@@ -311,11 +311,11 @@ export default function AcademicYearPage() {
                   Current Term
                 </p>
                 <p className="text-2xl font-bold text-foreground">
-                  {currentTerm?.status === 'in_term'
+                  {currentTerm?.status === "in_term"
                     ? currentTerm.term.name
-                    : currentTerm?.status === 'break'
-                      ? 'Holiday Break'
-                      : 'None set'}
+                    : currentTerm?.status === "break"
+                      ? "Holiday Break"
+                      : "None set"}
                 </p>
               </div>
             </div>
@@ -345,18 +345,10 @@ export default function AcademicYearPage() {
                 <TableHeader>
                   <TableRow className="bg-gray-100">
                     <TableHead className="font-semibold">Name</TableHead>
-                    {/* FIXED: hidden on mobile, shown from md: up */}
-                    <TableHead className="font-semibold hidden md:table-cell">
-                      Start Date
-                    </TableHead>
-                    <TableHead className="font-semibold hidden md:table-cell">
-                      End Date
-                    </TableHead>
+                    <TableHead className="font-semibold">Start Date</TableHead>
+                    <TableHead className="font-semibold">End Date</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
-                    {/* FIXED: hidden until desktop */}
-                    <TableHead className="font-semibold ">
-                      Terms
-                    </TableHead>
+                    <TableHead className="font-semibold">Terms</TableHead>
                     <TableHead className="text-right font-semibold">
                       Actions
                     </TableHead>
@@ -377,22 +369,18 @@ export default function AcademicYearPage() {
                         <TableCell className="font-medium">
                           {year.name}
                         </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {year.startDate}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {year.endDate}
-                        </TableCell>
+                        <TableCell>{year.startDate}</TableCell>
+                        <TableCell>{year.endDate}</TableCell>
                         <TableCell>
-                          <Badge variant={statusVariant[year.status] || 'outline'}>
+                          <Badge
+                            variant={statusVariant[year.status] || "outline"}
+                          >
                             {year.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="lg:table-cell">
-                          {year.terms?.length || 0}
-                        </TableCell>
+                        <TableCell>{year.terms?.length || 0}</TableCell>
                         <TableCell className="text-right">
-                          <div className="hidden lg:flex justify-end gap-2">
+                          <div className="flex justify-end gap-2">
                             <Button
                               className="px-5 py-2.5 border border-slate-300 text-slate-700 font-medium rounded-lg bg-transparent transition-transform duration-200 hover:scale-105"
                               size="icon"
@@ -416,34 +404,6 @@ export default function AcademicYearPage() {
                               fetcher={fetcher}
                             />
                           </div>
-
-                          {/* Mobile/tablet: collapsed three-dot menu */}
-                          <div className="flex lg:hidden justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="cursor-pointer">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleManageTerms(year)}>
-                                  <ListTree className="mr-2 h-4 w-4" />
-                                  Manage Terms
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEdit(year)}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onClick={() => setDeleteTarget(year)}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -461,7 +421,11 @@ export default function AcademicYearPage() {
       </div>
 
       {isAddOpen && (
-        <AddAcademicYearModal open={isAddOpen} setOpen={setIsAddOpen} fetcher={fetcher} />
+        <AddAcademicYearModal
+          open={isAddOpen}
+          setOpen={setIsAddOpen}
+          fetcher={fetcher}
+        />
       )}
 
       {isEditOpen && selectedYear && (
@@ -479,18 +443,6 @@ export default function AcademicYearPage() {
           setOpen={setIsTermsOpen}
           fetcher={fetcher}
           year={selectedYear}
-        />
-      )}
-
-      {/* NEW: controlled delete confirmation, triggered from the mobile dropdown */}
-      {deleteTarget && (
-        <DeleteStudentButton
-          id={deleteTarget.id}
-          name={deleteTarget.name}
-          fetcher={fetcher}
-          open={!!deleteTarget}
-          onOpenChange={(open) => !open && setDeleteTarget(null)}
-          showTrigger={false}
         />
       )}
     </div>
