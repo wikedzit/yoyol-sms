@@ -128,6 +128,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
     teachers: teachersWithSubjectsAndClasses,
     allSubjects: subjects,
     allClasses: allClasses,
+    campuses,
   };
 }
 
@@ -275,10 +276,12 @@ export default function Teachers() {
     teachers: initialTeachers,
     allSubjects,
     allClasses,
+    campuses,
   } = useLoaderData() as {
     teachers: any[];
     allSubjects: any[];
     allClasses: any[];
+    campuses: { id: number; name: string; isMain?: boolean }[];
   };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
@@ -309,7 +312,7 @@ export default function Teachers() {
   const {
     currentPage,
     totalPages,
-    paginatedItems: paginatedStudentsList,
+    paginatedItems: paginatedTeachersList,
     startIndex,
     goToPage,
   } = usePagination(filteredStudents, 10);
@@ -648,91 +651,32 @@ export default function Teachers() {
                                 );
                               }}
                             >
-                              {subject.code}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            No subjects
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {teacher.classes?.length > 0 ? (
-                          teacher.classes.map((classItem: any) => (
-                            <Badge
-                              key={classItem.id}
-                              variant="outline"
-                              className="text-xs"
+                              <GraduationCap className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              className="hover:scale-110 transition cursor-pointer"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedTeacher(teacher);
+                                setEditModalOpen(true);
+                              }}
                             >
-                              {classItem.name}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-xs text-muted-foreground">
-                            No classes
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{teacher.email}</TableCell>
-                    <TableCell>{teacher.phone}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          teacher.status === 'Active' ? 'default' : 'outline'
-                        }
-                      >
-                        {teacher.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right flex justify-end gap-2">
-                      <TeacherProfileModal teacher={teacher} />
-                      <Button
-                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        title="Assign Subjects"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setAssignSubjectsModalOpen(true);
-                        }}
-                      >
-                        <BookOpen className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        title="Assign Classes"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setAssignClassesModalOpen(true);
-                        }}
-                      >
-                        <GraduationCap className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        className="hover:scale-110 hover:text-white-600 transition cursor-pointer"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTeacher(teacher);
-                          setEditModalOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <DeleteStudentButton
-                        id={teacher.id}
-                        name={`${teacher.firstName} ${teacher.lastName}`}
-                        fetcher={fetcher}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+
+                            <DeleteStudentButton
+                              id={teacher.id}
+                              name={`${teacher.firstName} ${teacher.lastName}`}
+                              fetcher={fetcher}
+                            />
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                )}
               </TableBody>
             </Table>
           </div>
