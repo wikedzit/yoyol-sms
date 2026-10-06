@@ -16,5 +16,7 @@ export * from './academic-years';
 export * from './campuses';
 export * from './school-themes';
 export * from './roles';
+export * from './permissions';
+export * from './role-permissions';
 export * from './school-memberships';
 export * from './school-extensions';

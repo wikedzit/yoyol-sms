@@ -36,6 +36,8 @@ const mainNavigation = [
       { name: "Academic Year", href: "/schools/academic-year" },
       { name: "Subjects", href: "/subjects", icon: FileText },
       { name: "Classrooms", href: "/classes", icon: DoorOpen },
+      { name: "Members", href: "/schools/members", labelKey: "schoolMembers" },
+      { name: "Roles", href: "/schools/roles", labelKey: "schoolRoles" },
       { name: "Extensions", href: "/extensions", labelKey: "installExtensions" },
       { name: "Themes", href: "/themes", labelKey: "installThemes" },
     ],

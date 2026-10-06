@@ -11,7 +11,9 @@ import {
   AlertDialogTrigger,
 } from '~/components/ui/alert-dialog';
 import { Trash2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useFetcher } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useLanguage } from '~/lib/i18n';
 
 export const DeleteButton = ({
@@ -31,6 +33,13 @@ export const DeleteButton = ({
 }) => {
   const fetcher = externalFetcher || useFetcher();
   const { t } = useLanguage();
+  const failure = fetcher.data as { error?: unknown } | undefined;
+
+  useEffect(() => {
+    if (typeof failure?.error === 'string' && failure.error.length > 0) {
+      toast.error(failure.error);
+    }
+  }, [failure?.error]);
 
   return (
     <AlertDialog>

@@ -507,3 +507,17 @@ under each feature.
   response steps (SRS DP-7).
 - **DOC-09 Contributor quickstart.** One documented command sequence to get a working local
   environment with seeded data (SRS DR-9).
+
+## 12. Catalog gaps (GAP)
+
+These rows were in the adoption plan before they had catalog IDs. Phase 1 owns the school and identity gaps.
+
+- **GAP-SCH-01 School profile.** Create, view, and update a school, including logo and colours. Theme packages are installed on `/themes`.
+- **GAP-SCH-02 Archive a school.** An archived school leaves the school switcher. Permission checks fail except restore, so the owner can still sign in and restore it.
+- **GAP-SCH-03 Campuses.** Search and filter campuses on the school profile. Removing a campus is refused while students, staff, or classes still use it. Setting a campus as main clears the previous main campus.
+- **GAP-IAM-01 Own profile.** A signed-in person can update their name, phone, photo, and language, and can change their password.
+- **GAP-IAM-02 Membership status.** Suspend, restore, or remove a membership without deleting the person. The last active admin cannot be removed.
+- **GAP-IAM-03 Custom roles.** Create, rename, and delete roles that are not built in. Built-in roles stay protected, and a role in use cannot be deleted.
+- **GAP-IAM-04 Registration.** Signing up still works. A new account is not placed in a school until onboarding or an invitation.
+- **GAP-IAM-05 Members.** List the people in a school and change the role on a membership.
+- **GAP-NTF-01 Contact channel.** A parent chooses a contact channel from the ones the school offers. This waits for phase 2.

@@ -4,6 +4,7 @@ import { roles } from '../database/roles';
 import { school } from '../database/school';
 import { schoolMemberships } from '../database/school-memberships';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import AccessService from './access';
 
 const systemRoles = [
   { key: 'admin', name: 'Admin' },
@@ -62,6 +63,8 @@ export default class TenancyService {
     if (!adminRole) {
       return;
     }
+
+    await new AccessService(this.db, ownerUserId).ensurePermissions(schoolId);
 
     const membership = await this.db
       .select({ id: schoolMemberships.id })

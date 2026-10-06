@@ -95,13 +95,20 @@ export async function action({
       );
     }
 
-    const deleted = await services.campus.delete(id);
+    try {
+      const deleted = await services.campus.delete(id);
 
-    if (!deleted) {
-      return Response.json(
-        { error: 'Failed to delete campus.' },
-        { status: 400 }
-      );
+      if (!deleted) {
+        return Response.json(
+          { error: 'Failed to delete campus.' },
+          { status: 400 }
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'Failed to delete campus.';
+      return Response.json({ error: message }, { status: 400 });
     }
 
     return redirect('/schools/profile');

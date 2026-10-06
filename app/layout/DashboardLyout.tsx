@@ -1,7 +1,9 @@
 import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, Outlet, redirect, useLoaderData } from "react-router";
+import { Link, Outlet, redirect, useLoaderData, useLocation } from "react-router";
 import { authCookie } from "workers/utils/cookies.server";
+import { selectSchoolId } from "~/lib/selected-school";
+import { schoolCookie } from "workers/utils/cookies.server";
 import { Button } from "~/components/ui/button";
 import AppSidebar from "~/Dahsboard/Sidebar";
 import jwt from "@tsndr/cloudflare-worker-jwt";
@@ -38,8 +40,25 @@ export async function loader({ request, context }: any) {
   const user = payload.payload as { id: number; email: string; role: string };
   const account = await context.services.users.findUserByEmail(user.email);
   const activeThemeCss = await context.services.schoolThemes.getActiveCss();
+  await context.services.tenancy.ensureForCurrentOwner();
+  const ownedSchools = await context.services.school.getAll();
+  const activeSchools = ownedSchools.filter(
+    (school: { status: string }) => school.status !== "archived",
+  );
+  const remembered = await schoolCookie.parse(cookieHeader || "");
+  const rememberedId = Number(remembered);
+  const selectedSchoolId = selectSchoolId(
+    new URL(request.url),
+    activeSchools,
+    Number.isInteger(rememberedId) ? rememberedId : null,
+  );
 
   return {
+    schools: activeSchools.map((school: { id: number; name: string }) => ({
+      id: school.id,
+      name: school.name,
+    })),
+    selectedSchoolId,
     activeThemeCss,
     user: {
       email: user.email,
@@ -53,7 +72,9 @@ export async function loader({ request, context }: any) {
 }
 
 const DashboardLayout = () => {
-  const { user, activeThemeCss } = useLoaderData<{
+  const { user, activeThemeCss, schools, selectedSchoolId } = useLoaderData<{
+    schools: { id: number; name: string }[];
+    selectedSchoolId: number | null;
     activeThemeCss: string | null;
     user: {
       email: string;
@@ -78,6 +99,8 @@ const DashboardLayout = () => {
       theme={theme}
       setTheme={setTheme}
       activeThemeCss={activeThemeCss}
+      schools={schools}
+      selectedSchoolId={selectedSchoolId}
     />
   );
 };
@@ -91,8 +114,11 @@ function DashboardContent({
   theme,
   setTheme,
   activeThemeCss,
+  schools,
+  selectedSchoolId,
 }: any) {
   const { t, setLanguage } = useLanguage();
+  const location = useLocation();
   const displayName = [user?.firstName, user?.lastName]
     .filter(Boolean)
     .join(" ") || user?.email;
@@ -186,6 +212,31 @@ function DashboardContent({
                 <h1 className="text-lg lg:text-xl md:text-sm sm:text-xs font-semibold text-foreground">
                   {t('studentManagementSystem')}
                 </h1>
+                {Array.isArray(schools) && schools.length > 1 ? (
+                  <form method="post" action="/schools/switch">
+                    <input
+                      type="hidden"
+                      name="returnTo"
+                      value={`${location.pathname}${location.search}`}
+                    />
+                    <label className="sr-only" htmlFor="school-switcher">
+                      {t('switchSchool')}
+                    </label>
+                    <select
+                      id="school-switcher"
+                      name="schoolId"
+                      defaultValue={selectedSchoolId ?? undefined}
+                      onChange={(event) => event.currentTarget.form?.requestSubmit()}
+                      className="h-9 max-w-[180px] rounded-md border border-border bg-background px-2 text-sm"
+                    >
+                      {schools.map((school: { id: number; name: string }) => (
+                        <option key={school.id} value={school.id}>
+                          {school.name}
+                        </option>
+                      ))}
+                    </select>
+                  </form>
+                ) : null}
               </div>
 
               {/* Profile Dropdown */}

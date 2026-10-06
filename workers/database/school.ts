@@ -14,6 +14,7 @@ export const school = sqliteTable('school', {
   logoUrl: text('logo_url'),
   primaryColor: text('primary_color').default('#2563eb'),
   secondaryColor: text('secondary_color').default('#0f172a'),
+  status: text('status').notNull().default('active'),
   ownerUserId: integer('owner_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

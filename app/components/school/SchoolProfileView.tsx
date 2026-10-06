@@ -10,7 +10,8 @@ import {
   Plus,
   UserRound,
 } from 'lucide-react';
-import { Link } from 'react-router';
+import { useState } from 'react';
+import { Form, Link } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import {
@@ -47,6 +48,8 @@ export function SchoolProfileView({
   addCampusReturnTo,
 }: SchoolProfileViewProps) {
   const { t } = useLanguage();
+  const [campusQuery, setCampusQuery] = useState('');
+  const [mainCampusOnly, setMainCampusOnly] = useState(false);
 
   if (!school) {
     return (
@@ -76,6 +79,13 @@ export function SchoolProfileView({
   const logoUrl = school.logoUrl || '/assets/auth-page/yoyol-logo.png';
   const primaryColor = school.primaryColor || '#2563eb';
   const secondaryColor = school.secondaryColor || '#0f172a';
+  const isArchived = school.status === 'archived';
+  const visibleCampuses = campuses.filter((campus) => {
+    const matchesName = campus.name
+      .toLowerCase()
+      .includes(campusQuery.trim().toLowerCase());
+    return matchesName && (!mainCampusOnly || campus.isMain);
+  });
 
   return (
     <div className="min-h-screen space-y-6 pb-8">
@@ -89,6 +99,17 @@ export function SchoolProfileView({
                 {t('editSchool')}
               </Button>
             </Link>
+            <Form method="post" action="/schools/access">
+              <input type="hidden" name="schoolId" value={school.id} />
+              <input type="hidden" name="intent" value={isArchived ? 'restore' : 'archive'} />
+              <Button
+                type="submit"
+                variant="outline"
+                className="cursor-pointer"
+              >
+                {isArchived ? t('restoreSchool') : t('archiveSchool')}
+              </Button>
+            </Form>
             <Button
               asChild
               className="flex items-center gap-2 bg-primary-gradient text-white hover:scale-110 hover:text-white-600 cursor-pointer transition-all duration-300"
@@ -213,12 +234,33 @@ export function SchoolProfileView({
           <CardTitle>{t('campuses')}</CardTitle>
           <CardDescription>{t('campusesBelongToSchool')}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {isArchived ? (
+            <p className="text-sm text-muted-foreground">{t('schoolArchived')}</p>
+          ) : null}
           {campuses.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('noCampusesYet')}</p>
           ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  value={campusQuery}
+                  onChange={(event) => setCampusQuery(event.target.value)}
+                  placeholder={t('campusSearch')}
+                  aria-label={t('campusSearch')}
+                  className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={mainCampusOnly}
+                    onChange={(event) => setMainCampusOnly(event.target.checked)}
+                  />
+                  {t('mainCampusOnly')}
+                </label>
+              </div>
             <ul className="space-y-3">
-              {campuses.map((campus) => (
+              {visibleCampuses.map((campus) => (
                 <li
                   key={campus.id}
                   className="rounded-lg border border-border px-4 py-3"
@@ -259,6 +301,7 @@ export function SchoolProfileView({
                 </li>
               ))}
             </ul>
+            </>
           )}
         </CardContent>
       </Card>

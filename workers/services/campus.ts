@@ -8,6 +8,7 @@ import {
 } from '../database/campuses';
 
 import { school } from '../database/school';
+import { formClasses } from '../database/academic-levels';
 import { students } from '../database/students';
 import { teachers } from '../database/teachers';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
@@ -188,6 +189,7 @@ export default class CampusService {
         await this.db
           .select({
             id: campus.id,
+            schoolId: campus.schoolId,
           })
           .from(campus)
           .innerJoin(
@@ -207,6 +209,13 @@ export default class CampusService {
 
       if (!existingCampus) {
         return null;
+      }
+
+      if (data.isMain) {
+        await this.db
+          .update(campus)
+          .set({ isMain: false, updatedAt: Date.now() })
+          .where(eq(campus.schoolId, existingCampus.schoolId));
       }
 
       const result = await this.db
@@ -271,35 +280,36 @@ export default class CampusService {
         return false;
       }
 
-    // Students and teachers belong to this campus. Remove them
-    // before the campus row, because the database link only
-    // clears campus_id and would otherwise leave the people behind.
-    await this.db
-      .delete(students)
-      .where(
-        and(
-          eq(students.campusId, id),
-          eq(students.ownerUserId, ownerUserId),
-        ),
-      );
+      const studentUsing = await this.db
+        .select({ id: students.id })
+        .from(students)
+        .where(eq(students.campusId, id))
+        .get();
+      const teacherUsing = await this.db
+        .select({ id: teachers.id })
+        .from(teachers)
+        .where(eq(teachers.campusId, id))
+        .get();
+      const classUsing = await this.db
+        .select({ id: formClasses.id })
+        .from(formClasses)
+        .where(eq(formClasses.campusId, id))
+        .get();
 
-    await this.db
-      .delete(teachers)
-      .where(
-        and(
-          eq(teachers.campusId, id),
-          eq(teachers.ownerUserId, ownerUserId),
-        ),
-      );
+      if (studentUsing || teacherUsing || classUsing) {
+        throw new Error('This campus is still in use.');
+      }
 
-    await this.db
-      .delete(campus)
-      .where(
-        eq(campus.id, id)
-      );
+      await this.db
+        .delete(campus)
+        .where(eq(campus.id, id));
 
       return true;
     } catch (error) {
+      if (error instanceof Error && error.message === 'This campus is still in use.') {
+        throw error;
+      }
+
       console.error(
         'Error deleting campus:',
         error
