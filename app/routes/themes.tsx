@@ -4,10 +4,12 @@ import { SchoolThemeCard } from '~/components/school/SchoolThemeCard';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useLanguage } from '~/lib/i18n';
 import { selectSchoolId } from '~/lib/selected-school';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 import type { SelectSchool } from 'workers/database/school';
 import type { ListedSchoolTheme } from 'workers/services/school-themes';
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.read');
   await context.services.tenancy.ensureForCurrentOwner();
   const schools: SelectSchool[] = await context.services.school.getAll();
   const schoolId = selectSchoolId(new URL(request.url), schools);
@@ -28,6 +30,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.update');
   const form = await request.formData();
   const schoolId = Number(form.get('schoolId'));
   const intent = String(form.get('intent') || '');

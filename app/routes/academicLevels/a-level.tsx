@@ -16,6 +16,7 @@ import { PageHeader } from '~/components/ui/PageHeader';
 import { AddStreamModal } from '~/components/modal/addStreamModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { useLanguage } from '~/lib/i18n';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 import type { LevelType } from '~/type/shools';
 import { LEVEL_CONFIG } from '~/config/academic-levels';
 
@@ -23,7 +24,8 @@ const LEVEL_TYPE: LevelType = 'a-level';
 const LEVEL_INFO = LEVEL_CONFIG[LEVEL_TYPE];
 
 // --- Loader: fetch A-Level data with streams ---
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.read');
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };
@@ -63,6 +65,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
 // --- Action: handle stream CRUD operations ---
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.update');
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };

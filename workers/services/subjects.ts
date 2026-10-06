@@ -1,5 +1,5 @@
 import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
+import type { AppDatabase } from '../database/app-database';
 import {
   subject,
   type SelectSubject,
@@ -39,10 +39,10 @@ export type GetSubjectsInput = z.infer<typeof getSubjectsSchema>;
 
 // --- Subject Service ---
 export default class SubjectService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(db: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(db: AppDatabase, ownerUserId: number | null) {
     this.db = db;
     this.ownerUserId = ownerUserId;
   }

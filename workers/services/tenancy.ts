@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { roles } from '../database/roles';
 import { school } from '../database/school';
 import { schoolMemberships } from '../database/school-memberships';
@@ -16,7 +16,7 @@ const systemRoles = [
 
 export default class TenancyService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

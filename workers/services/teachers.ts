@@ -1,5 +1,5 @@
-import { and, eq, like, asc, desc } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import { and, eq, like, asc, desc, ne } from 'drizzle-orm';
+import type { AppDatabase } from '../database/app-database';
 import { teachers, type SelectTeacher } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
@@ -43,7 +43,7 @@ export type GetTeachersInput = z.infer<typeof GetTeachersSchema>;
 // --- Teacher Service ---
 export default class TeacherService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 
@@ -85,7 +85,9 @@ export default class TeacherService {
       const result = await this.db
         .select()
         .from(teachers)
-        .where(eq(teachers.ownerUserId, ownerUserId));
+        .where(
+          and(eq(teachers.ownerUserId, ownerUserId), ne(teachers.status, 'Archived')),
+        );
 
       return result.length;
     } catch (error) {
@@ -146,7 +148,10 @@ export default class TeacherService {
           ? teachers.createdAt
           : teachers.updatedAt;
 
-      const filters = [eq(teachers.ownerUserId, ownerUserId)];
+      const filters = [
+        eq(teachers.ownerUserId, ownerUserId),
+        ne(teachers.status, 'Archived'),
+      ];
       if (search) {
         filters.push(like(teachers.firstName, `%${search}%`));
       }
@@ -191,11 +196,12 @@ export default class TeacherService {
   async deleteTeacherById(id: number): Promise<boolean> {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      await this.db
-        .delete(teachers)
+      const result = await this.db
+        .update(teachers)
+        .set({ status: 'Archived', updatedAt: Date.now() })
         .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
-        .execute();
-      return true;
+        .returning({ id: teachers.id });
+      return result.length > 0;
     } catch (error) {
       console.error('Error deleting teacher:', error);
       return false;

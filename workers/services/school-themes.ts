@@ -1,5 +1,5 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import {
   buildThemeCss,
   defaultThemeKey,
@@ -31,7 +31,7 @@ const bundledTheme: ListedSchoolTheme = {
 
 export default class SchoolThemeService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

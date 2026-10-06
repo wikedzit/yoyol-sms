@@ -19,8 +19,10 @@ import {
 } from '~/components/ui/card';
 import type SchoolService from 'workers/services/school';
 import { useLanguage } from '~/lib/i18n';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.update');
   const services = context.services as { school: SchoolService };
   const form = await request.formData();
 

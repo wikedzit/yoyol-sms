@@ -1,5 +1,5 @@
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { drizzle } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
+import { createD1Adapter } from '../database/d1-adapter';
 import ClassService from './class';
 import StudentService from './student';
 import TeacherService from './teachers';
@@ -46,14 +46,14 @@ export default class ServiceContainer {
   public readonly extensions: ExtensionService;
   public readonly access: AccessService;
   public readonly recordScope: RecordScopeService;
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
 
   constructor(
     database: D1Database,
     jwtSecret: string,
     ownerUserId: number | null = null,
   ) {
-    this.db = drizzle(database);
+    this.db = createD1Adapter(database).db;
     this.users = new AuthService(this.db, jwtSecret);
     this.class = new ClassService(this.db, ownerUserId);
     this.student = new StudentService(this.db, ownerUserId);

@@ -5,7 +5,7 @@ import {
   type InsertGrade,
   type SelectGrade,
 } from '../database/grades';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { students } from '../database/students';
 import { subject } from '../database/subjects';
 import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
@@ -101,10 +101,10 @@ export type GradeWithRelations = SelectGrade & {
  * Grades Service Class
  */
 export default class GradeService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
   }

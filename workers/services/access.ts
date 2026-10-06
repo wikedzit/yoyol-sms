@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { permissions } from '../database/permissions';
 import { rolePermissions } from '../database/role-permissions';
 import { roles } from '../database/roles';
@@ -40,7 +40,7 @@ export type SchoolRole = {
 
 export default class AccessService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

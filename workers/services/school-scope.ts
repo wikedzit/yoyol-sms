@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { formClasses } from '../database/academic-levels';
 import { classes } from '../database/class';
 import { school } from '../database/school';
@@ -10,7 +10,7 @@ import { teachers } from '../database/teachers';
 // A single school can be stamped onto new rows. Several schools stay unset
 // until the school switcher chooses one.
 export async function schoolIdForOwner(
-  db: DrizzleD1Database,
+  db: AppDatabase,
   ownerUserId: number,
 ): Promise<number | null> {
   const schools = await db
@@ -27,7 +27,7 @@ export async function schoolIdForOwner(
 }
 
 async function schoolIdOn(
-  db: DrizzleD1Database,
+  db: AppDatabase,
   readSchoolId: Promise<{ schoolId: number | null } | undefined>,
 ): Promise<number | null> {
   const row = await readSchoolId;
@@ -35,7 +35,7 @@ async function schoolIdOn(
 }
 
 export function schoolIdForTeacher(
-  db: DrizzleD1Database,
+  db: AppDatabase,
   teacherId: number,
 ): Promise<number | null> {
   return schoolIdOn(
@@ -49,7 +49,7 @@ export function schoolIdForTeacher(
 }
 
 export function schoolIdForClass(
-  db: DrizzleD1Database,
+  db: AppDatabase,
   classId: number,
 ): Promise<number | null> {
   return schoolIdOn(
@@ -63,7 +63,7 @@ export function schoolIdForClass(
 }
 
 export function schoolIdForStudent(
-  db: DrizzleD1Database,
+  db: AppDatabase,
   studentId: number,
 ): Promise<number | null> {
   return schoolIdOn(
@@ -77,7 +77,7 @@ export function schoolIdForStudent(
 }
 
 export function schoolIdForFormClass(
-  db: DrizzleD1Database,
+  db: AppDatabase,
   formClassId: number,
 ): Promise<number | null> {
   return schoolIdOn(

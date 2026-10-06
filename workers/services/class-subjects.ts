@@ -1,5 +1,5 @@
 import { eq, and, getTableColumns } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import {
   classSubjects,
   classes,
@@ -12,7 +12,7 @@ import { schoolIdForClass } from './school-scope';
 
 export default class ClassSubjectService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

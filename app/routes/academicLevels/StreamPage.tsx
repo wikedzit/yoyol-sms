@@ -32,9 +32,11 @@ import {
   BreadcrumbSeparator,
 } from '~/components/ui/breadcrumb';
 import { getFormsForLevel, getLevelConfig } from '~/config/academic-levels';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 // --- Loader: fetch stream with class counts for each form ---
 export async function loader({ context, params, request }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.read');
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };

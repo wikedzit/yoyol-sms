@@ -80,9 +80,9 @@ Each slice is its own branch and pull request into `develop`.
 | 0.4 | `eng-04-test-harness` | ENG-02, ENG-03, ENG-04, ENG-05, ENG-07, ENG-08, ENG-10 | 0.2 | not started |
 | 0.5 | `eng-01-workspace-layout` | ENG-01 | 0.4, so the move is covered by tests | not started |
 | 1.1 | `krn-iam-tenancy` | KRN-IAM-01, KRN-IAM-02, KRN-IAM-03, KRN-IAM-04, KRN-DAT-10, GAP-SCH-01, GAP-SCH-02, GAP-SCH-03 | 0.5 | in progress |
-| 1.2 | `krn-iam-permissions` | KRN-IAM-05, KRN-IAM-06, KRN-IAM-07, KRN-IAM-08, GAP-IAM-02, GAP-IAM-03, GAP-IAM-05 | 1.1 | in progress |
-| 1.3 | `krn-iam-sessions` | KRN-IAM-09, KRN-IAM-10, KRN-IAM-11, KRN-IAM-12, KRN-IAM-13, KRN-IAM-14, KRN-IAM-15, KRN-IAM-16, GAP-IAM-01, GAP-IAM-04 | 1.1 | not started |
-| 1.4 | `krn-dat-adapter` | KRN-DAT-01, KRN-DAT-02, KRN-DAT-03, KRN-DAT-04, ENG-06, ENG-09 | 0.5 | not started |
+| 1.2 | `krn-iam-permissions` | KRN-IAM-05, KRN-IAM-06, KRN-IAM-07, KRN-IAM-08, GAP-IAM-02, GAP-IAM-03, GAP-IAM-05 | 1.1 | done |
+| 1.3 | `krn-iam-sessions` | KRN-IAM-09, KRN-IAM-10, KRN-IAM-11, KRN-IAM-12, KRN-IAM-13, KRN-IAM-14, KRN-IAM-15, KRN-IAM-16, GAP-IAM-01, GAP-IAM-04 | 1.1 | in progress |
+| 1.4 | `krn-dat-adapter` | KRN-DAT-01, KRN-DAT-02, KRN-DAT-03, KRN-DAT-04, ENG-06, ENG-09 | 0.5 | in progress |
 | 2.1 | `krn-reg-lifecycle` | KRN-REG-01 to KRN-REG-09, SDK-01 | 1.2, 1.4 | not started |
 | 2.2 | `krn-dat-extensions` | KRN-DAT-05, KRN-DAT-06, KRN-DAT-07, KRN-DAT-08, KRN-DAT-09, SDK-02, SDK-04 | 2.1, D-03 | not started |
 | 2.3 | `krn-evt-hooks` | KRN-EVT-01 to KRN-EVT-07 | 2.1 | not started |
@@ -142,7 +142,7 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 | KRN-IAM-03 | `school_memberships`. Owner is an admin. Screens still filter by `owner_user_id`. | 0002 | done |
 | KRN-IAM-04 | Roles as data. Five system roles are seeded per school and marked system. Custom roles are edited on `/schools/roles`. | 0002 | done |
 | KRN-IAM-05 | Permission keys are seeded. An admin can change grants for every role except admin, which keeps every permission. | 0002 | done |
-| KRN-IAM-06 | `can()` guards the school profile, campuses, classes, students, teachers, members, roles, and archive. `isAdminRole()` still gates onboarding so sign-in feels the same. Other loaders are still open. | 0002 | in progress |
+| KRN-IAM-06 | `can()` guards school profile, campuses, classes, class detail, levels, academic year, students, teachers, grades, members, roles, archive, extensions, and themes. `isAdminRole()` still gates onboarding so sign-in feels the same. | 0002 | done |
 | KRN-IAM-07 | A teacher sees assigned classes, subjects, and those students. A parent sees linked students. A student sees their own record. An admin still sees the whole school. The link is set on Members. | 0002 | done |
 | KRN-IAM-08 | The header shows a school switcher when the account has two or more active schools. The choice is stored in the `yoyol-school` cookie. | 0002 | done |
 | KRN-IAM-09 | Argon2id password hashes | 0002 | not started |
@@ -152,12 +152,12 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 | KRN-IAM-13 | TOTP, required for admin and finance when the school says so | 0002 | not started |
 | KRN-IAM-14 | Invitations by email or phone | 0002 | not started |
 | KRN-IAM-15 | Password reset that does not reveal whether the account exists | 0002 | not started |
-| KRN-IAM-16 | Security headers and CSRF | 0002 | not started |
-| KRN-DAT-01 | `DatabaseAdapter` selected by `DB_DRIVER` | 0003 | not started |
-| KRN-DAT-02 | D1 adapter | 0003 | not started |
-| KRN-DAT-03 | PostgreSQL adapter | 0003 | not started |
-| KRN-DAT-04 | Dialect-neutral column helpers | 0003 | not started |
-| KRN-DAT-10 | Deleting a campus is refused while students, staff, or classes still use it. Other deletes that remove people or money are still open. | 0002 | in progress |
+| KRN-IAM-16 | Responses set nosniff, referrer policy, frame denial, and a CSP that still allows the theme style tag. HSTS is sent only on https. CSRF tokens are not on forms yet, because adding them would break the current posts. | 0002 | in progress |
+| KRN-DAT-01 | `DB_DRIVER` selects `d1` unless the value is `postgres`. The Worker refuses to boot as postgres and keeps using D1. | 0003 | done |
+| KRN-DAT-02 | Services take the D1 adapter database. Seed uses the same adapter. | 0003 | done |
+| KRN-DAT-03 | A Node postgres adapter module exists and is kept out of the Worker typecheck. `pg` is not installed, and the Worker does not call it. | 0003 | in progress |
+| KRN-DAT-04 | `columnPlan` names sqlite and postgres column types. Existing tables still use the sqlite definitions. | 0003 | in progress |
+| KRN-DAT-10 | Campus delete is refused while in use. Student and teacher delete sets status to Archived and hides those rows. Class delete is refused while any student row still points at the class. A grade can still be removed, because that removes a mark. | 0002 | in progress |
 
 KRN-DAT-05 to KRN-DAT-09 and KRN-DAT-11 to KRN-DAT-13 are kernel work and are listed in phase 2, because they need the registry. They are still required.
 

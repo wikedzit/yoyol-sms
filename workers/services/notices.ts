@@ -5,7 +5,7 @@ import {
   type InsertNotice,
   type SelectNotice,
 } from '../database/notices';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
 
@@ -41,10 +41,10 @@ export type GetNoticesInput = z.infer<typeof GetNoticesSchema>;
 
 // --- Notice Service Class ---
 export default class NoticeService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
   }

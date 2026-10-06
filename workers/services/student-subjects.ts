@@ -1,4 +1,4 @@
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { eq, and, getTableColumns } from 'drizzle-orm';
 import {
   studentSubjects,
@@ -11,7 +11,7 @@ import { schoolIdForStudent } from './school-scope';
 
 export default class StudentSubjectService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

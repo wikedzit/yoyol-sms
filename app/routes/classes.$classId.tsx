@@ -6,6 +6,8 @@ import {
   useParams,
   Link,
   useRevalidator,
+  type LoaderFunctionArgs,
+  type ActionFunctionArgs,
 } from 'react-router';
 import { Card, CardContent, CardHeader } from '~/components/ui/card';
 import {
@@ -31,10 +33,7 @@ import {
 import AddStudentToClassModal from '~/components/modal/AddStudentToClassModal';
 import EditStudentModal from '~/components/modal/EditStudentModal';
 import { StudentProfilesModal } from '~/components/modal/StudentProfileModal';
-import {
-  type LoaderFunctionArgs,
-  type ActionFunctionArgs,
-} from 'react-router-dom';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 import type StudentService from 'workers/services/student';
 import type SubjectService from 'workers/services/subjects';
 import type AcademicLevelService from 'workers/services/academic-levels';
@@ -65,7 +64,8 @@ interface EnrichedFormClass {
 }
 
 // --- Loader ---
-export async function loader({ params, context }: LoaderFunctionArgs) {
+export async function loader({ request, params, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "school.profile.read");
   const { classId } = params;
   const services = context.services as {
     student: StudentService;
@@ -102,6 +102,7 @@ export async function loader({ params, context }: LoaderFunctionArgs) {
 
 // --- Action ---
 export async function action({ request, context, params }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.update');
   const { classId } = params;
   const services = context.services as {
     student: StudentService;

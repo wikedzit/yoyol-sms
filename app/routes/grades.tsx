@@ -7,6 +7,8 @@ import {
   type ActionFunctionArgs,
 } from "react-router";
 import { z } from "zod";
+import { requireSchoolPermission } from "~/lib/require-school-permission";
+import { loadRecordScope } from "~/lib/load-record-scope";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -60,6 +62,7 @@ const GradeUpdateSchema = GradeCreateSchema.partial().extend({
 
 // Loader: fetch grades and all related options
 export async function loader({ context, request }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "students.record.read");
   const services = context.services as {
     grade: GradeService;
     subject: SubjectService;
@@ -87,6 +90,12 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     teacherId: teacherId ? parseInt(teacherId, 10) : undefined,
   });
 
+  const scope = await loadRecordScope(request, context.services);
+  const gradeRows = grades.filter((grade): grade is GradeWithRelations => grade !== null);
+  const visibleGrades = scope.kind === "school"
+    ? gradeRows
+    : gradeRows.filter((grade) => scope.studentIds.includes(grade.studentId));
+
   const [streams, forms, subjects, students, teachers] = await Promise.all([
     services.academicLevel.getAllStreams(),
     services.academicLevel.getAllForms(),
@@ -109,7 +118,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   ]);
 
   return Response.json({
-    grades: grades.filter((g): g is GradeWithRelations => g !== null),
+    grades: visibleGrades,
     streams,
     forms,
     subjects,
@@ -120,6 +129,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
 
 // Action: handle create, update, delete with Zod validation
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "students.record.write");
   const services = context.services as { grade: GradeService };
   const form = await request.formData();
   const method = (form.get("_method") as string) || request.method;

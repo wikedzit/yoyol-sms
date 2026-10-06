@@ -15,8 +15,9 @@ import {
   type SelectFormClass,
 } from '../database/academic-levels';
 import { campus } from '../database/campuses';
+import { students } from '../database/students';
 import { school } from '../database/school';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
 
@@ -75,10 +76,10 @@ export type UpdateFormClassInput = z.infer<typeof UpdateFormClassSchema>;
 
 // --- Academic Level Service Class ---
 export default class AcademicLevelService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
   }
@@ -633,6 +634,15 @@ export default class AcademicLevelService {
 
   async deleteFormClass(id: number): Promise<boolean> {
     try {
+      const studentUsing = await this.db
+        .select({ id: students.id })
+        .from(students)
+        .where(eq(students.formClassId, id))
+        .get();
+      if (studentUsing) {
+        throw new Error('This class still has students.');
+      }
+
       const result = await this.db
         .delete(formClasses)
         .where(
@@ -644,6 +654,9 @@ export default class AcademicLevelService {
         .returning({ id: formClasses.id });
       return result.length > 0;
     } catch (error) {
+      if (error instanceof Error && error.message === 'This class still has students.') {
+        throw error;
+      }
       console.error('Error deleting form class:', error);
       return false;
     }

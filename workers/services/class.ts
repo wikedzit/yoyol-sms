@@ -1,7 +1,7 @@
 import { eq, desc, asc, like, sql, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { classes, type InsertClass, type SelectClass } from '../database/class';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { students } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
@@ -70,10 +70,10 @@ export type GetClassesInput = z.infer<typeof GetClassesSchema>;
  * @deprecated Use AcademicLevelService for new school features
  */
 export default class ClassService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
   }

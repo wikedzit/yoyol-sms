@@ -8,7 +8,7 @@ import {
   type InsertTerm,
   type SelectTerm,
 } from '../database/academic-years';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
 
@@ -107,10 +107,10 @@ export type CurrentTermStatus =
   | { term: null; status: 'unset' };
 
 export default class AcademicYearService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
   }

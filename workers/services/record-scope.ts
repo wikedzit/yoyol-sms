@@ -1,5 +1,5 @@
 import { and, eq, inArray } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { roles } from '../database/roles';
 import { schoolMemberships } from '../database/school-memberships';
 import { studentGuardians } from '../database/student-guardians';
@@ -14,7 +14,7 @@ const limitedRoles = new Set(['teacher', 'student', 'parent']);
 
 export default class RecordScopeService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

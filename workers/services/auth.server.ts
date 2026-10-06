@@ -1,4 +1,4 @@
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { eq } from 'drizzle-orm';
 import z from 'zod';
 import jwt from '@tsndr/cloudflare-worker-jwt';
@@ -24,10 +24,10 @@ export type SignUpResult =
   | { error: string };
 
 export default class AuthService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private jwtSecret: string;
 
-  constructor(database: DrizzleD1Database, jwtSecret: string) {
+  constructor(database: AppDatabase, jwtSecret: string) {
     this.db = database;
     this.jwtSecret = jwtSecret;
   }

@@ -24,6 +24,7 @@ import {
 import { DeleteStudentButton } from "~/components/DeleteStudentButton";
 import { PaginationControls } from "~/components/shared/PaginationControls";
 import { usePagination } from "~/hooks/usePagination";
+import { requireSchoolPermission } from "~/lib/require-school-permission";
 import AddAcademicYearModal from "~/components/modal/AddAcademicYearModal";
 import EditAcademicYearModal from "~/components/modal/EditAcademicYearModal";
 import ManageTermsModal from "~/components/modal/ManageTermsModal";
@@ -31,7 +32,8 @@ import ManageTermsModal from "~/components/modal/ManageTermsModal";
 import type AcademicYearService from "workers/services/academic-years";
 
 // --- Loader ---
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "school.profile.read");
   const services = context.services as { academicYear: AcademicYearService };
   const currentTerm = await services.academicYear.getCurrentTerm();
   const years = await services.academicYear.getAllYearsWithTerms();
@@ -40,6 +42,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
 // --- Action ---
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "school.profile.update");
   const services = context.services as { academicYear: AcademicYearService };
   const form = await request.formData();
   const method = (form.get("_method") as string) || request.method;

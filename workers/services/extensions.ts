@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import {
   bundledExtensions,
   findBundledExtension,
@@ -15,7 +15,7 @@ export type InstalledExtension = BundledExtension & {
 
 export default class ExtensionService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 

@@ -1,4 +1,4 @@
-import { and, eq, desc, asc, like } from 'drizzle-orm';
+import { and, eq, desc, asc, like, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   students,
@@ -7,7 +7,7 @@ import {
 } from '../database/students';
 import { campus } from '../database/campuses';
 import { school } from '../database/school';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
 
@@ -93,7 +93,7 @@ export type GetStudentsInput = z.infer<typeof GetStudentsSchema>;
 // --- Student service class ---
 export default class StudentService {
   constructor(
-    private db: DrizzleD1Database,
+    private db: AppDatabase,
     private ownerUserId: number | null,
   ) {}
 
@@ -289,7 +289,10 @@ export default class StudentService {
           ? students.createdAt
           : students.updatedAt;
 
-      const filters = [eq(students.ownerUserId, ownerUserId)];
+      const filters = [
+        eq(students.ownerUserId, ownerUserId),
+        ne(students.status, 'Archived'),
+      ];
       if (search) {
         filters.push(like(students.firstName, `%${search}%`));
       }
@@ -338,7 +341,8 @@ export default class StudentService {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const result = await this.db
-        .delete(students)
+        .update(students)
+        .set({ status: 'Archived', updatedAt: Date.now() })
         .where(
           and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
         )
@@ -363,6 +367,7 @@ export default class StudentService {
           and(
             eq(students.formClassId, formClassId),
             eq(students.ownerUserId, ownerUserId),
+            ne(students.status, 'Archived'),
           ),
         )
         .orderBy(asc(students.firstName), asc(students.lastName));
@@ -385,6 +390,7 @@ export default class StudentService {
           and(
             eq(students.formClassId, formClassId),
             eq(students.ownerUserId, ownerUserId),
+            ne(students.status, 'Archived'),
           ),
         );
       return result.length;
@@ -403,7 +409,9 @@ export default class StudentService {
       const result = await this.db
         .select()
         .from(students)
-        .where(eq(students.ownerUserId, ownerUserId));
+        .where(
+          and(eq(students.ownerUserId, ownerUserId), ne(students.status, 'Archived')),
+        );
       return result.length;
     } catch (error) {
       console.error('Error counting students:', error);
@@ -424,6 +432,7 @@ export default class StudentService {
           and(
             eq(students.schoolId, schoolId),
             eq(students.ownerUserId, ownerUserId),
+            ne(students.status, 'Archived'),
           ),
         )
         .orderBy(asc(students.firstName), asc(students.lastName));

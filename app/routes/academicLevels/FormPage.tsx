@@ -29,9 +29,11 @@ import type { LevelType } from '~/type/shools';
 import CreateClassModal from '~/components/modal/CreateClassModal';
 import EditClassModal from '~/components/modal/EditClassModal';
 import { getLevelConfig, isValidFormForLevel } from '~/config/academic-levels';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 // --- Loader: fetch form with its classes ---
-export async function loader({ context, params }: LoaderFunctionArgs) {
+export async function loader({ request, context, params }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.read');
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };
@@ -119,6 +121,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 
 // --- Action: handle form class CRUD operations ---
 export async function action({ request, context, params }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.update');
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };

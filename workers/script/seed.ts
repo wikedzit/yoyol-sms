@@ -5,7 +5,7 @@
  * Seeds a default admin for local development only.
  */
 import { eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/d1';
+import { createD1Adapter } from '../database/d1-adapter';
 import { getPlatformProxy } from 'wrangler';
 import { users } from '../database/users';
 import { hashPassword } from '../utils/password.server';
@@ -19,7 +19,7 @@ async function seed() {
   }>();
 
   try {
-    const db = drizzle(env.DB);
+    const db = createD1Adapter(env.DB).db;
 
     const existing = await db
       .select()

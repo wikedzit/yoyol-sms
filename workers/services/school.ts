@@ -1,7 +1,7 @@
 import { and, eq, like, asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { school, type SelectSchool } from '../database/school';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import TenancyService from './tenancy';
 
@@ -70,10 +70,10 @@ export default class SchoolService {
   return this.getAll();
 }
 
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
   }

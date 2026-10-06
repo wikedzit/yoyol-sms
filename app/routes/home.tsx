@@ -18,9 +18,11 @@ import type AcademicLevelService from "workers/services/academic-levels";
 import type GradeService from "workers/services/grades";
 import type NoticeService from "workers/services/notices";
 import { useLanguage } from "~/lib/i18n";
+import { requireSchoolPermission } from "~/lib/require-school-permission";
 
 // Loader function to fetch dashboard data
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "school.profile.read");
   const services = context.services as {
     student: StudentService;
     teacher: TeacherService;

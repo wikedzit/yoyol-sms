@@ -1,5 +1,5 @@
 import { and, asc, eq } from 'drizzle-orm';
-import type { DrizzleD1Database } from 'drizzle-orm/d1';
+import type { AppDatabase } from '../database/app-database';
 
 import {
   campus,
@@ -14,11 +14,11 @@ import { teachers } from '../database/teachers';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export default class CampusService {
-  private db: DrizzleD1Database;
+  private db: AppDatabase;
   private ownerUserId: number | null;
 
   constructor(
-    database: DrizzleD1Database,
+    database: AppDatabase,
     ownerUserId: number | null
   ) {
     this.db = database;
