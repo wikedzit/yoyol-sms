@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { school, type SelectSchool } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import TenancyService from './tenancy';
 
 const SchoolProfileSchema = z.object({
   name: z
@@ -168,7 +169,19 @@ export default class SchoolService {
         })
         .returning();
 
-      return result[0] ?? null;
+      const created = result[0] ?? null;
+      if (created) {
+        try {
+          await new TenancyService(this.db, ownerUserId).ensureSchool(
+            created.id,
+            ownerUserId,
+          );
+        } catch (membershipError) {
+          console.error('Unable to create the school membership:', membershipError);
+        }
+      }
+
+      return created;
     } catch (error) {
       console.error('Error creating school:', error);
       return null;

@@ -36,6 +36,8 @@ const mainNavigation = [
       { name: "Academic Year", href: "/schools/academic-year" },
       { name: "Subjects", href: "/subjects", icon: FileText },
       { name: "Classrooms", href: "/classes", icon: DoorOpen },
+      { name: "Extensions", href: "/extensions", labelKey: "installExtensions" },
+      { name: "Themes", href: "/themes", labelKey: "installThemes" },
     ],
   },
 
@@ -129,6 +131,7 @@ const SidebarLink = ({ item, location, onNavigate }: any) => {
    SINGLE STREAMLINED PARENT COMPONENT
 ---------------------------------------- */
 const SidebarParent = ({ item, location, onNavigate }: any) => {
+  const { t } = useLanguage();
   const isChildActive = item.children.some(
     (child: any) => location.pathname === child.href,
   );
@@ -188,7 +191,9 @@ const SidebarParent = ({ item, location, onNavigate }: any) => {
                     : "text-app-body hover:bg-accent hover:text-app-text font-medium",
                 )}
               >
-                <span className="truncate">{child.name}</span>
+                <span className="truncate">
+                  {child.labelKey ? t(child.labelKey) : child.name}
+                </span>
               </Link>
             );
           })}

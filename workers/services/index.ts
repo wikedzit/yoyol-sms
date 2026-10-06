@@ -16,6 +16,8 @@ import SchoolService from './school';
 import AcademicYearService from './academic-years';
 import CampusService from './campus';
 import SchoolThemeService from './school-themes';
+import TenancyService from './tenancy';
+import ExtensionService from './extensions';
 
 /**
  * Service Container that aggregates all individual services
@@ -38,6 +40,8 @@ export default class ServiceContainer {
   public readonly academicYear: AcademicYearService;
   public readonly campus: CampusService;
   public readonly schoolThemes: SchoolThemeService;
+  public readonly tenancy: TenancyService;
+  public readonly extensions: ExtensionService;
   private db: DrizzleD1Database;
 
   constructor(
@@ -62,6 +66,8 @@ export default class ServiceContainer {
     this.academicYear = new AcademicYearService(this.db, ownerUserId);
     this.campus = new CampusService(this.db,ownerUserId);
     this.schoolThemes = new SchoolThemeService(this.db, ownerUserId);
+    this.tenancy = new TenancyService(this.db, ownerUserId);
+    this.extensions = new ExtensionService(this.db, ownerUserId);
   }
 
   /**

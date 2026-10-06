@@ -64,6 +64,8 @@ const routes: RouteConfig = [
       route('teachers', './routes/teachers.tsx'),
       route('grades', './routes/grades.tsx'),
       route('settings', './routes/settings.tsx'),
+      route('extensions', './routes/extensions.tsx'),
+      route('themes', './routes/themes.tsx'),
       route('attendance', './routes/attendance.tsx'),
     ]),
   ]),

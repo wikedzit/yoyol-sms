@@ -26,7 +26,13 @@ type ThemeActionData = {
   themeSuccess?: 'uploaded' | 'activated';
 };
 
-export function SchoolThemeCard({ themes }: { themes: SchoolThemeChoice[] }) {
+export function SchoolThemeCard({
+  themes,
+  schoolId,
+}: {
+  themes: SchoolThemeChoice[];
+  schoolId: number;
+}) {
   const { language, t } = useLanguage();
   const fetcher = useFetcher<ThemeActionData>();
   const isSaving = fetcher.state !== 'idle';
@@ -70,6 +76,7 @@ export function SchoolThemeCard({ themes }: { themes: SchoolThemeChoice[] }) {
                 {theme.isActive ? null : (
                   <fetcher.Form method="post">
                     <input type="hidden" name="intent" value="activate-theme" />
+                    <input type="hidden" name="schoolId" value={schoolId} />
                     <input type="hidden" name="themeKey" value={theme.key} />
                     <Button type="submit" variant="outline" disabled={isSaving}>
                       {t('activateTheme')}
@@ -83,6 +90,7 @@ export function SchoolThemeCard({ themes }: { themes: SchoolThemeChoice[] }) {
 
         <fetcher.Form method="post" encType="multipart/form-data" className="space-y-3">
           <input type="hidden" name="intent" value="upload-theme" />
+          <input type="hidden" name="schoolId" value={schoolId} />
           <div className="space-y-2">
             <Label htmlFor="themeFile">{t('themeFile')}</Label>
             <Input id="themeFile" name="themeFile" type="file" accept="application/json,.json" />

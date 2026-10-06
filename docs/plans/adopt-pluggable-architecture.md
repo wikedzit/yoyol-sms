@@ -23,7 +23,7 @@ Nothing in the inventories below is optional. A row is either done, or it is def
 | Phase | Outcome | Status | Closes when |
 |-------|---------|--------|-------------|
 | 0. Decisions and repair | One data-access ADR, schema matches the code, a test gate exists | in progress | Every REP row and every decision in section 2 is `done` |
-| 1. Tenancy and data | A teacher signed in to a school sees that school's data, and only that school's data | not started | Every KRN-IAM, KRN-DAT (except DAT-05 to DAT-09), and GAP-SCH / GAP-IAM row is `done` |
+| 1. Tenancy and data | A teacher signed in to a school sees that school's data, and only that school's data | in progress | Every KRN-IAM, KRN-DAT (except DAT-05 to DAT-09), and GAP-SCH / GAP-IAM row is `done` |
 | 2. Kernel | A bundled hello plugin can be enabled and disabled per school, and can render a view document | not started | Every KRN-REG, KRN-EVT, KRN-UIX, KRN-SVC, SDK, and RUN-01 / RUN-02 row is `done` |
 | 3. Dogfood | Academics, students, staff, assessment, and calendar run as bundled modules | not started | Every MOD-ACA, MOD-STU, MOD-STF, MOD-ASM, and MOD-CAL row is `done`, and no feature imports another feature's internals |
 | 4. New modules | Attendance proves view documents, then the remaining SRS modules land | not started | Every remaining MOD-* row is `done` |
@@ -79,7 +79,7 @@ Each slice is its own branch and pull request into `develop`.
 | 0.3 | `rep-03-remote-reconcile` | REP-03 | 0.2 | not started |
 | 0.4 | `eng-04-test-harness` | ENG-02, ENG-03, ENG-04, ENG-05, ENG-07, ENG-08, ENG-10 | 0.2 | not started |
 | 0.5 | `eng-01-workspace-layout` | ENG-01 | 0.4, so the move is covered by tests | not started |
-| 1.1 | `krn-iam-tenancy` | KRN-IAM-01, KRN-IAM-02, KRN-IAM-03, KRN-IAM-04, KRN-DAT-10, GAP-SCH-01, GAP-SCH-02, GAP-SCH-03 | 0.5 | not started |
+| 1.1 | `krn-iam-tenancy` | KRN-IAM-01, KRN-IAM-02, KRN-IAM-03, KRN-IAM-04, KRN-DAT-10, GAP-SCH-01, GAP-SCH-02, GAP-SCH-03 | 0.5 | in progress |
 | 1.2 | `krn-iam-permissions` | KRN-IAM-05, KRN-IAM-06, KRN-IAM-07, KRN-IAM-08, GAP-IAM-02, GAP-IAM-03, GAP-IAM-05 | 1.1 | not started |
 | 1.3 | `krn-iam-sessions` | KRN-IAM-09, KRN-IAM-10, KRN-IAM-11, KRN-IAM-12, KRN-IAM-13, KRN-IAM-14, KRN-IAM-15, KRN-IAM-16, GAP-IAM-01, GAP-IAM-04 | 1.1 | not started |
 | 1.4 | `krn-dat-adapter` | KRN-DAT-01, KRN-DAT-02, KRN-DAT-03, KRN-DAT-04, ENG-06, ENG-09 | 0.5 | not started |
@@ -98,7 +98,8 @@ Each slice is its own branch and pull request into `develop`.
 | 4.1 | `mod-att` | MOD-ATT-01 to MOD-ATT-04 | 2.7, 3.2, 3.3. This is the first module that must use view documents only. | not started |
 | 4.2 | `mod-fin` | MOD-FIN-01 to MOD-FIN-09 | 4.1's renderer is already proven, plus 3.2 | not started |
 | 4.3 | `mod-rest` | MOD-TTB, MOD-LSN, MOD-DIS, MOD-CLB, MOD-LDR, MOD-RPT | 3.2, 3.3. These may be separate branches per module. | not started |
-| 5.1 | `run-install` | RUN-03, RUN-04, RUN-06 to RUN-13, D-05 | 2.6 | not started |
+| 1.5 | `install-pages` | KRN-REG-13, PLG-09 | Themes page can ship before zip upload. Extension zips still wait for RUN-06. | done |
+| 5.1 | `run-install` | RUN-03, RUN-04, RUN-06 to RUN-13, D-05, KRN-REG-13 zip half | 2.6 | not started |
 | 5.2 | `plg-channels` | PLG-01, PLG-02, PLG-04, PLG-05 | 5.1, MOD-ATT, KRN-SVC-04 | not started |
 | 5.3 | `plg-payments` | PLG-03 | 5.1, MOD-FIN-07 | not started |
 | 6.1 | `sdk-cli` | SDK-CLI-01 to SDK-CLI-05, ENG-11, ENG-12 | 5.1 | not started |
@@ -136,10 +137,10 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 
 | ID | Work | ADR | Status |
 |----|------|-----|--------|
-| KRN-IAM-01 | `school_id` on every tenant table, back-fill from `owner_user_id`, then drop `owner_user_id` | 0002 | not started |
+| KRN-IAM-01 | `school_id` on every tenant table, back-fill from `owner_user_id`, then drop `owner_user_id`. Memberships land first. Existing screens keep filtering by `owner_user_id` until every service reads the membership. | 0002 | in progress |
 | KRN-IAM-02 | Campuses under the school | 0002 | not started |
-| KRN-IAM-03 | `school_memberships` | 0002 | not started |
-| KRN-IAM-04 | Roles as data, five system roles protected | 0002 | not started |
+| KRN-IAM-03 | `school_memberships`. Owner is an admin. Screens still filter by `owner_user_id`. | 0002 | done |
+| KRN-IAM-04 | Roles as data. Five system roles are seeded per school and marked system. Custom role editing stays GAP-IAM-03. | 0002 | done |
 | KRN-IAM-05 | Permission registry, namespaced keys | 0002 | not started |
 | KRN-IAM-06 | `can(permissionKey)` replaces `isAdminRole()` | 0002 | not started |
 | KRN-IAM-07 | Teachers, parents, and students see only their own records | 0002 | not started |
@@ -184,6 +185,7 @@ KRN-DAT-05 to KRN-DAT-09 and KRN-DAT-11 to KRN-DAT-13 are kernel work and are li
 | KRN-REG-10 | Registry-driven service container | 0001 | not started |
 | KRN-REG-11 | Registry-driven routes and sidebar | 0001 | not started |
 | KRN-REG-12 | Extension management screen | 0001 | not started |
+| KRN-REG-13 | `/extensions` installation page. Bundled install now. Zip upload when RUN-06 exists. | 0001, 0005 | done |
 | KRN-EVT-01 | Hook bus, priority order, time budget, skip on failure | 0007 | not started |
 | KRN-EVT-02 | Blocking validation hooks | 0007 | not started |
 | KRN-EVT-03 | `domain_events` written in the same transaction | 0007 | not started |
@@ -312,8 +314,9 @@ Attendance is first. It is the proof that a module can ship with view documents 
 | PLG-04 | Absence alert | 0007 | not started |
 | PLG-05 | Fee reminder job | 0007 | not started |
 | PLG-06 | Theme package schema. JSON colour tokens only. The `yoyol` key injects nothing, so the current look stays. | 0008 | done |
-| PLG-07 | School profile upload and activate. Stored by the core in `school_themes`. | 0008 | done |
+| PLG-07 | Upload and activate on `/themes`. Stored by the core in `school_themes`. The school profile only links there. | 0008 | done |
 | PLG-08 | Example theme download. It changes colours only after a school activates it. | 0008 | done |
+| PLG-09 | `/themes` installation page. Install packages and set the active theme. | 0008 | done |
 
 ### 5.7 Phase 6
 
@@ -350,7 +353,12 @@ These requirements are in the SRS and are not a feature ID in `docs/features.md`
 | GAP-IAM-05 | Member list and change-role screen | FR-IAM-14, FR-IAM-15 | 1 | not started |
 | GAP-NTF-01 | Parent chooses a contact channel from the ones the school offers | FR-NTF-03 | 2 | not started |
 
-Count check: features.md IDs in this plan are REP 5, ENG 12, KRN-IAM 16, KRN-DAT 13, KRN-REG 12, KRN-EVT 7, KRN-UIX 9, KRN-SVC 13, RUN 13, SDK 5, SDK-CLI 5, MOD-ACA 6, MOD-STU 8, MOD-STF 3, MOD-ASM 6, MOD-CAL 3, MOD-ATT 4, MOD-FIN 9, MOD-TTB 4, MOD-LSN 3, MOD-DIS 3, MOD-CLB 3, MOD-LDR 2, MOD-RPT 2, PLG 5, DOC 9. That is 183 after PLG-06, PLG-07, and PLG-08. Plus 9 GAP rows and 4 OUT rows.
+Count check: features.md IDs in this plan are REP 5, ENG 12, KRN-IAM 16, KRN-DAT 13, KRN-REG 12, KRN-EVT 7, KRN-UIX 9, KRN-SVC 13, RUN 13, SDK 5, SDK-CLI 5, MOD-ACA 6, MOD-STU 8, MOD-STF 3, MOD-ASM 6, MOD-CAL 3, MOD-ATT 4, MOD-FIN 9, MOD-TTB 4, MOD-LSN 3, MOD-DIS 3, MOD-CLB 3, MOD-LDR 2, MOD-RPT 2, PLG 5, DOC 9. That is 185 after KRN-REG-13 and PLG-09. Plus 9 GAP rows and 4 OUT rows.
+
+Install pages:
+
+- `/extensions` is where a school administrator installs extensions (KRN-REG-13). Bundled extensions install on this page now. A signed zip uses the same page later (RUN-06) and does not get a second screen.
+- `/themes` is where a school administrator installs theme packages and sets the active one (PLG-09). The school profile links here. It does not host a second copy of the installer.
 
 ## 6. Requirement coverage
 

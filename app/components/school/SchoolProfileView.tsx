@@ -450,6 +450,9 @@ export function SchoolProfileView({
                 Secondary Colour
               </div>
             </div>
+            <Link className="text-sm underline" to={`/themes?schoolId=${school.id}`}>
+              {t('openThemes')}
+            </Link>
           </CardContent>
         </Card>
       </div>

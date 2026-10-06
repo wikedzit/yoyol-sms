@@ -205,6 +205,9 @@ under each feature.
   extensions and build the sidebar from registered navigation filtered by permission.
 - **KRN-REG-12 Extension management screen.** An admin screen listing installed extensions,
   versions, status, granted capabilities and available updates.
+- **KRN-REG-13 Extension installation page.** A page at `/extensions` where a school
+  administrator installs an extension for one school. Bundled extensions install
+  immediately. Signed zip upload stays on this page when RUN-06 exists.
 
 ### 5.4 Hooks and events (KRN-EVT)
 
@@ -479,8 +482,11 @@ under each feature.
   preferred language.
 - **PLG-05 Fee reminders.** A scheduled job that reminds guardians of outstanding balances.
 - **PLG-06 Theme packages.** A `themes` plugin validates JSON colour tokens for light and dark. No CSS, HTML, or scripts. The reserved `yoyol` theme leaves the current stylesheet untouched (ADR 0008).
-- **PLG-07 Upload and activate.** A school administrator uploads a theme on the school profile and activates it for that school. Packages are stored by the core.
+- **PLG-07 Upload and activate.** A school administrator uploads a theme on `/themes` and activates it for that school. The school profile links to that page. Packages are stored by the core.
 - **PLG-08 Example theme.** A downloadable example that changes colours only after it is activated.
+- **PLG-09 Themes installation page.** A page at `/themes` where a school administrator
+  installs theme packages and sets the active theme. The built-in YOYOL theme stays
+  available and leaves the current colours unchanged until another theme is activated.
 
 ## 11. Documentation (DOC)
 
