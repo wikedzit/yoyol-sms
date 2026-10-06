@@ -40,6 +40,8 @@ import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
+import { loadRecordScope, refuseOutsideScope } from '~/lib/load-record-scope';
+import { keepVisibleRecords } from 'workers/services/visible-records';
 
 // 🧠 Loader – fetch students with their assigned subjects + schools + campuses
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -100,9 +102,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     })
   );
 
+  const scope = await loadRecordScope(request, context.services);
+  const visibleStudents = keepVisibleRecords(
+    studentsWithSubjects,
+    scope,
+    (item) => item.studentIds,
+  );
+  const visibleSubjects = keepVisibleRecords(subjects, scope, (item) => item.subjectIds);
+
   return {
-    students: studentsWithSubjects,
-    allSubjects: subjects,
+    students: visibleStudents,
+    allSubjects: visibleSubjects,
     schools,
     campuses,
     defaultSchoolId,
@@ -112,6 +122,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 export async function action({ request, context }: ActionFunctionArgs) {
   await requireSchoolPermission(request, context.services, 'students.record.write');
+  const form = await request.formData();
+  const scope = await loadRecordScope(request, context.services);
+  const studentId = Number(form.get('studentId') || form.get('id') || 0) || null;
+  refuseOutsideScope(scope, studentId, (item) => item.studentIds);
   const services = context.services as {
     student: StudentService;
     studentSubjects: StudentSubjectService;
@@ -119,7 +133,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
     campus: CampusService;
     academicLevel: AcademicLevelService;
   };
-  const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
   const action = form.get('action') as string | null;
 

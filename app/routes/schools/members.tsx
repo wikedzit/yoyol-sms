@@ -15,17 +15,45 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const schoolId = selectSchoolId(new URL(request.url), schools, remembered);
 
   if (schoolId === null) {
-    return { schoolId: null, members: [], roles: [], error: null };
+    return emptyMembersPage();
   }
 
   try {
     const members: SchoolMember[] = await context.services.access.listMembers(schoolId);
     const roles: SchoolRole[] = await context.services.access.listRoles(schoolId);
-    return { schoolId, members, roles, error: null };
+    const guardianLinks: { userId: number; studentId: number }[] =
+      await context.services.access.listGuardianLinks(schoolId);
+    const teachers: { id: number; firstName: string; lastName: string }[] =
+      await context.services.teacher.getAllTeachers({
+        limit: 100,
+        offset: 0,
+        sortBy: 'firstName',
+        sortOrder: 'asc',
+      });
+    const students: { id: number; firstName: string; lastName: string }[] =
+      await context.services.student.getAll({
+        limit: 100,
+        offset: 0,
+        sortBy: 'firstName',
+        sortOrder: 'asc',
+      });
+    return { schoolId, members, roles, guardianLinks, teachers, students, error: null };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load members.';
-    return { schoolId, members: [], roles: [], error: message };
+    return { ...emptyMembersPage(), schoolId, error: message };
   }
+}
+
+function emptyMembersPage() {
+  return {
+    schoolId: null as number | null,
+    members: [] as SchoolMember[],
+    roles: [] as SchoolRole[],
+    guardianLinks: [] as { userId: number; studentId: number }[],
+    teachers: [] as { id: number; firstName: string; lastName: string }[],
+    students: [] as { id: number; firstName: string; lastName: string }[],
+    error: null as string | null,
+  };
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -47,6 +75,25 @@ export async function action({ request, context }: ActionFunctionArgs) {
       await context.services.access.setMembershipStatus(schoolId, membershipId, 'active');
     } else if (intent === 'remove') {
       await context.services.access.removeMembership(schoolId, membershipId);
+    } else if (intent === 'link') {
+      const roleKey = String(form.get('roleKey') || '');
+      if (roleKey === 'parent') {
+        const studentIds = String(form.get('studentIds') || '')
+          .split(',')
+          .map((value) => Number(value))
+          .filter((id) => Number.isInteger(id) && id > 0);
+        await context.services.access.replaceGuardianStudents(
+          schoolId,
+          Number(form.get('userId')),
+          studentIds,
+        );
+      } else if (roleKey === 'teacher') {
+        const teacherId = Number(form.get('teacherId') || 0) || null;
+        await context.services.access.linkMemberRecord(schoolId, membershipId, teacherId, null);
+      } else if (roleKey === 'student') {
+        const linkedStudentId = Number(form.get('studentId') || 0) || null;
+        await context.services.access.linkMemberRecord(schoolId, membershipId, null, linkedStudentId);
+      }
     }
     return { saved: true };
   } catch (error) {
@@ -56,7 +103,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function MembersPage() {
-  const { schoolId, members, roles, error } = useLoaderData<typeof loader>();
+  const { schoolId, members, roles, teachers, students, guardianLinks, error } =
+    useLoaderData<typeof loader>();
   const { t } = useLanguage();
   const fetcher = useFetcher<typeof action>();
   const actionError = fetcher.data && 'error' in fetcher.data ? fetcher.data.error : null;
@@ -124,6 +172,13 @@ export default function MembersPage() {
                       membershipId={member.membershipId}
                     />
                   </div>
+                  <MemberLink
+                    member={member}
+                    schoolId={schoolId}
+                    teachers={teachers}
+                    students={students}
+                    guardianLinks={guardianLinks}
+                  />
                 </CardContent>
               </Card>
             </li>
@@ -131,6 +186,84 @@ export default function MembersPage() {
         })}
       </ul>
     </div>
+  );
+}
+
+function MemberLink({
+  member,
+  schoolId,
+  teachers,
+  students,
+  guardianLinks,
+}: {
+  member: SchoolMember;
+  schoolId: number | null;
+  teachers: { id: number; firstName: string; lastName: string }[];
+  students: { id: number; firstName: string; lastName: string }[];
+  guardianLinks: { userId: number; studentId: number }[];
+}) {
+  const { t } = useLanguage();
+  const fetcher = useFetcher<{ error?: string }>();
+  if (member.roleKey !== 'teacher' && member.roleKey !== 'student' && member.roleKey !== 'parent') {
+    return null;
+  }
+
+  const linkedStudentIds = guardianLinks
+    .filter((link) => link.userId === member.userId)
+    .map((link) => link.studentId)
+    .join(',');
+
+  return (
+    <fetcher.Form method="post" className="flex w-full flex-wrap items-center gap-2">
+      <input type="hidden" name="intent" value="link" />
+      <input type="hidden" name="roleKey" value={member.roleKey} />
+      <input type="hidden" name="schoolId" value={schoolId ?? ''} />
+      <input type="hidden" name="membershipId" value={member.membershipId} />
+      <input type="hidden" name="userId" value={member.userId} />
+      {member.roleKey === 'teacher' ? (
+        <select
+          name="teacherId"
+          defaultValue={member.teacherId ?? ''}
+          aria-label={t('linkedTeacher')}
+          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+        >
+          <option value="">{t('noLinkedRecord')}</option>
+          {teachers.map((teacher) => (
+            <option key={teacher.id} value={teacher.id}>
+              {[teacher.firstName, teacher.lastName].filter(Boolean).join(' ')}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {member.roleKey === 'student' ? (
+        <select
+          name="studentId"
+          defaultValue={member.studentId ?? ''}
+          aria-label={t('linkedStudent')}
+          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+        >
+          <option value="">{t('noLinkedRecord')}</option>
+          {students.map((student) => (
+            <option key={student.id} value={student.id}>
+              {[student.firstName, student.lastName].filter(Boolean).join(' ')}
+            </option>
+          ))}
+        </select>
+      ) : null}
+      {member.roleKey === 'parent' ? (
+        <input
+          name="studentIds"
+          defaultValue={linkedStudentIds}
+          aria-label={t('linkedStudents')}
+          placeholder={t('linkedStudents')}
+          className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+        />
+      ) : null}
+      <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
+        {t('saveLink')}
+      </Button>
+      {fetcher.data?.error ? <p className="text-sm text-destructive">{fetcher.data.error}</p> : null}
+    </fetcher.Form>
   );
 }
 

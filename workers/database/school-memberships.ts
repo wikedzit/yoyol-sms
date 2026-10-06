@@ -16,6 +16,8 @@ export const schoolMemberships = sqliteTable(
     roleId: integer('role_id')
       .notNull()
       .references(() => roles.id, { onDelete: 'restrict' }),
+    teacherId: integer('teacher_id'),
+    studentId: integer('student_id'),
     status: text('status').notNull().default('active'),
     createdAt: integer('created_at').notNull(),
   },

@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["extensions/**/*.test.ts"],
+  "exclude": ["extensions/**/*.test.ts", "workers/**/*.test.ts"],
   "include": [
     ".react-router/types/**/*",
     "app/**/*",

@@ -36,9 +36,13 @@ import { Badge } from '~/components/ui/badge';
 import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
+import { loadRecordScope, refuseOutsideScope } from '~/lib/load-record-scope';
+import { keepVisibleRecords } from 'workers/services/visible-records';
 
 //Loader — fetch subjects with their teachers and classes from DB
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.read');
   const services = context.services as {
     subject: SubjectService;
     academicLevel: AcademicLevelService;
@@ -80,20 +84,26 @@ export async function loader({ context }: LoaderFunctionArgs) {
     })
   );
 
+  const scope = await loadRecordScope(request, context.services);
+
   return {
-    subjects: subjectsWithTeachersAndClasses,
+    subjects: keepVisibleRecords(subjectsWithTeachersAndClasses, scope, (item) => item.subjectIds),
     streams,
-    allTeachers: teachers,
+    allTeachers: keepVisibleRecords(teachers, scope, (item) => item.teacherIds),
   };
 }
 
 // Action — handle create, update, delete, and teacher assignments
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'school.profile.update');
+  const form = await request.formData();
+  const scope = await loadRecordScope(request, context.services);
+  const subjectId = Number(form.get('subjectId') || form.get('id') || 0) || null;
+  refuseOutsideScope(scope, subjectId, (item) => item.subjectIds);
   const services = context.services as {
     subject: SubjectService;
     teacherSubject: TeacherSubjectService;
   };
-  const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
   const action = form.get('action') as string | null;
 

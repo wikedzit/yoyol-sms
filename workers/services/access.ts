@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { permissions } from '../database/permissions';
 import { rolePermissions } from '../database/role-permissions';
@@ -6,6 +6,9 @@ import { roles } from '../database/roles';
 import { school } from '../database/school';
 import { schoolMemberships } from '../database/school-memberships';
 import { users } from '../database/users';
+import { students } from '../database/students';
+import { teachers } from '../database/teachers';
+import { studentGuardians } from '../database/student-guardians';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import {
   grantsByRole,
@@ -24,6 +27,8 @@ export type SchoolMember = {
   roleKey: string;
   roleName: string;
   status: string;
+  teacherId: number | null;
+  studentId: number | null;
 };
 
 export type SchoolRole = {
@@ -107,6 +112,8 @@ export default class AccessService {
         roleKey: roles.key,
         roleName: roles.name,
         status: schoolMemberships.status,
+        teacherId: schoolMemberships.teacherId,
+        studentId: schoolMemberships.studentId,
       })
       .from(schoolMemberships)
       .innerJoin(users, eq(users.id, schoolMemberships.userId))
@@ -230,6 +237,84 @@ export default class AccessService {
     await this.db.delete(roles).where(eq(roles.id, role.id));
   }
 
+  async listGuardianLinks(schoolId: number): Promise<{ userId: number; studentId: number }[]> {
+    await this.requirePermission(schoolId, 'school.member.manage');
+    return this.db
+      .select({
+        userId: studentGuardians.userId,
+        studentId: studentGuardians.studentId,
+      })
+      .from(studentGuardians)
+      .where(eq(studentGuardians.schoolId, schoolId));
+  }
+
+  async linkMemberRecord(
+    schoolId: number,
+    membershipId: number,
+    teacherId: number | null,
+    studentId: number | null,
+  ): Promise<void> {
+    await this.requirePermission(schoolId, 'school.member.manage');
+    const membership = await this.membershipInSchool(schoolId, membershipId);
+    if (!membership) {
+      throw new Error('That member is not in this school.');
+    }
+    if (teacherId != null) {
+      await this.teacherInSchool(schoolId, teacherId);
+    }
+    if (studentId != null) {
+      await this.studentInSchool(schoolId, studentId);
+    }
+    await this.db
+      .update(schoolMemberships)
+      .set({ teacherId, studentId })
+      .where(eq(schoolMemberships.id, membership.id));
+  }
+
+  async replaceGuardianStudents(
+    schoolId: number,
+    userId: number,
+    studentIds: number[],
+  ): Promise<void> {
+    await this.requirePermission(schoolId, 'school.member.manage');
+    const membership = await this.db
+      .select({ id: schoolMemberships.id })
+      .from(schoolMemberships)
+      .where(
+        and(
+          eq(schoolMemberships.schoolId, schoolId),
+          eq(schoolMemberships.userId, userId),
+        ),
+      )
+      .get();
+    if (!membership) {
+      throw new Error('That member is not in this school.');
+    }
+
+    const uniqueStudentIds = [...new Set(studentIds.filter((id) => Number.isInteger(id) && id > 0))];
+    if (uniqueStudentIds.length > 0) {
+      const found = await this.db
+        .select({ id: students.id })
+        .from(students)
+        .where(and(eq(students.schoolId, schoolId), inArray(students.id, uniqueStudentIds)));
+      if (found.length !== uniqueStudentIds.length) {
+        throw new Error('Choose students from this school.');
+      }
+    }
+
+    await this.db
+      .delete(studentGuardians)
+      .where(
+        and(
+          eq(studentGuardians.schoolId, schoolId),
+          eq(studentGuardians.userId, userId),
+        ),
+      );
+    for (const studentId of uniqueStudentIds) {
+      await this.db.insert(studentGuardians).values({ schoolId, studentId, userId });
+    }
+  }
+
   async listGrants(schoolId: number): Promise<{ roleId: number; permissionKey: string }[]> {
     await this.requirePermission(schoolId, 'school.role.manage');
     return this.db
@@ -288,6 +373,41 @@ export default class AccessService {
     const allowed = await this.can(schoolId, permissionKey);
     if (!allowed) {
       throw new Error('You do not have permission to do that.');
+    }
+  }
+
+  private async membershipInSchool(schoolId: number, membershipId: number) {
+    return this.db
+      .select({ id: schoolMemberships.id })
+      .from(schoolMemberships)
+      .where(
+        and(
+          eq(schoolMemberships.id, membershipId),
+          eq(schoolMemberships.schoolId, schoolId),
+        ),
+      )
+      .get();
+  }
+
+  private async teacherInSchool(schoolId: number, teacherId: number) {
+    const teacher = await this.db
+      .select({ id: teachers.id })
+      .from(teachers)
+      .where(and(eq(teachers.id, teacherId), eq(teachers.schoolId, schoolId)))
+      .get();
+    if (!teacher) {
+      throw new Error('That teacher is not in this school.');
+    }
+  }
+
+  private async studentInSchool(schoolId: number, studentId: number) {
+    const student = await this.db
+      .select({ id: students.id })
+      .from(students)
+      .where(and(eq(students.id, studentId), eq(students.schoolId, schoolId)))
+      .get();
+    if (!student) {
+      throw new Error('That student is not in this school.');
     }
   }
 

@@ -143,7 +143,7 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 | KRN-IAM-04 | Roles as data. Five system roles are seeded per school and marked system. Custom roles are edited on `/schools/roles`. | 0002 | done |
 | KRN-IAM-05 | Permission keys are seeded. An admin can change grants for every role except admin, which keeps every permission. | 0002 | done |
 | KRN-IAM-06 | `can()` guards the school profile, campuses, classes, students, teachers, members, roles, and archive. `isAdminRole()` still gates onboarding so sign-in feels the same. Other loaders are still open. | 0002 | in progress |
-| KRN-IAM-07 | Teachers, parents, and students see only their own records | 0002 | not started |
+| KRN-IAM-07 | A teacher sees assigned classes, subjects, and those students. A parent sees linked students. A student sees their own record. An admin still sees the whole school. The link is set on Members. | 0002 | done |
 | KRN-IAM-08 | The header shows a school switcher when the account has two or more active schools. The choice is stored in the `yoyol-school` cookie. | 0002 | done |
 | KRN-IAM-09 | Argon2id password hashes | 0002 | not started |
 | KRN-IAM-10 | Short-lived access token and rotating refresh token | 0002 | not started |

@@ -42,6 +42,8 @@ import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
+import { loadRecordScope, refuseOutsideScope } from '~/lib/load-record-scope';
+import { keepVisibleRecords } from 'workers/services/visible-records';
 
 // Loader – fetch teachers with their subjects and classes
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -126,8 +128,15 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       )
     );
 
+  const scope = await loadRecordScope(request, context.services);
+  const visibleTeachers = keepVisibleRecords(
+    teachersWithSubjectsAndClasses,
+    scope,
+    (item) => item.teacherIds,
+  );
+
   return {
-    teachers: teachersWithSubjectsAndClasses,
+    teachers: visibleTeachers,
     allSubjects: subjects,
     allClasses: allClasses,
     campuses,
@@ -137,13 +146,15 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 // Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
   await requireSchoolPermission(request, context.services, 'staff.record.write');
+  const form = await request.formData();
+  const scope = await loadRecordScope(request, context.services);
+  const teacherId = Number(form.get('teacherId') || form.get('id') || 0) || null;
+  refuseOutsideScope(scope, teacherId, (item) => item.teacherIds);
   const services = context.services as {
     teacher: TeacherService;
     teacherSubject: TeacherSubjectService;
     teacherClass: TeacherClassService;
   };
-  const form = await request.formData();
-
   const method = (form.get('_method') as string) || request.method;
   const action = form.get('action') as string | null;
 

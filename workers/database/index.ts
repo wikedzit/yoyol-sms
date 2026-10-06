@@ -19,4 +19,5 @@ export * from './roles';
 export * from './permissions';
 export * from './role-permissions';
 export * from './school-memberships';
+export * from './student-guardians';
 export * from './school-extensions';

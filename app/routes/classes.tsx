@@ -17,6 +17,8 @@ import CreateSchoolClassModal from "~/components/modal/CreateSchoolClassModal";
 import EditSchoolClassModal from "~/components/modal/EditSchoolClassModal";
 import { useLanguage } from "~/lib/i18n";
 import { requireSchoolPermission } from "~/lib/require-school-permission";
+import { loadRecordScope, refuseOutsideScope } from "~/lib/load-record-scope";
+import { keepVisibleRecords } from "workers/services/visible-records";
 
 export interface EnrichedFormClass {
   id: number;
@@ -68,15 +70,21 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     }
   }
 
-  return Response.json({ classes, streams, levels, campuses });
+  const scope = await loadRecordScope(request, context.services);
+  const visibleClasses = keepVisibleRecords(classes, scope, (item) => item.classIds);
+
+  return Response.json({ classes: visibleClasses, streams, levels, campuses });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
   await requireSchoolPermission(request, context.services, "school.profile.update");
+  const form = await request.formData();
+  const scope = await loadRecordScope(request, context.services);
+  const classId = Number(form.get("classId") || form.get("id") || 0) || null;
+  refuseOutsideScope(scope, classId, (item) => item.classIds);
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };
-  const form = await request.formData();
   const method = (form.get("_method") as string) || request.method;
 
   try {

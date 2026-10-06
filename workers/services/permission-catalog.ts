@@ -21,6 +21,6 @@ export const grantsByRole: Record<string, readonly PermissionKey[]> = {
   admin: permissionCatalog.map((permission) => permission.key),
   teacher: ['school.profile.read', 'students.record.read'],
   finance: ['school.profile.read'],
-  student: ['school.profile.read'],
-  parent: ['school.profile.read'],
+  student: ['school.profile.read', 'students.record.read'],
+  parent: ['school.profile.read', 'students.record.read'],
 };

@@ -52,6 +52,14 @@ async function schoolAllows(
   return checks.some(Boolean);
 }
 
+export async function selectedSchoolId(
+  request: Request,
+  services: SchoolAccessServices,
+): Promise<number | null> {
+  await services.tenancy.ensureForCurrentOwner();
+  return resolveSchoolId(request, services);
+}
+
 async function resolveSchoolId(
   request: Request,
   services: SchoolAccessServices,
