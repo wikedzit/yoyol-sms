@@ -12,6 +12,9 @@ const routes: RouteConfig = [
     layout('./layout/AuthLayout.tsx', [
       route('login', './routes/auth/SignIn.tsx'),
       route('signup', './routes/auth/sign-up.tsx'),
+      route('forgot', './routes/auth/forgot.tsx'),
+      route('reset', './routes/auth/reset.tsx'),
+      route('invite', './routes/auth/invite.tsx'),
     ]),
   ]),
 
@@ -52,6 +55,7 @@ const routes: RouteConfig = [
   route('new', './routes/schools/new.tsx'),
   route('access', './routes/schools/access.ts'),
   route('members', './routes/schools/members.tsx'),
+  route('invitations', './routes/schools/invitations.tsx'),
   route('roles', './routes/schools/roles.tsx'),
   route('switch', './routes/schools/switch.ts'),
   route(':schoolId', './routes/schools/detail.tsx', { id: 'school-profile' }),
@@ -62,6 +66,7 @@ const routes: RouteConfig = [
 
       route('students', './routes/students.tsx'),
       route('profile', './routes/profile.tsx'),
+      route('profile/security', './routes/profile.security.tsx'),
       route('classes', './routes/classes.tsx'),
       route('classes/:classId', './routes/classes.$classId.tsx'),
       route('subjects', './routes/subject.tsx'),

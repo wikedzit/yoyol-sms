@@ -8,7 +8,12 @@ import {
   useNavigation,
   type ActionFunctionArgs,
 } from "react-router";
-import { authCookie } from "workers/utils/cookies.server";
+import {
+  appendSetCookies,
+  serializeSessionCookies,
+  totpChallengeCookie,
+} from "workers/utils/cookies.server";
+import { clientIp } from "workers/services/sessions";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -21,7 +26,7 @@ const signInSchema = z.object({
 });
 
 type SignInFormValues = z.infer<typeof signInSchema>;
-type SignInActionData = { error?: string };
+type SignInActionData = { error?: string; totp?: boolean };
 
 function jsonErrorResponse(message: string, status: number) {
   return new Response(JSON.stringify({ error: message }), {
@@ -52,20 +57,81 @@ export async function action({ request, context }: ActionFunctionArgs) {
     );
   }
 
-  const token = await context.services.users.login(
+  const totpCode = String(form.get("totpCode") ?? "");
+  if (totpCode) {
+    return completeTotp(request, context, totpCode);
+  }
+
+  const result = await context.services.users.authenticate(
     parsed.data.email,
     parsed.data.password,
+    clientIp(request),
   );
 
-  if (!token) {
+  if (result.kind === "locked") {
+    await context.services.sessions.recordAudit({
+      action: "sign_in_locked",
+      detail: parsed.data.email,
+      ip: clientIp(request),
+    });
+    return jsonErrorResponse("Sign-in is temporarily locked. Try again later.", 429);
+  }
+
+  if (result.kind === "invalid") {
     return jsonErrorResponse("Invalid email or password", 401);
   }
 
-  return redirect("/", {
-    headers: {
-      "Set-Cookie": await authCookie.serialize(token),
-    },
+  if (result.kind === "totp") {
+    const headers = new Headers({ "Content-Type": "application/json" });
+    headers.append(
+      "Set-Cookie",
+      await totpChallengeCookie.serialize(
+        await context.services.users.issueTotpChallenge(result.user.id),
+      ),
+    );
+    return new Response(JSON.stringify({ totp: true }), { status: 200, headers });
+  }
+
+  return startSession(request, context, result.user, result.mustEnrollTotp);
+}
+
+async function completeTotp(
+  request: Request,
+  context: ActionFunctionArgs["context"],
+  code: string,
+) {
+  const challenge = await totpChallengeCookie.parse(request.headers.get("Cookie") || "");
+  const userId = typeof challenge === "string"
+    ? await context.services.users.readTotpChallenge(challenge)
+    : null;
+  if (!userId || !(await context.services.users.verifyTotp(userId, code))) {
+    return jsonErrorResponse("That code is not valid.", 401);
+  }
+
+  const signedIn = await context.services.users.findUserById(userId);
+  if (!signedIn) {
+    return jsonErrorResponse("That code is not valid.", 401);
+  }
+
+  return startSession(request, context, signedIn, false);
+}
+
+async function startSession(
+  request: Request,
+  context: ActionFunctionArgs["context"],
+  user: Awaited<ReturnType<ActionFunctionArgs["context"]["services"]["users"]["findUserById"]>> & object,
+  mustEnrollTotp: boolean,
+) {
+  const session = await context.services.sessions.start(user, request);
+  await context.services.sessions.recordAudit({
+    action: "sign_in",
+    userId: user.id,
+    ip: clientIp(request),
   });
+  const headers = new Headers();
+  appendSetCookies(headers, await serializeSessionCookies(session));
+  headers.append("Set-Cookie", await totpChallengeCookie.serialize("", { maxAge: 0 }));
+  return redirect(mustEnrollTotp ? "/profile/security" : "/", { headers });
 }
 
 export default function SignInPage() {
@@ -84,7 +150,9 @@ export default function SignInPage() {
   });
 
   const submitSignIn = (values: SignInFormValues) => {
-    fetcher.submit(values, { method: "POST" });
+    const codeInput = document.getElementById("totpCode");
+    const totpCode = codeInput instanceof HTMLInputElement ? codeInput.value : "";
+    fetcher.submit({ ...values, totpCode }, { method: "POST" });
   };
 
   return (
@@ -156,6 +224,22 @@ export default function SignInPage() {
             )}
           </div>
 
+          {fetcher.data?.totp && (
+            <div>
+              <label htmlFor="totpCode" className="block text-sm mb-1 font-medium">
+                Authenticator code
+              </label>
+              <input
+                id="totpCode"
+                name="totpCode"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                className={fieldClassName(false)}
+                placeholder="6 digit code"
+              />
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -169,6 +253,12 @@ export default function SignInPage() {
               {fetcher.data.error}
             </p>
           )}
+
+          <p className="text-center text-sm text-gray-500">
+            <Link to="/auth/forgot" className="text-purple-600 underline">
+              Forgot password
+            </Link>
+          </p>
 
           <p className="text-center text-sm text-gray-500 mt-4">
             Don't have an account?

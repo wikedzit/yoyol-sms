@@ -20,6 +20,9 @@ import TenancyService from './tenancy';
 import ExtensionService from './extensions';
 import AccessService from './access';
 import RecordScopeService from './record-scope';
+import SessionService from './sessions';
+import InvitationService from './invitations';
+import PasswordResetService from './password-resets';
 
 /**
  * Service Container that aggregates all individual services
@@ -46,6 +49,9 @@ export default class ServiceContainer {
   public readonly extensions: ExtensionService;
   public readonly access: AccessService;
   public readonly recordScope: RecordScopeService;
+  public readonly sessions: SessionService;
+  public readonly invitations: InvitationService;
+  public readonly passwordResets: PasswordResetService;
   private db: AppDatabase;
 
   constructor(
@@ -74,6 +80,9 @@ export default class ServiceContainer {
     this.extensions = new ExtensionService(this.db, ownerUserId);
     this.access = new AccessService(this.db, ownerUserId);
     this.recordScope = new RecordScopeService(this.db, ownerUserId);
+    this.sessions = new SessionService(this.db, jwtSecret);
+    this.invitations = new InvitationService(this.db, ownerUserId);
+    this.passwordResets = new PasswordResetService(this.db);
   }
 
   /**

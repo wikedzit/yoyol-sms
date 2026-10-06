@@ -11,6 +11,8 @@ export const users = sqliteTable('users', {
   phone: text('phone'),
   preferredLanguage: text('preferred_language').default('en'), // 'en' | 'sw'
   avatarUrl: text('avatar_url'),
+  totpSecret: text('totp_secret'),
+  totpEnabled: integer('totp_enabled').notNull().default(0),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

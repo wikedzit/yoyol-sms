@@ -8,6 +8,7 @@ import {
 } from 'react-router';
 
 import type { Route } from './+types/root';
+import './lib/csrf-client';
 import './app.css';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from './components/ui/theme-toggle';

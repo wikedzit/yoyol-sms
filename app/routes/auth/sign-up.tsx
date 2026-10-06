@@ -8,7 +8,7 @@ import {
   useNavigation,
   type ActionFunctionArgs,
 } from "react-router";
-import { authCookie } from "workers/utils/cookies.server";
+import { appendSetCookies, serializeSessionCookies } from "workers/utils/cookies.server";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -20,7 +20,7 @@ const signUpSchema = z
       .email("Invalid email address"),
     password: z
       .string()
-      .min(6, "Password must be at least 6 characters")
+      .min(8, "Use at least 8 characters, with a letter and a number.")
       .max(100, "Password too long"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
@@ -71,11 +71,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return jsonErrorResponse(result.error, 409);
   }
 
-  return redirect("/onboarding", {
-    headers: {
-      "Set-Cookie": await authCookie.serialize(result.token),
-    },
-  });
+  const session = await context.services.sessions.start(result.user, request);
+  const headers = new Headers();
+  appendSetCookies(headers, await serializeSessionCookies(session));
+  return redirect("/onboarding", { headers });
 }
 
 export default function SignUpPage() {

@@ -41,9 +41,19 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     const decoded = jwt.decode(token);
     const payload = decoded.payload as UserPayload;
 
-    if (!payload?.email || !payload?.role) {
+    if (!payload?.email || !payload?.role || typeof payload.id !== "number") {
       console.log("Invalid token payload, redirecting to login");
       return redirect("/auth/login");
+    }
+
+    const mustEnrollTotp = await context.services.users.mustEnrollTotp(payload.id);
+    const pathnameForTotp = new URL(request.url).pathname;
+    if (
+      mustEnrollTotp &&
+      pathnameForTotp !== "/profile/security" &&
+      pathnameForTotp !== "/logout"
+    ) {
+      return redirect("/profile/security");
     }
 
     const pathname = new URL(request.url).pathname;

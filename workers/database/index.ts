@@ -21,3 +21,8 @@ export * from './role-permissions';
 export * from './school-memberships';
 export * from './student-guardians';
 export * from './school-extensions';
+export * from './sessions';
+export * from './sign-in-attempts';
+export * from './audit-events';
+export * from './invitations';
+export * from './password-resets';

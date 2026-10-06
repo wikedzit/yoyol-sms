@@ -15,6 +15,7 @@ export const school = sqliteTable('school', {
   primaryColor: text('primary_color').default('#2563eb'),
   secondaryColor: text('secondary_color').default('#0f172a'),
   status: text('status').notNull().default('active'),
+  requirePrivilegedTotp: integer('require_privileged_totp').notNull().default(0),
   ownerUserId: integer('owner_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

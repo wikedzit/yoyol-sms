@@ -145,14 +145,14 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 | KRN-IAM-06 | `can()` guards school profile, campuses, classes, class detail, levels, academic year, students, teachers, grades, members, roles, archive, extensions, and themes. `isAdminRole()` still gates onboarding so sign-in feels the same. | 0002 | done |
 | KRN-IAM-07 | A teacher sees assigned classes, subjects, and those students. A parent sees linked students. A student sees their own record. An admin still sees the whole school. The link is set on Members. | 0002 | done |
 | KRN-IAM-08 | The header shows a school switcher when the account has two or more active schools. The choice is stored in the `yoyol-school` cookie. | 0002 | done |
-| KRN-IAM-09 | Argon2id password hashes | 0002 | not started |
-| KRN-IAM-10 | Short-lived access token and rotating refresh token | 0002 | not started |
-| KRN-IAM-11 | Server-side sessions, sign-out everywhere | 0002 | not started |
-| KRN-IAM-12 | Sign-in rate limit and lockout | 0002 | not started |
-| KRN-IAM-13 | TOTP, required for admin and finance when the school says so | 0002 | not started |
-| KRN-IAM-14 | Invitations by email or phone | 0002 | not started |
-| KRN-IAM-15 | Password reset that does not reveal whether the account exists | 0002 | not started |
-| KRN-IAM-16 | Responses set nosniff, referrer policy, frame denial, and a CSP that still allows the theme style tag. HSTS is sent only on https. CSRF tokens are not on forms yet, because adding them would break the current posts. | 0002 | in progress |
+| KRN-IAM-09 | Argon2id verifies in Node. The Worker rejects `WebAssembly.compile`, so accounts store versioned PBKDF2 until Argon2 is imported as a compiled module. | 0002 | in progress |
+| KRN-IAM-10 | Access token lasts 10 minutes. The refresh token rotates on use. Both are HttpOnly, Secure, SameSite cookies. | 0002 | done |
+| KRN-IAM-11 | Sessions live in `sessions`. Sign-out revokes the current session. Sign out everywhere revokes every session for the account. | 0002 | done |
+| KRN-IAM-12 | Five failed attempts for an email, or twenty for an address, lock sign-in for 15 minutes and write an audit event. | 0002 | done |
+| KRN-IAM-13 | A user can turn on TOTP from Account security. A school can require it for admin and finance. | 0002 | done |
+| KRN-IAM-14 | An admin creates an invitation by email or phone on `/schools/invitations`. The link lets the person set a password and join that school and role. | 0002 | done |
+| KRN-IAM-15 | Password reset uses a single-use 30 minute token. The reply does not say whether the account exists. | 0002 | done |
+| KRN-IAM-16 | Responses set nosniff, referrer policy, frame denial, and a CSP that still allows the theme style tag. HSTS is sent only on https. State-changing requests must send the `yoyol_csrf` cookie value in `x-csrf-token`. | 0002 | done |
 | KRN-DAT-01 | `DB_DRIVER` selects `d1` unless the value is `postgres`. The Worker refuses to boot as postgres and keeps using D1. | 0003 | done |
 | KRN-DAT-02 | Services take the D1 adapter database. Seed uses the same adapter. | 0003 | done |
 | KRN-DAT-03 | A Node postgres adapter module exists and is kept out of the Worker typecheck. `pg` is not installed, and the Worker does not call it. | 0003 | in progress |
