@@ -1,0 +1,18 @@
+{
+  "manifestVersion": 1,
+  "key": "themes",
+  "type": "plugin",
+  "version": "1.0.0",
+  "name": { "en": "Site themes", "sw": "Mandhari ya tovuti" },
+  "description": {
+    "en": "Upload a colour theme for a school. The built-in YOYOL theme stays the default.",
+    "sw": "Pakia mandhari ya rangi kwa shule. Mandhari ya YOYOL hubaki kuwa chaguo-msingi."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0" },
+  "capabilities": [],
+  "settings": [],
+  "provides": ["themes.package"],
+  "outboundHosts": []
+}

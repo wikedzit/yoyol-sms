@@ -1,6 +1,6 @@
 # 0002. School-based tenancy and a permission registry
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-02
 
 ## Context

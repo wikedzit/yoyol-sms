@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { campus } from './campuses';
 import { users } from './users';
 
 export const teachers = sqliteTable('teachers', {
@@ -17,6 +18,10 @@ export const teachers = sqliteTable('teachers', {
 
   // Legacy field - kept for backwards compatibility
   departmentId: integer('department_id'),
+
+  campusId: integer('campus_id').references(() => campus.id, {
+    onDelete: 'set null',
+  }),
 
   ownerUserId: integer('owner_user_id')
     .notNull()

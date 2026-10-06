@@ -5,6 +5,7 @@ import {
   type InsertStudent,
   type SelectStudent,
 } from '../database/students';
+import { campus } from '../database/campuses';
 import { school } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
@@ -45,6 +46,26 @@ const CreateStudentSchema = z.object({
   schoolId: z.preprocess(
     (v) => (v ? Number(v) : undefined),
     z.number().optional()
+  ),
+  admissionNumber: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') {
+        return undefined;
+      }
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    },
+    z.string().max(64).optional(),
+  ),
+  campusId: z.preprocess(
+    (value) => {
+      if (value === undefined || value === null || value === '') {
+        return undefined;
+      }
+      const campusId = Number(value);
+      return Number.isFinite(campusId) ? campusId : undefined;
+    },
+    z.number().int().positive().optional(),
   ),
   status: z.enum(['Active', 'Pending', 'Inactive']).default('Active'),
 });
@@ -128,6 +149,23 @@ export default class StudentService {
         }
       }
 
+      if (validated.schoolId) {
+        const ownedSchool = await this.db
+          .select({ id: school.id })
+          .from(school)
+          .where(
+            and(
+              eq(school.id, validated.schoolId),
+              eq(school.ownerUserId, ownerUserId),
+            ),
+          )
+          .get();
+
+        if (!ownedSchool) {
+          throw new Error('Selected school was not found.');
+        }
+      }
+
       // Prevent duplicate admission numbers
       // for the same owner.
       if (validated.admissionNumber) {
@@ -180,46 +218,22 @@ export default class StudentService {
     }
   }
 
-  async create(data: CreateStudentInput): Promise<SelectStudent | null> {
-    try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      const validated = CreateStudentSchema.parse(data);
+  async findByAdmissionNumber(
+    admissionNumber: string,
+  ): Promise<SelectStudent | null> {
+    const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const result = await this.db
+      .select()
+      .from(students)
+      .where(
+        and(
+          eq(students.ownerUserId, ownerUserId),
+          eq(students.admissionNumber, admissionNumber),
+        ),
+      )
+      .get();
 
-      // Only check school ownership if a schoolId was actually provided.
-      // Students added through the formClass (O-Level/A-Level) flow have
-      // no schoolId at all, so this check simply doesn't apply to them.
-      if (validated.schoolId) {
-        const ownedSchool = await this.db
-          .select({ id: school.id })
-          .from(school)
-          .where(
-            and(
-              eq(school.id, validated.schoolId),
-              eq(school.ownerUserId, ownerUserId),
-            ),
-          )
-          .get();
-
-        if (!ownedSchool) {
-          return null;
-        }
-      }
-
-      const result = await this.db
-        .insert(students)
-        .values({
-          ...validated,
-          ownerUserId,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        })
-        .returning();
-
-      return result[0] || null;
-    } catch (error) {
-      console.error('Error creating student:', error);
-      return null;
-    }
+    return result ?? null;
   }
 
   async getById(id: string): Promise<SelectStudent | null> {

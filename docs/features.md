@@ -478,6 +478,9 @@ under each feature.
 - **PLG-04 Absence alert.** Subscribes to absence events and notifies guardians in their
   preferred language.
 - **PLG-05 Fee reminders.** A scheduled job that reminds guardians of outstanding balances.
+- **PLG-06 Theme packages.** A `themes` plugin validates JSON colour tokens for light and dark. No CSS, HTML, or scripts. The reserved `yoyol` theme leaves the current stylesheet untouched (ADR 0008).
+- **PLG-07 Upload and activate.** A school administrator uploads a theme on the school profile and activates it for that school. Packages are stored by the core.
+- **PLG-08 Example theme.** A downloadable example that changes colours only after it is activated.
 
 ## 11. Documentation (DOC)
 

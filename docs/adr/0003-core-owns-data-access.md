@@ -1,6 +1,6 @@
 # 0003. The core owns all data access for extensions
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-02
 
 ## Context

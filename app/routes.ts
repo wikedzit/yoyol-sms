@@ -16,6 +16,8 @@ const routes: RouteConfig = [
   ]),
 
   route('logout', './routes/logout.ts'),
+  route('themes/template', './routes/themes.template.ts'),
+  route('themes/example', './routes/themes.example.ts'),
   // Protected routes
   layout('./layout/ProtectedLayout.tsx', [
     route('onboarding', './routes/onboarding.tsx'),

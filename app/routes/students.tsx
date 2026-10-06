@@ -244,7 +244,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
           "Active" | "Pending" | "Inactive",
       };
 
-      const created = await services.student.create(data);
+      let created;
+      try {
+        created = await services.student.create(data);
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'Failed to add student. Please make sure all required fields are valid.';
+        return { error: message };
+      }
 
       if (!created) {
         return {

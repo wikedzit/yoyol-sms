@@ -1,6 +1,6 @@
 # 0007. Synchronous hooks and asynchronous events
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-02
 
 ## Context

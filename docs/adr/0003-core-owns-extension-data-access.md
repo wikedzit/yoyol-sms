@@ -1,7 +1,9 @@
 # 0003. The core owns all database access for extensions
 
-- Status: Proposed
+- Status: Superseded by [0003](0003-core-owns-data-access.md)
 - Date: 2026-10-02
+
+This file is not the data-access decision. It used the table prefix `ext_<key>_` and a direct Drizzle path for bundled modules. Both are rejected. The accepted decision uses `mod_<key>_` and sends bundled and installed statements through the same checker. The text below is kept so the rejected alternative stays visible.
 
 ## Context
 

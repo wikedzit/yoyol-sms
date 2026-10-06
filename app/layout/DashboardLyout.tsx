@@ -37,8 +37,10 @@ export async function loader({ request, context }: any) {
   const payload = jwt.decode(token);
   const user = payload.payload as { id: number; email: string; role: string };
   const account = await context.services.users.findUserByEmail(user.email);
+  const activeThemeCss = await context.services.schoolThemes.getActiveCss();
 
   return {
+    activeThemeCss,
     user: {
       email: user.email,
       role: user.role,
@@ -51,7 +53,8 @@ export async function loader({ request, context }: any) {
 }
 
 const DashboardLayout = () => {
-  const { user } = useLoaderData<{
+  const { user, activeThemeCss } = useLoaderData<{
+    activeThemeCss: string | null;
     user: {
       email: string;
       role: string;
@@ -74,6 +77,7 @@ const DashboardLayout = () => {
       setIsLogoutConfirmOpen={setIsLogoutConfirmOpen}
       theme={theme}
       setTheme={setTheme}
+      activeThemeCss={activeThemeCss}
     />
   );
 };
@@ -86,6 +90,7 @@ function DashboardContent({
   setIsLogoutConfirmOpen,
   theme,
   setTheme,
+  activeThemeCss,
 }: any) {
   const { t, setLanguage } = useLanguage();
   const displayName = [user?.firstName, user?.lastName]
@@ -99,6 +104,9 @@ function DashboardContent({
 
   return (
     <div className="relative min-h-screen overflow-hidden">
+      {typeof activeThemeCss === 'string' ? (
+        <style dangerouslySetInnerHTML={{ __html: activeThemeCss }} />
+      ) : null}
       <div
         className="h-screen bg-background"
         style={{

@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm/sql/sql';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { classes } from './class';
 import { formClasses } from './academic-levels';
+import { campus } from './campuses';
 import { school } from './school';
 import { users } from './users';
 import { relations } from 'drizzle-orm';
@@ -42,6 +43,12 @@ export const students = sqliteTable('students', {
 
   // Which school this student belongs to. Nullable - old records may not have one.
   schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'set null',
+  }),
+
+  admissionNumber: text('admission_number'),
+
+  campusId: integer('campus_id').references(() => campus.id, {
     onDelete: 'set null',
   }),
 

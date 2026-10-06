@@ -1,6 +1,6 @@
 # Plan: Adopt the pluggable extension architecture
 
-- Status: Draft
+- Status: In progress
 - Branch: `plan/adopt-pluggable-architecture`
 - Base: `develop` at `d974da4`
 - Date: 2026-10-06
@@ -22,7 +22,7 @@ Nothing in the inventories below is optional. A row is either done, or it is def
 
 | Phase | Outcome | Status | Closes when |
 |-------|---------|--------|-------------|
-| 0. Decisions and repair | One data-access ADR, schema matches the code, a test gate exists | not started | Every REP row and every decision in section 2 is `done` |
+| 0. Decisions and repair | One data-access ADR, schema matches the code, a test gate exists | in progress | Every REP row and every decision in section 2 is `done` |
 | 1. Tenancy and data | A teacher signed in to a school sees that school's data, and only that school's data | not started | Every KRN-IAM, KRN-DAT (except DAT-05 to DAT-09), and GAP-SCH / GAP-IAM row is `done` |
 | 2. Kernel | A bundled hello plugin can be enabled and disabled per school, and can render a view document | not started | Every KRN-REG, KRN-EVT, KRN-UIX, KRN-SVC, SDK, and RUN-01 / RUN-02 row is `done` |
 | 3. Dogfood | Academics, students, staff, assessment, and calendar run as bundled modules | not started | Every MOD-ACA, MOD-STU, MOD-STF, MOD-ASM, and MOD-CAL row is `done`, and no feature imports another feature's internals |
@@ -38,12 +38,12 @@ These are unresolved in the ADRs today. Slice 0.1 is docs only and must merge be
 
 | ID | Decision | Recommendation | Blocks | Status |
 |----|----------|----------------|--------|--------|
-| D-01 | Two files both claim to be ADR 0003 | Keep [0003-core-owns-data-access.md](../adr/0003-core-owns-data-access.md), the file the ADR index links. Delete `0003-core-owns-extension-data-access.md` while both are still Proposed. Do not leave two records with the same number. | KRN-DAT-06, KRN-DAT-07, KRN-DAT-08 | not started |
-| D-02 | Table prefix | Use `mod_<key>_`, with `-` in the key replaced by `_`. This matches the specification section 3.1 and the ADR the index links. The duplicate ADR's `ext_<key>_` prefix is dropped. | Schema compiler, every module table | not started |
-| D-03 | Bundled data path | Bundled and installed extensions both go through the statement checker. Bundled mode is an in-process call. Installed mode is RPC. The duplicate ADR's direct Drizzle path for bundled modules is rejected, because it would let trusted code skip the checker. | KRN-DAT-07, KRN-DAT-08, SDK-04 | not started |
-| D-04 | Accept the proposed ADRs | After D-01 to D-03, set ADR 0001, ADR 0002, the surviving ADR 0003, and ADR 0007 to Accepted. ADR 0004, ADR 0005, and ADR 0006 are already Accepted. | Every later slice | not started |
+| D-01 | Two files both claim to be ADR 0003 | Keep [0003-core-owns-data-access.md](../adr/0003-core-owns-data-access.md), the file the ADR index links. The other file is marked superseded. Its `ext_` prefix and direct Drizzle path are rejected. | KRN-DAT-06, KRN-DAT-07, KRN-DAT-08 | done |
+| D-02 | Table prefix | Use `mod_<key>_`, with `-` in the key replaced by `_`. This matches the specification section 3.1 and the ADR the index links. The duplicate ADR's `ext_<key>_` prefix is dropped. | Schema compiler, every module table | done |
+| D-03 | Bundled data path | Bundled and installed extensions both go through the statement checker. Bundled mode is an in-process call. Installed mode is RPC. The duplicate ADR's direct Drizzle path for bundled modules is rejected, because it would let trusted code skip the checker. | KRN-DAT-07, KRN-DAT-08, SDK-04 | done |
+| D-04 | Accept the proposed ADRs | After D-01 to D-03, set ADR 0001, ADR 0002, the surviving ADR 0003, and ADR 0007 to Accepted. ADR 0004, ADR 0005, and ADR 0006 are already Accepted. | Every later slice | done |
 | D-05 | Who may upload a zip on a self-hosted school | Platform administrators upload packages. On a single-school deployment the same person is the platform administrator, so the upload screen is available to that account only. School admins enable, disable, and purge. They do not upload. Confirm this before RUN-06. | RUN-06 | not started |
-| D-06 | Shared database with a predicate check | Build the shared-database design in ADR 0003. Database-per-school stays an alternative, revisited only if the statement checker proves too restrictive. | KRN-DAT-07 | not started |
+| D-06 | Shared database with a predicate check | Build the shared-database design in ADR 0003. Database-per-school stays an alternative, revisited only if the statement checker proves too restrictive. | KRN-DAT-07 | done |
 
 ### Explicitly out of v1
 
@@ -114,11 +114,11 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 
 | ID | Work | Status |
 |----|------|--------|
-| REP-01 | Restore `students.admission_number`, `students.campus_id`, `teachers.campus_id` | not started |
-| REP-02 | Rebuild the migration journal | not started |
+| REP-01 | Restore `students.admission_number`, `students.campus_id`, `teachers.campus_id` | done |
+| REP-02 | Rebuild the migration journal | in progress |
 | REP-03 | Reconcile remote databases without data loss | not started |
 | REP-04 | Schema drift check in CI | not started |
-| REP-05 | Resolve the duplicate ADR 0003. This is D-01 to D-03. | not started |
+| REP-05 | Resolve the duplicate ADR 0003. This is D-01 to D-03. | done |
 | ENG-01 | pnpm workspace: `apps/web`, `packages/core`, `packages/sdk`, `packages/ui`, `packages/cli`, `extensions/*` | not started |
 | ENG-02 | Strict TypeScript, no `any` | not started |
 | ENG-03 | ESLint, Prettier, pre-commit hook | not started |
@@ -311,6 +311,9 @@ Attendance is first. It is the proof that a module can ship with view documents 
 | PLG-03 | Mobile money provider, shipped as a signed zip | 0004, 0005 | not started |
 | PLG-04 | Absence alert | 0007 | not started |
 | PLG-05 | Fee reminder job | 0007 | not started |
+| PLG-06 | Theme package schema. JSON colour tokens only. The `yoyol` key injects nothing, so the current look stays. | 0008 | done |
+| PLG-07 | School profile upload and activate. Stored by the core in `school_themes`. | 0008 | done |
+| PLG-08 | Example theme download. It changes colours only after a school activates it. | 0008 | done |
 
 ### 5.7 Phase 6
 
@@ -347,7 +350,7 @@ These requirements are in the SRS and are not a feature ID in `docs/features.md`
 | GAP-IAM-05 | Member list and change-role screen | FR-IAM-14, FR-IAM-15 | 1 | not started |
 | GAP-NTF-01 | Parent chooses a contact channel from the ones the school offers | FR-NTF-03 | 2 | not started |
 
-Count check: features.md IDs in this plan are REP 5, ENG 12, KRN-IAM 16, KRN-DAT 13, KRN-REG 12, KRN-EVT 7, KRN-UIX 9, KRN-SVC 13, RUN 13, SDK 5, SDK-CLI 5, MOD-ACA 6, MOD-STU 8, MOD-STF 3, MOD-ASM 6, MOD-CAL 3, MOD-ATT 4, MOD-FIN 9, MOD-TTB 4, MOD-LSN 3, MOD-DIS 3, MOD-CLB 3, MOD-LDR 2, MOD-RPT 2, PLG 5, DOC 9. That is 180. Plus 9 GAP rows and 4 OUT rows.
+Count check: features.md IDs in this plan are REP 5, ENG 12, KRN-IAM 16, KRN-DAT 13, KRN-REG 12, KRN-EVT 7, KRN-UIX 9, KRN-SVC 13, RUN 13, SDK 5, SDK-CLI 5, MOD-ACA 6, MOD-STU 8, MOD-STF 3, MOD-ASM 6, MOD-CAL 3, MOD-ATT 4, MOD-FIN 9, MOD-TTB 4, MOD-LSN 3, MOD-DIS 3, MOD-CLB 3, MOD-LDR 2, MOD-RPT 2, PLG 5, DOC 9. That is 183 after PLG-06, PLG-07, and PLG-08. Plus 9 GAP rows and 4 OUT rows.
 
 ## 6. Requirement coverage
 

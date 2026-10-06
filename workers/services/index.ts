@@ -15,6 +15,7 @@ import AcademicLevelService from './academic-levels';
 import SchoolService from './school';
 import AcademicYearService from './academic-years';
 import CampusService from './campus';
+import SchoolThemeService from './school-themes';
 
 /**
  * Service Container that aggregates all individual services
@@ -36,6 +37,7 @@ export default class ServiceContainer {
   public readonly school: SchoolService;
   public readonly academicYear: AcademicYearService;
   public readonly campus: CampusService;
+  public readonly schoolThemes: SchoolThemeService;
   private db: DrizzleD1Database;
 
   constructor(
@@ -59,6 +61,7 @@ export default class ServiceContainer {
     this.school = new SchoolService(this.db, ownerUserId);
     this.academicYear = new AcademicYearService(this.db, ownerUserId);
     this.campus = new CampusService(this.db,ownerUserId);
+    this.schoolThemes = new SchoolThemeService(this.db, ownerUserId);
   }
 
   /**
@@ -82,6 +85,7 @@ export default class ServiceContainer {
       school: this.school,
       academicYear: this.academicYear,
       campus: this.campus,
+      schoolThemes: this.schoolThemes,
     };
   }
 
@@ -109,6 +113,7 @@ export default class ServiceContainer {
       school: true,
       academicYear: true,
       campus: true,
+      schoolThemes: true,
     };
 
     // Check if all services are available

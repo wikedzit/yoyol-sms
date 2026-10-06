@@ -1,6 +1,6 @@
 # 0001. Pluggable extension architecture (core, modules, plugins)
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-02
 
 ## Context

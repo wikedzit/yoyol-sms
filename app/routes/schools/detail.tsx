@@ -29,13 +29,17 @@ import {
   CardTitle,
 } from '~/components/ui/card';
 import type SchoolService from 'workers/services/school';
+import type SchoolThemeService from 'workers/services/school-themes';
 import type StudentService from 'workers/services/student';
+import { SchoolThemeCard } from '~/components/school/SchoolThemeCard';
 
 export async function loader({
   context,params,
 }: LoaderFunctionArgs) {
   const services = context.services as {
-    school: SchoolService;student: StudentService;
+    school: SchoolService;
+    student: StudentService;
+    schoolThemes: SchoolThemeService;
   };
   const schoolId = Number(params.schoolId);
   const profile = await services.school.getById(schoolId);
@@ -45,9 +49,12 @@ export async function loader({
   }
   const totalStudents =
     await services.student.countBySchoolId(schoolId);
+  const themes = await services.schoolThemes.listForSchool(schoolId);
 
   return {
-    profile,totalStudents,
+    profile,
+    totalStudents,
+    themes,
   };
 }
 
@@ -57,9 +64,36 @@ export async function action({
   params,
 }: ActionFunctionArgs) {
   const services = context.services as {
-    school: SchoolService;student: StudentService; };
+    school: SchoolService;
+    student: StudentService;
+    schoolThemes: SchoolThemeService;
+  };
   const schoolId = Number(params.schoolId);
   const form = await request.formData();
+  const intent = String(form.get('intent') || '');
+
+  if (intent === 'upload-theme' || intent === 'activate-theme') {
+    try {
+      if (intent === 'upload-theme') {
+        const themeFile = form.get('themeFile');
+        if (!(themeFile instanceof File) || themeFile.size === 0) {
+          return { themeError: 'Choose a theme file.' };
+        }
+        await services.schoolThemes.savePackage(schoolId, await themeFile.text());
+        return { themeSuccess: 'uploaded' as const };
+      }
+
+      await services.schoolThemes.activate(
+        schoolId,
+        String(form.get('themeKey') || ''),
+      );
+      return { themeSuccess: 'activated' as const };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Theme file is not valid.';
+      return { themeError: message };
+    }
+  }
+
   const method = (form.get('_method') as string) || request.method;
   if (method !== 'POST') {
     return new Response(
@@ -113,7 +147,7 @@ export async function action({
 }
 
 export default function SchoolProfilePage() {
-  const { profile, totalStudents } =
+  const { profile, totalStudents, themes } =
     useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [isEditing, setIsEditing] = useState(false);
@@ -126,32 +160,31 @@ export default function SchoolProfilePage() {
     if (fetcher.state !== 'idle' || !fetcher.data) {
       return;
     }
-    if (fetcher.data.success) {
+    if (
+      'success' in fetcher.data &&
+      fetcher.data.success &&
+      'profile' in fetcher.data &&
+      fetcher.data.profile
+    ) {
+      const savedProfile = fetcher.data.profile;
       toast.success(
         'Your school profile has been updated successfully!'
       );
       setIsEditing(false);
-      setPrimaryColor(
-        fetcher.data.profile.primaryColor ??
-          '#2563eb'
-      );
-      setSecondaryColor(
-        fetcher.data.profile.secondaryColor ??
-          '#0f172a'
-      );
+      setPrimaryColor(savedProfile.primaryColor ?? '#2563eb');
+      setSecondaryColor(savedProfile.secondaryColor ?? '#0f172a');
     }
 
-    if (
-      'error' in fetcher.data &&
-      fetcher.data.error
-    ) {
+    if ('error' in fetcher.data && typeof fetcher.data.error === 'string') {
       toast.error(fetcher.data.error);
     }
   }, [fetcher.state, fetcher.data]);
 
   const isSaving = fetcher.state === 'submitting';
-  const displayProfile = fetcher.data &&
-    'profile' in fetcher.data ? fetcher.data.profile: profile;
+  const displayProfile =
+    fetcher.data && 'profile' in fetcher.data && fetcher.data.profile
+      ? fetcher.data.profile
+      : profile;
   const currentPrimaryColor = displayProfile.primaryColor ?? '#2563eb';
   const currentSecondaryColor = displayProfile.secondaryColor ?? '#0f172a';
 
@@ -674,6 +707,7 @@ export default function SchoolProfilePage() {
           )}
         </CardContent>
       </Card>
+      <SchoolThemeCard themes={themes} />
     </div>
   );
 }
