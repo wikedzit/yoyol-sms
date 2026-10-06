@@ -7,6 +7,7 @@ import {
   type SelectSubject,
 } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForStudent } from './school-scope';
 
 export default class StudentSubjectService {
   constructor(
@@ -83,6 +84,7 @@ export default class StudentSubjectService {
         .values({
           studentId,
           subjectId,
+          schoolId: await schoolIdForStudent(this.db, studentId),
           assignedAt: Date.now(),
         })
         .execute();
@@ -201,9 +203,11 @@ export default class StudentSubjectService {
           return false;
         }
       }
+      const schoolId = await schoolIdForStudent(this.db, studentId);
       const assignments = subjectIds.map((subjectId) => ({
         studentId,
         subjectId,
+        schoolId,
         assignedAt: Date.now(),
       }));
 
@@ -233,11 +237,14 @@ export default class StudentSubjectService {
           return false;
         }
       }
-      const assignments = studentIds.map((studentId) => ({
-        studentId,
-        subjectId,
-        assignedAt: Date.now(),
-      }));
+      const assignments = await Promise.all(
+        studentIds.map(async (studentId) => ({
+          studentId,
+          subjectId,
+          schoolId: await schoolIdForStudent(this.db, studentId),
+          assignedAt: Date.now(),
+        })),
+      );
 
       await this.db.insert(studentSubjects).values(assignments).execute();
 
@@ -273,9 +280,11 @@ export default class StudentSubjectService {
 
       // Insert new assignments if any
       if (subjectIds.length > 0) {
+        const schoolId = await schoolIdForStudent(this.db, studentId);
         const values = subjectIds.map((subjectId) => ({
           studentId,
           subjectId,
+          schoolId,
           assignedAt: Date.now(),
         }));
 
@@ -314,11 +323,14 @@ export default class StudentSubjectService {
 
       // Insert new assignments if any
       if (studentIds.length > 0) {
-        const values = studentIds.map((studentId) => ({
-          studentId,
-          subjectId,
-          assignedAt: Date.now(),
-        }));
+        const values = await Promise.all(
+          studentIds.map(async (studentId) => ({
+            studentId,
+            subjectId,
+            schoolId: await schoolIdForStudent(this.db, studentId),
+            assignedAt: Date.now(),
+          })),
+        );
 
         await this.db.insert(studentSubjects).values(values).execute();
       }

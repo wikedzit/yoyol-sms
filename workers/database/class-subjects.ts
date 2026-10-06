@@ -5,6 +5,7 @@ import {
   primaryKey,
 } from 'drizzle-orm/sqlite-core';
 import { classes } from './class';
+import { school } from './school';
 import { subject } from './subjects';
 
 // Join table for many-to-many relationship between classes and subjects
@@ -17,6 +18,9 @@ export const classSubjects = sqliteTable(
     subjectId: integer('subject_id')
       .notNull()
       .references(() => subject.id, { onDelete: 'cascade' }),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'set null',
+    }),
     // Optional: track when the assignment was made
     assignedAt: integer('assigned_at')
       .notNull()

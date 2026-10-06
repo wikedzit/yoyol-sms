@@ -137,8 +137,8 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 
 | ID | Work | ADR | Status |
 |----|------|-----|--------|
-| KRN-IAM-01 | `school_id` is on the owner-scoped tables and is filled when the account has one school. `owner_user_id` stays, and screens still filter by it. Join tables and dropping `owner_user_id` remain. | 0002 | in progress |
-| KRN-IAM-02 | Students and staff can belong to a campus. Form classes have `campus_id`. The class screen does not ask for a campus yet. | 0002 | in progress |
+| KRN-IAM-01 | `school_id` is on owner-scoped tables and assignment rows. It is filled from the parent record, or from the single school on an account. `owner_user_id` stays, and screens still filter by it. | 0002 | in progress |
+| KRN-IAM-02 | Students, staff, and form classes can belong to a campus. The class form asks for a campus and still saves when it is left blank. | 0002 | done |
 | KRN-IAM-03 | `school_memberships`. Owner is an admin. Screens still filter by `owner_user_id`. | 0002 | done |
 | KRN-IAM-04 | Roles as data. Five system roles are seeded per school and marked system. Custom role editing stays GAP-IAM-03. | 0002 | done |
 | KRN-IAM-05 | Permission registry, namespaced keys | 0002 | not started |

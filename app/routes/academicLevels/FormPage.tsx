@@ -90,6 +90,14 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 
   // Get classes for this form
   const classes = await services.academicLevel.getFormClassesByFormId(form.id);
+  const schools: { id: number }[] = await context.services.school.getAll();
+  const campuses: { id: number; name: string }[] = [];
+  for (const ownedSchool of schools) {
+    const rows = await context.services.campus.getBySchoolId(ownedSchool.id);
+    for (const row of rows) {
+      campuses.push({ id: row.id, name: row.name });
+    }
+  }
 
   // Calculate totals
   const totalStudents = classes.reduce(
@@ -105,6 +113,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
     totalStudents,
     levelType,
     levelConfig,
+    campuses,
   };
 }
 
@@ -154,12 +163,28 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
         );
       }
 
+      const campusIdRaw = formData.get('campusId')
+        ? Number(formData.get('campusId'))
+        : undefined;
+      let campusId: number | undefined;
+      if (campusIdRaw) {
+        const selectedCampus = await context.services.campus.getById(campusIdRaw);
+        if (!selectedCampus) {
+          return new Response(
+            JSON.stringify({ error: 'Selected campus was not found' }),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+        campusId = selectedCampus.id;
+      }
+
       const created = await services.academicLevel.createFormClass({
         name,
         formId: form.id,
         streamId,
         levelId: stream.levelId,
         studentCount,
+        campusId,
       });
 
       return { success: true, formClass: created };
@@ -227,6 +252,7 @@ export default function FormPage() {
     totalStudents,
     levelType,
     levelConfig,
+    campuses,
   } = useLoaderData<{
     stream: {
       id: number;
@@ -262,6 +288,7 @@ export default function FormPage() {
       description: string;
       basePath: string;
     };
+    campuses: { id: number; name: string }[];
   }>();
 
   const params = useParams();
@@ -583,7 +610,7 @@ export default function FormPage() {
         open={isAddModalOpen}
         setOpen={setIsAddModalOpen}
         fetcher={fetcher}
-        formNumber={form.number}
+        campuses={campuses}
       />
 
       <EditClassModal

@@ -4,8 +4,9 @@ import {
   primaryKey,
   sqliteTable,
 } from 'drizzle-orm/sqlite-core';
-import { teachers } from './teachers';
 import { formClasses } from './academic-levels';
+import { school } from './school';
+import { teachers } from './teachers';
 
 export const teacherFormClasses = sqliteTable(
   'teacher_form_classes',
@@ -16,6 +17,9 @@ export const teacherFormClasses = sqliteTable(
     formClassId: integer('form_class_id')
       .notNull()
       .references(() => formClasses.id, { onDelete: 'cascade' }),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'set null',
+    }),
     assignedAt: integer('assigned_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),

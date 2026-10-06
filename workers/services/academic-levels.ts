@@ -14,6 +14,8 @@ import {
   type InsertFormClass,
   type SelectFormClass,
 } from '../database/academic-levels';
+import { campus } from '../database/campuses';
+import { school } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import { schoolIdForOwner } from './school-scope';
@@ -56,6 +58,7 @@ const CreateFormClassSchema = z.object({
   streamId: z.number().int().positive(),
   levelId: z.number().int().positive(),
   studentCount: z.number().int().min(0).optional().default(0),
+  campusId: z.number().int().positive().optional(),
 });
 
 const UpdateFormClassSchema = CreateFormClassSchema.partial();
@@ -501,6 +504,22 @@ export default class AcademicLevelService {
   async createFormClass(data: CreateFormClassInput): Promise<SelectFormClass | null> {
     try {
       const validated = CreateFormClassSchema.parse(data);
+      if (validated.campusId) {
+        const ownedCampus = await this.db
+          .select({ id: campus.id })
+          .from(campus)
+          .innerJoin(school, eq(campus.schoolId, school.id))
+          .where(
+            and(
+              eq(campus.id, validated.campusId),
+              eq(school.ownerUserId, this.currentOwner()),
+            ),
+          )
+          .get();
+        if (!ownedCampus) {
+          return null;
+        }
+      }
       const result = await this.db
         .insert(formClasses)
         .values({
@@ -747,6 +766,8 @@ export default class AcademicLevelService {
       streamColor: 'science' | 'arts' | 'business';
       levelName: string;
       levelType: 'o-level' | 'a-level';
+      campusId: number | null;
+      campusName: string | null;
     }>
   > {
     try {
@@ -768,6 +789,12 @@ export default class AcademicLevelService {
 
       // Get all form classes
       const allClasses = await this.getAllFormClasses();
+      const campusRows = await this.db
+        .select({ id: campus.id, name: campus.name })
+        .from(campus)
+        .innerJoin(school, eq(campus.schoolId, school.id))
+        .where(eq(school.ownerUserId, this.currentOwner()));
+      const campusNames = new Map(campusRows.map((row) => [row.id, row.name]));
 
       // Enrich classes with related data
       const enrichedClasses = allClasses
@@ -806,6 +833,10 @@ export default class AcademicLevelService {
             streamColor: stream.color as 'science' | 'arts' | 'business',
             levelName: level.name,
             levelType: level.type as 'o-level' | 'a-level',
+            campusId: cls.campusId,
+            campusName: cls.campusId
+              ? (campusNames.get(cls.campusId) ?? null)
+              : null,
           };
         })
         .filter((cls): cls is NonNullable<typeof cls> => cls !== null);

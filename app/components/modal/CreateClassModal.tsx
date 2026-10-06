@@ -25,6 +25,7 @@ interface CreateClassModalProps {
   forms?: Array<{ id: number; name: string }>;
   streams?: Array<{ id: number; name: string }>;
   levels?: Array<{ id: number; name: string }>;
+  campuses?: Array<{ id: number; name: string }>;
 }
 
 export default function CreateClassModal({
@@ -34,11 +35,13 @@ export default function CreateClassModal({
   forms = [],
   streams = [],
   levels = [],
+  campuses = [],
 }: CreateClassModalProps) {
   const [className, setClassName] = useState('');
   const [formId, setFormId] = useState('');
   const [streamId, setStreamId] = useState('');
   const [levelId, setLevelId] = useState('');
+  const [campusId, setCampusId] = useState('');
 
   const isSubmitting = fetcher.state === 'submitting';
 
@@ -47,6 +50,7 @@ export default function CreateClassModal({
     setFormId('');
     setStreamId('');
     setLevelId('');
+    setCampusId('');
   };
 
   useEffect(() => {
@@ -169,6 +173,27 @@ export default function CreateClassModal({
               </Select>
               <input type="hidden" name="streamId" value={streamId} required />
             </div>
+
+            {campuses.length > 0 ? (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Campus
+                </label>
+                <Select value={campusId || undefined} onValueChange={setCampusId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="No campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campuses.map((row) => (
+                      <SelectItem key={row.id} value={String(row.id)}>
+                        {row.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <input type="hidden" name="campusId" value={campusId} />
+              </div>
+            ) : null}
           </div>
 
           {/* Sticky Action Footer */}

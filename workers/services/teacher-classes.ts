@@ -11,6 +11,7 @@ import {
   type SelectTeacher,
 } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForClass, schoolIdForTeacher } from './school-scope';
 
 export default class TeacherClassService {
   constructor(
@@ -87,6 +88,7 @@ export default class TeacherClassService {
         .values({
           teacherId,
           classId,
+          schoolId: await schoolIdForTeacher(this.db, teacherId),
           assignedAt: Date.now(),
         })
         .execute();
@@ -231,9 +233,11 @@ export default class TeacherClassService {
       // Remove duplicates
       const uniqueTeacherIds = [...new Set(teacherIds)];
       
+      const schoolId = await schoolIdForClass(this.db, classId);
       const values = uniqueTeacherIds.map((teacherId) => ({
         classId,
         teacherId,
+        schoolId,
         assignedAt: Date.now(),
       }));
 
@@ -274,9 +278,11 @@ export default class TeacherClassService {
 
       // Insert new assignments if any
       if (teacherIds.length > 0) {
+        const schoolId = await schoolIdForClass(this.db, classId);
         const values = teacherIds.map((teacherId) => ({
           classId,
           teacherId,
+          schoolId,
           assignedAt: Date.now(),
         }));
 
@@ -317,9 +323,11 @@ export default class TeacherClassService {
 
       // Insert new assignments if any
       if (classIds.length > 0) {
+        const schoolId = await schoolIdForTeacher(this.db, teacherId);
         const values = classIds.map((classId) => ({
           teacherId,
           classId,
+          schoolId,
           assignedAt: Date.now(),
         }));
 
@@ -360,10 +368,12 @@ export default class TeacherClassService {
         .execute();
 
       if (formClassIds.length > 0) {
+        const schoolId = await schoolIdForTeacher(this.db, teacherId);
         await this.db.insert(teacherFormClasses).values(
           formClassIds.map((formClassId) => ({
             teacherId,
             formClassId,
+            schoolId,
             assignedAt: Date.now(),
           })),
         ).execute();

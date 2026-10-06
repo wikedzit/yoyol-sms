@@ -40,6 +40,7 @@ interface CreateSchoolClassModalProps {
   fetcher: any;
   streams: Stream[];
   levels: Level[];
+  campuses?: { id: number; name: string }[];
 }
 
 export default function CreateSchoolClassModal({
@@ -48,6 +49,7 @@ export default function CreateSchoolClassModal({
   fetcher,
   streams,
   levels,
+  campuses = [],
 }: CreateSchoolClassModalProps) {
   const [name, setName] = useState('');
   const [selectedLevelType, setSelectedLevelType] = useState<LevelType | ''>(
@@ -56,6 +58,7 @@ export default function CreateSchoolClassModal({
   const [selectedStreamId, setSelectedStreamId] = useState<string>('');
   const [selectedFormNumber, setSelectedFormNumber] = useState<string>('');
   const [studentCount, setStudentCount] = useState(0);
+  const [campusId, setCampusId] = useState('');
 
   // Filter streams based on selected level
   const filteredStreams = useMemo(() => {
@@ -103,6 +106,7 @@ export default function CreateSchoolClassModal({
     setSelectedStreamId('');
     setSelectedFormNumber('');
     setStudentCount(0);
+    setCampusId('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,6 +123,9 @@ export default function CreateSchoolClassModal({
     submitData.append('levelId', String(selectedLevel.id));
     submitData.append('formNumber', selectedFormNumber);
     submitData.append('studentCount', String(studentCount));
+    if (campusId) {
+      submitData.append('campusId', campusId);
+    }
 
     fetcher.submit(submitData, { method: 'post' });
   };
@@ -255,6 +262,26 @@ export default function CreateSchoolClassModal({
                 required
               />
             </div>
+
+            {campuses.length > 0 ? (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  Campus
+                </label>
+                <Select value={campusId || undefined} onValueChange={setCampusId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No campus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {campuses.map((row) => (
+                      <SelectItem key={row.id} value={String(row.id)}>
+                        {row.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
 
             {/* Student Count */}
             <div>

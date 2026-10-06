@@ -5,6 +5,7 @@ import {
   text,
   primaryKey,
 } from 'drizzle-orm/sqlite-core';
+import { school } from './school';
 import { teachers } from './teachers';
 import { subject } from './subjects';
 
@@ -18,6 +19,9 @@ export const teacherSubjects = sqliteTable(
     subjectId: integer('subject_id')
       .notNull()
       .references(() => subject.id, { onDelete: 'cascade' }),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'set null',
+    }),
     // Optional: track when the assignment was made
     assignedAt: integer('assigned_at')
       .notNull()

@@ -30,6 +30,8 @@ export interface EnrichedFormClass {
   streamColor: "science" | "arts" | "business";
   levelName: string;
   levelType: LevelType;
+  campusId: number | null;
+  campusName: string | null;
 }
 
 interface StreamOption {
@@ -55,8 +57,16 @@ export async function loader({ context }: LoaderFunctionArgs) {
   const classes = await services.academicLevel.getAllFormClassesWithDetails();
   const streams = await services.academicLevel.getAllStreams();
   const levels = await services.academicLevel.getLevels();
+  const schools: { id: number }[] = await context.services.school.getAll();
+  const campuses = [];
+  for (const ownedSchool of schools) {
+    const rows = await context.services.campus.getBySchoolId(ownedSchool.id);
+    for (const row of rows) {
+      campuses.push({ id: row.id, name: row.name });
+    }
+  }
 
-  return Response.json({ classes, streams, levels });
+  return Response.json({ classes, streams, levels, campuses });
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -79,6 +89,20 @@ export async function action({ request, context }: ActionFunctionArgs) {
       const studentCount = form.get("studentCount")
         ? Number(form.get("studentCount"))
         : 0;
+      const campusIdRaw = form.get("campusId")
+        ? Number(form.get("campusId"))
+        : undefined;
+      let campusId: number | undefined;
+      if (campusIdRaw) {
+        const selectedCampus = await context.services.campus.getById(campusIdRaw);
+        if (!selectedCampus) {
+          return Response.json(
+            { error: "Selected campus was not found" },
+            { status: 400 },
+          );
+        }
+        campusId = selectedCampus.id;
+      }
 
       if (!name || !streamId || !levelId || !formNumber) {
         return Response.json(
@@ -114,6 +138,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         streamId,
         levelId,
         studentCount,
+        campusId,
       });
 
       return Response.json({ success: true, formClass: created });
@@ -166,10 +191,12 @@ export default function ClassesRoute() {
     classes: initialClasses,
     streams,
     levels,
+    campuses,
   } = useLoaderData() as {
     classes: EnrichedFormClass[];
     streams: StreamOption[];
     levels: LevelOption[];
+    campuses: { id: number; name: string }[];
   };
 
   const fetcher = useFetcher();
@@ -415,6 +442,14 @@ export default function ClassesRoute() {
                     </span>
                     <span className="text-foreground">{c.levelName}</span>
                   </div>
+                  {c.campusName ? (
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-muted-foreground">
+                        Campus:
+                      </span>
+                      <span className="text-foreground">{c.campusName}</span>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-1 text-xs text-muted-foreground pt-1">
@@ -472,6 +507,7 @@ export default function ClassesRoute() {
                   </div>
                   <p className="text-muted-foreground text-sm">
                     {c.formName} • {c.streamName} • {c.levelName}
+                    {c.campusName ? ` • ${c.campusName}` : ""}
                   </p>
                 </div>
               </Link>
@@ -513,6 +549,7 @@ export default function ClassesRoute() {
         fetcher={fetcher}
         streams={streams}
         levels={levels}
+        campuses={campuses ?? []}
       />
 
       {editingClass && (

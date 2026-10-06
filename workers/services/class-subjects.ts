@@ -8,6 +8,7 @@ import {
   type SelectSubject,
 } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForClass } from './school-scope';
 
 export default class ClassSubjectService {
   constructor(
@@ -84,6 +85,7 @@ export default class ClassSubjectService {
         .values({
           classId,
           subjectId,
+          schoolId: await schoolIdForClass(this.db, classId),
           assignedAt: Date.now(),
         })
         .execute();
@@ -194,9 +196,11 @@ export default class ClassSubjectService {
       // Remove duplicates
       const uniqueSubjectIds = [...new Set(subjectIds)];
       
+      const schoolId = await schoolIdForClass(this.db, classId);
       const values = uniqueSubjectIds.map((subjectId) => ({
         classId,
         subjectId,
+        schoolId,
         assignedAt: Date.now(),
       }));
 
@@ -237,9 +241,11 @@ export default class ClassSubjectService {
 
       // Insert new assignments if any
       if (subjectIds.length > 0) {
+        const schoolId = await schoolIdForClass(this.db, classId);
         const values = subjectIds.map((subjectId) => ({
           classId,
           subjectId,
+          schoolId,
           assignedAt: Date.now(),
         }));
 
