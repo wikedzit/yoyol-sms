@@ -9,6 +9,7 @@ import { campus } from '../database/campuses';
 import { school } from '../database/school';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 // --- Zod schemas for validation ---
 const CreateStudentSchema = z.object({
@@ -188,6 +189,9 @@ export default class StudentService {
           .insert(students)
           .values({
             ...validated,
+            schoolId:
+              validated.schoolId ??
+              (await schoolIdForOwner(this.db, ownerUserId)),
             ownerUserId,
             createdAt: now,
             updatedAt: now,

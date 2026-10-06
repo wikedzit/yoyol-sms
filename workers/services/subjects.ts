@@ -7,6 +7,7 @@ import {
 import { studentSubjects } from 'workers/database/student-subjects';
 import { z } from 'zod';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
@@ -55,6 +56,7 @@ export default class SubjectService {
         .insert(subject)
         .values({
           ...validatedData,
+          schoolId: await schoolIdForOwner(this.db, ownerUserId),
           ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),

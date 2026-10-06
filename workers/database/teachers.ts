@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 import { campus } from './campuses';
+import { school } from './school';
 import { users } from './users';
 
 export const teachers = sqliteTable('teachers', {
@@ -20,6 +21,10 @@ export const teachers = sqliteTable('teachers', {
   departmentId: integer('department_id'),
 
   campusId: integer('campus_id').references(() => campus.id, {
+    onDelete: 'set null',
+  }),
+
+  schoolId: integer('school_id').references(() => school.id, {
     onDelete: 'set null',
   }),
 

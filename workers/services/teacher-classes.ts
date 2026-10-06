@@ -161,6 +161,8 @@ export default class TeacherClassService {
           streamId: formClasses.streamId,
           levelId: formClasses.levelId,
           studentCount: formClasses.studentCount,
+          schoolId: formClasses.schoolId,
+          campusId: formClasses.campusId,
           ownerUserId: formClasses.ownerUserId,
           createdAt: formClasses.createdAt,
           updatedAt: formClasses.updatedAt,

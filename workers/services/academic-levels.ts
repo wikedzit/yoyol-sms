@@ -16,6 +16,7 @@ import {
 } from '../database/academic-levels';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 // --- Zod Schemas for Validation ---
 
@@ -83,6 +84,10 @@ export default class AcademicLevelService {
     return requireOwnerUserId(this.ownerUserId);
   }
 
+  private schoolId(): Promise<number | null> {
+    return schoolIdForOwner(this.db, this.currentOwner());
+  }
+
   // ==================== LEVEL OPERATIONS ====================
 
   async createLevel(data: CreateLevelInput): Promise<SelectAcademicLevel | null> {
@@ -92,6 +97,7 @@ export default class AcademicLevelService {
         .insert(academicLevels)
         .values({
           ...validated,
+          schoolId: await this.schoolId(),
           ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -208,6 +214,7 @@ export default class AcademicLevelService {
         .insert(academicStreams)
         .values({
           ...validated,
+          schoolId: await this.schoolId(),
           ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -341,6 +348,7 @@ export default class AcademicLevelService {
         .insert(academicForms)
         .values({
           ...validated,
+          schoolId: await this.schoolId(),
           ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -497,6 +505,7 @@ export default class AcademicLevelService {
         .insert(formClasses)
         .values({
           ...validated,
+          schoolId: await this.schoolId(),
           ownerUserId: this.currentOwner(),
           createdAt: Date.now(),
           updatedAt: Date.now(),

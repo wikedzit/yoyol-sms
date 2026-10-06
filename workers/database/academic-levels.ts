@@ -5,6 +5,8 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
+import { campus } from './campuses';
+import { school } from './school';
 import { users } from './users';
 
 // Academic Levels table (O-Level, A-Level)
@@ -15,6 +17,9 @@ export const academicLevels = sqliteTable(
     name: text('name').notNull(), // "O-Level", "A-Level"
     type: text('type').notNull(), // "o-level", "a-level"
     description: text('description'),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'set null',
+    }),
     ownerUserId: integer('owner_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -42,6 +47,9 @@ export const academicStreams = sqliteTable('academic_streams', {
     .references(() => academicLevels.id, { onDelete: 'cascade' }),
   levelType: text('level_type').notNull(), // "o-level", "a-level"
   color: text('color').notNull(), // "science", "arts", "business" - used for styling
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'set null',
+  }),
   ownerUserId: integer('owner_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -64,6 +72,9 @@ export const academicForms = sqliteTable('academic_forms', {
   levelId: integer('level_id')
     .notNull()
     .references(() => academicLevels.id, { onDelete: 'cascade' }),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'set null',
+  }),
   ownerUserId: integer('owner_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -89,6 +100,12 @@ export const formClasses = sqliteTable('form_classes', {
     .notNull()
     .references(() => academicLevels.id, { onDelete: 'cascade' }),
   studentCount: integer('student_count').notNull().default(0),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'set null',
+  }),
+  campusId: integer('campus_id').references(() => campus.id, {
+    onDelete: 'set null',
+  }),
   ownerUserId: integer('owner_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),

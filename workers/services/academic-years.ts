@@ -10,6 +10,7 @@ import {
 } from '../database/academic-years';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 // --- Zod Schemas for Validation ---
 
@@ -124,6 +125,7 @@ export default class AcademicYearService {
         .insert(academicYears)
         .values({
           ...validated,
+          schoolId: await schoolIdForOwner(this.db, ownerUserId),
           ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -327,6 +329,7 @@ export default class AcademicYearService {
         .insert(terms)
         .values({
           ...validated,
+          schoolId: year.schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })

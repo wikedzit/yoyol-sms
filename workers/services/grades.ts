@@ -11,6 +11,7 @@ import { subject } from '../database/subjects';
 import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
 import { teachers } from '../database/teachers';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 // Helper function to calculate grade from score
 const getGradeFromScore = (score: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
@@ -118,7 +119,7 @@ export default class GradeService {
       const grade = getGradeFromScore(validated.score);
 
       const ownedStudent = await this.db
-        .select({ id: students.id })
+        .select({ id: students.id, schoolId: students.schoolId })
         .from(students)
         .where(
           and(
@@ -137,6 +138,9 @@ export default class GradeService {
         .values({
           ...validated,
           grade,
+          schoolId:
+            ownedStudent.schoolId ??
+            (await schoolIdForOwner(this.db, ownerUserId)),
           ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),

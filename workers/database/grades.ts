@@ -4,6 +4,7 @@ import { students } from './students';
 import { subject } from './subjects';
 import { academicStreams, academicForms } from './academic-levels';
 import { teachers } from './teachers';
+import { school } from './school';
 import { users } from './users';
 
 export const grades = sqliteTable('grades', {
@@ -22,6 +23,9 @@ export const grades = sqliteTable('grades', {
     .notNull()
     .references(() => academicForms.id, { onDelete: 'cascade' }),
   teacherId: integer('teacher_id').references(() => teachers.id, {
+    onDelete: 'set null',
+  }),
+  schoolId: integer('school_id').references(() => school.id, {
     onDelete: 'set null',
   }),
   ownerUserId: integer('owner_user_id')

@@ -5,6 +5,7 @@ import {
   integer,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
+import { school } from './school';
 import { users } from './users';
 
 // Academic Years table
@@ -16,6 +17,9 @@ export const academicYears = sqliteTable(
     startDate: text('start_date').notNull(), // ISO date string
     endDate: text('end_date').notNull(), // ISO date string
     status: text('status').notNull().default('upcoming'), // 'upcoming' | 'active' | 'archived'
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'set null',
+    }),
     ownerUserId: integer('owner_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -44,6 +48,9 @@ export const terms = sqliteTable('terms', {
   termNumber: integer('term_number').notNull(), // ordering within the year
   startDate: text('start_date').notNull(),
   endDate: text('end_date').notNull(),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'set null',
+  }),
   isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(false),
   createdAt: integer('created_at')
     .notNull()

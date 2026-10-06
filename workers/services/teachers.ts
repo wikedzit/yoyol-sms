@@ -2,6 +2,7 @@ import { and, eq, like, asc, desc } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { teachers, type SelectTeacher } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 import { z } from 'zod';
 
@@ -63,6 +64,7 @@ export default class TeacherService {
           gender: validatedData.gender,
           experience: validatedData.experience,
           status: validatedData.status,
+          schoolId: await schoolIdForOwner(this.db, ownerUserId),
           ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),

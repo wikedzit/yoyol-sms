@@ -7,6 +7,7 @@ import {
 } from '../database/notices';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 // --- Zod Schemas for Validation ---
 const CreateNoticeSchema = z.object({
@@ -59,6 +60,7 @@ export default class NoticeService {
         .insert(notices)
         .values({
           ...validated,
+          schoolId: await schoolIdForOwner(this.db, ownerUserId),
           ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),

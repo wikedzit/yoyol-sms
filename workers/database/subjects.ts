@@ -6,6 +6,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
 import { academicStreams } from './academic-levels';
+import { school } from './school';
 import { users } from './users';
 
 export const subject = sqliteTable(
@@ -23,6 +24,9 @@ export const subject = sqliteTable(
     streamId: integer('stream_id')
       .notNull()
       .references(() => academicStreams.id),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'set null',
+    }),
     ownerUserId: integer('owner_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),

@@ -4,6 +4,7 @@ import { classes, type InsertClass, type SelectClass } from '../database/class';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { students } from 'workers/database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { schoolIdForOwner } from './school-scope';
 
 // Zod schemas for validation
 const CreateClassSchema = z.object({
@@ -93,6 +94,7 @@ export default class ClassService {
           section: validatedData.section,
           year: validatedData.year,
           departmentId: validatedData.departmentId ?? null,
+          schoolId: await schoolIdForOwner(this.db, ownerUserId),
           ownerUserId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -188,6 +190,7 @@ export default class ClassService {
           section: classes.section,
           year: classes.year,
           departmentId: classes.departmentId,
+          schoolId: classes.schoolId,
           ownerUserId: classes.ownerUserId,
           createdAt: classes.createdAt,
           updatedAt: classes.updatedAt,
@@ -203,6 +206,7 @@ export default class ClassService {
           classes.section,
           classes.year,
           classes.departmentId,
+          classes.schoolId,
           classes.ownerUserId,
           classes.createdAt,
           classes.updatedAt
