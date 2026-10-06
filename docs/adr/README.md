@@ -15,6 +15,8 @@ rewritten after acceptance; a later record supersedes an earlier one instead.
 | [0007](0007-hooks-and-events.md) | Synchronous hooks and asynchronous events | Proposed |
 
 The full extension contract lives in [docs/extensions](../extensions/specification.md).
+Adoption of these decisions is tracked in the
+[pluggable architecture plan](../plans/adopt-pluggable-architecture.md).
 
 ## Template
 
