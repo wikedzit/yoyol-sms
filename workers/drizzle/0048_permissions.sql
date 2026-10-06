@@ -37,6 +37,12 @@ WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE key = 'students.record.read');
 INSERT INTO permissions (key, label)
 SELECT 'students.record.write', 'Change student records'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE key = 'students.record.write');
+INSERT INTO permissions (key, label)
+SELECT 'staff.record.read', 'View staff records'
+WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE key = 'staff.record.read');
+INSERT INTO permissions (key, label)
+SELECT 'staff.record.write', 'Change staff records'
+WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE key = 'staff.record.write');
 
 INSERT INTO role_permissions (role_id, permission_key)
 SELECT roles.id, permissions.key

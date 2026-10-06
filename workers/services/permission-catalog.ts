@@ -7,7 +7,13 @@ export const permissionCatalog = [
   { key: 'campus.manage', label: 'Manage campuses' },
   { key: 'students.record.read', label: 'View student records' },
   { key: 'students.record.write', label: 'Change student records' },
+  { key: 'staff.record.read', label: 'View staff records' },
+  { key: 'staff.record.write', label: 'Change staff records' },
 ] as const;
+
+export function isPermissionKey(value: string): value is PermissionKey {
+  return permissionCatalog.some((permission) => permission.key === value);
+}
 
 export type PermissionKey = (typeof permissionCatalog)[number]['key'];
 

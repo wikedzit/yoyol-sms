@@ -30,8 +30,10 @@ import {
 } from '~/components/ui/card';
 import type SchoolService from 'workers/services/school';
 import type StudentService from 'workers/services/student';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 export async function loader({
+  request,
   context,params,
 }: LoaderFunctionArgs) {
   const services = context.services as {
@@ -44,6 +46,7 @@ export async function loader({
     throw new Response('School not found', {
       status: 404,});
   }
+  await requireSchoolPermission(request, context.services, 'school.profile.read', schoolId);
   const totalStudents =
     await services.student.countBySchoolId(schoolId);
 
@@ -63,6 +66,7 @@ export async function action({
     student: StudentService;
   };
   const schoolId = Number(params.schoolId);
+  await requireSchoolPermission(request, context.services, 'school.profile.update', schoolId);
   const form = await request.formData();
   const method = (form.get('_method') as string) || request.method;
   if (method !== 'POST') {

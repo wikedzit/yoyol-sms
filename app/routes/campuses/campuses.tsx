@@ -5,6 +5,7 @@ import {
 
 import type SchoolService from 'workers/services/school';
 import type CampusService from 'workers/services/campus';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 export async function action({
   request,
@@ -34,6 +35,8 @@ export async function action({
       { status: 404 }
     );
   }
+
+  await requireSchoolPermission(request, context.services, 'campus.manage', schoolId);
 
   const form = await request.formData();
 

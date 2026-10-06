@@ -41,9 +41,11 @@ import { PaginationControls } from '~/components/shared/PaginationControls';
 import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
 import { GraduationCap } from 'lucide-react';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 // Loader – fetch teachers with their subjects and classes
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'staff.record.read');
   const services = context.services as {
     teacher: TeacherService;
     subject: SubjectService;
@@ -134,6 +136,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 
 // Action – handle create, update, delete, and subject/class assignments
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'staff.record.write');
   const services = context.services as {
     teacher: TeacherService;
     teacherSubject: TeacherSubjectService;

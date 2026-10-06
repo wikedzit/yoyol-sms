@@ -2,8 +2,13 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { SchoolProfileView } from "~/components/school/SchoolProfileView";
 import { loadSchoolProfile } from "~/lib/school-profile.server";
+import { requireAnySchoolPermission } from "~/lib/require-school-permission";
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireAnySchoolPermission(request, context.services, [
+    "school.profile.read",
+    "school.archive",
+  ]);
   return loadSchoolProfile(context.services);
 }
 

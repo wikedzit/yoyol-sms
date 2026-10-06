@@ -39,9 +39,11 @@ import { toast } from 'sonner';
 import { usePagination } from '~/hooks/usePagination';
 import { useLanguage } from '~/lib/i18n';
 import { PaginationControls } from '~/components/shared/PaginationControls';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 // 🧠 Loader – fetch students with their assigned subjects + schools + campuses
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'students.record.read');
   const services = context.services as {
     student: StudentService;
     subject: SubjectService;
@@ -109,6 +111,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
   };
 }
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, 'students.record.write');
   const services = context.services as {
     student: StudentService;
     studentSubjects: StudentSubjectService;

@@ -7,7 +7,12 @@ import { school } from '../database/school';
 import { schoolMemberships } from '../database/school-memberships';
 import { users } from '../database/users';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { grantsByRole, permissionCatalog, type PermissionKey } from './permission-catalog';
+import {
+  grantsByRole,
+  isPermissionKey,
+  permissionCatalog,
+  type PermissionKey,
+} from './permission-catalog';
 
 export type SchoolMember = {
   membershipId: number;
@@ -223,6 +228,52 @@ export default class AccessService {
       throw new Error('Move members off this role before deleting it.');
     }
     await this.db.delete(roles).where(eq(roles.id, role.id));
+  }
+
+  async listGrants(schoolId: number): Promise<{ roleId: number; permissionKey: string }[]> {
+    await this.requirePermission(schoolId, 'school.role.manage');
+    return this.db
+      .select({
+        roleId: rolePermissions.roleId,
+        permissionKey: rolePermissions.permissionKey,
+      })
+      .from(rolePermissions)
+      .innerJoin(roles, eq(roles.id, rolePermissions.roleId))
+      .where(eq(roles.schoolId, schoolId));
+  }
+
+  async setRoleGrant(
+    schoolId: number,
+    roleId: number,
+    permissionKey: string,
+    enabled: boolean,
+  ): Promise<void> {
+    await this.requirePermission(schoolId, 'school.role.manage');
+    if (!isPermissionKey(permissionKey)) {
+      throw new Error('That permission is not recognized.');
+    }
+    const role = await this.roleInSchool(schoolId, roleId);
+    if (!role) {
+      throw new Error('That role does not belong to this school.');
+    }
+    if (role.key === 'admin') {
+      throw new Error('The admin role keeps every permission.');
+    }
+    if (enabled) {
+      await this.db
+        .insert(rolePermissions)
+        .values({ roleId: role.id, permissionKey })
+        .onConflictDoNothing();
+      return;
+    }
+    await this.db
+      .delete(rolePermissions)
+      .where(
+        and(
+          eq(rolePermissions.roleId, role.id),
+          eq(rolePermissions.permissionKey, permissionKey),
+        ),
+      );
   }
 
   async setSchoolStatus(schoolId: number, status: 'active' | 'archived'): Promise<void> {

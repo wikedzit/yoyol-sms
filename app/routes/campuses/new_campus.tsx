@@ -25,6 +25,7 @@ import {
 
 import type SchoolService from 'workers/services/school';
 import type CampusService from 'workers/services/campus';
+import { requireSchoolPermission } from '~/lib/require-school-permission';
 
 export async function loader({ request, params, context }: LoaderFunctionArgs) {
   const services = context.services as {
@@ -42,6 +43,8 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
   if (!school) {
     throw new Response('School not found', { status: 404 });
   }
+
+  await requireSchoolPermission(request, context.services, 'campus.manage', schoolId);
 
   const returnTo =
     safeInternalPath(new URL(request.url).searchParams.get('returnTo')) ??
@@ -79,6 +82,8 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
       error: 'School not found.',
     };
   }
+
+  await requireSchoolPermission(request, context.services, 'campus.manage', schoolId);
 
   const form = await request.formData();
 

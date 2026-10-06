@@ -16,6 +16,7 @@ import type { LevelType } from "~/type/shools";
 import CreateSchoolClassModal from "~/components/modal/CreateSchoolClassModal";
 import EditSchoolClassModal from "~/components/modal/EditSchoolClassModal";
 import { useLanguage } from "~/lib/i18n";
+import { requireSchoolPermission } from "~/lib/require-school-permission";
 
 export interface EnrichedFormClass {
   id: number;
@@ -49,7 +50,8 @@ interface LevelOption {
   description?: string;
 }
 
-export async function loader({ context }: LoaderFunctionArgs) {
+export async function loader({ request, context }: LoaderFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "school.profile.read");
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };
@@ -70,6 +72,7 @@ export async function loader({ context }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, context }: ActionFunctionArgs) {
+  await requireSchoolPermission(request, context.services, "school.profile.update");
   const services = context.services as {
     academicLevel: AcademicLevelService;
   };

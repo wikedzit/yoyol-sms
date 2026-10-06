@@ -44,7 +44,18 @@ const translations = {
     schoolMembers: 'Members',
     schoolMembersDescription: 'People who belong to this school, and the role each one holds.',
     schoolRoles: 'Roles',
-    schoolRolesDescription: 'Built-in roles stay as they are. Add a role when the school needs one.',
+    schoolRolesDescription: 'Built-in role names stay as they are. Choose which permissions each role holds. The admin role keeps every permission.',
+    adminKeepsPermissions: 'The admin role keeps every permission.',
+    permissionViewSchool: 'View the school',
+    permissionUpdateSchool: 'Update the school profile',
+    permissionArchiveSchool: 'Archive or restore the school',
+    permissionManageMembers: 'Manage school members',
+    permissionManageRoles: 'Manage school roles',
+    permissionManageCampuses: 'Manage campuses',
+    permissionViewStudents: 'View student records',
+    permissionChangeStudents: 'Change student records',
+    permissionViewStaff: 'View staff records',
+    permissionChangeStaff: 'Change staff records',
     changeRole: 'Change role',
     suspendMember: 'Suspend',
     restoreMember: 'Restore',
@@ -308,7 +319,18 @@ const translations = {
     schoolMembers: 'Wanachama',
     schoolMembersDescription: 'Watu wa shule hii, na jukumu la kila mmoja.',
     schoolRoles: 'Majukumu',
-    schoolRolesDescription: 'Majukumu ya mfumo yanabaki. Ongeza jukumu shule inapolihitaji.',
+    schoolRolesDescription: 'Majina ya majukumu ya mfumo yanabaki. Chagua ruhusa za kila jukumu. Jukumu la msimamizi linabaki na ruhusa zote.',
+    adminKeepsPermissions: 'Jukumu la msimamizi linabaki na ruhusa zote.',
+    permissionViewSchool: 'Angalia shule',
+    permissionUpdateSchool: 'Sasisha wasifu wa shule',
+    permissionArchiveSchool: 'Hifadhi au rejesha shule',
+    permissionManageMembers: 'Simamia wanachama',
+    permissionManageRoles: 'Simamia majukumu',
+    permissionManageCampuses: 'Simamia kampasi',
+    permissionViewStudents: 'Angalia wanafunzi',
+    permissionChangeStudents: 'Badilisha wanafunzi',
+    permissionViewStaff: 'Angalia walimu',
+    permissionChangeStaff: 'Badilisha walimu',
     changeRole: 'Badilisha jukumu',
     suspendMember: 'Simamisha',
     restoreMember: 'Rejesha',
@@ -533,7 +555,7 @@ const translations = {
   },
 } as const;
 
-type TranslationKey = keyof typeof translations.en;
+export type TranslationKey = keyof typeof translations.en;
 
 const LanguageContext = createContext<{
   language: Language;

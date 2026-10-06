@@ -3,10 +3,24 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
-import { useLanguage } from '~/lib/i18n';
+import { useLanguage, type TranslationKey } from '~/lib/i18n';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
 import type { SelectSchool } from 'workers/database/school';
 import type { SchoolRole } from 'workers/services/access';
+import { permissionCatalog, type PermissionKey } from 'workers/services/permission-catalog';
+
+const permissionLabels: Record<PermissionKey, TranslationKey> = {
+  'school.profile.read': 'permissionViewSchool',
+  'school.profile.update': 'permissionUpdateSchool',
+  'school.archive': 'permissionArchiveSchool',
+  'school.member.manage': 'permissionManageMembers',
+  'school.role.manage': 'permissionManageRoles',
+  'campus.manage': 'permissionManageCampuses',
+  'students.record.read': 'permissionViewStudents',
+  'students.record.write': 'permissionChangeStudents',
+  'staff.record.read': 'permissionViewStaff',
+  'staff.record.write': 'permissionChangeStaff',
+};
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   await context.services.tenancy.ensureForCurrentOwner();
@@ -15,15 +29,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const schoolId = selectSchoolId(new URL(request.url), schools, remembered);
 
   if (schoolId === null) {
-    return { schoolId: null, roles: [], error: null };
+    return { schoolId: null, roles: [], grants: [], error: null };
   }
 
   try {
     const roles: SchoolRole[] = await context.services.access.listRoles(schoolId);
-    return { schoolId, roles, error: null };
+    const grants: { roleId: number; permissionKey: string }[] =
+      await context.services.access.listGrants(schoolId);
+    return { schoolId, roles, grants, error: null };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to load roles.';
-    return { schoolId, roles: [], error: message };
+    return { schoolId, roles: [], grants: [], error: message };
   }
 }
 
@@ -43,6 +59,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
       );
     } else if (intent === 'delete') {
       await context.services.access.deleteRole(schoolId, Number(form.get('roleId')));
+    } else if (intent === 'grant') {
+      await context.services.access.setRoleGrant(
+        schoolId,
+        Number(form.get('roleId')),
+        String(form.get('permissionKey') || ''),
+        form.get('enabled') === '1',
+      );
     }
     return { saved: true };
   } catch (error) {
@@ -52,7 +75,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
 }
 
 export default function RolesPage() {
-  const { schoolId, roles, error } = useLoaderData<typeof loader>();
+  const { schoolId, roles, grants, error } = useLoaderData<typeof loader>();
   const { t } = useLanguage();
   const fetcher = useFetcher<typeof action>();
   const actionError = fetcher.data && 'error' in fetcher.data ? fetcher.data.error : null;
@@ -89,6 +112,9 @@ export default function RolesPage() {
                   {role.isSystem ? (
                     <p className="text-sm text-muted-foreground">{t('builtInRole')}</p>
                   ) : null}
+                  {role.key === 'admin' ? (
+                    <p className="text-sm text-muted-foreground">{t('adminKeepsPermissions')}</p>
+                  ) : null}
                 </div>
                 {role.isSystem ? null : (
                   <div className="flex flex-wrap items-center gap-2">
@@ -117,10 +143,57 @@ export default function RolesPage() {
                   </div>
                 )}
               </CardContent>
+              <RoleGrants role={role} schoolId={schoolId} grants={grants} />
             </Card>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function RoleGrants({
+  role,
+  schoolId,
+  grants,
+}: {
+  role: SchoolRole;
+  schoolId: number | null;
+  grants: { roleId: number; permissionKey: string }[];
+}) {
+  const { t } = useLanguage();
+  const fetcher = useFetcher<{ error?: string }>();
+  const adminRole = role.key === 'admin';
+
+  return (
+    <div className="flex flex-wrap gap-x-4 gap-y-2 px-4 pb-4">
+      {permissionCatalog.map((permission) => {
+        const granted = adminRole || grants.some(
+          (grant) => grant.roleId === role.id && grant.permissionKey === permission.key,
+        );
+        return (
+          <label key={permission.key} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={granted}
+              disabled={adminRole || fetcher.state !== 'idle'}
+              onChange={(event) => {
+                const form = new FormData();
+                form.set('intent', 'grant');
+                form.set('schoolId', String(schoolId ?? ''));
+                form.set('roleId', String(role.id));
+                form.set('permissionKey', permission.key);
+                form.set('enabled', event.target.checked ? '1' : '0');
+                fetcher.submit(form, { method: 'post' });
+              }}
+            />
+            {t(permissionLabels[permission.key])}
+          </label>
+        );
+      })}
+      {fetcher.data?.error ? (
+        <p className="w-full text-sm text-destructive">{fetcher.data.error}</p>
+      ) : null}
     </div>
   );
 }
