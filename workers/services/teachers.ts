@@ -1,9 +1,7 @@
 import { and, eq, like, asc, desc, ne } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
 import { teachers, type SelectTeacher } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
-
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 import { z } from 'zod';
 
 // --- Zod Schemas ---
@@ -45,6 +43,7 @@ export default class TeacherService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   async createTeacher(data: CreateTeacherInput): Promise<SelectTeacher | null> {
@@ -64,8 +63,7 @@ export default class TeacherService {
           gender: validatedData.gender,
           experience: validatedData.experience,
           status: validatedData.status,
-          schoolId: await schoolIdForOwner(this.db, ownerUserId),
-          ownerUserId,
+          schoolId: requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -86,7 +84,7 @@ export default class TeacherService {
         .select()
         .from(teachers)
         .where(
-          and(eq(teachers.ownerUserId, ownerUserId), ne(teachers.status, 'Archived')),
+          and(eq(teachers.schoolId, requireSchoolId(this.activeSchoolId)), ne(teachers.status, 'Archived')),
         );
 
       return result.length;
@@ -102,7 +100,7 @@ export default class TeacherService {
       const result = await this.db
         .select()
         .from(teachers)
-        .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
+        .where(and(eq(teachers.id, id), eq(teachers.schoolId, requireSchoolId(this.activeSchoolId))))
         .get();
       return result || null;
     } catch (error) {
@@ -118,7 +116,7 @@ export default class TeacherService {
         .select()
         .from(teachers)
         .where(
-          and(eq(teachers.email, email), eq(teachers.ownerUserId, ownerUserId)),
+          and(eq(teachers.email, email), eq(teachers.schoolId, requireSchoolId(this.activeSchoolId))),
         )
         .get();
       return result || null;
@@ -149,7 +147,7 @@ export default class TeacherService {
           : teachers.updatedAt;
 
       const filters = [
-        eq(teachers.ownerUserId, ownerUserId),
+        eq(teachers.schoolId, requireSchoolId(this.activeSchoolId)),
         ne(teachers.status, 'Archived'),
       ];
       if (search) {
@@ -182,7 +180,7 @@ export default class TeacherService {
       const result = await this.db
         .update(teachers)
         .set({ ...validatedData, updatedAt: Date.now() })
-        .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
+        .where(and(eq(teachers.id, id), eq(teachers.schoolId, requireSchoolId(this.activeSchoolId))))
         .returning()
         .execute();
 
@@ -199,7 +197,7 @@ export default class TeacherService {
       const result = await this.db
         .update(teachers)
         .set({ status: 'Archived', updatedAt: Date.now() })
-        .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
+        .where(and(eq(teachers.id, id), eq(teachers.schoolId, requireSchoolId(this.activeSchoolId))))
         .returning({ id: teachers.id });
       return result.length > 0;
     } catch (error) {

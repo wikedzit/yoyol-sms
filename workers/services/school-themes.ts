@@ -11,7 +11,7 @@ import {
   schoolThemes,
   type SelectSchoolTheme,
 } from '../database/school-themes';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 
 export type ListedSchoolTheme = {
   key: string;
@@ -33,6 +33,7 @@ export default class SchoolThemeService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   async listForSchool(schoolId: number): Promise<ListedSchoolTheme[]> {
@@ -78,7 +79,6 @@ export default class SchoolThemeService {
 
     await this.db.insert(schoolThemes).values({
       schoolId,
-      ownerUserId,
       themeKey: document.key,
       nameEn: document.name.en,
       nameSw: document.name.sw,
@@ -123,7 +123,7 @@ export default class SchoolThemeService {
         .innerJoin(school, eq(schoolThemes.schoolId, school.id))
         .where(
           and(
-            eq(school.ownerUserId, ownerUserId),
+            eq(school.id, requireSchoolId(this.activeSchoolId)),
             eq(schoolThemes.isActive, true),
           ),
         )
@@ -148,7 +148,7 @@ export default class SchoolThemeService {
     const ownedSchool = await this.db
       .select({ id: school.id })
       .from(school)
-      .where(and(eq(school.id, schoolId), eq(school.ownerUserId, ownerUserId)))
+      .where(and(eq(school.id, schoolId), eq(school.id, requireSchoolId(this.activeSchoolId))))
       .get();
 
     if (!ownedSchool) {

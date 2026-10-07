@@ -5,7 +5,6 @@ import { subject } from './subjects';
 import { academicStreams, academicForms } from './academic-levels';
 import { teachers } from './teachers';
 import { school } from './school';
-import { users } from './users';
 
 export const grades = sqliteTable('grades', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -28,9 +27,7 @@ export const grades = sqliteTable('grades', {
   schoolId: integer('school_id').references(() => school.id, {
     onDelete: 'set null',
   }),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('Active'),
   // Grade data
   score: integer('score').notNull(), // 0-100
   grade: text('grade').notNull(), // A, B, C, D, F

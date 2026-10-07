@@ -5,3 +5,11 @@ export function requireOwnerUserId(ownerUserId: number | null): number {
 
   return ownerUserId;
 }
+
+export function requireSchoolId(schoolId: number | null): number {
+  if (schoolId == null) {
+    throw new Error('Choose a school before changing its records.');
+  }
+
+  return schoolId;
+}

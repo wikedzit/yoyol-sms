@@ -1,6 +1,10 @@
+import { and, eq } from "drizzle-orm";
 import { createRequestHandler } from "react-router";
+import { readRememberedSchoolId } from "../app/lib/selected-school";
 import { readDatabaseDriver } from "./database/adapter";
 import { createD1Adapter } from "./database/d1-adapter";
+import { schoolMemberships } from "./database/school-memberships";
+import type { AppDatabase } from "./database/app-database";
 import ServiceContainer from "./services/index";
 import SessionService from "./services/sessions";
 import { csrfHeaderMatchesCookie, requestNeedsCsrf } from "./utils/csrf";
@@ -38,10 +42,12 @@ export default {
 			return withSecurityHeaders(request, new Response('CSRF check failed.', { status: 403, headers }));
 		}
 
+		const schoolId = await resolveActiveSchoolId(db, opened.userId, opened.request);
 		const services = new ServiceContainer(
 			env.DB,
 			env.AUTH_SESSION_SECRET,
 			opened.userId,
+			schoolId,
 		);
 
 		const response = await requestHandler(opened.request, {
@@ -58,6 +64,38 @@ export default {
 		}));
 	},
 } satisfies ExportedHandler<Env>;
+
+async function resolveActiveSchoolId(
+  db: AppDatabase,
+  userId: number | null,
+  request: Request,
+): Promise<number | null> {
+  if (userId == null) {
+    return null;
+  }
+
+  const memberships = await db
+    .select({ schoolId: schoolMemberships.schoolId })
+    .from(schoolMemberships)
+    .where(
+      and(
+        eq(schoolMemberships.userId, userId),
+        eq(schoolMemberships.status, 'active'),
+      ),
+    );
+  const schoolIds = memberships.map((membership) => membership.schoolId);
+  const requested = Number(new URL(request.url).searchParams.get('schoolId'));
+  if (schoolIds.includes(requested)) {
+    return requested;
+  }
+
+  const remembered = await readRememberedSchoolId(request);
+  if (remembered != null && schoolIds.includes(remembered)) {
+    return remembered;
+  }
+
+  return schoolIds[0] ?? null;
+}
 
 async function ensureCsrf(request: Request): Promise<{ token: string; setCookie: string | null }> {
   const existing = readCookie(request.headers.get('Cookie'), 'yoyol_csrf');

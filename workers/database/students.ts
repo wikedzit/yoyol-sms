@@ -4,7 +4,6 @@ import { classes } from './class';
 import { formClasses } from './academic-levels';
 import { campus } from './campuses';
 import { school } from './school';
-import { users } from './users';
 import { relations } from 'drizzle-orm';
 
 export const students = sqliteTable('students', {
@@ -51,10 +50,6 @@ export const students = sqliteTable('students', {
   campusId: integer('campus_id').references(() => campus.id, {
     onDelete: 'set null',
   }),
-
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
 });
 
 export const studentsRelations = relations(students, ({ one }) => ({

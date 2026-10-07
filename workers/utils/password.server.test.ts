@@ -15,9 +15,9 @@ test('KRN-IAM-09 Argon2id verifies and replaces an older hash', async () => {
   assert.equal(passwordIsStrong('admin123'), true);
   assert.equal(passwordIsStrong('short1'), false);
   const argonHash = await hashWithArgon2('admin123');
-  assert.equal(argonHash?.startsWith('$argon2id$'), true);
-  assert.equal(await verifyPassword('admin123', argonHash ?? ''), true);
-  assert.equal(await verifyPassword('wrong123', argonHash ?? ''), false);
+  assert.equal(argonHash.startsWith('$argon2id$'), true);
+  assert.equal(await verifyPassword('admin123', argonHash), true);
+  assert.equal(await verifyPassword('wrong123', argonHash), false);
   const hash = await hashPassword('admin123');
   assert.equal(await verifyPassword('admin123', hash), true);
   assert.equal(passwordNeedsRehash(hash), false);

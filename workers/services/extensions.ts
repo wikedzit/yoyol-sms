@@ -7,7 +7,7 @@ import {
 } from '../extensions/catalog';
 import { school } from '../database/school';
 import { schoolExtensions } from '../database/school-extensions';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 
 export type InstalledExtension = BundledExtension & {
   status: 'enabled' | 'available';
@@ -17,6 +17,7 @@ export default class ExtensionService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   async listForSchool(schoolId: number): Promise<InstalledExtension[]> {
@@ -113,7 +114,7 @@ export default class ExtensionService {
     const ownedSchool = await this.db
       .select({ id: school.id })
       .from(school)
-      .where(and(eq(school.id, schoolId), eq(school.ownerUserId, ownerUserId)))
+      .where(and(eq(school.id, schoolId), eq(school.id, requireSchoolId(this.activeSchoolId))))
       .get();
 
     if (!ownedSchool) {

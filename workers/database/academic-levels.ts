@@ -7,7 +7,6 @@ import {
 } from 'drizzle-orm/sqlite-core';
 import { campus } from './campuses';
 import { school } from './school';
-import { users } from './users';
 
 // Academic Levels table (O-Level, A-Level)
 export const academicLevels = sqliteTable(
@@ -20,9 +19,6 @@ export const academicLevels = sqliteTable(
     schoolId: integer('school_id').references(() => school.id, {
       onDelete: 'set null',
     }),
-    ownerUserId: integer('owner_user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
     createdAt: integer('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
@@ -31,8 +27,8 @@ export const academicLevels = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
-    ownerTypeUnique: uniqueIndex('academic_levels_owner_type_unique').on(
-      table.ownerUserId,
+    schoolTypeUnique: uniqueIndex('academic_levels_school_type_unique').on(
+      table.schoolId,
       table.type,
     ),
   }),
@@ -50,9 +46,6 @@ export const academicStreams = sqliteTable('academic_streams', {
   schoolId: integer('school_id').references(() => school.id, {
     onDelete: 'set null',
   }),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -75,9 +68,6 @@ export const academicForms = sqliteTable('academic_forms', {
   schoolId: integer('school_id').references(() => school.id, {
     onDelete: 'set null',
   }),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -106,9 +96,6 @@ export const formClasses = sqliteTable('form_classes', {
   campusId: integer('campus_id').references(() => campus.id, {
     onDelete: 'set null',
   }),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

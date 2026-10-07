@@ -3,9 +3,7 @@ import { z } from 'zod';
 import { classes, type InsertClass, type SelectClass } from '../database/class';
 import type { AppDatabase } from '../database/app-database';
 import { students } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
-
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // Zod schemas for validation
 const CreateClassSchema = z.object({
   name: z
@@ -72,10 +70,12 @@ export type GetClassesInput = z.infer<typeof GetClassesSchema>;
 export default class ClassService {
   private db: AppDatabase;
   private ownerUserId: number | null;
+  private activeSchoolId: number | null;
 
-  constructor(database: AppDatabase, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
+    this.activeSchoolId = activeSchoolId;
   }
 
   /**
@@ -94,8 +94,7 @@ export default class ClassService {
           section: validatedData.section,
           year: validatedData.year,
           departmentId: validatedData.departmentId ?? null,
-          schoolId: await schoolIdForOwner(this.db, ownerUserId),
-          ownerUserId,
+          schoolId: requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -117,7 +116,7 @@ export default class ClassService {
       const result = await this.db
         .select()
         .from(classes)
-        .where(and(eq(classes.id, id), eq(classes.ownerUserId, ownerUserId)))
+        .where(and(eq(classes.id, id), eq(classes.schoolId, requireSchoolId(this.activeSchoolId))))
         .get();
 
       return result || null;
@@ -143,7 +142,7 @@ export default class ClassService {
           ? classes.createdAt
           : classes.updatedAt;
 
-      const filters = [eq(classes.ownerUserId, ownerUserId)];
+      const filters = [eq(classes.schoolId, requireSchoolId(this.activeSchoolId))];
       if (search) {
         filters.push(like(classes.name, `%${search}%`));
       }
@@ -177,7 +176,7 @@ export default class ClassService {
           ? classes.createdAt
           : classes.updatedAt;
 
-      const filters = [eq(classes.ownerUserId, ownerUserId)];
+      const filters = [eq(classes.schoolId, requireSchoolId(this.activeSchoolId))];
       if (search) {
         filters.push(like(classes.name, `%${search}%`));
       }
@@ -191,7 +190,6 @@ export default class ClassService {
           year: classes.year,
           departmentId: classes.departmentId,
           schoolId: classes.schoolId,
-          ownerUserId: classes.ownerUserId,
           createdAt: classes.createdAt,
           updatedAt: classes.updatedAt,
           studentCount: sql<number>`COUNT(${students.id})`.as('studentCount'),
@@ -207,7 +205,6 @@ export default class ClassService {
           classes.year,
           classes.departmentId,
           classes.schoolId,
-          classes.ownerUserId,
           classes.createdAt,
           classes.updatedAt
         )
@@ -244,7 +241,7 @@ export default class ClassService {
         .where(
           and(
             eq(classes.id, id),
-            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning();
@@ -266,7 +263,7 @@ export default class ClassService {
         .where(
           and(
             eq(classes.id, id),
-            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning({ id: classes.id });
@@ -289,7 +286,7 @@ export default class ClassService {
         .where(
           and(
             eq(classes.name, name),
-            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .get();

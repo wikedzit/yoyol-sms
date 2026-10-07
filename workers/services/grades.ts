@@ -1,4 +1,4 @@
-import { eq, desc, asc, and, inArray } from 'drizzle-orm';
+import { eq, desc, asc, and, inArray, ne } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   grades,
@@ -10,9 +10,7 @@ import { students } from '../database/students';
 import { subject } from '../database/subjects';
 import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
 import { teachers } from '../database/teachers';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
-
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // Helper function to calculate grade from score
 const getGradeFromScore = (score: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
   if (score >= 90) return 'A';
@@ -103,10 +101,12 @@ export type GradeWithRelations = SelectGrade & {
 export default class GradeService {
   private db: AppDatabase;
   private ownerUserId: number | null;
+  private activeSchoolId: number | null;
 
-  constructor(database: AppDatabase, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
+    this.activeSchoolId = activeSchoolId;
   }
 
   /**
@@ -124,7 +124,7 @@ export default class GradeService {
         .where(
           and(
             eq(students.id, validated.studentId),
-            eq(students.ownerUserId, ownerUserId),
+            eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .get();
@@ -138,10 +138,7 @@ export default class GradeService {
         .values({
           ...validated,
           grade,
-          schoolId:
-            ownedStudent.schoolId ??
-            (await schoolIdForOwner(this.db, ownerUserId)),
-          ownerUserId,
+          schoolId: ownedStudent.schoolId ?? requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -166,7 +163,8 @@ export default class GradeService {
         .where(
           and(
             eq(grades.id, parseInt(id)),
-            eq(grades.ownerUserId, ownerUserId),
+            eq(grades.schoolId, requireSchoolId(this.activeSchoolId)),
+            ne(grades.status, 'Archived'),
           ),
         )
         .get();
@@ -199,7 +197,10 @@ export default class GradeService {
         levelId,
       } = GetGradesSchema.parse(options) ?? {};
 
-      const conditions = [eq(grades.ownerUserId, ownerUserId)];
+      const conditions = [
+        eq(grades.schoolId, requireSchoolId(this.activeSchoolId)),
+        ne(grades.status, 'Archived'),
+      ];
       if (studentId) conditions.push(eq(grades.studentId, studentId));
       if (subjectId) conditions.push(eq(grades.subjectId, subjectId));
       if (streamId) conditions.push(eq(grades.streamId, streamId));
@@ -215,7 +216,7 @@ export default class GradeService {
           .where(
             and(
               eq(academicStreams.levelId, levelId),
-              eq(academicStreams.ownerUserId, ownerUserId),
+              eq(academicStreams.schoolId, requireSchoolId(this.activeSchoolId)),
             ),
           );
         
@@ -228,7 +229,7 @@ export default class GradeService {
           .where(
             and(
               inArray(grades.streamId, streamIds),
-              eq(grades.ownerUserId, ownerUserId),
+              eq(grades.schoolId, requireSchoolId(this.activeSchoolId)),
             ),
           );
         
@@ -392,7 +393,7 @@ export default class GradeService {
         .where(
           and(
             eq(grades.id, parseInt(id)),
-            eq(grades.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(grades.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning();
@@ -410,11 +411,13 @@ export default class GradeService {
   async delete(id: string): Promise<boolean> {
     try {
       const result = await this.db
-        .delete(grades)
+        .update(grades)
+        .set({ status: 'Archived', updatedAt: Date.now() })
         .where(
           and(
             eq(grades.id, parseInt(id)),
-            eq(grades.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(grades.schoolId, requireSchoolId(this.activeSchoolId)),
+            ne(grades.status, 'Archived'),
           ),
         )
         .returning({ id: grades.id });

@@ -1,3 +1,6 @@
+import { boolean, date, integer as pgInteger, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { integer, text } from 'drizzle-orm/sqlite-core';
+
 export type SqlDialect = 'sqlite' | 'postgres';
 
 export type ColumnPlan = {
@@ -25,5 +28,29 @@ export function columnPlan(dialect: SqlDialect): ColumnPlan {
     boolean: 'integer',
     json: 'text',
     date: 'text',
+  };
+}
+
+// Live D1 tables stay sqliteTable because their SQL is already applied.
+// New shared tables call this so the same field list type-checks for both hosts.
+export function sharedRecordColumns(dialect: SqlDialect) {
+  if (dialect === 'postgres') {
+    return {
+      id: pgInteger('id').primaryKey().generatedByDefaultAsIdentity(),
+      createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+      updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+      active: boolean('active').notNull().default(true),
+      payload: jsonb('payload'),
+      onDate: date('on_date'),
+    };
+  }
+
+  return {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    createdAt: integer('created_at').notNull(),
+    updatedAt: integer('updated_at').notNull(),
+    active: integer('active').notNull().default(1),
+    payload: text('payload'),
+    onDate: text('on_date'),
   };
 }

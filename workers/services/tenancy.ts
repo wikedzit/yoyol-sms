@@ -23,13 +23,22 @@ export default class TenancyService {
   async ensureForCurrentOwner(): Promise<void> {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      const schools = await this.db
+      const founded = await this.db
         .select({ id: school.id })
         .from(school)
         .where(eq(school.ownerUserId, ownerUserId));
+      const joined = await this.db
+        .select({ id: schoolMemberships.schoolId })
+        .from(schoolMemberships)
+        .where(eq(schoolMemberships.userId, ownerUserId));
 
-      for (const ownedSchool of schools) {
-        await this.ensureSchool(ownedSchool.id, ownerUserId);
+      const schoolIds = new Set<number>([
+        ...founded.map((row) => row.id),
+        ...joined.map((row) => row.id),
+      ]);
+
+      for (const schoolId of schoolIds) {
+        await this.ensureSchool(schoolId, ownerUserId);
       }
     } catch (error) {
       console.error('Unable to ensure school memberships:', error);

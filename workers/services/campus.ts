@@ -11,18 +11,21 @@ import { school } from '../database/school';
 import { formClasses } from '../database/academic-levels';
 import { students } from '../database/students';
 import { teachers } from '../database/teachers';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 
 export default class CampusService {
   private db: AppDatabase;
   private ownerUserId: number | null;
+  private activeSchoolId: number | null;
 
   constructor(
     database: AppDatabase,
-    ownerUserId: number | null
+    ownerUserId: number | null,
+    activeSchoolId: number | null = null,
   ) {
     this.db = database;
     this.ownerUserId = ownerUserId;
+    this.activeSchoolId = activeSchoolId;
   }
 
   /**
@@ -47,7 +50,7 @@ export default class CampusService {
         .where(
           and(
             eq(campus.schoolId, schoolId),
-            eq(school.ownerUserId, ownerUserId)
+            eq(school.id, requireSchoolId(this.activeSchoolId))
           )
         )
         .orderBy(asc(campus.id));
@@ -85,7 +88,7 @@ export default class CampusService {
         .where(
           and(
             eq(campus.id, id),
-            eq(school.ownerUserId, ownerUserId)
+            eq(school.id, requireSchoolId(this.activeSchoolId))
           )
         )
         .get();
@@ -123,7 +126,7 @@ export default class CampusService {
         .where(
           and(
             eq(school.id, data.schoolId),
-            eq(school.ownerUserId, ownerUserId)
+            eq(school.id, requireSchoolId(this.activeSchoolId))
           )
         )
         .get();
@@ -199,10 +202,7 @@ export default class CampusService {
           .where(
             and(
               eq(campus.id, id),
-              eq(
-                school.ownerUserId,
-                ownerUserId
-              )
+              eq(school.id, requireSchoolId(this.activeSchoolId))
             )
           )
           .get();
@@ -268,10 +268,7 @@ export default class CampusService {
           .where(
             and(
               eq(campus.id, id),
-              eq(
-                school.ownerUserId,
-                ownerUserId
-              )
+              eq(school.id, requireSchoolId(this.activeSchoolId))
             )
           )
           .get();

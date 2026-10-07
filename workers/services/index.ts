@@ -58,26 +58,27 @@ export default class ServiceContainer {
     database: D1Database,
     jwtSecret: string,
     ownerUserId: number | null = null,
+    activeSchoolId: number | null = null,
   ) {
     this.db = createD1Adapter(database).db;
     this.users = new AuthService(this.db, jwtSecret);
-    this.class = new ClassService(this.db, ownerUserId);
-    this.student = new StudentService(this.db, ownerUserId);
-    this.teacher = new TeacherService(this.db, ownerUserId);
-    this.subject = new SubjectService(this.db, ownerUserId);
-    this.teacherSubject = new TeacherSubjectService(this.db, ownerUserId);
-    this.classSubject = new ClassSubjectService(this.db, ownerUserId);
-    this.teacherClass = new TeacherClassService(this.db, ownerUserId);
-    this.studentSubjects = new StudentSubjectService(this.db, ownerUserId);
-    this.grade = new GradeService(this.db, ownerUserId);
-    this.notice = new NoticeService(this.db, ownerUserId);
-    this.academicLevel = new AcademicLevelService(this.db, ownerUserId);
+    this.class = new ClassService(this.db, ownerUserId, activeSchoolId);
+    this.student = new StudentService(this.db, ownerUserId, activeSchoolId);
+    this.teacher = new TeacherService(this.db, ownerUserId, activeSchoolId);
+    this.subject = new SubjectService(this.db, ownerUserId, activeSchoolId);
+    this.teacherSubject = new TeacherSubjectService(this.db, ownerUserId, activeSchoolId);
+    this.classSubject = new ClassSubjectService(this.db, ownerUserId, activeSchoolId);
+    this.teacherClass = new TeacherClassService(this.db, ownerUserId, activeSchoolId);
+    this.studentSubjects = new StudentSubjectService(this.db, ownerUserId, activeSchoolId);
+    this.grade = new GradeService(this.db, ownerUserId, activeSchoolId);
+    this.notice = new NoticeService(this.db, ownerUserId, activeSchoolId);
+    this.academicLevel = new AcademicLevelService(this.db, ownerUserId, activeSchoolId);
     this.school = new SchoolService(this.db, ownerUserId);
-    this.academicYear = new AcademicYearService(this.db, ownerUserId);
-    this.campus = new CampusService(this.db,ownerUserId);
-    this.schoolThemes = new SchoolThemeService(this.db, ownerUserId);
+    this.academicYear = new AcademicYearService(this.db, ownerUserId, activeSchoolId);
+    this.campus = new CampusService(this.db, ownerUserId, activeSchoolId);
+    this.schoolThemes = new SchoolThemeService(this.db, ownerUserId, activeSchoolId);
     this.tenancy = new TenancyService(this.db, ownerUserId);
-    this.extensions = new ExtensionService(this.db, ownerUserId);
+    this.extensions = new ExtensionService(this.db, ownerUserId, activeSchoolId);
     this.access = new AccessService(this.db, ownerUserId);
     this.recordScope = new RecordScopeService(this.db, ownerUserId);
     this.sessions = new SessionService(this.db, jwtSecret);

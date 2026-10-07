@@ -1,6 +1,7 @@
-import { and, eq, like, asc } from 'drizzle-orm';
+import { and, eq, like, asc, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { school, type SelectSchool } from '../database/school';
+import { schoolMemberships } from '../database/school-memberships';
 import type { AppDatabase } from '../database/app-database';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import TenancyService from './tenancy';
@@ -78,15 +79,33 @@ export default class SchoolService {
     this.ownerUserId = ownerUserId;
   }
 
-  // Orodha ya shule za mmiliki
+  private async visibleSchoolIds(): Promise<number[]> {
+    const userId = requireOwnerUserId(this.ownerUserId);
+    const memberships = await this.db
+      .select({ schoolId: schoolMemberships.schoolId })
+      .from(schoolMemberships)
+      .where(
+        and(
+          eq(schoolMemberships.userId, userId),
+          eq(schoolMemberships.status, 'active'),
+        ),
+      );
+
+    return memberships.map((membership) => membership.schoolId);
+  }
+
+  // Schools the signed-in person belongs to.
   async getAll(): Promise<SelectSchool[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolIds = await this.visibleSchoolIds();
+      if (schoolIds.length === 0) {
+        return [];
+      }
 
       return await this.db
         .select()
         .from(school)
-        .where(eq(school.ownerUserId, ownerUserId))
+        .where(inArray(school.id, schoolIds))
         .orderBy(asc(school.name));
     } catch (error) {
       console.error(
@@ -103,11 +122,15 @@ export default class SchoolService {
     id: number
   ): Promise<SelectSchool | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolIds = await this.visibleSchoolIds();
+      if (!schoolIds.includes(id)) {
+        return null;
+      }
+
       const result = await this.db
         .select()
         .from(school)
-        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
+        .where(eq(school.id, id))
         .get();
 
       return result || null;
@@ -126,14 +149,17 @@ export default class SchoolService {
     query: string
   ): Promise<SelectSchool[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolIds = await this.visibleSchoolIds();
+      if (schoolIds.length === 0) {
+        return [];
+      }
 
       return await this.db
         .select()
         .from(school)
         .where(
           and(
-            eq(school.ownerUserId, ownerUserId),
+            inArray(school.id, schoolIds),
             like(
               school.name,
               `%${query.trim()}%`
@@ -195,7 +221,11 @@ export default class SchoolService {
     data: SchoolProfileInput
   ): Promise<SelectSchool | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolIds = await this.visibleSchoolIds();
+      if (!schoolIds.includes(id)) {
+        return null;
+      }
+
       const validated =
         SchoolProfileSchema.parse(data);
 
@@ -206,7 +236,7 @@ export default class SchoolService {
 
           updatedAt: Date.now(),
         })
-        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
+        .where(eq(school.id, id))
         .returning();
 
       return result[0] || null;
@@ -225,10 +255,14 @@ export default class SchoolService {
     id: number
   ): Promise<boolean> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolIds = await this.visibleSchoolIds();
+      if (!schoolIds.includes(id)) {
+        return false;
+      }
+
       const result = await this.db
         .delete(school)
-        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
+        .where(eq(school.id, id))
         .returning({
           id: school.id,
         });

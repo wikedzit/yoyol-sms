@@ -23,7 +23,7 @@ Nothing in the inventories below is optional. A row is either done, or it is def
 | Phase | Outcome | Status | Closes when |
 |-------|---------|--------|-------------|
 | 0. Decisions and repair | One data-access ADR, schema matches the code, a test gate exists | in progress | Every REP row and every decision in section 2 is `done` |
-| 1. Tenancy and data | A teacher signed in to a school sees that school's data, and only that school's data | in progress | Every KRN-IAM, KRN-DAT (except DAT-05 to DAT-09), and GAP-SCH / GAP-IAM row is `done` |
+| 1. Tenancy and data | A teacher signed in to a school sees that school's data, and only that school's data | done | Every KRN-IAM, KRN-DAT-01 to KRN-DAT-04, KRN-DAT-10, and GAP-SCH / GAP-IAM row is `done`. KRN-DAT-05 to KRN-DAT-13 stay in phase 2. |
 | 2. Kernel | A bundled hello plugin can be enabled and disabled per school, and can render a view document | not started | Every KRN-REG, KRN-EVT, KRN-UIX, KRN-SVC, SDK, and RUN-01 / RUN-02 row is `done` |
 | 3. Dogfood | Academics, students, staff, assessment, and calendar run as bundled modules | not started | Every MOD-ACA, MOD-STU, MOD-STF, MOD-ASM, and MOD-CAL row is `done`, and no feature imports another feature's internals |
 | 4. New modules | Attendance proves view documents, then the remaining SRS modules land | not started | Every remaining MOD-* row is `done` |
@@ -79,9 +79,9 @@ Each slice is its own branch and pull request into `develop`.
 | 0.3 | `rep-03-remote-reconcile` | REP-03 | 0.2 | not started |
 | 0.4 | `eng-04-test-harness` | ENG-02, ENG-03, ENG-04, ENG-05, ENG-07, ENG-08, ENG-10 | 0.2 | not started |
 | 0.5 | `eng-01-workspace-layout` | ENG-01 | 0.4, so the move is covered by tests | not started |
-| 1.1 | `krn-iam-tenancy` | KRN-IAM-01, KRN-IAM-02, KRN-IAM-03, KRN-IAM-04, KRN-DAT-10, GAP-SCH-01, GAP-SCH-02, GAP-SCH-03 | 0.5 | in progress |
+| 1.1 | `krn-iam-tenancy` | KRN-IAM-01, KRN-IAM-02, KRN-IAM-03, KRN-IAM-04, KRN-DAT-10, GAP-SCH-01, GAP-SCH-02, GAP-SCH-03 | 0.5 | done |
 | 1.2 | `krn-iam-permissions` | KRN-IAM-05, KRN-IAM-06, KRN-IAM-07, KRN-IAM-08, GAP-IAM-02, GAP-IAM-03, GAP-IAM-05 | 1.1 | done |
-| 1.3 | `krn-iam-sessions` | KRN-IAM-09, KRN-IAM-10, KRN-IAM-11, KRN-IAM-12, KRN-IAM-13, KRN-IAM-14, KRN-IAM-15, KRN-IAM-16, GAP-IAM-01, GAP-IAM-04 | 1.1 | in progress |
+| 1.3 | `krn-iam-sessions` | KRN-IAM-09, KRN-IAM-10, KRN-IAM-11, KRN-IAM-12, KRN-IAM-13, KRN-IAM-14, KRN-IAM-15, KRN-IAM-16, GAP-IAM-01, GAP-IAM-04 | 1.1 | done |
 | 1.4 | `krn-dat-adapter` | KRN-DAT-01, KRN-DAT-02, KRN-DAT-03, KRN-DAT-04, ENG-06, ENG-09 | 0.5 | in progress |
 | 2.1 | `krn-reg-lifecycle` | KRN-REG-01 to KRN-REG-09, SDK-01 | 1.2, 1.4 | not started |
 | 2.2 | `krn-dat-extensions` | KRN-DAT-05, KRN-DAT-06, KRN-DAT-07, KRN-DAT-08, KRN-DAT-09, SDK-02, SDK-04 | 2.1, D-03 | not started |
@@ -137,15 +137,15 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 
 | ID | Work | ADR | Status |
 |----|------|-----|--------|
-| KRN-IAM-01 | `school_id` is on owner-scoped tables and assignment rows. It is filled from the parent record, or from the single school on an account. `owner_user_id` stays, and screens still filter by it. | 0002 | in progress |
+| KRN-IAM-01 | Child records are read and written by `school_id`. The active school comes from membership, the `schoolId` query, then the `yoyol-school` cookie. `school.owner_user_id` stays as the founding account. | 0002 | done |
 | KRN-IAM-02 | Students, staff, and form classes can belong to a campus. The class form asks for a campus and still saves when it is left blank. | 0002 | done |
-| KRN-IAM-03 | `school_memberships`. Owner is an admin. Screens still filter by `owner_user_id`. | 0002 | done |
+| KRN-IAM-03 | `school_memberships`. The founding account is an admin. School lists use active memberships. | 0002 | done |
 | KRN-IAM-04 | Roles as data. Five system roles are seeded per school and marked system. Custom roles are edited on `/schools/roles`. | 0002 | done |
 | KRN-IAM-05 | Permission keys are seeded. An admin can change grants for every role except admin, which keeps every permission. | 0002 | done |
 | KRN-IAM-06 | `can()` guards school profile, campuses, classes, class detail, levels, academic year, students, teachers, grades, members, roles, archive, extensions, and themes. `isAdminRole()` still gates onboarding so sign-in feels the same. | 0002 | done |
 | KRN-IAM-07 | A teacher sees assigned classes, subjects, and those students. A parent sees linked students. A student sees their own record. An admin still sees the whole school. The link is set on Members. | 0002 | done |
 | KRN-IAM-08 | The header shows a school switcher when the account has two or more active schools. The choice is stored in the `yoyol-school` cookie. | 0002 | done |
-| KRN-IAM-09 | Argon2id verifies in Node. The Worker rejects `WebAssembly.compile`, so accounts store versioned PBKDF2 until Argon2 is imported as a compiled module. | 0002 | in progress |
+| KRN-IAM-09 | New passwords are Argon2id (`@noble/hashes`, m=19456, t=2, p=1). Older PBKDF2 hashes still verify and are replaced on the next successful sign-in. | 0002 | done |
 | KRN-IAM-10 | Access token lasts 10 minutes. The refresh token rotates on use. Both are HttpOnly, Secure, SameSite cookies. | 0002 | done |
 | KRN-IAM-11 | Sessions live in `sessions`. Sign-out revokes the current session. Sign out everywhere revokes every session for the account. | 0002 | done |
 | KRN-IAM-12 | Five failed attempts for an email, or twenty for an address, lock sign-in for 15 minutes and write an audit event. | 0002 | done |
@@ -155,9 +155,9 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 | KRN-IAM-16 | Responses set nosniff, referrer policy, frame denial, and a CSP that still allows the theme style tag. HSTS is sent only on https. State-changing requests must send the `yoyol_csrf` cookie value in `x-csrf-token`. | 0002 | done |
 | KRN-DAT-01 | `DB_DRIVER` selects `d1` unless the value is `postgres`. The Worker refuses to boot as postgres and keeps using D1. | 0003 | done |
 | KRN-DAT-02 | Services take the D1 adapter database. Seed uses the same adapter. | 0003 | done |
-| KRN-DAT-03 | A Node postgres adapter module exists and is kept out of the Worker typecheck. `pg` is not installed, and the Worker does not call it. | 0003 | in progress |
-| KRN-DAT-04 | `columnPlan` names sqlite and postgres column types. Existing tables still use the sqlite definitions. | 0003 | in progress |
-| KRN-DAT-10 | Campus delete is refused while in use. Student and teacher delete sets status to Archived and hides those rows. Class delete is refused while any student row still points at the class. A grade can still be removed, because that removes a mark. | 0002 | in progress |
+| KRN-DAT-03 | The Node postgres adapter uses `pg` and `DATABASE_URL`. It is excluded from the Worker typecheck, and the Worker still refuses `DB_DRIVER=postgres`. | 0003 | done |
+| KRN-DAT-04 | `sharedRecordColumns` builds the same id, timestamp, boolean, JSON, and date fields for sqlite and postgres. Live D1 tables stay on the sqlite definitions already applied. | 0003 | done |
+| KRN-DAT-10 | Campus delete is refused while in use. Student, teacher, and grade delete sets status to Archived and hides those rows. Class delete is refused while any student row still points at the class. | 0002 | done |
 
 KRN-DAT-05 to KRN-DAT-09 and KRN-DAT-11 to KRN-DAT-13 are kernel work and are listed in phase 2, because they need the registry. They are still required.
 

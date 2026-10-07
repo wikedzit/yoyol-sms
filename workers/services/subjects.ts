@@ -6,8 +6,7 @@ import {
 } from 'workers/database/subjects';
 import { studentSubjects } from 'workers/database/student-subjects';
 import { z } from 'zod';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
@@ -41,10 +40,12 @@ export type GetSubjectsInput = z.infer<typeof getSubjectsSchema>;
 export default class SubjectService {
   private db: AppDatabase;
   private ownerUserId: number | null;
+  private activeSchoolId: number | null;
 
-  constructor(db: AppDatabase, ownerUserId: number | null) {
+  constructor(db: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
     this.db = db;
     this.ownerUserId = ownerUserId;
+    this.activeSchoolId = activeSchoolId;
   }
 
   // Create a new subject
@@ -56,8 +57,7 @@ export default class SubjectService {
         .insert(subject)
         .values({
           ...validatedData,
-          schoolId: await schoolIdForOwner(this.db, ownerUserId),
-          ownerUserId,
+          schoolId: requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -84,7 +84,7 @@ export default class SubjectService {
       const result = await this.db
         .select()
         .from(subject)
-        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.id, id), eq(subject.schoolId, requireSchoolId(this.activeSchoolId))))
         .execute();
 
       return result[0] || null;
@@ -101,7 +101,7 @@ export default class SubjectService {
       const result = await this.db
         .select()
         .from(subject)
-        .where(and(eq(subject.code, code), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.code, code), eq(subject.schoolId, requireSchoolId(this.activeSchoolId))))
         .execute();
 
       return result[0] || null;
@@ -121,7 +121,7 @@ export default class SubjectService {
         .where(
           and(
             eq(subject.streamId, streamId),
-            eq(subject.ownerUserId, ownerUserId),
+            eq(subject.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();
@@ -151,7 +151,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
         ? subject.createdAt
         : subject.updatedAt;
 
-    const filters = [eq(subject.ownerUserId, ownerUserId)];
+    const filters = [eq(subject.schoolId, requireSchoolId(this.activeSchoolId))];
 
     if (search) {
       filters.push(like(subject.subjectName, `%${search}%`));
@@ -177,7 +177,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
 
         status: subject.status,
         streamId: subject.streamId,
-        ownerUserId: subject.ownerUserId,
+        schoolId: subject.schoolId,
         createdAt: subject.createdAt,
         updatedAt: subject.updatedAt,
       })
@@ -216,7 +216,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
       const result = await this.db
         .update(subject)
         .set(updateResult)
-        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.id, id), eq(subject.schoolId, requireSchoolId(this.activeSchoolId))))
         .returning()
         .execute();
 
@@ -233,7 +233,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       await this.db
         .delete(subject)
-        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.id, id), eq(subject.schoolId, requireSchoolId(this.activeSchoolId))))
         .execute();
       return true;
     } catch (error) {

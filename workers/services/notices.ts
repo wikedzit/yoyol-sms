@@ -6,9 +6,7 @@ import {
   type SelectNotice,
 } from '../database/notices';
 import type { AppDatabase } from '../database/app-database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
-
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // --- Zod Schemas for Validation ---
 const CreateNoticeSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -43,10 +41,12 @@ export type GetNoticesInput = z.infer<typeof GetNoticesSchema>;
 export default class NoticeService {
   private db: AppDatabase;
   private ownerUserId: number | null;
+  private activeSchoolId: number | null;
 
-  constructor(database: AppDatabase, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
+    this.activeSchoolId = activeSchoolId;
   }
 
   async createNotice(
@@ -60,8 +60,7 @@ export default class NoticeService {
         .insert(notices)
         .values({
           ...validated,
-          schoolId: await schoolIdForOwner(this.db, ownerUserId),
-          ownerUserId,
+          schoolId: requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -83,7 +82,7 @@ export default class NoticeService {
         .where(
           and(
             eq(notices.id, parseInt(id)),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .get();
@@ -109,7 +108,7 @@ export default class NoticeService {
           ? notices.createdAt
           : notices.updatedAt;
 
-      const conditions = [eq(notices.ownerUserId, ownerUserId)];
+      const conditions = [eq(notices.schoolId, requireSchoolId(this.activeSchoolId))];
       if (search) {
         conditions.push(like(notices.title, `%${search}%`));
       }
@@ -139,7 +138,7 @@ export default class NoticeService {
         .where(
           and(
             eq(notices.status, 'Active'),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .orderBy(desc(notices.createdAt))
@@ -168,7 +167,7 @@ export default class NoticeService {
         .where(
           and(
             eq(notices.id, parseInt(id)),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning();
@@ -188,7 +187,7 @@ export default class NoticeService {
         .where(
           and(
             eq(notices.id, parseInt(id)),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning({ id: notices.id });

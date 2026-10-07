@@ -6,13 +6,14 @@ import {
   students,
   type SelectSubject,
 } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 import { schoolIdForStudent } from './school-scope';
 
 export default class StudentSubjectService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   private currentOwner(): number {
@@ -26,7 +27,7 @@ export default class StudentSubjectService {
       .where(
         and(
           eq(students.id, studentId),
-          eq(students.ownerUserId, this.currentOwner()),
+          eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
         ),
       )
       .get();
@@ -41,7 +42,7 @@ export default class StudentSubjectService {
       .where(
         and(
           eq(subject.id, subjectId),
-          eq(subject.ownerUserId, this.currentOwner()),
+          eq(subject.schoolId, requireSchoolId(this.activeSchoolId)),
         ),
       )
       .get();
@@ -154,7 +155,7 @@ export default class StudentSubjectService {
         .where(
           and(
             eq(studentSubjects.studentId, studentId),
-            eq(subject.ownerUserId, this.currentOwner()),
+            eq(subject.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();

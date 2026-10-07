@@ -1,6 +1,5 @@
 import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { school } from './school';
-import { users } from './users';
 
 // Uploaded site themes. The themes plugin validates the JSON. This table
 // only stores what the core accepted.
@@ -11,9 +10,6 @@ export const schoolThemes = sqliteTable(
     schoolId: integer('school_id')
       .notNull()
       .references(() => school.id, { onDelete: 'cascade' }),
-    ownerUserId: integer('owner_user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
     themeKey: text('theme_key').notNull(),
     nameEn: text('name_en').notNull(),
     nameSw: text('name_sw').notNull(),

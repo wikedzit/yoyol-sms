@@ -2,7 +2,6 @@ import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 import { campus } from './campuses';
 import { school } from './school';
-import { users } from './users';
 
 export const teachers = sqliteTable('teachers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -27,10 +26,6 @@ export const teachers = sqliteTable('teachers', {
   schoolId: integer('school_id').references(() => school.id, {
     onDelete: 'set null',
   }),
-
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
 
   createdAt: integer('created_at')
     .notNull()

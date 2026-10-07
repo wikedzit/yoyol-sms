@@ -7,13 +7,14 @@ import {
   type SelectClass,
   type SelectSubject,
 } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 import { schoolIdForClass } from './school-scope';
 
 export default class ClassSubjectService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   private currentOwner(): number {
@@ -27,7 +28,7 @@ export default class ClassSubjectService {
       .where(
         and(
           eq(classes.id, classId),
-          eq(classes.ownerUserId, this.currentOwner()),
+          eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
         ),
       )
       .get();
@@ -42,7 +43,7 @@ export default class ClassSubjectService {
       .where(
         and(
           eq(subject.id, subjectId),
-          eq(subject.ownerUserId, this.currentOwner()),
+          eq(subject.schoolId, requireSchoolId(this.activeSchoolId)),
         ),
       )
       .get();
@@ -138,7 +139,7 @@ export default class ClassSubjectService {
         .where(
           and(
             eq(classSubjects.classId, classId),
-            eq(subject.ownerUserId, this.currentOwner()),
+            eq(subject.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();
@@ -162,7 +163,7 @@ export default class ClassSubjectService {
         .where(
           and(
             eq(classSubjects.subjectId, subjectId),
-            eq(classes.ownerUserId, this.currentOwner()),
+            eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();
@@ -270,7 +271,7 @@ export default class ClassSubjectService {
       const allClasses = await this.db
         .select()
         .from(classes)
-        .where(eq(classes.ownerUserId, this.currentOwner()))
+        .where(eq(classes.schoolId, requireSchoolId(this.activeSchoolId)))
         .execute();
 
       // Then get subject counts for each class
@@ -302,7 +303,7 @@ export default class ClassSubjectService {
       const allSubjects = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.ownerUserId, this.currentOwner()))
+        .where(eq(subject.schoolId, requireSchoolId(this.activeSchoolId)))
         .execute();
 
       // Then get class counts for each subject

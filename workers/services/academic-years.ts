@@ -9,9 +9,7 @@ import {
   type SelectTerm,
 } from '../database/academic-years';
 import type { AppDatabase } from '../database/app-database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
-
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // --- Zod Schemas for Validation ---
 
 const isoDate = z.string().refine((v) => !isNaN(Date.parse(v)), {
@@ -109,10 +107,12 @@ export type CurrentTermStatus =
 export default class AcademicYearService {
   private db: AppDatabase;
   private ownerUserId: number | null;
+  private activeSchoolId: number | null;
 
-  constructor(database: AppDatabase, ownerUserId: number | null) {
+  constructor(database: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
     this.db = database;
     this.ownerUserId = ownerUserId;
+    this.activeSchoolId = activeSchoolId;
   }
 
   // ==================== ACADEMIC YEAR OPERATIONS ====================
@@ -125,8 +125,7 @@ export default class AcademicYearService {
         .insert(academicYears)
         .values({
           ...validated,
-          schoolId: await schoolIdForOwner(this.db, ownerUserId),
-          ownerUserId,
+          schoolId: requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -153,7 +152,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .get();
@@ -169,7 +168,7 @@ export default class AcademicYearService {
       return await this.db
         .select()
         .from(academicYears)
-        .where(eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)))
+        .where(eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)))
         .orderBy(academicYears.startDate);
     } catch (error) {
       console.error('Error fetching academic years:', error);
@@ -224,7 +223,7 @@ export default class AcademicYearService {
             .where(
               and(
                 eq(academicYears.id, id),
-                eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+                eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
               ),
             );
         }
@@ -241,7 +240,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning();
@@ -268,7 +267,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.status, 'active'),
-            eq(academicYears.ownerUserId, ownerUserId),
+            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
             ne(academicYears.id, id),
           ),
         );
@@ -279,7 +278,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, ownerUserId),
+            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning();
@@ -298,7 +297,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .returning({ id: academicYears.id });
@@ -355,7 +354,7 @@ export default class AcademicYearService {
         .from(terms)
         .innerJoin(academicYears, eq(terms.academicYearId, academicYears.id))
         .where(
-          and(eq(terms.id, id), eq(academicYears.ownerUserId, ownerUserId)),
+          and(eq(terms.id, id), eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId))),
         )
         .get();
       return result?.term || null;

@@ -10,13 +10,14 @@ import {
   type SelectFormClass,
   type SelectTeacher,
 } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 import { schoolIdForClass, schoolIdForTeacher } from './school-scope';
 
 export default class TeacherClassService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   private currentOwner(): number {
@@ -30,7 +31,7 @@ export default class TeacherClassService {
       .where(
         and(
           eq(teachers.id, teacherId),
-          eq(teachers.ownerUserId, this.currentOwner()),
+          eq(teachers.schoolId, requireSchoolId(this.activeSchoolId)),
         ),
       )
       .get();
@@ -45,7 +46,7 @@ export default class TeacherClassService {
       .where(
         and(
           eq(classes.id, classId),
-          eq(classes.ownerUserId, this.currentOwner()),
+          eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
         ),
       )
       .get();
@@ -141,7 +142,7 @@ export default class TeacherClassService {
         .where(
           and(
             eq(teacherClasses.teacherId, teacherId),
-            eq(classes.ownerUserId, this.currentOwner()),
+            eq(classes.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();
@@ -165,7 +166,6 @@ export default class TeacherClassService {
           studentCount: formClasses.studentCount,
           schoolId: formClasses.schoolId,
           campusId: formClasses.campusId,
-          ownerUserId: formClasses.ownerUserId,
           createdAt: formClasses.createdAt,
           updatedAt: formClasses.updatedAt,
         })
@@ -177,7 +177,7 @@ export default class TeacherClassService {
         .where(
           and(
             eq(teacherFormClasses.teacherId, teacherId),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();
@@ -199,7 +199,7 @@ export default class TeacherClassService {
         .where(
           and(
             eq(teacherClasses.classId, classId),
-            eq(teachers.ownerUserId, this.currentOwner()),
+            eq(teachers.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         )
         .execute();
@@ -355,7 +355,7 @@ export default class TeacherClassService {
           .where(
             and(
               eq(formClasses.id, formClassId),
-              eq(formClasses.ownerUserId, this.currentOwner()),
+              eq(formClasses.schoolId, requireSchoolId(this.activeSchoolId)),
             ),
           )
           .get();
@@ -397,7 +397,7 @@ export default class TeacherClassService {
       const allTeachers = await this.db
         .select()
         .from(teachers)
-        .where(eq(teachers.ownerUserId, this.currentOwner()))
+        .where(eq(teachers.schoolId, requireSchoolId(this.activeSchoolId)))
         .execute();
 
       // Then get class counts for each teacher
@@ -429,7 +429,7 @@ export default class TeacherClassService {
       const allClasses = await this.db
         .select()
         .from(classes)
-        .where(eq(classes.ownerUserId, this.currentOwner()))
+        .where(eq(classes.schoolId, requireSchoolId(this.activeSchoolId)))
         .execute();
 
       // Then get teacher counts for each class

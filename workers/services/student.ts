@@ -8,9 +8,7 @@ import {
 import { campus } from '../database/campuses';
 import { school } from '../database/school';
 import type { AppDatabase } from '../database/app-database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
-import { schoolIdForOwner } from './school-scope';
-
+import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // --- Zod schemas for validation ---
 const CreateStudentSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
@@ -95,6 +93,7 @@ export default class StudentService {
   constructor(
     private db: AppDatabase,
     private ownerUserId: number | null,
+    private activeSchoolId: number | null = null,
   ) {}
 
   // ------------------------------------------------
@@ -135,10 +134,7 @@ export default class StudentService {
                   campus.id,
                   validated.campusId,
                 ),
-                eq(
-                  school.ownerUserId,
-                  ownerUserId,
-                ),
+                eq(school.id, requireSchoolId(this.activeSchoolId)),
               ),
             )
             .get();
@@ -157,7 +153,7 @@ export default class StudentService {
           .where(
             and(
               eq(school.id, validated.schoolId),
-              eq(school.ownerUserId, ownerUserId),
+              eq(school.id, requireSchoolId(this.activeSchoolId)),
             ),
           )
           .get();
@@ -190,9 +186,7 @@ export default class StudentService {
           .values({
             ...validated,
             schoolId:
-              validated.schoolId ??
-              (await schoolIdForOwner(this.db, ownerUserId)),
-            ownerUserId,
+              validated.schoolId ?? requireSchoolId(this.activeSchoolId),
             createdAt: now,
             updatedAt: now,
           })
@@ -231,7 +225,7 @@ export default class StudentService {
       .from(students)
       .where(
         and(
-          eq(students.ownerUserId, ownerUserId),
+          eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
           eq(students.admissionNumber, admissionNumber),
         ),
       )
@@ -247,7 +241,7 @@ export default class StudentService {
         .select()
         .from(students)
         .where(
-          and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
+          and(eq(students.id, Number(id)), eq(students.schoolId, requireSchoolId(this.activeSchoolId))),
         )
         .get();
       return result || null;
@@ -264,7 +258,7 @@ export default class StudentService {
         .select()
         .from(students)
         .where(
-          and(eq(students.email, email), eq(students.ownerUserId, ownerUserId)),
+          and(eq(students.email, email), eq(students.schoolId, requireSchoolId(this.activeSchoolId))),
         )
         .get();
       return result || null;
@@ -290,7 +284,7 @@ export default class StudentService {
           : students.updatedAt;
 
       const filters = [
-        eq(students.ownerUserId, ownerUserId),
+        eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
         ne(students.status, 'Archived'),
       ];
       if (search) {
@@ -326,7 +320,7 @@ export default class StudentService {
         .update(students)
         .set(updateValues)
         .where(
-          and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
+          and(eq(students.id, Number(id)), eq(students.schoolId, requireSchoolId(this.activeSchoolId))),
         )
         .returning();
 
@@ -344,7 +338,7 @@ export default class StudentService {
         .update(students)
         .set({ status: 'Archived', updatedAt: Date.now() })
         .where(
-          and(eq(students.id, Number(id)), eq(students.ownerUserId, ownerUserId)),
+          and(eq(students.id, Number(id)), eq(students.schoolId, requireSchoolId(this.activeSchoolId))),
         )
         .returning({ id: students.id });
       return result.length > 0;
@@ -366,7 +360,7 @@ export default class StudentService {
         .where(
           and(
             eq(students.formClassId, formClassId),
-            eq(students.ownerUserId, ownerUserId),
+            eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
             ne(students.status, 'Archived'),
           ),
         )
@@ -389,7 +383,7 @@ export default class StudentService {
         .where(
           and(
             eq(students.formClassId, formClassId),
-            eq(students.ownerUserId, ownerUserId),
+            eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
             ne(students.status, 'Archived'),
           ),
         );
@@ -410,7 +404,7 @@ export default class StudentService {
         .select()
         .from(students)
         .where(
-          and(eq(students.ownerUserId, ownerUserId), ne(students.status, 'Archived')),
+          and(eq(students.schoolId, requireSchoolId(this.activeSchoolId)), ne(students.status, 'Archived')),
         );
       return result.length;
     } catch (error) {
@@ -431,7 +425,7 @@ export default class StudentService {
         .where(
           and(
             eq(students.schoolId, schoolId),
-            eq(students.ownerUserId, ownerUserId),
+            eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
             ne(students.status, 'Archived'),
           ),
         )
@@ -454,7 +448,7 @@ export default class StudentService {
         .where(
           and(
             eq(students.schoolId, schoolId),
-            eq(students.ownerUserId, ownerUserId),
+            eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
           ),
         );
       return result.length;
