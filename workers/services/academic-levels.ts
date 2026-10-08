@@ -1,6 +1,13 @@
 import { eq, desc, asc, and } from 'drizzle-orm';
 import { z } from 'zod';
 import {
+  enrolmentCountByClass,
+  refusalToRemoveForm,
+  refusalToRemoveLevel,
+  refusalToRemoveStream,
+} from '../kernel/academic-structure';
+import { subject } from '../database/subjects';
+import {
   academicLevels,
   academicStreams,
   academicForms,
@@ -189,6 +196,34 @@ export default class AcademicLevelService {
 
   async deleteLevel(id: number): Promise<boolean> {
     try {
+      const schoolId = requireSchoolId(this.activeSchoolId);
+      const refusal = refusalToRemoveLevel({
+        streamCount: await this.rowCount(
+          this.db
+            .select({ id: academicStreams.id })
+            .from(academicStreams)
+            .where(and(eq(academicStreams.levelId, id), eq(academicStreams.schoolId, schoolId)))
+            .limit(1),
+        ),
+        classCount: await this.rowCount(
+          this.db
+            .select({ id: formClasses.id })
+            .from(formClasses)
+            .where(and(eq(formClasses.levelId, id), eq(formClasses.schoolId, schoolId)))
+            .limit(1),
+        ),
+        subjectCount: await this.rowCount(
+          this.db
+            .select({ id: subject.id })
+            .from(subject)
+            .where(and(eq(subject.levelId, id), eq(subject.schoolId, schoolId)))
+            .limit(1),
+        ),
+      });
+      if (refusal) {
+        throw new Error(refusal);
+      }
+
       const result = await this.db
         .delete(academicLevels)
         .where(
@@ -200,6 +235,9 @@ export default class AcademicLevelService {
         .returning({ id: academicLevels.id });
       return result.length > 0;
     } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Remove the ')) {
+        throw error;
+      }
       console.error('Error deleting level:', error);
       return false;
     }
@@ -322,6 +360,27 @@ export default class AcademicLevelService {
 
   async deleteStream(id: number): Promise<boolean> {
     try {
+      const schoolId = requireSchoolId(this.activeSchoolId);
+      const refusal = refusalToRemoveStream({
+        formCount: await this.rowCount(
+          this.db
+            .select({ id: academicForms.id })
+            .from(academicForms)
+            .where(and(eq(academicForms.streamId, id), eq(academicForms.schoolId, schoolId)))
+            .limit(1),
+        ),
+        classCount: await this.rowCount(
+          this.db
+            .select({ id: formClasses.id })
+            .from(formClasses)
+            .where(and(eq(formClasses.streamId, id), eq(formClasses.schoolId, schoolId)))
+            .limit(1),
+        ),
+      });
+      if (refusal) {
+        throw new Error(refusal);
+      }
+
       const result = await this.db
         .delete(academicStreams)
         .where(
@@ -333,6 +392,9 @@ export default class AcademicLevelService {
         .returning({ id: academicStreams.id });
       return result.length > 0;
     } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Remove the ')) {
+        throw error;
+      }
       console.error('Error deleting stream:', error);
       return false;
     }
@@ -478,6 +540,20 @@ export default class AcademicLevelService {
 
   async deleteForm(id: number): Promise<boolean> {
     try {
+      const schoolId = requireSchoolId(this.activeSchoolId);
+      const refusal = refusalToRemoveForm(
+        await this.rowCount(
+          this.db
+            .select({ id: formClasses.id })
+            .from(formClasses)
+            .where(and(eq(formClasses.formId, id), eq(formClasses.schoolId, schoolId)))
+            .limit(1),
+        ),
+      );
+      if (refusal) {
+        throw new Error(refusal);
+      }
+
       const result = await this.db
         .delete(academicForms)
         .where(
@@ -489,6 +565,9 @@ export default class AcademicLevelService {
         .returning({ id: academicForms.id });
       return result.length > 0;
     } catch (error) {
+      if (error instanceof Error && error.message.startsWith('Remove the ')) {
+        throw error;
+      }
       console.error('Error deleting form:', error);
       return false;
     }
@@ -543,7 +622,11 @@ export default class AcademicLevelService {
           ),
         )
         .get();
-      return result || null;
+      if (!result) {
+        return null;
+      }
+      const counts = await this.enrolmentCounts();
+      return { ...result, studentCount: counts.get(result.id) ?? 0 };
     } catch (error) {
       console.error('Error fetching form class:', error);
       return null;
@@ -552,7 +635,7 @@ export default class AcademicLevelService {
 
   async getFormClassesByFormId(formId: number): Promise<SelectFormClass[]> {
     try {
-      return await this.db
+      const classes = await this.db
         .select()
         .from(formClasses)
         .where(
@@ -562,6 +645,7 @@ export default class AcademicLevelService {
           ),
         )
         .orderBy(asc(formClasses.name));
+      return this.withEnrolmentCounts(classes);
     } catch (error) {
       console.error('Error fetching form classes by form:', error);
       return [];
@@ -570,7 +654,7 @@ export default class AcademicLevelService {
 
   async getFormClassesByStreamId(streamId: number): Promise<SelectFormClass[]> {
     try {
-      return await this.db
+      const classes = await this.db
         .select()
         .from(formClasses)
         .where(
@@ -580,6 +664,7 @@ export default class AcademicLevelService {
           ),
         )
         .orderBy(asc(formClasses.name));
+      return this.withEnrolmentCounts(classes);
     } catch (error) {
       console.error('Error fetching form classes by stream:', error);
       return [];
@@ -588,11 +673,12 @@ export default class AcademicLevelService {
 
   async getAllFormClasses(): Promise<SelectFormClass[]> {
     try {
-      return await this.db
+      const classes = await this.db
         .select()
         .from(formClasses)
         .where(eq(formClasses.schoolId, requireSchoolId(this.activeSchoolId)))
         .orderBy(asc(formClasses.name));
+      return this.withEnrolmentCounts(classes);
     } catch (error) {
       console.error('Error fetching all form classes:', error);
       return [];
@@ -630,7 +716,12 @@ export default class AcademicLevelService {
       const studentUsing = await this.db
         .select({ id: students.id })
         .from(students)
-        .where(eq(students.formClassId, id))
+        .where(
+          and(
+            eq(students.formClassId, id),
+            eq(students.schoolId, requireSchoolId(this.activeSchoolId)),
+          ),
+        )
         .get();
       if (studentUsing) {
         throw new Error('This class still has students.');
@@ -868,7 +959,7 @@ export default class AcademicLevelService {
    */
   async getFormClassesByLevelId(levelId: number): Promise<SelectFormClass[]> {
     try {
-      return await this.db
+      const classes = await this.db
         .select()
         .from(formClasses)
         .where(
@@ -878,6 +969,7 @@ export default class AcademicLevelService {
           ),
         )
         .orderBy(asc(formClasses.name));
+      return this.withEnrolmentCounts(classes);
     } catch (error) {
       console.error('Error fetching form classes by level:', error);
       return [];
@@ -937,6 +1029,30 @@ export default class AcademicLevelService {
       console.error('Error fetching form class with details:', error);
       return null;
     }
+  }
+
+  private async rowCount(query: PromiseLike<readonly unknown[]>): Promise<number> {
+    const rows = await query;
+    return rows.length;
+  }
+
+  private async enrolmentCounts(): Promise<Map<number, number>> {
+    const rows = await this.db
+      .select({ formClassId: students.formClassId })
+      .from(students)
+      .where(eq(students.schoolId, requireSchoolId(this.activeSchoolId)));
+    return enrolmentCountByClass(rows);
+  }
+
+  private async withEnrolmentCounts(classes: SelectFormClass[]): Promise<SelectFormClass[]> {
+    if (classes.length === 0) {
+      return classes;
+    }
+    const counts = await this.enrolmentCounts();
+    return classes.map((formClass) => ({
+      ...formClass,
+      studentCount: counts.get(formClass.id) ?? 0,
+    }));
   }
 }
 

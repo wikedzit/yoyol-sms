@@ -2,9 +2,14 @@ import { and, eq, inArray } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
 import { roles } from '../database/roles';
 import { schoolMemberships } from '../database/school-memberships';
+import { guardianStudents, guardians } from '../database/guardians';
 import { studentGuardians } from '../database/student-guardians';
+import { studentsVisibleToParent } from '../kernel/guardian-accounts';
 import { studentSubjects } from '../database/student-subjects';
 import { students } from '../database/students';
+import { academicYears } from '../database/academic-years';
+import { studentEnrolments } from '../database/student-enrolments';
+import { teachingAssignments } from '../database/teaching-assignments';
 import { teacherFormClasses } from '../database/teacher-form-classes';
 import { teacherSubjects } from '../database/teacher-subjects';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
@@ -43,7 +48,7 @@ export default class RecordScopeService {
     }
 
     if (membership.roleKey === 'teacher') {
-      return this.teacherScope(membership.teacherId);
+      return this.teacherScope(schoolId, membership.teacherId);
     }
     if (membership.roleKey === 'student') {
       return this.studentScope(membership.studentId);
@@ -51,9 +56,45 @@ export default class RecordScopeService {
     return this.parentScope(schoolId, membership.userId);
   }
 
-  private async teacherScope(teacherId: number | null): Promise<RecordScope> {
+  private async teacherScope(schoolId: number, teacherId: number | null): Promise<RecordScope> {
     if (teacherId == null) {
       return emptyScope();
+    }
+
+    const activeYear = await this.db
+      .select({ id: academicYears.id })
+      .from(academicYears)
+      .where(and(eq(academicYears.schoolId, schoolId), eq(academicYears.status, 'active')))
+      .get();
+    if (activeYear) {
+      const yearRows = await this.db
+        .select({
+          formClassId: teachingAssignments.formClassId,
+          subjectId: teachingAssignments.subjectId,
+        })
+        .from(teachingAssignments)
+        .where(and(
+          eq(teachingAssignments.teacherId, teacherId),
+          eq(teachingAssignments.academicYearId, activeYear.id),
+        ));
+      if (yearRows.length > 0) {
+        const classIds = [...new Set(yearRows.map((row) => row.formClassId))];
+        const studentRows = await this.db
+          .select({ id: studentEnrolments.studentId })
+          .from(studentEnrolments)
+          .where(and(
+            eq(studentEnrolments.academicYearId, activeYear.id),
+            inArray(studentEnrolments.formClassId, classIds),
+            inArray(studentEnrolments.status, ['enrolled', 'promoted']),
+          ));
+        return {
+          kind: 'limited',
+          teacherIds: [teacherId],
+          classIds,
+          subjectIds: [...new Set(yearRows.map((row) => row.subjectId))],
+          studentIds: [...new Set(studentRows.map((row) => row.id))],
+        };
+      }
     }
 
     const classRows = await this.db
@@ -106,7 +147,7 @@ export default class RecordScopeService {
   }
 
   private async parentScope(schoolId: number, userId: number): Promise<RecordScope> {
-    const links = await this.db
+    const accountLinks = await this.db
       .select({ studentId: studentGuardians.studentId })
       .from(studentGuardians)
       .where(
@@ -115,7 +156,19 @@ export default class RecordScopeService {
           eq(studentGuardians.userId, userId),
         ),
       );
-    const studentIds = links.map((link) => link.studentId);
+    const guardianLinks = await this.db
+      .select({ studentId: guardianStudents.studentId })
+      .from(guardianStudents)
+      .innerJoin(guardians, eq(guardians.id, guardianStudents.guardianId))
+      .where(and(eq(guardians.schoolId, schoolId), eq(guardians.userId, userId)));
+    const schoolStudents = await this.db
+      .select({ id: students.id })
+      .from(students)
+      .where(eq(students.schoolId, schoolId));
+    const studentIds = studentsVisibleToParent({
+      linkedStudentIds: [...accountLinks, ...guardianLinks].map((link) => link.studentId),
+      requestedStudentIds: schoolStudents.map((student) => student.id),
+    });
     if (studentIds.length === 0) {
       return emptyScope();
     }

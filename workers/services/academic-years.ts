@@ -1,4 +1,4 @@
-import { eq, and, ne, inArray } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, or } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   academicYears,
@@ -9,6 +9,11 @@ import {
   type SelectTerm,
 } from '../database/academic-years';
 import type { AppDatabase } from '../database/app-database';
+import { activeYearPlan, currentTermPlan, refusalToDeleteTerm, refusalToDeleteYear, refusalToEditArchivedYear } from '../kernel/academic-calendar';
+import { grades } from '../database/grades';
+import { attendanceRecords } from '../database/attendance';
+import { financeInvoices } from '../database/finance';
+import { students } from '../database/students';
 import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // --- Zod Schemas for Validation ---
 
@@ -108,11 +113,26 @@ export default class AcademicYearService {
   private db: AppDatabase;
   private ownerUserId: number | null;
   private activeSchoolId: number | null;
+  private publishTermStarted: ((input: {
+    schoolId: number;
+    termId: number;
+    academicYearId: number;
+  }) => Promise<void>) | null;
 
-  constructor(database: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
+  constructor(
+    database: AppDatabase,
+    ownerUserId: number | null,
+    activeSchoolId: number | null = null,
+    publishTermStarted: ((input: {
+      schoolId: number;
+      termId: number;
+      academicYearId: number;
+    }) => Promise<void>) | null = null,
+  ) {
     this.db = database;
     this.ownerUserId = ownerUserId;
     this.activeSchoolId = activeSchoolId;
+    this.publishTermStarted = publishTermStarted;
   }
 
   // ==================== ACADEMIC YEAR OPERATIONS ====================
@@ -211,6 +231,12 @@ export default class AcademicYearService {
   ): Promise<SelectAcademicYear | null> {
     try {
       const validated = UpdateAcademicYearSchema.parse(data);
+      const current = await this.getYearById(id);
+      if (!current) return null;
+      const archivedRefusal = refusalToEditArchivedYear(current.status, validated);
+      if (archivedRefusal) {
+        throw new Error(archivedRefusal);
+      }
 
       // Route through setActiveYear so the single-active-year rule is enforced,
       // rather than allowing a bare status flip to create two active years.
@@ -246,6 +272,9 @@ export default class AcademicYearService {
         .returning();
       return result[0] || null;
     } catch (error) {
+      if (error instanceof Error && error.message === 'An archived year keeps its name and dates.') {
+        throw error;
+      }
       console.error('Error updating academic year:', error);
       return null;
     }
@@ -257,20 +286,23 @@ export default class AcademicYearService {
    */
   async setActiveYear(id: number): Promise<SelectAcademicYear | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      requireOwnerUserId(this.ownerUserId);
       const target = await this.getYearById(id);
       if (!target) return null;
 
-      await this.db
-        .update(academicYears)
-        .set({ status: 'archived', updatedAt: Date.now() })
-        .where(
-          and(
-            eq(academicYears.status, 'active'),
-            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
-            ne(academicYears.id, id),
-          ),
-        );
+      const years = await this.getAllYears();
+      const plan = activeYearPlan(years.map((year) => ({ id: year.id, status: year.status })), id);
+      if (plan.archiveIds.length > 0) {
+        await this.db
+          .update(academicYears)
+          .set({ status: 'archived', updatedAt: Date.now() })
+          .where(
+            and(
+              eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
+              inArray(academicYears.id, plan.archiveIds),
+            ),
+          );
+      }
 
       const result = await this.db
         .update(academicYears)
@@ -291,18 +323,66 @@ export default class AcademicYearService {
 
   async deleteYear(id: number): Promise<boolean> {
     try {
-      // Terms cascade via the FK, so no manual cleanup needed here.
+      const year = await this.getYearById(id);
+      if (!year) return false;
+      const schoolId = requireSchoolId(this.activeSchoolId);
+      const refusal = refusalToDeleteYear({
+        enrolmentCount: await this.matchingRowCount(
+          this.db
+            .select({ id: students.id })
+            .from(students)
+            .where(and(
+              eq(students.schoolId, schoolId),
+              or(
+                eq(students.academicYearId, year.id),
+                and(
+                  gte(students.enrollmentDate, year.startDate),
+                  lte(students.enrollmentDate, year.endDate),
+                ),
+              ),
+            ))
+            .limit(1),
+        ),
+        resultCount: await this.matchingRowCount(
+          this.db
+            .select({ id: grades.id })
+            .from(grades)
+            .innerJoin(terms, eq(grades.termId, terms.id))
+            .where(and(
+              eq(grades.schoolId, schoolId),
+              eq(terms.academicYearId, year.id),
+            ))
+            .limit(1),
+        ),
+        invoiceCount: await this.matchingRowCount(
+          this.db
+            .select({ id: financeInvoices.id })
+            .from(financeInvoices)
+            .where(and(
+              eq(financeInvoices.schoolId, schoolId),
+              eq(financeInvoices.academicYearId, year.id),
+            ))
+            .limit(1),
+        ),
+      });
+      if (refusal) {
+        throw new Error(refusal);
+      }
+
       const result = await this.db
         .delete(academicYears)
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.schoolId, requireSchoolId(this.activeSchoolId)),
+            eq(academicYears.schoolId, schoolId),
           ),
         )
         .returning({ id: academicYears.id });
       return result.length > 0;
     } catch (error) {
+      if (error instanceof Error && error.message === 'This year still has enrolments, results, or invoices.') {
+        throw error;
+      }
       console.error('Error deleting academic year:', error);
       return false;
     }
@@ -495,17 +575,18 @@ export default class AcademicYearService {
       }
 
       const ownedYearIds = (await this.getAllYears()).map((year) => year.id);
-      if (ownedYearIds.length > 0) {
+      const schoolTerms = ownedYearIds.length === 0
+        ? []
+        : await this.db
+          .select({ id: terms.id, isCurrent: terms.isCurrent })
+          .from(terms)
+          .where(inArray(terms.academicYearId, ownedYearIds));
+      const plan = currentTermPlan(schoolTerms, id);
+      if (plan.clearIds.length > 0) {
         await this.db
           .update(terms)
           .set({ isCurrent: false, updatedAt: Date.now() })
-          .where(
-            and(
-              eq(terms.isCurrent, true),
-              ne(terms.id, id),
-              inArray(terms.academicYearId, ownedYearIds),
-            ),
-          );
+          .where(inArray(terms.id, plan.clearIds));
       }
 
       const result = await this.db
@@ -513,7 +594,15 @@ export default class AcademicYearService {
         .set({ isCurrent: true, updatedAt: Date.now() })
         .where(eq(terms.id, id))
         .returning();
-      return result[0] || null;
+      const updated = result[0] || null;
+      if (updated && !target.isCurrent && this.publishTermStarted) {
+        await this.publishTermStarted({
+          schoolId: requireSchoolId(this.activeSchoolId),
+          termId: updated.id,
+          academicYearId: updated.academicYearId,
+        });
+      }
+      return updated;
     } catch (error) {
       console.error('Error setting current term:', error);
       return null;
@@ -524,6 +613,26 @@ export default class AcademicYearService {
     try {
       const existing = await this.getTermById(id);
       if (!existing) return false;
+      const schoolId = requireSchoolId(this.activeSchoolId);
+      const refusal = refusalToDeleteTerm({
+        resultCount: await this.matchingRowCount(
+          this.db
+            .select({ id: grades.id })
+            .from(grades)
+            .where(and(eq(grades.termId, id), eq(grades.schoolId, schoolId)))
+            .limit(1),
+        ),
+        attendanceCount: await this.matchingRowCount(
+          this.db
+            .select({ id: attendanceRecords.id })
+            .from(attendanceRecords)
+            .where(and(eq(attendanceRecords.termId, id), eq(attendanceRecords.schoolId, schoolId)))
+            .limit(1),
+        ),
+      });
+      if (refusal) {
+        throw new Error(refusal);
+      }
 
       const result = await this.db
         .delete(terms)
@@ -531,6 +640,9 @@ export default class AcademicYearService {
         .returning({ id: terms.id });
       return result.length > 0;
     } catch (error) {
+      if (error instanceof Error && error.message === 'This term still has results or attendance.') {
+        throw error;
+      }
       console.error('Error deleting term:', error);
       return false;
     }
@@ -562,5 +674,10 @@ export default class AcademicYearService {
       console.error('Error fetching years with terms:', error);
       return [];
     }
+  }
+
+  private async matchingRowCount(query: PromiseLike<readonly unknown[]>): Promise<number> {
+    const rows = await query;
+    return rows.length;
   }
 }

@@ -1,5 +1,7 @@
 import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
+import { academicLevels, academicStreams } from 'workers/database/academic-levels';
+import { subjectLevelLink } from '../kernel/academic-subjects';
 import {
   subject,
   type SelectSubject,
@@ -11,13 +13,10 @@ export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
   code: z.string().min(2).max(10),
-  stream: z.string().min(2).max(100), // Stream name (Science, Arts, Business)
-  instructor: z.string().min(2).max(100),
   description: z.string().max(500).optional(),
-  enrolledStudents: z.number().min(0).optional(),
   status: z.enum(['Active', 'Inactive']).default('Active'),
-  // Foreign key to academic streams (required)
-  streamId: z.number().min(1),
+  levelId: z.number().int().positive(),
+  streamId: z.number().int().positive().nullable().optional(),
 });
 
 const updateSubjectSchema = subjectSchema.partial();
@@ -53,10 +52,16 @@ export default class SubjectService {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = subjectSchema.parse(data);
+      const link = await this.checkedLevelLink(validatedData.levelId, validatedData.streamId ?? null);
       const result = await this.db
         .insert(subject)
         .values({
-          ...validatedData,
+          subjectName: validatedData.subjectName,
+          code: validatedData.code,
+          description: validatedData.description,
+          status: validatedData.status,
+          levelId: link.levelId,
+          streamId: link.streamId,
           schoolId: requireSchoolId(this.activeSchoolId),
           createdAt: Date.now(),
           updatedAt: Date.now(),
@@ -135,7 +140,7 @@ export default class SubjectService {
 
   // Get all subjects with pagination, search, sorting,
 // and REAL number of students enrolled
-async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
+async getAllSubjects(options?: GetSubjectsInput): Promise<Array<SelectSubject & { enrolledStudents: number }>> {
   try {
     const ownerUserId = requireOwnerUserId(this.ownerUserId);
 
@@ -162,11 +167,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
         id: subject.id,
         subjectName: subject.subjectName,
         code: subject.code,
-        stream: subject.stream,
-        instructor: subject.instructor,
         description: subject.description,
-
-        // 🔥 REAL student count
         enrolledStudents: sql<number>`
           (
             SELECT COUNT(*)
@@ -174,9 +175,9 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
             WHERE ${studentSubjects.subjectId} = ${subject.id}
           )
         `,
-
         status: subject.status,
         streamId: subject.streamId,
+        levelId: subject.levelId,
         schoolId: subject.schoolId,
         createdAt: subject.createdAt,
         updatedAt: subject.updatedAt,
@@ -195,7 +196,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
     return results.map((item) => ({
       ...item,
       enrolledStudents: Number(item.enrolledStudents ?? 0),
-    })) as SelectSubject[];
+    }));
   } catch (error) {
     console.error('Error fetching all subjects:', error);
     return [];
@@ -209,8 +210,23 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validatedData = updateSubjectSchema.parse(data);
+      const current = await this.getSubjectById(id);
+      if (!current?.levelId && validatedData.levelId === undefined) {
+        throw new Error('Choose a level for this subject.');
+      }
+      const levelId = validatedData.levelId ?? current?.levelId;
+      if (!levelId) {
+        throw new Error('Choose a level for this subject.');
+      }
+      const streamId = validatedData.streamId === undefined ? current?.streamId ?? null : validatedData.streamId;
+      const link = await this.checkedLevelLink(levelId, streamId);
       const updateResult = {
-        ...validatedData,
+        subjectName: validatedData.subjectName,
+        code: validatedData.code,
+        description: validatedData.description,
+        status: validatedData.status,
+        levelId: link.levelId,
+        streamId: link.streamId,
         updatedAt: Date.now(),
       };
       const result = await this.db
@@ -222,6 +238,12 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
 
       return result[0] || null;
     } catch (error) {
+      if (error instanceof Error && (
+        error.message === 'Choose a level for this subject.'
+        || error.message === 'Choose a stream from the same level.'
+      )) {
+        throw error;
+      }
       console.error('Error updating subject:', error);
       return null;
     }
@@ -240,5 +262,30 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
       console.error('Error deleting subject:', error);
       return false;
     }
+  }
+
+  private async checkedLevelLink(levelId: number, streamId: number | null) {
+    const schoolId = requireSchoolId(this.activeSchoolId);
+    const level = await this.db
+      .select({ id: academicLevels.id })
+      .from(academicLevels)
+      .where(and(eq(academicLevels.id, levelId), eq(academicLevels.schoolId, schoolId)))
+      .get();
+    if (!level) {
+      throw new Error('Choose a level for this subject.');
+    }
+    const streams = await this.db
+      .select({
+        id: academicStreams.id,
+        levelId: academicStreams.levelId,
+        name: academicStreams.name,
+      })
+      .from(academicStreams)
+      .where(eq(academicStreams.schoolId, schoolId));
+    const link = subjectLevelLink({ levelId, streamId, streams });
+    if ('error' in link) {
+      throw new Error(link.error);
+    }
+    return link;
   }
 }

@@ -7,11 +7,26 @@ import {
 } from '../database/students';
 import { campus } from '../database/campuses';
 import { school } from '../database/school';
-import type { AppDatabase } from '../database/app-database';
+import type { DatabaseAdapter } from '../database/adapter';
+import { academicYears } from '../database/academic-years';
+import { studentEnrolments } from '../database/student-enrolments';
+import { financeInvoices } from '../database/finance';
+import { refusalToEnrolTwice } from '../kernel/student-enrolments';
+import { extensionSettings } from '../database/extension-registry';
+import {
+  admissionYear,
+  defaultAdmissionNumberFormat,
+  nextAdmissionNumber,
+  refusalToChangeAdmissionNumber,
+  refusalToReuseAdmissionNumber,
+} from '../kernel/admission-numbers';
+import { outboxInsert, sqliteOutboxInsert } from '../kernel/event-catalogue';
+import { schoolClassroom } from '../kernel/school-classroom';
 import { requireOwnerUserId, requireSchoolId } from 'workers/utils/require-owner-user';
 // --- Zod schemas for validation ---
 const CreateStudentSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(100),
+  middleName: z.string().max(100).optional(),
   lastName: z.string().min(1, 'Last name is required').max(100),
   gender: z
     .string()
@@ -91,10 +106,15 @@ export type GetStudentsInput = z.infer<typeof GetStudentsSchema>;
 // --- Student service class ---
 export default class StudentService {
   constructor(
-    private db: AppDatabase,
+    private adapter: DatabaseAdapter,
     private ownerUserId: number | null,
     private activeSchoolId: number | null = null,
+    private dispatchOutbox: () => Promise<void> = async () => {},
   ) {}
+
+  private get db() {
+    return this.adapter.db;
+  }
 
   // ------------------------------------------------
   // Create student
@@ -163,35 +183,76 @@ export default class StudentService {
         }
       }
 
-      // Prevent duplicate admission numbers
-      // for the same owner.
+      const schoolId = validated.schoolId ?? requireSchoolId(this.activeSchoolId);
       if (validated.admissionNumber) {
-        const existingAdmission =
-          await this.findByAdmissionNumber(
-            validated.admissionNumber,
-          );
-
-        if (existingAdmission) {
-          throw new Error(
-            'This admission number is already in use.',
-          );
+        const duplicate = refusalToReuseAdmissionNumber(
+          (await this.findByAdmissionNumber(validated.admissionNumber)) !== null,
+        );
+        if (duplicate) {
+          throw new Error(duplicate);
         }
+      } else {
+        validated.admissionNumber = await this.generatedAdmissionNumber(
+          schoolId,
+          validated.enrollmentDate,
+        );
       }
 
       const now = Date.now();
+      const classroom = schoolClassroom({
+        formClassId: validated.formClassId,
+        universityClassId: validated.classId,
+      });
+      const activeYear = await this.db
+        .select({ id: academicYears.id })
+        .from(academicYears)
+        .where(and(eq(academicYears.schoolId, schoolId), eq(academicYears.status, 'active')))
+        .get();
+      const studentFields = { ...validated };
+      delete studentFields.classId;
+      const values = {
+        ...studentFields,
+        formClassId: classroom.formClassId ?? undefined,
+        academicYearId: activeYear?.id,
+        schoolId,
+        createdAt: now,
+        updatedAt: now,
+      };
 
-      const result =
-        await this.db
-          .insert(students)
-          .values({
-            ...validated,
-            schoolId:
-              validated.schoolId ?? requireSchoolId(this.activeSchoolId),
-            createdAt: now,
-            updatedAt: now,
-          })
-          .returning();
+      if (validated.formClassId && activeYear) {
+        const compiled = this.db.insert(students).values(values).returning().toSQL();
+        const created = await this.adapter.insertWithOutbox({
+          change: { sql: compiled.sql, params: compiled.params },
+          map: studentFromRow,
+          outbox: (row) => outboxInsert({
+            schoolId,
+            name: 'students.student.enrolled',
+            payload: {
+              studentId: row.id,
+              formClassId: validated.formClassId,
+              academicYearId: activeYear.id,
+            },
+            now,
+          }),
+          sqliteOutbox: sqliteOutboxInsert({
+            schoolId,
+            name: 'students.student.enrolled',
+            payload: { formClassId: validated.formClassId, academicYearId: activeYear.id },
+            idField: 'studentId',
+            now,
+          }),
+        });
+        await this.dispatchOutbox();
+        if (created) {
+          await this.recordYearEnrolment(schoolId, created.id, activeYear.id, classroom.formClassId ?? null);
+        }
+        return created;
+      }
 
+      const result = await this.db.insert(students).values(values).returning();
+      if (result[0] && activeYear) {
+        await this.recordYearEnrolment(schoolId, result[0].id, activeYear.id, classroom.formClassId ?? null);
+      }
       return result[0] || null;
     } catch (error) {
       if (
@@ -311,8 +372,13 @@ export default class StudentService {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
       const validated = UpdateStudentSchema.parse(data);
+      if (validated.admissionNumber) {
+        await this.refuseAdmissionNumberChange(id, validated.admissionNumber);
+      }
+      const studentFields = { ...validated };
+      delete studentFields.classId;
       const updateValues: Partial<InsertStudent> = {
-        ...validated,
+        ...studentFields,
         updatedAt: Date.now(),
       };
 
@@ -326,6 +392,12 @@ export default class StudentService {
 
       return result[0] || null;
     } catch (error) {
+      if (error instanceof Error && (
+        error.message === 'This admission number is already in use.'
+        || error.message === 'This admission number is already on a report or invoice.'
+      )) {
+        throw error;
+      }
       console.error('Error updating student:', error);
       return null;
     }
@@ -457,6 +529,147 @@ export default class StudentService {
       return 0;
     }
   }
+
+  private async recordYearEnrolment(
+    schoolId: number,
+    studentId: number,
+    academicYearId: number,
+    formClassId: number | null,
+  ): Promise<void> {
+    const existing = await this.db
+      .select({
+        studentId: studentEnrolments.studentId,
+        academicYearId: studentEnrolments.academicYearId,
+        formClassId: studentEnrolments.formClassId,
+        status: studentEnrolments.status,
+      })
+      .from(studentEnrolments)
+      .where(and(
+        eq(studentEnrolments.studentId, studentId),
+        eq(studentEnrolments.academicYearId, academicYearId),
+      ))
+      .get();
+    const refusal = refusalToEnrolTwice(existing
+      ? { ...existing, status: existing.status === 'left' || existing.status === 'transferred' ? existing.status : 'enrolled' }
+      : null);
+    if (refusal) {
+      throw new Error(refusal);
+    }
+    const now = Date.now();
+    await this.db.insert(studentEnrolments).values({
+      schoolId,
+      studentId,
+      academicYearId,
+      formClassId,
+      status: 'enrolled',
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  private async generatedAdmissionNumber(
+    schoolId: number,
+    enrollmentDate: string | undefined,
+  ): Promise<string> {
+    const stored = await this.db
+      .select({ value: extensionSettings.settingValue })
+      .from(extensionSettings)
+      .where(and(
+        eq(extensionSettings.schoolId, schoolId),
+        eq(extensionSettings.extensionKey, 'students'),
+        eq(extensionSettings.settingKey, 'admissionNumberFormat'),
+      ))
+      .get();
+    const taken = await this.db
+      .select({ admissionNumber: students.admissionNumber })
+      .from(students)
+      .where(eq(students.schoolId, schoolId));
+
+    return nextAdmissionNumber({
+      format: stored?.value || defaultAdmissionNumberFormat,
+      year: admissionYear(enrollmentDate, new Date()),
+      taken: taken
+        .map((row) => row.admissionNumber)
+        .filter((value): value is string => Boolean(value)),
+    });
+  }
+
+  private async refuseAdmissionNumberChange(id: string, admissionNumber: string): Promise<void> {
+    const current = await this.getById(id);
+    if (!current || current.admissionNumber === admissionNumber) {
+      return;
+    }
+
+    const invoice = await this.db
+      .select({ id: financeInvoices.id })
+      .from(financeInvoices)
+      .where(and(
+        eq(financeInvoices.studentId, Number(id)),
+        current.schoolId == null ? eq(financeInvoices.studentId, Number(id)) : eq(financeInvoices.schoolId, current.schoolId),
+      ))
+      .limit(1)
+      .get();
+    const blocked = refusalToChangeAdmissionNumber({
+      reportCount: 0,
+      invoiceCount: invoice ? 1 : 0,
+    });
+    if (blocked) {
+      throw new Error(blocked);
+    }
+
+    const existing = await this.findByAdmissionNumber(admissionNumber);
+    const duplicate = refusalToReuseAdmissionNumber(existing !== null && existing.id !== Number(id));
+    if (duplicate) {
+      throw new Error(duplicate);
+    }
+  }
+}
+
+function studentFromRow(raw: Record<string, unknown>): SelectStudent {
+  return {
+    id: numberValue(raw.id),
+    firstName: textValue(raw.first_name),
+    middleName: textOrNull(raw.middle_name),
+    lastName: textValue(raw.last_name),
+    gender: textValue(raw.gender),
+    dob: textOrNull(raw.dob),
+    email: textOrNull(raw.email),
+    phone: textOrNull(raw.phone),
+    address: textOrNull(raw.address),
+    guardianName: textOrNull(raw.guardian_name),
+    guardianPhone: textOrNull(raw.guardian_phone),
+    photoUrl: textOrNull(raw.photo_url),
+    course: textOrNull(raw.course),
+    grade: textOrNull(raw.grade),
+    enrollmentDate: textOrNull(raw.enrollment_date),
+    status: textValue(raw.status),
+    createdAt: numberValue(raw.created_at),
+    updatedAt: numberValue(raw.updated_at),
+    formClassId: numberOrNull(raw.form_class_id),
+    schoolId: numberOrNull(raw.school_id),
+    admissionNumber: textOrNull(raw.admission_number),
+    academicYearId: numberOrNull(raw.academic_year_id),
+    campusId: numberOrNull(raw.campus_id),
+  };
+}
+
+function textValue(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function numberValue(value: unknown): number {
+  return typeof value === 'number' ? value : Number(value);
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return typeof value === 'number' ? value : Number(value);
 }
 
 function capitalize(s: string): string {

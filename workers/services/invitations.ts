@@ -1,8 +1,10 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
+import { guardianStudents, guardians } from '../database/guardians';
 import { invitations, type SelectInvitation } from '../database/invitations';
 import { roles } from '../database/roles';
 import { schoolMemberships } from '../database/school-memberships';
+import { studentGuardians } from '../database/student-guardians';
 import { users } from '../database/users';
 import {
   hashPassword,
@@ -41,6 +43,7 @@ export default class InvitationService {
     roleId: number;
     teacherId?: number | null;
     studentId?: number | null;
+    guardianId?: number | null;
   }): Promise<{ token: string }> {
     const createdBy = requireOwnerUserId(this.ownerUserId);
     const contact = (input.email || '').trim().toLowerCase();
@@ -58,6 +61,7 @@ export default class InvitationService {
       tokenHash: await sha256(token),
       teacherId: input.teacherId ?? null,
       studentId: input.studentId ?? null,
+      guardianId: input.guardianId ?? null,
       expiresAt: Date.now() + INVITE_MS,
       createdBy,
       createdAt: Date.now(),
@@ -129,12 +133,57 @@ export default class InvitationService {
       });
     }
 
+    if (invitation.guardianId) {
+      await attachGuardianAccount(this.db, invitation.schoolId, invitation.guardianId, user.id);
+    }
+
     await this.db
       .update(invitations)
       .set({ acceptedAt: Date.now() })
       .where(eq(invitations.id, invitation.id));
 
     return { userId: user.id };
+  }
+}
+
+async function attachGuardianAccount(
+  db: AppDatabase,
+  schoolId: number,
+  guardianId: number,
+  userId: number,
+) {
+  await db
+    .update(guardians)
+    .set({ userId, updatedAt: Date.now() })
+    .where(and(
+      eq(guardians.id, guardianId),
+      eq(guardians.schoolId, schoolId),
+      isNull(guardians.userId),
+    ));
+
+  const links = await db
+    .select({ studentId: guardianStudents.studentId })
+    .from(guardianStudents)
+    .where(and(
+      eq(guardianStudents.guardianId, guardianId),
+      eq(guardianStudents.schoolId, schoolId),
+    ));
+
+  for (const link of links) {
+    const existing = await db
+      .select({ id: studentGuardians.id })
+      .from(studentGuardians)
+      .where(and(
+        eq(studentGuardians.studentId, link.studentId),
+        eq(studentGuardians.userId, userId),
+      ))
+      .get();
+    if (existing) continue;
+    await db.insert(studentGuardians).values({
+      schoolId,
+      studentId: link.studentId,
+      userId,
+    });
   }
 }
 

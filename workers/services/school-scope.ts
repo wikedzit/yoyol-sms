@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
 import { formClasses } from '../database/academic-levels';
-import { classes } from '../database/class';
 import { students } from '../database/students';
 import { teachers } from '../database/teachers';
 
@@ -23,20 +22,6 @@ export function schoolIdForTeacher(
       .select({ schoolId: teachers.schoolId })
       .from(teachers)
       .where(eq(teachers.id, teacherId))
-      .get(),
-  );
-}
-
-export function schoolIdForClass(
-  db: AppDatabase,
-  classId: number,
-): Promise<number | null> {
-  return schoolIdOn(
-    db,
-    db
-      .select({ schoolId: classes.schoolId })
-      .from(classes)
-      .where(eq(classes.id, classId))
       .get(),
   );
 }

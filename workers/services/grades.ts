@@ -5,7 +5,9 @@ import {
   type InsertGrade,
   type SelectGrade,
 } from '../database/grades';
-import type { AppDatabase } from '../database/app-database';
+import type { DatabaseAdapter } from '../database/adapter';
+import { outboxInsert, sqliteOutboxInsert } from '../kernel/event-catalogue';
+import { terms } from '../database/academic-years';
 import { students } from '../database/students';
 import { subject } from '../database/subjects';
 import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
@@ -99,14 +101,21 @@ export type GradeWithRelations = SelectGrade & {
  * Grades Service Class
  */
 export default class GradeService {
-  private db: AppDatabase;
   private ownerUserId: number | null;
   private activeSchoolId: number | null;
 
-  constructor(database: AppDatabase, ownerUserId: number | null, activeSchoolId: number | null = null) {
-    this.db = database;
+  constructor(
+    private adapter: DatabaseAdapter,
+    ownerUserId: number | null,
+    activeSchoolId: number | null = null,
+    private dispatchOutbox: () => Promise<void> = async () => {},
+  ) {
     this.ownerUserId = ownerUserId;
     this.activeSchoolId = activeSchoolId;
+  }
+
+  private get db() {
+    return this.adapter.db;
   }
 
   /**
@@ -133,18 +142,41 @@ export default class GradeService {
         return null;
       }
 
-      const result = await this.db
-        .insert(grades)
-        .values({
-          ...validated,
-          grade,
-          schoolId: ownedStudent.schoolId ?? requireSchoolId(this.activeSchoolId),
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        })
-        .returning();
-
-      return result[0] || null;
+      const now = Date.now();
+      const schoolId = ownedStudent.schoolId ?? requireSchoolId(this.activeSchoolId);
+      const currentTerm = await this.db
+        .select({ id: terms.id })
+        .from(terms)
+        .where(and(eq(terms.schoolId, schoolId), eq(terms.isCurrent, true)))
+        .get();
+      const values = {
+        ...validated,
+        grade,
+        termId: currentTerm?.id,
+        schoolId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const compiled = this.db.insert(grades).values(values).returning().toSQL();
+      const created = await this.adapter.insertWithOutbox({
+        change: { sql: compiled.sql, params: compiled.params },
+        map: gradeFromRow,
+        outbox: (row) => outboxInsert({
+          schoolId,
+          name: 'assessment.grade.recorded',
+          payload: { gradeId: row.id, studentId: validated.studentId, subjectId: validated.subjectId },
+          now,
+        }),
+        sqliteOutbox: sqliteOutboxInsert({
+          schoolId,
+          name: 'assessment.grade.recorded',
+          payload: { studentId: validated.studentId, subjectId: validated.subjectId },
+          idField: 'gradeId',
+          now,
+        }),
+      });
+      await this.dispatchOutbox();
+      return created;
     } catch (error) {
       console.error('Error creating grade:', error);
       return null;
@@ -279,7 +311,7 @@ export default class GradeService {
           id: students.id,
           firstName: students.firstName,
           lastName: students.lastName,
-          classId: students.classId,
+          classId: students.formClassId, // The classroom is the form class.
         })
         .from(students)
         .where(eq(students.id, grade.studentId))
@@ -428,4 +460,42 @@ export default class GradeService {
       return false;
     }
   }
+}
+
+function gradeFromRow(raw: Record<string, unknown>): SelectGrade {
+  return {
+    id: numberValue(raw.id),
+    studentId: numberValue(raw.student_id),
+    subjectId: numberValue(raw.subject_id),
+    streamId: numberValue(raw.stream_id),
+    formId: numberValue(raw.form_id),
+    teacherId: numberOrNull(raw.teacher_id),
+    schoolId: numberOrNull(raw.school_id),
+    termId: numberOrNull(raw.term_id),
+    status: textValue(raw.status),
+    score: numberValue(raw.score),
+    grade: textValue(raw.grade),
+    remarks: textOrNull(raw.remarks),
+    createdAt: numberValue(raw.created_at),
+    updatedAt: numberValue(raw.updated_at),
+  };
+}
+
+function textValue(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function textOrNull(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
+function numberValue(value: unknown): number {
+  return typeof value === 'number' ? value : Number(value);
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return typeof value === 'number' ? value : Number(value);
 }
