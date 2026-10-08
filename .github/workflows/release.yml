@@ -1,0 +1,25 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: node --experimental-strip-types --test workers/kernel/*.test.ts
+      - run: node --experimental-strip-types scripts/traceability.ts
+      - run: pnpm build
+      - name: Changelog mentions the tag
+        run: grep -F "${GITHUB_REF_NAME}" CHANGELOG.md
