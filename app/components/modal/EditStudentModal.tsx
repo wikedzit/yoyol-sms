@@ -201,6 +201,7 @@ export default function EditStudentModal({
                       <SelectItem value="Active">Active</SelectItem>
                       <SelectItem value="Pending">Pending</SelectItem>
                       <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Suspended">Suspended</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

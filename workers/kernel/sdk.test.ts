@@ -34,17 +34,17 @@ function readManifest(key: string) {
   return JSON.parse(readFileSync(join(packageDirectory(key), 'yoyol.extension.json'), 'utf8'));
 }
 
-test('SDK-01 definePlugin builds the hello entrypoint', async () => {
+test('SDK-01 definePlugin builds a plugin entrypoint', async () => {
   let enabledSchool = 0;
   const plugin = definePlugin({
-    manifest: readManifest('hello'),
+    manifest: readManifest('email'),
     onEnable(context) {
       enabledSchool = context.schoolId;
     },
   });
 
   await plugin.onEnable(contextFor(4));
-  assert.equal(plugin.manifest.key, 'hello');
+  assert.equal(plugin.manifest.key, 'email');
   assert.equal(plugin.manifest.type, 'plugin');
   assert.equal(enabledSchool, 4);
   const page = await plugin.handlePage({ path: '/' }, contextFor(4));
@@ -52,12 +52,12 @@ test('SDK-01 definePlugin builds the hello entrypoint', async () => {
 });
 
 test('SDK-01 a plugin cannot declare permissions', () => {
-  const hello = readManifest('hello');
+  const email = readManifest('email');
   assert.throws(
     () => definePlugin({
       manifest: {
-        ...hello,
-        permissions: [{ key: 'hello.greet' }],
+        ...email,
+        permissions: [{ key: 'email.send' }],
       },
     }),
     /plugin cannot declare/,
@@ -67,7 +67,7 @@ test('SDK-01 a plugin cannot declare permissions', () => {
 test('SDK-02 an entrypoint can read a setting from its context', async () => {
   let greeting: string | null = null;
   const plugin = definePlugin({
-    manifest: readManifest('hello'),
+    manifest: readManifest('email'),
     async runHook(_name, _payload, context) {
       greeting = await context.settings.get('greeting');
       assert.equal(context.core.students, undefined);

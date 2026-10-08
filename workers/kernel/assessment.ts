@@ -35,10 +35,13 @@ export function describeResults(rows: readonly {
   assessmentName: string;
   score: number;
   gradeLabel: string;
+  comment?: string | null;
 }[]): string[] {
-  return rows.map((row) => (
-    `${row.studentName}, ${row.termName}: ${row.subjectName} ${row.assessmentName} ${row.score} ${row.gradeLabel}`
-  ));
+  return rows.map((row) => {
+    const line = `${row.studentName}, ${row.termName}: ${row.subjectName} ${row.assessmentName} ${row.score} ${row.gradeLabel}`;
+    const comment = row.comment?.trim() ?? '';
+    return comment.length > 0 ? `${line}. ${comment}` : line;
+  });
 }
 
 export const defaultGradeBands: readonly GradeBand[] = [

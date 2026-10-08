@@ -248,16 +248,18 @@ export default class ClubService {
       const canWrite = !row.closed && (
         viewer.role === 'admin' || (viewer.role === 'teacher' && viewer.teacherId === row.patronId)
       );
+      const patronName = [row.firstName, row.middleName, row.lastName].filter(Boolean).join(' ');
       return {
         id: row.id,
         name: row.name,
         description: row.description,
         patronId: row.patronId,
+        patronName,
         closed: row.closed,
         canWrite,
         line: describeClub({
           name: row.name,
-          patronName: [row.firstName, row.middleName, row.lastName].filter(Boolean).join(' '),
+          patronName,
           closed: row.closed,
         }),
       };
@@ -280,12 +282,16 @@ export default class ClubService {
       .innerJoin(students, eq(students.id, clubMemberships.studentId))
       .where(and(eq(clubMemberships.schoolId, schoolId), eq(clubMemberships.academicYearId, yearId)))
       .orderBy(asc(students.lastName));
-    return rows.map((row) => ({
-      id: row.id,
-      clubId: row.clubId,
-      studentId: row.studentId,
-      line: `${[row.firstName, row.middleName, row.lastName].filter(Boolean).join(' ')}, ${row.clubName}`,
-    }));
+    return rows.map((row) => {
+      const studentName = [row.firstName, row.middleName, row.lastName].filter(Boolean).join(' ');
+      return {
+        id: row.id,
+        clubId: row.clubId,
+        studentId: row.studentId,
+        studentName,
+        line: `${studentName}, ${row.clubName}`,
+      };
+    });
   }
 
   private async activityRows(schoolId: number): Promise<ClubActivity[]> {

@@ -1,5 +1,5 @@
-import { Form } from 'react-router';
-import { useState } from 'react'; 
+import { Form, useFetcher } from 'react-router';
+import { useEffect, useState } from 'react'; 
 import {
   Dialog,
   DialogContent,
@@ -38,6 +38,7 @@ export function StudentProfilesModal({
   profileTabs = [],
 }: StudentProfilesModalProps) {
   const { t, language } = useLanguage();
+  const tabsFetcher = useFetcher<{ studentId: number; profileTabs: ProfileTab[] }>();
   // new
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -45,6 +46,19 @@ export function StudentProfilesModal({
   const isControlled = open !== undefined;
   const dialogOpen = isControlled ? open : internalOpen;
   const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
+
+  useEffect(() => {
+    if (!dialogOpen || !student?.id) {
+      return;
+    }
+    tabsFetcher.load(`/students/${student.id}/tabs`);
+    // Load once each time this student's profile opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dialogOpen, student?.id]);
+
+  const loadedTabs = tabsFetcher.data && tabsFetcher.data.studentId === student?.id
+    ? tabsFetcher.data.profileTabs
+    : profileTabs;
 
   // 
   if (!student) return null;
@@ -93,6 +107,9 @@ export function StudentProfilesModal({
               <strong>Gender:</strong> {student.gender}
             </p>
             <p>
+              <strong>Admission number:</strong> {show(student.admissionNumber)}
+            </p>
+            <p>
               <strong>DOB:</strong> {show(student.dob)}
             </p>
             <p>
@@ -139,7 +156,7 @@ export function StudentProfilesModal({
             )}
           </div>
 
-          {profileTabs.map((tab) => {
+          {loadedTabs.map((tab) => {
             const catalog = tab.catalog[language === "sw" ? "sw" : "en"];
             const title = tab.label ? catalog[tab.label] ?? tab.catalog.en[tab.label] ?? tab.label : "";
             return (

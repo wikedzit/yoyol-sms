@@ -22,8 +22,6 @@ import timetableSw from '../../modules/timetable/locales/sw.json';
 import academicsSw from '../../modules/academics/locales/sw.json';
 import assessmentEn from '../../modules/assessment/locales/en.json';
 import assessmentSw from '../../modules/assessment/locales/sw.json';
-import helloEn from '../../plugins/hello/locales/en.json';
-import helloSw from '../../plugins/hello/locales/sw.json';
 import noticesEn from '../../modules/notices/locales/en.json';
 import noticesSw from '../../modules/notices/locales/sw.json';
 import reportsEn from '../../modules/reports/locales/en.json';
@@ -59,7 +57,6 @@ const catalogs: Record<string, LocaleCatalog> = {
   'lesson-plans': catalog(lessonPlansEn, lessonPlansSw),
   timetable: catalog(timetableEn, timetableSw),
   assessment: catalog(assessmentEn, assessmentSw),
-  hello: catalog(helloEn, helloSw),
   notices: catalog(noticesEn, noticesSw),
   reports: catalog(reportsEn, reportsSw),
   sms: catalog(smsEn, smsSw),

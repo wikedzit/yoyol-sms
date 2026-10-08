@@ -42,6 +42,15 @@ test('MOD-ASM-05 a report line is plain text a browser can print', () => {
     gradeLabel: 'A',
   }])[0];
   assert.equal(line?.includes('80'), true);
+  assert.equal(describeResults([{
+    studentName: 'Baraka Eli Mwanga',
+    termName: 'Term 1',
+    subjectName: 'Mathematics',
+    assessmentName: 'Assignment',
+    score: 72,
+    gradeLabel: 'B',
+    comment: 'Steady start',
+  }])[0], 'Baraka Eli Mwanga, Term 1: Mathematics Assignment 72 B. Steady start');
 });
 
 test('MOD-ASM-06 a family line is the same released result', () => {

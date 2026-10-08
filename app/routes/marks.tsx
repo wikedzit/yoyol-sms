@@ -3,6 +3,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
+import { loadRecordScope } from '~/lib/load-record-scope';
 import { requireSchoolPermission, selectedSchoolId } from '~/lib/require-school-permission';
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -35,10 +36,29 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const term = years.flatMap((year) => year.terms.map((item) => ({ ...item, yearId: year.id }))).find((item) => item.id === termId);
   const allowedClasses = teacherId == null ? null : new Set(ownRows.map((row) => row.formClassId));
   const allowedSubjects = teacherId == null ? null : new Set(ownRows.map((row) => row.subjectId));
-  const students = term && classId && subjectId
+  const scope = await loadRecordScope(request, context.services);
+  const roster = term && classId && subjectId
     ? await context.services.assessment.classStudents(classId, term.yearId)
     : [];
+  const visibleRoster = scope.kind === 'school'
+    ? roster
+    : roster.filter((student) => scope.studentIds.includes(student.id));
+  const entered = termId && subjectId && typeId
+    ? await context.services.assessment.enteredMarks(termId, subjectId, typeId)
+    : [];
+  const enteredByStudent = new Map(entered.map((row) => [row.studentId, row]));
+  const students = visibleRoster.map((student) => {
+    const mark = enteredByStudent.get(student.id);
+    return {
+      ...student,
+      score: mark?.score ?? null,
+      gradeLabel: mark?.gradeLabel ?? null,
+      comment: mark?.comment ?? '',
+    };
+  });
   const canRelease = schoolId != null && await context.services.access.can(schoolId, 'students.record.write');
+  const canEnter = canRelease || teacherId != null;
+  const released = termId ? await context.services.assessment.termIsReleased(termId) : false;
   return {
     types: types.filter((type) => type.status === 'active'),
     classes: allowedClasses ? classes.filter((item) => allowedClasses.has(item.id)) : classes,
@@ -50,6 +70,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     typeId,
     termId,
     canRelease,
+    canEnter,
+    released,
   };
 }
 
@@ -106,10 +128,15 @@ export default function MarksPage() {
   const result = useActionData<typeof action>();
   const { t } = useLanguage();
   const message = result && 'error' in result ? result.error : null;
+  const saved = result && 'saved' in result ? result.saved : false;
 
   return (
     <PageFrame title={t('marks')} description={t('marksDescription')}>
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
+      {saved ? <p className="text-sm">Marks saved. The grade is shown beside each score.</p> : null}
+      {data.released && data.termId ? (
+        <p className="text-sm">Results for this term are released. Withdraw the release before changing marks.</p>
+      ) : null}
       <Form method="get" className="flex flex-wrap items-center gap-2">
         <select name="classId" defaultValue={data.classId || ''} required aria-label={t('classrooms')} className="h-9 rounded-md border px-3 text-sm">
           {data.classes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -127,18 +154,19 @@ export default function MarksPage() {
         </select>
         <Button type="submit">{t('marks')}</Button>
       </Form>
-      {data.students.length > 0 && data.typeId && data.termId ? (
+      {data.canEnter && data.students.length > 0 && data.typeId && data.termId ? (
         <Form method="post" className="space-y-3">
           <input type="hidden" name="intent" value="save" />
           <input type="hidden" name="subjectId" value={data.subjectId} />
           <input type="hidden" name="typeId" value={data.typeId} />
           <input type="hidden" name="termId" value={data.termId} />
           {data.students.map((student) => (
-            <div key={student.id} className="flex flex-wrap items-center gap-2">
+            <div key={`${student.id}-${student.score ?? 'empty'}`} className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="studentId" value={student.id} />
               <span className="w-56 text-sm">{student.name}</span>
-              <input name={`score-${student.id}`} inputMode="numeric" aria-label={student.name} className="h-9 w-24 rounded-md border px-3 text-sm" />
-              <input name={`comment-${student.id}`} aria-label={student.name} className="h-9 rounded-md border px-3 text-sm" />
+              <input name={`score-${student.id}`} inputMode="numeric" aria-label={student.name} defaultValue={student.score ?? ''} className="h-9 w-24 rounded-md border px-3 text-sm" />
+              <input name={`comment-${student.id}`} aria-label={`${student.name} comment`} defaultValue={student.comment} className="h-9 rounded-md border px-3 text-sm" />
+              {student.gradeLabel ? <span className="text-sm">Grade {student.gradeLabel}</span> : null}
             </div>
           ))}
           <Button type="submit">{t('saveMarks')}</Button>

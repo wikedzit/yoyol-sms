@@ -11,6 +11,7 @@ import type { DatabaseAdapter } from '../database/adapter';
 import { academicYears } from '../database/academic-years';
 import { studentEnrolments } from '../database/student-enrolments';
 import { financeInvoices } from '../database/finance';
+import { results } from '../database/assessment';
 import { refusalToEnrolTwice } from '../kernel/student-enrolments';
 import { extensionSettings } from '../database/extension-registry';
 import {
@@ -81,7 +82,7 @@ const CreateStudentSchema = z.object({
     },
     z.number().int().positive().optional(),
   ),
-  status: z.enum(['Active', 'Pending', 'Inactive']).default('Active'),
+  status: z.enum(['Active', 'Pending', 'Inactive', 'Suspended']).default('Active'),
 });
 
 const UpdateStudentSchema = CreateStudentSchema.partial();
@@ -250,9 +251,6 @@ export default class StudentService {
       }
 
       const result = await this.db.insert(students).values(values).returning();
-      if (result[0] && activeYear) {
-        await this.recordYearEnrolment(schoolId, result[0].id, activeYear.id, classroom.formClassId ?? null);
-      }
       return result[0] || null;
     } catch (error) {
       if (
@@ -609,8 +607,14 @@ export default class StudentService {
       ))
       .limit(1)
       .get();
+    const report = await this.db
+      .select({ id: results.id })
+      .from(results)
+      .where(eq(results.studentId, Number(id)))
+      .limit(1)
+      .get();
     const blocked = refusalToChangeAdmissionNumber({
-      reportCount: 0,
+      reportCount: report ? 1 : 0,
       invoiceCount: invoice ? 1 : 0,
     });
     if (blocked) {

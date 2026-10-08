@@ -195,6 +195,34 @@ export default class AssessmentRecordService {
     return { lines: describeResults(rows) };
   }
 
+  async enteredMarks(termId: number, subjectId: number, typeId: number): Promise<{
+    studentId: number;
+    score: number;
+    gradeLabel: string;
+    comment: string | null;
+  }[]> {
+    const schoolId = requireSchoolId(this.activeSchoolId);
+    return this.db
+      .select({
+        studentId: results.studentId,
+        score: results.score,
+        gradeLabel: results.gradeLabel,
+        comment: results.comment,
+      })
+      .from(results)
+      .where(and(
+        eq(results.schoolId, schoolId),
+        eq(results.termId, termId),
+        eq(results.subjectId, subjectId),
+        eq(results.assessmentTypeId, typeId),
+      ));
+  }
+
+  async termIsReleased(termId: number): Promise<boolean> {
+    const schoolId = requireSchoolId(this.activeSchoolId);
+    return this.isReleased(schoolId, termId);
+  }
+
   async releasedLines(): Promise<string[]> {
     const schoolId = requireSchoolId(this.activeSchoolId);
     const releases = await this.db
@@ -288,6 +316,7 @@ export default class AssessmentRecordService {
         assessmentName: assessmentTypes.name,
         score: results.score,
         gradeLabel: results.gradeLabel,
+        comment: results.comment,
       })
       .from(results)
       .innerJoin(students, eq(students.id, results.studentId))
@@ -304,6 +333,7 @@ export default class AssessmentRecordService {
       assessmentName: row.assessmentName,
       score: row.score,
       gradeLabel: row.gradeLabel,
+      comment: row.comment,
     }));
   }
 

@@ -4,6 +4,7 @@ import {
   classMove,
   describeEnrolments,
   endedEnrolment,
+  enrolmentPlacement,
   promotionPlan,
   refusalToEnrolTwice,
 } from './student-enrolments.ts';
@@ -18,6 +19,10 @@ test('MOD-STU-03 a student keeps a class for each academic year', () => {
 
   assert.equal(refusalToEnrolTwice(open), 'This student is already enrolled for that year.');
   assert.equal(refusalToEnrolTwice(null), null);
+  assert.equal(enrolmentPlacement(null, 8), 'create');
+  assert.equal(enrolmentPlacement(open, 9), 'refuse');
+  assert.equal(enrolmentPlacement({ ...open, formClassId: null }, 8), 'assign-class');
+  assert.equal(enrolmentPlacement({ ...open, formClassId: null }, null), 'refuse');
 
   assert.deepEqual(classMove({
     status: 'enrolled',

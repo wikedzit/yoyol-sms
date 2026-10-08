@@ -48,7 +48,6 @@ type Viewer = {
 };
 
 const widgetNames: Record<string, string> = {
-  hello: 'Hello',
   notices: 'Notices',
   attendance: 'Attendance',
   reports: 'Reports',

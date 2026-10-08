@@ -3,16 +3,13 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { ModuleCatalogTable } from '~/components/modules/ModuleCatalogTable';
 import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
 import { useLanguage } from '~/lib/i18n';
 import { selectSchoolId } from '~/lib/selected-school';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import type { SelectSchool } from 'workers/database/school';
 import type { InstalledExtension } from 'workers/services/extensions';
-import type { ExtensionSettingField } from 'workers/services/settings';
-import { findBundledManifest } from 'workers/kernel/bundled-manifests';
-import { consentLines, revocationNotice, uploadBlockReason, workerLoaderPresent } from 'workers/kernel/package-upload';
+import { revocationNotice, uploadBlockReason, workerLoaderPresent } from 'workers/kernel/package-upload';
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   await requireSchoolPermission(request, context.services, 'school.profile.read');
@@ -26,35 +23,22 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       )
     : [];
   const deadEvents = schoolId ? await context.services.events.listDead(schoolId) : [];
-  const settingFields: ExtensionSettingField[] = schoolId
-    ? await context.services.settings.list(schoolId)
-    : [];
 
   const selected = schools.find((school) => school.id === schoolId) ?? null;
   const isPlatformAdmin = selected != null && selected.ownerUserId === context.services.currentUserId;
   const loaderPresent = workerLoaderPresent(context.cloudflare.env);
   const publishers = isPlatformAdmin ? await context.services.publishers.list() : [];
   const revokedVersions = isPlatformAdmin ? await context.services.publishers.revokedVersions() : [];
-  const consent = Object.fromEntries(extensions.map((extension) => {
-    const manifest = findBundledManifest(extension.key);
-    return [extension.key, consentLines({
-      capabilities: manifest?.capabilities ?? [],
-      outboundHosts: manifest?.outboundHosts ?? [],
-    }).filter((line) => line.sensitive)];
-  }));
-
   return {
     schools: schools.map((school) => ({ id: school.id, name: school.name })),
     schoolId,
     extensions,
     catalog,
     deadEvents,
-    settingFields,
     isPlatformAdmin,
     packageUpload: isPlatformAdmin ? uploadBlockReason({ isPlatformAdmin: true, loaderPresent }) : null,
     publishers,
     revokedVersions,
-    consent,
   };
 }
 
@@ -124,14 +108,12 @@ export default function ExtensionsPage() {
     extensions,
     catalog,
     deadEvents,
-    settingFields,
     isPlatformAdmin,
     packageUpload,
     publishers,
     revokedVersions,
-    consent,
   } = useLoaderData<typeof loader>();
-  const { language, t } = useLanguage();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const fetcher = useFetcher<typeof action>();
 
@@ -141,7 +123,7 @@ export default function ExtensionsPage() {
       description={t(catalog === 'plugin' ? 'installPluginsDescription' : 'installExtensionsDescription')}
     >
       <SchoolPicker schools={schools} schoolId={schoolId} searchParams={searchParams} />
-      {schoolId !== null && isPlatformAdmin && catalog === 'module' ? (
+      {schoolId !== null && isPlatformAdmin ? (
         <PackageAdmin
           schoolId={schoolId}
           packageUpload={packageUpload}
@@ -153,135 +135,8 @@ export default function ExtensionsPage() {
       {schoolId === null ? (
         <p className="text-sm text-muted-foreground">{t('createSchoolFirst')}</p>
       ) : (
-        catalog === 'module' ? (
-          <ModuleCatalogTable modules={extensions} schoolId={schoolId} />
-        ) : (
-        <ul className="space-y-3">
-          {fetcher.data && 'error' in fetcher.data && fetcher.data.error ? (
-            <p className="text-sm text-destructive">{fetcher.data.error}</p>
-          ) : null}
-          {extensions.map((extension) => {
-            const name = language === 'sw' ? extension.nameSw : extension.nameEn;
-            const description = language === 'sw' ? extension.descriptionSw : extension.descriptionEn;
-            const isEnabled = extension.status === 'enabled';
-            return (
-              <li key={extension.key}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{name}</CardTitle>
-                    <CardDescription>{description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-wrap items-center gap-3">
-                    <p className="w-full text-sm text-muted-foreground">
-                      {t('extensionVersion')} {extension.version}
-                      {' · '}
-                      {t('extensionStatus')}: {extensionStatusLabel(extension.status, extension.required, t)}
-                      {' · '}
-                      {t('extensionCapabilities')}: {extension.grantedCapabilities.length > 0
-                        ? extension.grantedCapabilities.join(', ')
-                        : t('extensionNoCapabilities')}
-                      {(consent[extension.key] ?? []).map((line) => (
-                        <span key={line.en} className="mt-1 block font-medium">
-                          {language === 'sw' ? line.sw : line.en}
-                        </span>
-                      ))}
-                      {extension.installedVersion
-                        ? ` · ${extension.updateAvailable ? t('extensionUpdateAvailable') : t('extensionUpToDate')}`
-                        : ''}
-                    </p>
-                    {extension.required ? (
-                      <p className="text-sm text-muted-foreground">{t('extensionIncluded')}</p>
-                    ) : null}
-                    {extension.status === 'removed' ? (
-                      <p className="text-sm text-muted-foreground">{t('extensionRemoved')}</p>
-                    ) : null}
-                    {isEnabled && !extension.required ? (
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="intent" value="disable" />
-                        <input type="hidden" name="schoolId" value={schoolId} />
-                        <input type="hidden" name="extensionKey" value={extension.key} />
-                        <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                          {t('turnOffExtension')}
-                        </Button>
-                      </fetcher.Form>
-                    ) : null}
-                    {(isEnabled || extension.status === 'disabled') && !extension.required ? (
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="intent" value="remove" />
-                        <input type="hidden" name="schoolId" value={schoolId} />
-                        <input type="hidden" name="extensionKey" value={extension.key} />
-                        <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                          {t('removeExtension')}
-                        </Button>
-                      </fetcher.Form>
-                    ) : null}
-                    {(extension.status === 'disabled' || extension.status === 'removed') && !extension.required ? (
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="intent" value="purge" />
-                        <input type="hidden" name="schoolId" value={schoolId} />
-                        <input type="hidden" name="extensionKey" value={extension.key} />
-                        <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                          {t('purgeExtension')}
-                        </Button>
-                      </fetcher.Form>
-                    ) : null}
-                    {!isEnabled && !extension.required ? (
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="intent" value="enable" />
-                        <input type="hidden" name="schoolId" value={schoolId} />
-                        <input type="hidden" name="extensionKey" value={extension.key} />
-                        <Button type="submit" disabled={fetcher.state !== 'idle'}>
-                          {t('installExtension')}
-                        </Button>
-                      </fetcher.Form>
-                    ) : null}
-                    {extension.key === 'hello' && isEnabled ? (
-                      <Link className="text-sm underline" to={`/x/hello?schoolId=${schoolId}`}>
-                        {t('openExtension')}
-                      </Link>
-                    ) : null}
-                    {isEnabled
-                      ? settingFields
-                        .filter((field) => field.extensionKey === extension.key)
-                        .map((field) => (
-                          <fetcher.Form key={field.key} method="post" className="flex flex-wrap items-center gap-2">
-                            <input type="hidden" name="intent" value="saveSetting" />
-                            <input type="hidden" name="schoolId" value={schoolId ?? ''} />
-                            <input type="hidden" name="extensionKey" value={extension.key} />
-                            <input type="hidden" name="settingKey" value={field.key} />
-                            <label className="text-sm text-muted-foreground" htmlFor={`${extension.key}-${field.key}`}>
-                              {field.key}
-                            </label>
-                            <Input
-                              id={`${extension.key}-${field.key}`}
-                              name="settingValue"
-                              defaultValue={field.value}
-                              key={`${field.key}-${field.value}`}
-                              className="max-w-xs"
-                            />
-                            <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                              {t('saveSetting')}
-                            </Button>
-                          </fetcher.Form>
-                        ))
-                      : null}
-                  </CardContent>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
-        )
+        <ModuleCatalogTable modules={extensions} schoolId={schoolId} catalog={catalog} />
       )}
-      {schoolId !== null && isPlatformAdmin && catalog !== 'module' ? (
-        <PackageAdmin
-          schoolId={schoolId}
-          packageUpload={packageUpload}
-          publishers={publishers}
-          revokedVersions={revokedVersions}
-          fetcher={fetcher}
-        />
-      ) : null}
       {schoolId !== null && deadEvents.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">{t('failedEvents')}</h2>
@@ -354,26 +209,6 @@ async function packageAdminAction(
     });
   }
   return { revoked: true };
-}
-
-function extensionStatusLabel(
-  status: 'enabled' | 'disabled' | 'available' | 'removed',
-  required: boolean,
-  t: (key: 'extensionIncluded' | 'extensionOn' | 'extensionOffStatus' | 'extensionNotInstalled' | 'extensionRemoved') => string,
-): string {
-  if (required) {
-    return t('extensionIncluded');
-  }
-  if (status === 'enabled') {
-    return t('extensionOn');
-  }
-  if (status === 'disabled') {
-    return t('extensionOffStatus');
-  }
-  if (status === 'removed') {
-    return t('extensionRemoved');
-  }
-  return t('extensionNotInstalled');
 }
 
 function PackageAdmin({

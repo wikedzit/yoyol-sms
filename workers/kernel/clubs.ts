@@ -56,12 +56,19 @@ export type ClubRecord = {
   name: string;
   description: string;
   patronId: number;
+  patronName: string;
   closed: boolean;
   line: string;
   canWrite: boolean;
 };
 
-export type ClubMember = { id: number; clubId: number; studentId: number; line: string };
+export type ClubMember = {
+  id: number;
+  clubId: number;
+  studentId: number;
+  studentName: string;
+  line: string;
+};
 
 export type ClubActivity = {
   id: number;

@@ -21,6 +21,7 @@ import { ViewDocumentView } from "~/components/ViewDocumentView";
 import { Card, CardContent } from "~/components/ui/card";
 import { PageBreadcrumb } from "~/components/ui/PageFrame";
 import { useLanguage } from "~/lib/i18n";
+import { loadRecordScope } from "~/lib/load-record-scope";
 import { requireSchoolPermission } from "~/lib/require-school-permission";
 import type { SchoolSlot } from "workers/services/extensions";
 import { readRememberedSchoolId, selectSchoolId } from "~/lib/selected-school";
@@ -61,19 +62,26 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       }),
       services.notice.getActiveNotices(10),
     ]);
+  const scope = await loadRecordScope(request, context.services);
+  const visibleStudents = scope.kind === "school"
+    ? students
+    : students.filter((student) => scope.studentIds.includes(student.id));
+  const visibleGrades = scope.kind === "school"
+    ? allGrades
+    : allGrades.filter((grade) => scope.studentIds.includes(grade.studentId));
   const schools = await context.services.school.getAll();
   const rememberedSchoolId = await readRememberedSchoolId(request);
   const schoolId = selectSchoolId(new URL(request.url), schools, rememberedSchoolId);
   const widgets = schoolId === null ? [] : await dashboardWidgets(context.services.extensions, schoolId);
 
   // Calculate statistics
-  const totalStudents = students.length;
+  const totalStudents = visibleStudents.length;
   const totalTeachers = teachers.length;
   const totalStreams = streams.length;
   const totalForms = forms.length;
 
   // Calculate average GPA (convert score 0-100 to GPA 0-4.0 scale)
-  const validGrades = allGrades.filter((g) => g.score != null && g.score >= 0);
+  const validGrades = visibleGrades.filter((g) => g.score != null && g.score >= 0);
   const averageGPA =
     validGrades.length > 0
       ? (
@@ -83,27 +91,32 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       : "0.00";
 
   // Calculate performance chart data (grade distribution by month)
-  const performanceData = calculatePerformanceData(allGrades);
+  const performanceData = calculatePerformanceData(visibleGrades);
 
   // Calculate stream insights (students per stream)
-  const streamInsights = await calculateStreamInsights(
-    services.academicLevel,
-    streams,
-  );
+  const streamInsights = scope.kind === "school"
+    ? await calculateStreamInsights(services.academicLevel, streams)
+    : [{
+      name: "Linked students",
+      students: visibleStudents.length,
+      percentage: visibleStudents.length > 0 ? 100 : 0,
+      color: "science" as const,
+      levelType: "o-level" as const,
+    }];
 
   // Get recent student activity
-  const recentStudents = students
+  const recentStudents = visibleStudents
     .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
     .slice(0, 10);
 
   // Calculate student activity stats
   const now = Date.now();
   const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const newThisWeek = students.filter(
+  const newThisWeek = visibleStudents.filter(
     (s) => (s.createdAt || 0) >= oneWeekAgo,
   ).length;
-  const activeStudents = students.filter((s) => s.status === "Active").length;
-  const inactiveStudents = students.filter(
+  const activeStudents = visibleStudents.filter((s) => s.status === "Active").length;
+  const inactiveStudents = visibleStudents.filter(
     (s) => s.status === "Inactive",
   ).length;
 
@@ -124,8 +137,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   // Get most recent update time for each entity
   const lastStudentUpdate =
-    students.length > 0
-      ? Math.max(...students.map((s) => s.createdAt || 0))
+    visibleStudents.length > 0
+      ? Math.max(...visibleStudents.map((s) => s.createdAt || 0))
       : null;
   const lastTeacherUpdate =
     teachers.length > 0
@@ -146,8 +159,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const lastFormUpdate =
     forms.length > 0 ? Math.max(...forms.map((f) => f.createdAt || 0)) : null;
   const lastGradeUpdate =
-    allGrades.length > 0
-      ? Math.max(...allGrades.map((g) => g.createdAt || 0))
+    visibleGrades.length > 0
+      ? Math.max(...visibleGrades.map((g) => g.createdAt || 0))
       : null;
 
   return {

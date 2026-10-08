@@ -14,6 +14,21 @@ export function refusalToEnrolTwice(existing: YearEnrolment | null): string | nu
   return null;
 }
 
+// A registration can leave a year row with no class. Placing that student in a class
+// is the first enrolment, not a second one.
+export function enrolmentPlacement(
+  existing: YearEnrolment | null,
+  formClassId: number | null,
+): 'create' | 'assign-class' | 'refuse' {
+  if (!existing) {
+    return 'create';
+  }
+  if (existing.status === 'enrolled' && existing.formClassId == null && formClassId != null) {
+    return 'assign-class';
+  }
+  return 'refuse';
+}
+
 export function classMove(input: {
   status: EnrolmentStatus;
   currentFormClassId: number | null;

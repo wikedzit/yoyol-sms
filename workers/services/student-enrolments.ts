@@ -7,8 +7,8 @@ import { students } from '../database/students';
 import {
   classMove,
   endedEnrolment,
+  enrolmentPlacement,
   promotionPlan,
-  refusalToEnrolTwice,
   type EnrolmentStatus,
 } from '../kernel/student-enrolments';
 import { requireSchoolId } from '../utils/require-owner-user';
@@ -126,6 +126,7 @@ export default class StudentEnrolmentService {
 
     const existing = await this.db
       .select({
+        id: studentEnrolments.id,
         studentId: studentEnrolments.studentId,
         academicYearId: studentEnrolments.academicYearId,
         formClassId: studentEnrolments.formClassId,
@@ -137,11 +138,21 @@ export default class StudentEnrolmentService {
         eq(studentEnrolments.academicYearId, year.id),
       ))
       .get();
-    const refusal = refusalToEnrolTwice(existing
+    const placement = enrolmentPlacement(existing
       ? { ...existing, status: existing.status as EnrolmentStatus }
-      : null);
-    if (refusal) {
-      return { error: refusal };
+      : null, formClassId);
+    if (placement === 'refuse') {
+      return { error: 'This student is already enrolled for that year.' };
+    }
+    if (placement === 'assign-class' && existing && formClassId != null) {
+      const now = Date.now();
+      await this.db
+        .update(studentEnrolments)
+        .set({ formClassId, updatedAt: now })
+        .where(eq(studentEnrolments.id, existing.id));
+      await this.syncCurrentClass(studentId, year.id, formClassId);
+      await this.publishEnrolment(studentId, formClassId, year.id);
+      return { id: existing.id };
     }
 
     const now = Date.now();
@@ -155,14 +166,21 @@ export default class StudentEnrolmentService {
       updatedAt: now,
     }).returning({ id: studentEnrolments.id });
     await this.syncCurrentClass(studentId, year.id, formClassId);
-    if (formClassId != null && this.whenEnrolled) {
-      try {
-        await this.whenEnrolled({ studentId, formClassId, academicYearId: year.id });
-      } catch (error) {
-        console.error('Unable to create the enrolment invoice:', error);
-      }
+    if (formClassId != null) {
+      await this.publishEnrolment(studentId, formClassId, year.id);
     }
     return { id: created[0]?.id ?? 0 };
+  }
+
+  private async publishEnrolment(studentId: number, formClassId: number, academicYearId: number): Promise<void> {
+    if (!this.whenEnrolled) {
+      return;
+    }
+    try {
+      await this.whenEnrolled({ studentId, formClassId, academicYearId });
+    } catch (error) {
+      console.error('Unable to create the enrolment invoice:', error);
+    }
   }
 
   async move(enrolmentId: number, formClassId: number, reason: string): Promise<{ error: string } | { id: number }> {

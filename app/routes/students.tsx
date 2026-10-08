@@ -43,8 +43,6 @@ import { PaginationControls } from '~/components/shared/PaginationControls';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import { loadRecordScope, refuseOutsideScope } from '~/lib/load-record-scope';
 import { keepVisibleRecords } from 'workers/services/visible-records';
-import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
-import type { SchoolSlot } from 'workers/services/extensions';
 
 function titleCase(value: string): string {
   return value
@@ -121,10 +119,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     (item) => item.studentIds,
   );
   const visibleSubjects = keepVisibleRecords(subjects, scope, (item) => item.subjectIds);
-  const rememberedSchoolId = await readRememberedSchoolId(request);
-  const schoolId = selectSchoolId(new URL(request.url), schools ?? [], rememberedSchoolId);
-  const profileTabs = await studentProfileTabs(context.services, schoolId);
-
   return {
     students: visibleStudents,
     allSubjects: visibleSubjects,
@@ -133,34 +127,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     defaultSchoolId,
     streams,
     forms,
-    profileTabs,
   };
-}
-
-async function studentProfileTabs(
-  services: {
-    extensions: {
-      enable: (schoolId: number, extensionKey: string) => Promise<void>;
-      runSchoolSlot: (schoolId: number, slotName: string, payload: unknown) => Promise<SchoolSlot[]>;
-    };
-  },
-  schoolId: number | null,
-) {
-  if (schoolId === null) {
-    return [];
-  }
-  try {
-    await services.extensions.enable(schoolId, 'timetable');
-  } catch {
-    // Other profile tabs still load when this hook is already registered.
-  }
-  try {
-    const slots = await services.extensions.runSchoolSlot(schoolId, 'student.profile.tabs', {});
-    return slots.flatMap((slot) => (slot.kind === 'document' ? [slot] : []));
-  } catch (error) {
-    console.error('Unable to load student profile tabs:', error);
-    return [];
-  }
 }
 export async function action({ request, context }: ActionFunctionArgs) {
   await requireSchoolPermission(request, context.services, 'students.record.write');
@@ -303,7 +270,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         schoolId,
         campusId,
         status: String(form.get("status") ?? "Active") as
-          "Active" | "Pending" | "Inactive",
+          "Active" | "Pending" | "Inactive" | "Suspended",
       };
 
       let created;
@@ -400,7 +367,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         schoolId,
         campusId,
         status: String(form.get("status") ?? "Active") as
-          "Active" | "Pending" | "Inactive",
+          "Active" | "Pending" | "Inactive" | "Suspended",
       };
 
       const updated = await services.student.update(String(id), data);
@@ -445,7 +412,6 @@ export default function Students() {
   defaultSchoolId,
   streams,
   forms,
-  profileTabs,
 } = useLoaderData() as {
   students: any[];
   allSubjects: any[];
@@ -454,7 +420,6 @@ export default function Students() {
   defaultSchoolId: number | null;
   streams: any[];
   forms: any[];
-  profileTabs: Extract<SchoolSlot, { kind: 'document' }>[];
 };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
@@ -663,7 +628,7 @@ export default function Students() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right flex justify-end gap-2">
-                      <StudentProfilesModal student={student} profileTabs={profileTabs} />
+                      <StudentProfilesModal student={student} />
                       <Button
                         variant="ghost"
                         size="sm"
@@ -742,7 +707,6 @@ export default function Students() {
         open={profileModalOpen}
         onOpenChange={setProfileModalOpen}
         showTrigger={false}
-        profileTabs={profileTabs}
       />
     </div>
   );

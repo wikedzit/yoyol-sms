@@ -36,19 +36,19 @@ test('KRN-REG-01 the themes manifest matches the shared schema', () => {
 });
 
 test('KRN-REG-01 a plugin cannot declare permissions', () => {
-  const hello = readManifests().find((manifest) => manifest.key === 'hello');
+  const email = readManifests().find((manifest) => manifest.key === 'email');
   const message = manifestError({
-    ...hello,
-    permissions: [{ key: 'hello.greet', label: { en: 'Greet', sw: 'Salimu' }, defaultRoles: [] }],
+    ...email,
+    permissions: [{ key: 'email.send', label: { en: 'Send', sw: 'Tuma' }, defaultRoles: [] }],
   });
   assert.match(message ?? '', /plugin cannot declare/);
 });
 
 test('KRN-REG-01 a plugin cannot define hooks', () => {
-  const hello = readManifests().find((manifest) => manifest.key === 'hello');
+  const email = readManifests().find((manifest) => manifest.key === 'email');
   const message = manifestError({
-    ...hello,
-    hooks: { defines: ['hello.beforeGreet'] },
+    ...email,
+    hooks: { defines: ['email.beforeSend'] },
   });
   assert.match(message ?? '', /cannot define hooks/);
 });
@@ -56,9 +56,9 @@ test('KRN-REG-01 a plugin cannot define hooks', () => {
 test('KRN-REG-03 every bundled folder has a valid manifest', () => {
   const manifests = readManifests().map((source) => parseManifest(source));
   const keys = manifests.map((manifest) => manifest.key).sort();
-  assert.deepEqual(keys, ['absence-alerts', 'academics', 'assessment', 'attendance', 'clubs', 'discipline', 'email', 'fee-reminders', 'finance', 'hello', 'leadership', 'lesson-plans', 'notices', 'reports', 'sms', 'staff', 'students', 'themes', 'timetable']);
+  assert.deepEqual(keys, ['absence-alerts', 'academics', 'assessment', 'attendance', 'clubs', 'discipline', 'email', 'fee-reminders', 'finance', 'leadership', 'lesson-plans', 'notices', 'reports', 'sms', 'staff', 'students', 'themes', 'timetable']);
   assert.equal(manifests.find((manifest) => manifest.key === 'students')?.required, true);
-  assert.equal(manifests.find((manifest) => manifest.key === 'hello')?.required, undefined);
+  assert.equal(manifests.find((manifest) => manifest.key === 'email')?.required, undefined);
 });
 
 test('KRN-REG-04 a core range accepts the running core version', () => {
@@ -70,12 +70,12 @@ test('KRN-REG-04 a core range accepts the running core version', () => {
 test('KRN-REG-04 the bundled extensions do not depend on each other in a circle', () => {
   const manifests = readManifests().map((source) => parseManifest(source));
   assert.equal(dependencyCycle(manifests), null);
-  const hello = manifests.find((manifest) => manifest.key === 'hello');
-  assert.ok(hello);
+  const email = manifests.find((manifest) => manifest.key === 'email');
+  assert.ok(email);
   const enabled = manifests
     .filter((manifest) => manifest.required)
     .map((manifest) => ({ key: manifest.key, version: manifest.version, enabled: true }));
-  assert.equal(reasonToRefuseEnable(hello, manifests, enabled, '1.0.0'), null);
+  assert.equal(reasonToRefuseEnable(email, manifests, enabled, '1.0.0'), null);
 });
 
 test('KRN-REG-04 a circle of requirements is explained', () => {

@@ -166,11 +166,13 @@ export default class AttendanceRecordService {
     const schoolId = requireSchoolId(this.activeSchoolId);
     const today = await this.today();
     const rows = await this.db
-      .select({ status: attendanceRecords.status })
+      .select({ studentId: attendanceRecords.studentId, status: attendanceRecords.status })
       .from(attendanceRecords)
       .where(and(eq(attendanceRecords.schoolId, schoolId), eq(attendanceRecords.attendanceDate, today)));
-    if (rows.length === 0) return [];
-    const counts = countStatuses(rows.map((row) => row.status));
+    const allowed = await this.allowedStudentIds();
+    const visible = rows.filter((row) => allowed == null || allowed.has(row.studentId));
+    if (visible.length === 0) return [];
+    const counts = countStatuses(visible.map((row) => row.status));
     return [`${today}: ${counts.present} present, ${counts.absent} absent, ${counts.late} late, ${attendanceRate(counts)}%`];
   }
 

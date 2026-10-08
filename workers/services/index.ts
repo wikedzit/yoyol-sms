@@ -313,7 +313,7 @@ export default class ServiceContainer {
 
   private async reportWidgets(schoolId: number | null) {
     if (schoolId == null) return [];
-    for (const key of ['hello', 'notices', 'attendance', 'reports']) {
+    for (const key of ['notices', 'attendance', 'reports']) {
       try {
         await this.extensions.enable(schoolId, key);
       } catch {
@@ -370,7 +370,7 @@ export default class ServiceContainer {
 
   private async extensionHostCheck(): Promise<'ok' | 'down'> {
     try {
-      await bundledExtensionHost.getEntrypoint({ key: 'hello', version: 'bundled' }, []);
+      await bundledExtensionHost.getEntrypoint({ key: 'students', version: 'bundled' }, []);
       return 'ok';
     } catch {
       return 'down';

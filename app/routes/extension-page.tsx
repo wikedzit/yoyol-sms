@@ -135,10 +135,16 @@ export default function ExtensionPage() {
   const title = page.state === 'view'
     ? renderText(page.document.title, page.catalog, appLanguage)
     : moduleName || t('extensionPageInvalid');
+  const trail = page.state === 'view'
+    ? page.document.breadcrumbs?.map((crumb) => {
+      const label = renderText(crumb.label, page.catalog, appLanguage);
+      return crumb.href ? { label, to: crumb.href } : { label };
+    })
+    : undefined;
 
   if (page.state === 'off') {
     return (
-      <PageFrame title={title}>
+      <PageFrame title={title} trail={trail}>
         <p className="text-sm text-muted-foreground">{t('extensionOff')}</p>
         <Link className="text-sm underline" to="/modules">{t('installExtensions')}</Link>
       </PageFrame>
@@ -146,14 +152,14 @@ export default function ExtensionPage() {
   }
   if (page.state === 'invalid' || page.state === 'missing') {
     return (
-      <PageFrame title={title}>
+      <PageFrame title={title} trail={trail}>
         <p className="text-sm text-muted-foreground">{t('extensionPageInvalid')}</p>
       </PageFrame>
     );
   }
 
   return (
-    <PageFrame title={title}>
+    <PageFrame title={title} trail={trail}>
       {result && 'error' in result && result.error ? <p className="text-sm">{result.error}</p> : null}
       <ViewDocumentView
         document={page.document}

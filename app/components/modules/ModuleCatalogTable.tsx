@@ -32,11 +32,14 @@ type ModuleStatusFilter = 'all' | 'included' | 'enabled' | 'disabled' | 'removed
 export function ModuleCatalogTable({
   modules,
   schoolId,
+  catalog = 'module',
 }: {
   modules: InstalledExtension[];
   schoolId: number;
+  catalog?: 'module' | 'plugin';
 }) {
   const { language, t } = useLanguage();
+  const copy = catalogCopy(catalog);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ModuleStatusFilter>('all');
   const filteredModules = modules.filter((module) => {
@@ -74,7 +77,8 @@ export function ModuleCatalogTable({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder={t('searchModules')}
+              placeholder={t(copy.search)}
+              aria-label={t(copy.search)}
               className="bg-muted/50 pl-10"
               value={search}
               onChange={(event) => updateSearch(event.target.value)}
@@ -97,7 +101,7 @@ export function ModuleCatalogTable({
       </CardHeader>
       <CardContent>
         {modules.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('noModules')}</p>
+          <p className="text-sm text-muted-foreground">{t(copy.empty)}</p>
         ) : (
           <div className="rounded-md border">
             <Table>
@@ -115,7 +119,7 @@ export function ModuleCatalogTable({
                 {paginatedItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-muted-foreground">
-                      {t('noModulesMatch')}
+                      {t(copy.none)}
                     </TableCell>
                   </TableRow>
                 ) : paginatedItems.map((module, index) => {
@@ -125,7 +129,7 @@ export function ModuleCatalogTable({
                     <TableRow key={module.key}>
                       <TableCell className="font-medium">{startIndex + index + 1}</TableCell>
                       <TableCell className="font-medium">
-                        <Link className="underline" to={modulePath(module.key, schoolId)}>
+                        <Link className="underline" to={catalogPath(catalog, module.key, schoolId)}>
                           {name}
                         </Link>
                       </TableCell>
@@ -141,7 +145,7 @@ export function ModuleCatalogTable({
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" asChild>
-                          <Link to={modulePath(module.key, schoolId)}>{t('openExtension')}</Link>
+                          <Link to={catalogPath(catalog, module.key, schoolId)}>{t('openExtension')}</Link>
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -162,7 +166,23 @@ export function ModuleCatalogTable({
 }
 
 export function modulePath(moduleKey: string, schoolId: number): string {
-  return `/modules/${moduleKey}?schoolId=${schoolId}`;
+  return catalogPath('module', moduleKey, schoolId);
+}
+
+export function catalogPath(catalog: 'module' | 'plugin', key: string, schoolId: number): string {
+  const root = catalog === 'plugin' ? 'plugins' : 'modules';
+  return `/${root}/${key}?schoolId=${schoolId}`;
+}
+
+function catalogCopy(catalog: 'module' | 'plugin'): {
+  search: 'searchModules' | 'searchPlugins';
+  empty: 'noModules' | 'noPlugins';
+  none: 'noModulesMatch' | 'noPluginsMatch';
+} {
+  if (catalog === 'plugin') {
+    return { search: 'searchPlugins', empty: 'noPlugins', none: 'noPluginsMatch' };
+  }
+  return { search: 'searchModules', empty: 'noModules', none: 'noModulesMatch' };
 }
 
 export function moduleStatusLabel(

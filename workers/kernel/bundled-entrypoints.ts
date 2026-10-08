@@ -10,7 +10,6 @@ import leadership from '../../modules/leadership/entrypoint';
 import lessonPlans from '../../modules/lesson-plans/entrypoint';
 import timetable from '../../modules/timetable/entrypoint';
 import assessment from '../../modules/assessment/entrypoint';
-import hello from '../../plugins/hello/entrypoint';
 import notices from '../../modules/notices/entrypoint';
 import reports from '../../modules/reports/entrypoint';
 import sms from '../../plugins/sms/entrypoint';
@@ -34,7 +33,6 @@ const entrypoints: ExtensionEntrypoint[] = [
   leadership,
   lessonPlans,
   timetable,
-  hello,
   notices,
   reports,
   sms,

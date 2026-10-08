@@ -25,14 +25,18 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const visibleStudents = scope.kind === 'school'
     ? students
     : students.filter((student) => scope.studentIds.includes(student.id));
-  const report = studentId && termId
+  const allowedStudent = scope.kind === 'school' || scope.studentIds.includes(studentId);
+  const report = studentId && termId && allowedStudent
     ? await context.services.assessment.report(studentId, termId, familyView)
+    : null;
+  const refused = studentId > 0 && !allowedStudent
+    ? 'You can only open a report for a linked student.'
     : null;
   return {
     students: visibleStudents,
     years,
     lines: report && 'lines' in report ? report.lines : [],
-    message: report && 'error' in report ? report.error : null,
+    message: refused ?? (report && 'error' in report ? report.error : null),
     studentId,
     termId,
   };
