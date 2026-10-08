@@ -5,7 +5,7 @@ import {
   text,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import { users } from './users';
+import { school } from './school';
 
 // Academic Levels table (O-Level, A-Level)
 export const academicLevels = sqliteTable(
@@ -15,9 +15,9 @@ export const academicLevels = sqliteTable(
     name: text('name').notNull(), // "O-Level", "A-Level"
     type: text('type').notNull(), // "o-level", "a-level"
     description: text('description'),
-    ownerUserId: integer('owner_user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'restrict',
+    }),
     createdAt: integer('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
@@ -26,8 +26,8 @@ export const academicLevels = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
-    ownerTypeUnique: uniqueIndex('academic_levels_owner_type_unique').on(
-      table.ownerUserId,
+    schoolTypeUnique: uniqueIndex('academic_levels_school_type_unique').on(
+      table.schoolId,
       table.type,
     ),
   }),
@@ -42,9 +42,9 @@ export const academicStreams = sqliteTable('academic_streams', {
     .references(() => academicLevels.id, { onDelete: 'cascade' }),
   levelType: text('level_type').notNull(), // "o-level", "a-level"
   color: text('color').notNull(), // "science", "arts", "business" - used for styling
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'restrict',
+  }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -64,9 +64,9 @@ export const academicForms = sqliteTable('academic_forms', {
   levelId: integer('level_id')
     .notNull()
     .references(() => academicLevels.id, { onDelete: 'cascade' }),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'restrict',
+  }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
@@ -89,9 +89,9 @@ export const formClasses = sqliteTable('form_classes', {
     .notNull()
     .references(() => academicLevels.id, { onDelete: 'cascade' }),
   studentCount: integer('student_count').notNull().default(0),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'restrict',
+  }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

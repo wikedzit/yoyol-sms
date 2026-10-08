@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import { eq, and, getTableColumns } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import {
@@ -7,26 +8,27 @@ import {
   type SelectTeacher,
   type SelectSubject,
 } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export default class TeacherSubjectService {
   constructor(
     private db: DrizzleD1Database,
-    private ownerUserId: number | null,
+    private schoolAccess: SchoolAccess,
   ) {}
 
-  private currentOwner(): number {
-    return requireOwnerUserId(this.ownerUserId);
-  }
 
-  private async teacherBelongsToOwner(teacherId: number): Promise<boolean> {
+  private async teacherBelongsToSchool(teacherId: number): Promise<boolean> {
+    const schoolId = await this.schoolAccess.schoolFor('teachers.teacher.update');
+    if (schoolId == null) {
+      return false;
+    }
+
     const row = await this.db
       .select({ id: teachers.id })
       .from(teachers)
       .where(
         and(
           eq(teachers.id, teacherId),
-          eq(teachers.ownerUserId, this.currentOwner()),
+          eq(teachers.schoolId, schoolId),
         ),
       )
       .get();
@@ -34,14 +36,19 @@ export default class TeacherSubjectService {
     return Boolean(row);
   }
 
-  private async subjectBelongsToOwner(subjectId: number): Promise<boolean> {
+  private async subjectBelongsToSchool(subjectId: number): Promise<boolean> {
+    const schoolId = await this.schoolAccess.schoolFor('teachers.teacher.update');
+    if (schoolId == null) {
+      return false;
+    }
+
     const row = await this.db
       .select({ id: subject.id })
       .from(subject)
       .where(
         and(
           eq(subject.id, subjectId),
-          eq(subject.ownerUserId, this.currentOwner()),
+          eq(subject.schoolId, schoolId),
         ),
       )
       .get();
@@ -57,8 +64,8 @@ export default class TeacherSubjectService {
     subjectId: number
   ): Promise<boolean> {
     try {
-      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
-      const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+      const teacherIsOwned = await this.teacherBelongsToSchool(teacherId);
+      const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
       if (!teacherIsOwned || !subjectIsOwned) {
         return false;
       }
@@ -103,7 +110,7 @@ export default class TeacherSubjectService {
     subjectId: number
   ): Promise<boolean> {
     try {
-      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      const teacherIsOwned = await this.teacherBelongsToSchool(teacherId);
       if (!teacherIsOwned) {
         return false;
       }
@@ -129,6 +136,11 @@ export default class TeacherSubjectService {
    */
   async getSubjectsByTeacher(teacherId: number): Promise<SelectSubject[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('teachers.teacher.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const results = await this.db
         .select(getTableColumns(subject))
         .from(teacherSubjects)
@@ -136,7 +148,7 @@ export default class TeacherSubjectService {
         .where(
           and(
             eq(teacherSubjects.teacherId, teacherId),
-            eq(subject.ownerUserId, this.currentOwner()),
+            eq(subject.schoolId, schoolId),
           ),
         )
         .execute();
@@ -153,6 +165,11 @@ export default class TeacherSubjectService {
    */
   async getTeachersBySubject(subjectId: number): Promise<SelectTeacher[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('teachers.teacher.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const results = await this.db
         .select(getTableColumns(teachers))
         .from(teacherSubjects)
@@ -160,7 +177,7 @@ export default class TeacherSubjectService {
         .where(
           and(
             eq(teacherSubjects.subjectId, subjectId),
-            eq(teachers.ownerUserId, this.currentOwner()),
+            eq(teachers.schoolId, schoolId),
           ),
         )
         .execute();
@@ -180,13 +197,13 @@ export default class TeacherSubjectService {
     subjectIds: number[]
   ): Promise<boolean> {
     try {
-      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      const teacherIsOwned = await this.teacherBelongsToSchool(teacherId);
       if (!teacherIsOwned) {
         return false;
       }
 
       for (const subjectId of subjectIds) {
-        const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+        const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
         if (!subjectIsOwned) {
           return false;
         }
@@ -213,13 +230,13 @@ export default class TeacherSubjectService {
     subjectIds: number[]
   ): Promise<boolean> {
     try {
-      const teacherIsOwned = await this.teacherBelongsToOwner(teacherId);
+      const teacherIsOwned = await this.teacherBelongsToSchool(teacherId);
       if (!teacherIsOwned) {
         return false;
       }
 
       for (const subjectId of subjectIds) {
-        const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+        const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
         if (!subjectIsOwned) {
           return false;
         }
@@ -255,11 +272,16 @@ export default class TeacherSubjectService {
     Array<SelectTeacher & { subjectCount: number }>
   > {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('teachers.teacher.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       // First get all teachers
       const allTeachers = await this.db
         .select()
         .from(teachers)
-        .where(eq(teachers.ownerUserId, this.currentOwner()))
+        .where(eq(teachers.schoolId, schoolId))
         .execute();
 
       // Then get subject counts for each teacher
@@ -287,11 +309,16 @@ export default class TeacherSubjectService {
     Array<SelectSubject & { teacherCount: number }>
   > {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('teachers.teacher.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       // First get all subjects
       const allSubjects = await this.db
         .select()
         .from(subject)
-        .where(eq(subject.ownerUserId, this.currentOwner()))
+        .where(eq(subject.schoolId, schoolId))
         .execute();
 
       // Then get teacher counts for each subject

@@ -1,4 +1,5 @@
-CREATE TABLE `teacher_form_classes` (
+-- 0038_smiling_wolfpack.sql already creates this table.
+CREATE TABLE IF NOT EXISTS `teacher_form_classes` (
 	`teacher_id` integer NOT NULL,
 	`form_class_id` integer NOT NULL,
 	`assigned_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,

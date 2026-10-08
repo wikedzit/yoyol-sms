@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import { like, asc, desc, eq, and, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1/driver';
 import {
@@ -6,7 +7,6 @@ import {
 } from 'workers/database/subjects';
 import { studentSubjects } from 'workers/database/student-subjects';
 import { z } from 'zod';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 export const subjectSchema = z.object({
   id: z.number().min(1).optional(),
   subjectName: z.string().min(2).max(100),
@@ -38,24 +38,25 @@ export type GetSubjectsInput = z.infer<typeof getSubjectsSchema>;
 
 // --- Subject Service ---
 export default class SubjectService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
-
-  constructor(db: DrizzleD1Database, ownerUserId: number | null) {
-    this.db = db;
-    this.ownerUserId = ownerUserId;
-  }
+  constructor(
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
 
   // Create a new subject
   async createSubject(data: SubjectInput): Promise<SelectSubject | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validatedData = subjectSchema.parse(data);
       const result = await this.db
         .insert(subject)
         .values({
           ...validatedData,
-          ownerUserId,
+          schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -78,11 +79,15 @@ export default class SubjectService {
   // Get subject by ID
   async getSubjectById(id: number): Promise<SelectSubject | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(subject)
-        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.id, id), eq(subject.schoolId, schoolId)))
         .execute();
 
       return result[0] || null;
@@ -95,11 +100,15 @@ export default class SubjectService {
   // Get subject by code
   async getSubjectByCode(code: string): Promise<SelectSubject | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(subject)
-        .where(and(eq(subject.code, code), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.code, code), eq(subject.schoolId, schoolId)))
         .execute();
 
       return result[0] || null;
@@ -112,14 +121,18 @@ export default class SubjectService {
   // Get Subjects by Stream ID
   async getSubjectsByStreamId(streamId: number): Promise<SelectSubject[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const result = await this.db
         .select()
         .from(subject)
         .where(
           and(
             eq(subject.streamId, streamId),
-            eq(subject.ownerUserId, ownerUserId),
+            eq(subject.schoolId, schoolId),
           ),
         )
         .execute();
@@ -135,7 +148,10 @@ export default class SubjectService {
 // and REAL number of students enrolled
 async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
   try {
-    const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
 
     const { limit, offset, sortBy, sortOrder, search } =
       getSubjectsSchema.parse(options || {});
@@ -149,7 +165,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
         ? subject.createdAt
         : subject.updatedAt;
 
-    const filters = [eq(subject.ownerUserId, ownerUserId)];
+    const filters = [eq(subject.schoolId, schoolId)];
 
     if (search) {
       filters.push(like(subject.subjectName, `%${search}%`));
@@ -175,7 +191,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
 
         status: subject.status,
         streamId: subject.streamId,
-        ownerUserId: subject.ownerUserId,
+        schoolId: subject.schoolId,
         createdAt: subject.createdAt,
         updatedAt: subject.updatedAt,
       })
@@ -205,7 +221,11 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
     data: UpdateSubjectInput
   ): Promise<SelectSubject | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validatedData = updateSubjectSchema.parse(data);
       const updateResult = {
         ...validatedData,
@@ -214,7 +234,7 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
       const result = await this.db
         .update(subject)
         .set(updateResult)
-        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.id, id), eq(subject.schoolId, schoolId)))
         .returning()
         .execute();
 
@@ -228,10 +248,14 @@ async getAllSubjects(options?: GetSubjectsInput): Promise<SelectSubject[]> {
   // Delete a subject
   async deleteSubject(id: number): Promise<boolean> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       await this.db
         .delete(subject)
-        .where(and(eq(subject.id, id), eq(subject.ownerUserId, ownerUserId)))
+        .where(and(eq(subject.id, id), eq(subject.schoolId, schoolId)))
         .execute();
       return true;
     } catch (error) {

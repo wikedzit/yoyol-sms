@@ -7,21 +7,26 @@ import {
   type SelectCampus,
 } from '../database/campuses';
 
-import { school } from '../database/school';
 import { students } from '../database/students';
 import { teachers } from '../database/teachers';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import type SchoolAccess from './school-access';
 
 export default class CampusService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
-
   constructor(
-    database: DrizzleD1Database,
-    ownerUserId: number | null
-  ) {
-    this.db = database;
-    this.ownerUserId = ownerUserId;
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
+
+  private async canUseSchool(
+    schoolId: number,
+    permissionKey: string,
+  ): Promise<boolean> {
+    const member = await this.schoolAccess.isMemberOf(schoolId);
+    if (!member) {
+      return false;
+    }
+
+    return this.schoolAccess.can(permissionKey, schoolId);
   }
 
   /**
@@ -31,27 +36,16 @@ export default class CampusService {
     schoolId: number
   ): Promise<SelectCampus[]> {
     try {
-      const ownerUserId =
-        requireOwnerUserId(this.ownerUserId);
+      const allowed = await this.canUseSchool(schoolId, 'school.school.read');
+      if (!allowed) {
+        return [];
+      }
 
-      const result = await this.db
-        .select({
-          campus,
-        })
+      return await this.db
+        .select()
         .from(campus)
-        .innerJoin(
-          school,
-          eq(campus.schoolId, school.id)
-        )
-        .where(
-          and(
-            eq(campus.schoolId, schoolId),
-            eq(school.ownerUserId, ownerUserId)
-          )
-        )
+        .where(eq(campus.schoolId, schoolId))
         .orderBy(asc(campus.id));
-
-      return result.map((row) => row.campus);
     } catch (error) {
       console.error(
         'Error fetching campuses:',
@@ -69,27 +63,22 @@ export default class CampusService {
     id: number
   ): Promise<SelectCampus | null> {
     try {
-      const ownerUserId =
-        requireOwnerUserId(this.ownerUserId);
-
       const result = await this.db
-        .select({
-          campus,
-        })
+        .select()
         .from(campus)
-        .innerJoin(
-          school,
-          eq(campus.schoolId, school.id)
-        )
-        .where(
-          and(
-            eq(campus.id, id),
-            eq(school.ownerUserId, ownerUserId)
-          )
-        )
+        .where(eq(campus.id, id))
         .get();
 
-      return result?.campus ?? null;
+      if (!result) {
+        return null;
+      }
+
+      const allowed = await this.canUseSchool(result.schoolId, 'school.school.read');
+      if (!allowed) {
+        return null;
+      }
+
+      return result;
     } catch (error) {
       console.error(
         'Error fetching campus:',
@@ -111,23 +100,11 @@ export default class CampusService {
     >
   ): Promise<SelectCampus | null> {
     try {
-      const ownerUserId =
-        requireOwnerUserId(this.ownerUserId);
-
-      const existingSchool = await this.db
-        .select({
-          id: school.id,
-        })
-        .from(school)
-        .where(
-          and(
-            eq(school.id, data.schoolId),
-            eq(school.ownerUserId, ownerUserId)
-          )
-        )
-        .get();
-
-      if (!existingSchool) {
+      const allowed = await this.canUseSchool(
+        data.schoolId,
+        'school.school.update',
+      );
+      if (!allowed) {
         return null;
       }
 
@@ -180,32 +157,16 @@ export default class CampusService {
     >
   ): Promise<SelectCampus | null> {
     try {
-      const ownerUserId =
-        requireOwnerUserId(this.ownerUserId);
-
-      // Verify ownership first.
-      const existingCampus =
-        await this.db
-          .select({
-            id: campus.id,
-          })
-          .from(campus)
-          .innerJoin(
-            school,
-            eq(campus.schoolId, school.id)
-          )
-          .where(
-            and(
-              eq(campus.id, id),
-              eq(
-                school.ownerUserId,
-                ownerUserId
-              )
-            )
-          )
-          .get();
-
+      const existingCampus = await this.getById(id);
       if (!existingCampus) {
+        return null;
+      }
+
+      const allowed = await this.canUseSchool(
+        existingCampus.schoolId,
+        'school.school.update',
+      );
+      if (!allowed) {
         return null;
       }
 
@@ -242,32 +203,16 @@ export default class CampusService {
     id: number
   ): Promise<boolean> {
     try {
-      const ownerUserId =
-        requireOwnerUserId(this.ownerUserId);
-
-      // Verify ownership first.
-      const existingCampus =
-        await this.db
-          .select({
-            id: campus.id,
-          })
-          .from(campus)
-          .innerJoin(
-            school,
-            eq(campus.schoolId, school.id)
-          )
-          .where(
-            and(
-              eq(campus.id, id),
-              eq(
-                school.ownerUserId,
-                ownerUserId
-              )
-            )
-          )
-          .get();
-
+      const existingCampus = await this.getById(id);
       if (!existingCampus) {
+        return false;
+      }
+
+      const allowed = await this.canUseSchool(
+        existingCampus.schoolId,
+        'school.school.update',
+      );
+      if (!allowed) {
         return false;
       }
 
@@ -279,7 +224,7 @@ export default class CampusService {
       .where(
         and(
           eq(students.campusId, id),
-          eq(students.ownerUserId, ownerUserId),
+          eq(students.schoolId, existingCampus.schoolId),
         ),
       );
 
@@ -288,7 +233,7 @@ export default class CampusService {
       .where(
         and(
           eq(teachers.campusId, id),
-          eq(teachers.ownerUserId, ownerUserId),
+          eq(teachers.schoolId, existingCampus.schoolId),
         ),
       );
 

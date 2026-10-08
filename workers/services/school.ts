@@ -1,8 +1,10 @@
 import { and, eq, like, asc } from 'drizzle-orm';
 import { z } from 'zod';
 import { school, type SelectSchool } from '../database/school';
+import { schoolMemberships } from '../database/school-memberships';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import type SchoolAccess from './school-access';
 
 const SchoolProfileSchema = z.object({
   name: z
@@ -70,29 +72,42 @@ export default class SchoolService {
 }
 
   private db: DrizzleD1Database;
-  private ownerUserId: number | null;
+  private signedInUserId: number | null;
+  private schoolAccess: SchoolAccess;
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
+  constructor(
+    database: DrizzleD1Database,
+    signedInUserId: number | null,
+    schoolAccess: SchoolAccess,
+  ) {
     this.db = database;
-    this.ownerUserId = ownerUserId;
+    this.signedInUserId = signedInUserId;
+    this.schoolAccess = schoolAccess;
   }
 
   // Orodha ya shule za mmiliki
   async getAll(): Promise<SelectSchool[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const userId = requireOwnerUserId(this.signedInUserId);
 
-      return await this.db
+      const rows = await this.db
         .select()
         .from(school)
-        .where(eq(school.ownerUserId, ownerUserId))
+        .innerJoin(
+          schoolMemberships,
+          eq(schoolMemberships.schoolId, school.id),
+        )
+        .where(
+          and(
+            eq(schoolMemberships.userId, userId),
+            eq(schoolMemberships.status, 'active'),
+          ),
+        )
         .orderBy(asc(school.name));
-    } catch (error) {
-      console.error(
-        'Error fetching schools:',
-        error
-      );
 
+      return rows.map((row) => row.school);
+    } catch (error) {
+      console.error('Error fetching schools:', error);
       return [];
     }
   }
@@ -102,14 +117,24 @@ export default class SchoolService {
     id: number
   ): Promise<SelectSchool | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const userId = requireOwnerUserId(this.signedInUserId);
       const result = await this.db
         .select()
         .from(school)
-        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
+        .innerJoin(
+          schoolMemberships,
+          eq(schoolMemberships.schoolId, school.id),
+        )
+        .where(
+          and(
+            eq(school.id, id),
+            eq(schoolMemberships.userId, userId),
+            eq(schoolMemberships.status, 'active'),
+          ),
+        )
         .get();
 
-      return result || null;
+      return result?.school ?? null;
     } catch (error) {
       console.error(
         'Error fetching school:',
@@ -125,21 +150,25 @@ export default class SchoolService {
     query: string
   ): Promise<SelectSchool[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const userId = requireOwnerUserId(this.signedInUserId);
 
-      return await this.db
+      const rows = await this.db
         .select()
         .from(school)
+        .innerJoin(
+          schoolMemberships,
+          eq(schoolMemberships.schoolId, school.id),
+        )
         .where(
           and(
-            eq(school.ownerUserId, ownerUserId),
-            like(
-              school.name,
-              `%${query.trim()}%`
-            )
-          )
+            eq(schoolMemberships.userId, userId),
+            eq(schoolMemberships.status, 'active'),
+            like(school.name, `%${query.trim()}%`),
+          ),
         )
         .orderBy(asc(school.name));
+
+      return rows.map((row) => row.school);
     } catch (error) {
       console.error(
         'Error searching schools:',
@@ -154,7 +183,15 @@ export default class SchoolService {
     data: SchoolProfileInput
   ): Promise<SelectSchool | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const userId = requireOwnerUserId(this.signedInUserId);
+      const alreadyBelongsToASchool = await this.schoolAccess.currentSchoolId();
+      if (alreadyBelongsToASchool != null) {
+        const allowed = await this.schoolAccess.can('school.school.create');
+        if (!allowed) {
+          return null;
+        }
+      }
+
       const validated = SchoolProfileSchema.parse(data);
       const now = Date.now();
 
@@ -162,13 +199,24 @@ export default class SchoolService {
         .insert(school)
         .values({
           ...validated,
-          ownerUserId,
           createdAt: now,
           updatedAt: now,
         })
         .returning();
 
-      return result[0] ?? null;
+      const created = result[0] ?? null;
+      if (!created) {
+        return null;
+      }
+
+      try {
+        await this.schoolAccess.prepareNewSchool(created.id, userId);
+      } catch (error) {
+        await this.db.delete(school).where(eq(school.id, created.id));
+        throw error;
+      }
+
+      return created;
     } catch (error) {
       console.error('Error creating school:', error);
       return null;
@@ -182,7 +230,11 @@ export default class SchoolService {
     data: SchoolProfileInput
   ): Promise<SelectSchool | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const allowed = await this.schoolAccess.can('school.school.update', id);
+      if (!allowed) {
+        return null;
+      }
+
       const validated =
         SchoolProfileSchema.parse(data);
 
@@ -193,7 +245,7 @@ export default class SchoolService {
 
           updatedAt: Date.now(),
         })
-        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
+        .where(eq(school.id, id))
         .returning();
 
       return result[0] || null;
@@ -212,10 +264,14 @@ export default class SchoolService {
     id: number
   ): Promise<boolean> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const allowed = await this.schoolAccess.can('school.school.delete', id);
+      if (!allowed) {
+        return false;
+      }
+
       const result = await this.db
         .delete(school)
-        .where(and(eq(school.id, id), eq(school.ownerUserId, ownerUserId)))
+        .where(eq(school.id, id))
         .returning({
           id: school.id,
         });

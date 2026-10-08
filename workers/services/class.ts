@@ -1,9 +1,9 @@
+import type SchoolAccess from './school-access';
 import { eq, desc, asc, like, sql, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { classes, type InsertClass, type SelectClass } from '../database/class';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { students } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // Zod schemas for validation
 const CreateClassSchema = z.object({
@@ -69,20 +69,21 @@ export type GetClassesInput = z.infer<typeof GetClassesSchema>;
  * @deprecated Use AcademicLevelService for new school features
  */
 export default class ClassService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
-
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
-    this.db = database;
-    this.ownerUserId = ownerUserId;
-  }
+  constructor(
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
 
   /**
    * Create a new class
    */
   async create(data: CreateClassInput): Promise<SelectClass | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validatedData = CreateClassSchema.parse(data);
 
       const result = await this.db
@@ -93,7 +94,7 @@ export default class ClassService {
           section: validatedData.section,
           year: validatedData.year,
           departmentId: validatedData.departmentId ?? null,
-          ownerUserId,
+          schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -111,11 +112,15 @@ export default class ClassService {
    */
   async getById(id: number): Promise<SelectClass | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(classes)
-        .where(and(eq(classes.id, id), eq(classes.ownerUserId, ownerUserId)))
+        .where(and(eq(classes.id, id), eq(classes.schoolId, schoolId)))
         .get();
 
       return result || null;
@@ -130,7 +135,11 @@ export default class ClassService {
    */
   async getAll(options: GetClassesInput): Promise<SelectClass[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const { limit, offset, sortBy, sortOrder, search } =
         GetClassesSchema.parse(options) ?? {};
 
@@ -141,7 +150,7 @@ export default class ClassService {
           ? classes.createdAt
           : classes.updatedAt;
 
-      const filters = [eq(classes.ownerUserId, ownerUserId)];
+      const filters = [eq(classes.schoolId, schoolId)];
       if (search) {
         filters.push(like(classes.name, `%${search}%`));
       }
@@ -164,7 +173,11 @@ export default class ClassService {
     options: GetClassesInput
   ): Promise<(SelectClass & { studentCount: number })[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const { limit, offset, sortBy, sortOrder, search } =
         GetClassesSchema.parse(options) ?? {};
 
@@ -175,7 +188,7 @@ export default class ClassService {
           ? classes.createdAt
           : classes.updatedAt;
 
-      const filters = [eq(classes.ownerUserId, ownerUserId)];
+      const filters = [eq(classes.schoolId, schoolId)];
       if (search) {
         filters.push(like(classes.name, `%${search}%`));
       }
@@ -188,7 +201,7 @@ export default class ClassService {
           section: classes.section,
           year: classes.year,
           departmentId: classes.departmentId,
-          ownerUserId: classes.ownerUserId,
+          schoolId: classes.schoolId,
           createdAt: classes.createdAt,
           updatedAt: classes.updatedAt,
           studentCount: sql<number>`COUNT(${students.id})`.as('studentCount'),
@@ -203,7 +216,7 @@ export default class ClassService {
           classes.section,
           classes.year,
           classes.departmentId,
-          classes.ownerUserId,
+          classes.schoolId,
           classes.createdAt,
           classes.updatedAt
         )
@@ -226,6 +239,11 @@ export default class ClassService {
     data: UpdateClassInput & { departmentId?: number }
   ): Promise<SelectClass | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validatedData = UpdateClassSchema.parse(data);
 
       const updateValues: Partial<InsertClass> = {
@@ -240,7 +258,7 @@ export default class ClassService {
         .where(
           and(
             eq(classes.id, id),
-            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(classes.schoolId, schoolId),
           ),
         )
         .returning();
@@ -257,12 +275,17 @@ export default class ClassService {
    */
   async delete(id: number): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(classes)
         .where(
           and(
             eq(classes.id, id),
-            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(classes.schoolId, schoolId),
           ),
         )
         .returning({ id: classes.id });
@@ -279,13 +302,18 @@ export default class ClassService {
    */
   async exists(name: string): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .select({ id: classes.id })
         .from(classes)
         .where(
           and(
             eq(classes.name, name),
-            eq(classes.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(classes.schoolId, schoolId),
           ),
         )
         .get();

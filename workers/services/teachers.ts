@@ -1,7 +1,7 @@
 import { and, eq, like, asc, desc } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { teachers, type SelectTeacher } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
+import type SchoolAccess from './school-access';
 
 import { z } from 'zod';
 
@@ -43,12 +43,29 @@ export type GetTeachersInput = z.infer<typeof GetTeachersSchema>;
 export default class TeacherService {
   constructor(
     private db: DrizzleD1Database,
-    private ownerUserId: number | null,
+    private schoolAccess: SchoolAccess,
   ) {}
+
+  private async schoolFor(permissionKey: string): Promise<number | null> {
+    const schoolId = await this.schoolAccess.currentSchoolId();
+    if (schoolId == null) {
+      return null;
+    }
+
+    const allowed = await this.schoolAccess.can(permissionKey, schoolId);
+    if (!allowed) {
+      return null;
+    }
+
+    return schoolId;
+  }
 
   async createTeacher(data: CreateTeacherInput): Promise<SelectTeacher | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.create');
+      if (schoolId == null) {
+        return null;
+      }
       const validatedData = CreateTeacherSchema.parse(data);
       const result = await this.db
         .insert(teachers)
@@ -63,14 +80,27 @@ export default class TeacherService {
           gender: validatedData.gender,
           experience: validatedData.experience,
           status: validatedData.status,
-          ownerUserId,
+          schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
         .returning()
         .execute();
 
-      return result[0] || null;
+      const created = result[0] || null;
+      if (created) {
+        await this.schoolAccess.ensureStaffMember({
+          schoolId,
+          firstName: created.firstName,
+          lastName: created.lastName,
+          email: created.email,
+          phone: created.phone,
+          jobTitle: 'Teacher',
+          status: created.status,
+        });
+      }
+
+      return created;
     } catch (error) {
       console.error('Error creating teacher:', error);
       return null;
@@ -79,11 +109,14 @@ export default class TeacherService {
 
   async countAll(): Promise<number> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.read');
+      if (schoolId == null) {
+        return 0;
+      }
       const result = await this.db
         .select()
         .from(teachers)
-        .where(eq(teachers.ownerUserId, ownerUserId));
+        .where(eq(teachers.schoolId, schoolId));
 
       return result.length;
     } catch (error) {
@@ -94,11 +127,14 @@ export default class TeacherService {
 
   async getTeacherById(id: number): Promise<SelectTeacher | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.read');
+      if (schoolId == null) {
+        return null;
+      }
       const result = await this.db
         .select()
         .from(teachers)
-        .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
+        .where(and(eq(teachers.id, id), eq(teachers.schoolId, schoolId)))
         .get();
       return result || null;
     } catch (error) {
@@ -109,12 +145,15 @@ export default class TeacherService {
 
   async getTeacherByEmail(email: string): Promise<SelectTeacher | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.read');
+      if (schoolId == null) {
+        return null;
+      }
       const result = await this.db
         .select()
         .from(teachers)
         .where(
-          and(eq(teachers.email, email), eq(teachers.ownerUserId, ownerUserId)),
+          and(eq(teachers.email, email), eq(teachers.schoolId, schoolId)),
         )
         .get();
       return result || null;
@@ -126,7 +165,10 @@ export default class TeacherService {
 
   async getAllTeachers(options?: GetTeachersInput): Promise<SelectTeacher[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.read');
+      if (schoolId == null) {
+        return [];
+      }
       const {
         limit = 50,
         offset = 0,
@@ -144,7 +186,7 @@ export default class TeacherService {
           ? teachers.createdAt
           : teachers.updatedAt;
 
-      const filters = [eq(teachers.ownerUserId, ownerUserId)];
+      const filters = [eq(teachers.schoolId, schoolId)];
       if (search) {
         filters.push(like(teachers.firstName, `%${search}%`));
       }
@@ -170,12 +212,15 @@ export default class TeacherService {
     data: UpdateTeacherInput
   ): Promise<SelectTeacher | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.update');
+      if (schoolId == null) {
+        return null;
+      }
       const validatedData = UpdateTeacherSchema.parse(data);
       const result = await this.db
         .update(teachers)
         .set({ ...validatedData, updatedAt: Date.now() })
-        .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
+        .where(and(eq(teachers.id, id), eq(teachers.schoolId, schoolId)))
         .returning()
         .execute();
 
@@ -188,10 +233,13 @@ export default class TeacherService {
 
   async deleteTeacherById(id: number): Promise<boolean> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      const schoolId = await this.schoolFor('teachers.teacher.delete');
+      if (schoolId == null) {
+        return false;
+      }
       await this.db
         .delete(teachers)
-        .where(and(eq(teachers.id, id), eq(teachers.ownerUserId, ownerUserId)))
+        .where(and(eq(teachers.id, id), eq(teachers.schoolId, schoolId)))
         .execute();
       return true;
     } catch (error) {

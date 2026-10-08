@@ -1,8 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
-import { users } from './users';
-
-// School Profile table - one or more schools per account holder
+// School Profile table. People join a school through memberships.
 export const school = sqliteTable('school', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
@@ -14,9 +12,6 @@ export const school = sqliteTable('school', {
   logoUrl: text('logo_url'),
   primaryColor: text('primary_color').default('#2563eb'),
   secondaryColor: text('secondary_color').default('#0f172a'),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

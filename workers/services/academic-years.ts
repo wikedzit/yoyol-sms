@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import { eq, and, ne, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import {
@@ -9,7 +10,6 @@ import {
   type SelectTerm,
 } from '../database/academic-years';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod Schemas for Validation ---
 
@@ -106,25 +106,26 @@ export type CurrentTermStatus =
   | { term: null; status: 'unset' };
 
 export default class AcademicYearService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
-
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
-    this.db = database;
-    this.ownerUserId = ownerUserId;
-  }
+  constructor(
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
 
   // ==================== ACADEMIC YEAR OPERATIONS ====================
 
   async createYear(data: CreateAcademicYearInput): Promise<SelectAcademicYear | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateAcademicYearSchema.parse(data);
       const result = await this.db
         .insert(academicYears)
         .values({
           ...validated,
-          ownerUserId,
+          schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -145,13 +146,18 @@ export default class AcademicYearService {
 
   async getYearById(id: number): Promise<SelectAcademicYear | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(academicYears)
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(academicYears.schoolId, schoolId),
           ),
         )
         .get();
@@ -164,10 +170,15 @@ export default class AcademicYearService {
 
   async getAllYears(): Promise<SelectAcademicYear[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicYears)
-        .where(eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)))
+        .where(eq(academicYears.schoolId, schoolId))
         .orderBy(academicYears.startDate);
     } catch (error) {
       console.error('Error fetching academic years:', error);
@@ -209,6 +220,11 @@ export default class AcademicYearService {
     data: UpdateAcademicYearInput
   ): Promise<SelectAcademicYear | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateAcademicYearSchema.parse(data);
 
       // Route through setActiveYear so the single-active-year rule is enforced,
@@ -222,7 +238,7 @@ export default class AcademicYearService {
             .where(
               and(
                 eq(academicYears.id, id),
-                eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+                eq(academicYears.schoolId, schoolId),
               ),
             );
         }
@@ -239,7 +255,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(academicYears.schoolId, schoolId),
           ),
         )
         .returning();
@@ -256,7 +272,11 @@ export default class AcademicYearService {
    */
   async setActiveYear(id: number): Promise<SelectAcademicYear | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const target = await this.getYearById(id);
       if (!target) return null;
 
@@ -266,7 +286,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.status, 'active'),
-            eq(academicYears.ownerUserId, ownerUserId),
+            eq(academicYears.schoolId, schoolId),
             ne(academicYears.id, id),
           ),
         );
@@ -277,7 +297,7 @@ export default class AcademicYearService {
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, ownerUserId),
+            eq(academicYears.schoolId, schoolId),
           ),
         )
         .returning();
@@ -290,13 +310,18 @@ export default class AcademicYearService {
 
   async deleteYear(id: number): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       // Terms cascade via the FK, so no manual cleanup needed here.
       const result = await this.db
         .delete(academicYears)
         .where(
           and(
             eq(academicYears.id, id),
-            eq(academicYears.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(academicYears.schoolId, schoolId),
           ),
         )
         .returning({ id: academicYears.id });
@@ -346,13 +371,17 @@ export default class AcademicYearService {
 
   async getTermById(id: number): Promise<SelectTerm | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select({ term: terms })
         .from(terms)
         .innerJoin(academicYears, eq(terms.academicYearId, academicYears.id))
         .where(
-          and(eq(terms.id, id), eq(academicYears.ownerUserId, ownerUserId)),
+          and(eq(terms.id, id), eq(academicYears.schoolId, schoolId)),
         )
         .get();
       return result?.term || null;
