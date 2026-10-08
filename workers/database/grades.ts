@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { terms } from './academic-years';
 import { students } from './students';
 import { subject } from './subjects';
 import { academicStreams, academicForms } from './academic-levels';
@@ -25,6 +26,9 @@ export const grades = sqliteTable('grades', {
     onDelete: 'set null',
   }),
   schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'set null',
+  }),
+  termId: integer('term_id').references(() => terms.id, {
     onDelete: 'set null',
   }),
   status: text('status').notNull().default('Active'),

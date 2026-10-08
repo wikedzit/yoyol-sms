@@ -1,4 +1,5 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { guardians } from './guardians';
 import { roles } from './roles';
 import { school } from './school';
 import { users } from './users';
@@ -16,6 +17,7 @@ export const invitations = sqliteTable('invitations', {
   tokenHash: text('token_hash').notNull().unique(),
   teacherId: integer('teacher_id'),
   studentId: integer('student_id'),
+  guardianId: integer('guardian_id').references(() => guardians.id, { onDelete: 'set null' }),
   expiresAt: integer('expires_at').notNull(),
   acceptedAt: integer('accepted_at'),
   createdBy: integer('created_by')

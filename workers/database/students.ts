@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm/sql/sql';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { classes } from './class';
 import { formClasses } from './academic-levels';
+import { academicYears } from './academic-years';
 import { campus } from './campuses';
 import { school } from './school';
 import { relations } from 'drizzle-orm';
@@ -9,6 +9,7 @@ import { relations } from 'drizzle-orm';
 export const students = sqliteTable('students', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   firstName: text('first_name').notNull(),
+  middleName: text('middle_name'),
   lastName: text('last_name').notNull(),
   gender: text('gender').notNull().default('Male'),
   dob: text('dob'),
@@ -30,12 +31,6 @@ export const students = sqliteTable('students', {
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),
 
-  // Legacy: use formClassId for school-based structure instead
-  classId: integer('class_id').references(() => classes.id, {
-    onDelete: 'cascade',
-  }),
-
-  // Links student to a specific class like "3A", "5B" within a form/stream/level
   formClassId: integer('form_class_id').references(() => formClasses.id, {
     onDelete: 'cascade',
   }),
@@ -47,16 +42,16 @@ export const students = sqliteTable('students', {
 
   admissionNumber: text('admission_number'),
 
+  academicYearId: integer('academic_year_id').references(() => academicYears.id, {
+    onDelete: 'set null',
+  }),
+
   campusId: integer('campus_id').references(() => campus.id, {
     onDelete: 'set null',
   }),
 });
 
 export const studentsRelations = relations(students, ({ one }) => ({
-  class: one(classes, {
-    fields: [students.classId],
-    references: [classes.id],
-  }),
   formClass: one(formClasses, {
     fields: [students.formClassId],
     references: [formClasses.id],

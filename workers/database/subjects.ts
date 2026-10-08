@@ -5,7 +5,7 @@ import {
   integer,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import { academicStreams } from './academic-levels';
+import { academicLevels, academicStreams } from './academic-levels';
 import { school } from './school';
 
 export const subject = sqliteTable(
@@ -14,15 +14,10 @@ export const subject = sqliteTable(
     id: integer('id').primaryKey({ autoIncrement: true }),
     subjectName: text('subjectName').notNull(),
     code: text('code').notNull(),
-    stream: text('stream').notNull(), // Stream name (Science, Arts, Business)
-    instructor: text('instructor').notNull(),
     description: text('description'),
-    enrolledStudents: integer('enrolledStudents').default(0),
     status: text('status').default('Active'),
-    // Foreign Key to Academic Streams table
-    streamId: integer('stream_id')
-      .notNull()
-      .references(() => academicStreams.id),
+    streamId: integer('stream_id').references(() => academicStreams.id),
+    levelId: integer('level_id').references(() => academicLevels.id),
     schoolId: integer('school_id').references(() => school.id, {
       onDelete: 'set null',
     }),

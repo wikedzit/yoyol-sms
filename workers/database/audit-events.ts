@@ -7,5 +7,7 @@ export const auditEvents = sqliteTable('audit_events', {
   action: text('action').notNull(),
   detail: text('detail'),
   ip: text('ip'),
+  extensionKey: text('extension_key'),
+  target: text('target'),
   createdAt: integer('created_at').notNull(),
 });

@@ -15,9 +15,8 @@ export const teachers = sqliteTable('teachers', {
   gender: text('gender').notNull(),
   experience: integer('experience'),
   status: text('status').notNull().default('Active'),
-
-  // Legacy field - kept for backwards compatibility
-  departmentId: integer('department_id'),
+  middleName: text('middle_name'),
+  staffType: text('staff_type').notNull().default('teaching'),
 
   campusId: integer('campus_id').references(() => campus.id, {
     onDelete: 'set null',
