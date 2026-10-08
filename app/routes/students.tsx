@@ -42,6 +42,17 @@ import { PaginationControls } from '~/components/shared/PaginationControls';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import { loadRecordScope, refuseOutsideScope } from '~/lib/load-record-scope';
 import { keepVisibleRecords } from 'workers/services/visible-records';
+import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
+import type { SchoolSlot } from 'workers/services/extensions';
+
+function titleCase(value: string): string {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 // 🧠 Loader – fetch students with their assigned subjects + schools + campuses
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -109,6 +120,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     (item) => item.studentIds,
   );
   const visibleSubjects = keepVisibleRecords(subjects, scope, (item) => item.subjectIds);
+  const rememberedSchoolId = await readRememberedSchoolId(request);
+  const schoolId = selectSchoolId(new URL(request.url), schools ?? [], rememberedSchoolId);
+  const profileTabs = await studentProfileTabs(context.services, schoolId);
 
   return {
     students: visibleStudents,
@@ -118,7 +132,34 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     defaultSchoolId,
     streams,
     forms,
+    profileTabs,
   };
+}
+
+async function studentProfileTabs(
+  services: {
+    extensions: {
+      enable: (schoolId: number, extensionKey: string) => Promise<void>;
+      runSchoolSlot: (schoolId: number, slotName: string, payload: unknown) => Promise<SchoolSlot[]>;
+    };
+  },
+  schoolId: number | null,
+) {
+  if (schoolId === null) {
+    return [];
+  }
+  try {
+    await services.extensions.enable(schoolId, 'timetable');
+  } catch {
+    // Other profile tabs still load when this hook is already registered.
+  }
+  try {
+    const slots = await services.extensions.runSchoolSlot(schoolId, 'student.profile.tabs', {});
+    return slots.flatMap((slot) => (slot.kind === 'document' ? [slot] : []));
+  } catch (error) {
+    console.error('Unable to load student profile tabs:', error);
+    return [];
+  }
 }
 export async function action({ request, context }: ActionFunctionArgs) {
   await requireSchoolPermission(request, context.services, 'students.record.write');
@@ -139,16 +180,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
   try {
     if (action === 'assign_subjects') {
       const studentId = Number(form.get('studentId'));
-      const subjectIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+      const parsedIds = JSON.parse(String(form.get('subjectIds') || '[]'));
+      const subjectIds = Array.isArray(parsedIds) ? parsedIds.map((value) => Number(value)) : [];
 
       if (!studentId) {
         return { error: 'Student ID is required' };
       }
 
-      await services.studentSubjects?.replaceStudentSubjects(
-        studentId,
-        subjectIds
-      );
+      const saved = await context.services.yearSubjects.saveSubjects(studentId, subjectIds);
+      if ('error' in saved) {
+        return saved;
+      }
       return { success: true, action: 'assign_subjects' };
     }
 
@@ -211,16 +253,19 @@ export async function action({ request, context }: ActionFunctionArgs) {
         formClasses.length === 1 ? formClasses[0].id : undefined;
 
       const data = {
-        firstName: toTitleCase(String(form.get("firstName") ?? "")),
-        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        firstName: titleCase(String(form.get("firstName") ?? "")),
+        middleName: form.get("middleName")
+          ? titleCase(String(form.get("middleName")))
+          : undefined,
+        lastName: titleCase(String(form.get("lastName") ?? "")),
         gender: String(form.get("gender") ?? "Select gender") as
           "Male" | "Female",
-        dob: String(form.get("dob") ?? ""),
+        dob: String(form.get("dob") || form.get("dateOfBirth") || ""),
         email: form.get("email") ? String(form.get("email")) : undefined,
         phone: form.get("phone") ? String(form.get("phone")) : undefined,
         address: form.get("address") ? String(form.get("address")) : undefined,
         guardianName: form.get("guardianName")
-          ? toTitleCase(String(form.get("guardianName")))
+          ? titleCase(String(form.get("guardianName")))
           : undefined,
 
         phone: form.get("phone")
@@ -232,7 +277,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
           : undefined,
 
         guardianName: form.get("guardianName")
-          ? toTitleCase(String(form.get("guardianName")).trim())
+          ? titleCase(String(form.get("guardianName")).trim())
           : undefined,
         guardianPhone: form.get('guardianPhone')
           ? String(form.get('guardianPhone'))
@@ -322,16 +367,22 @@ export async function action({ request, context }: ActionFunctionArgs) {
       }
 
       const data = {
-        firstName: toTitleCase(String(form.get("firstName") ?? "")),
-        lastName: toTitleCase(String(form.get("lastName") ?? "")),
+        firstName: titleCase(String(form.get("firstName") ?? "")),
+        middleName: form.get("middleName")
+          ? titleCase(String(form.get("middleName")))
+          : undefined,
+        lastName: titleCase(String(form.get("lastName") ?? "")),
+        admissionNumber: form.get('admissionNumber')
+          ? String(form.get('admissionNumber')).trim()
+          : undefined,
         gender: String(form.get("gender") ?? "Select gender") as
           "Male" | "Female",
-        dob: String(form.get("dob") ?? ""),
+        dob: String(form.get("dob") || form.get("dateOfBirth") || ""),
         email: form.get("email") ? String(form.get("email")) : undefined,
         phone: form.get("phone") ? String(form.get("phone")) : undefined,
         address: form.get("address") ? String(form.get("address")) : undefined,
         guardianName: form.get("guardianName")
-          ? toTitleCase(String(form.get("guardianName")))
+          ? titleCase(String(form.get("guardianName")))
           : undefined,
         guardianPhone: form.get('guardianPhone')
           ? String(form.get('guardianPhone'))
@@ -393,6 +444,7 @@ export default function Students() {
   defaultSchoolId,
   streams,
   forms,
+  profileTabs,
 } = useLoaderData() as {
   students: any[];
   allSubjects: any[];
@@ -401,6 +453,7 @@ export default function Students() {
   defaultSchoolId: number | null;
   streams: any[];
   forms: any[];
+  profileTabs: Extract<SchoolSlot, { kind: 'document' }>[];
 };
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
@@ -417,9 +470,10 @@ export default function Students() {
 
   const filteredStudents = initialStudents?.filter((student) => {
     const matchesSearch =
-      student.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      student.lastName.toLowerCase().includes(search.toLowerCase()) ||
-      student.email.toLowerCase().includes(search.toLowerCase());
+      (student.firstName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (student.middleName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (student.lastName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (student.email || '').toLowerCase().includes(search.toLowerCase());
     const matchesFilter =
       filter === 'all' || student.course === filter || student.grade === filter;
     return matchesSearch && matchesFilter;
@@ -548,6 +602,7 @@ export default function Students() {
                 <TableRow className="bg-gray-100">
                   <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">{t('firstName')}</TableHead>
+                  <TableHead className="font-semibold">{t('middleName')}</TableHead>
                   <TableHead className="font-semibold">{t('lastName')}</TableHead>
                   <TableHead className="font-semibold">{t('email')}</TableHead>
                   <TableHead className="font-semibold">
@@ -568,6 +623,7 @@ export default function Students() {
                       {startIndex + index + 1}
                     </TableCell>
                     <TableCell>{student.firstName}</TableCell>
+                    <TableCell>{student.middleName || ''}</TableCell>
                     <TableCell>{student.lastName}</TableCell>
                     <TableCell>
                       {student.admissionNumber || "—"}
@@ -605,7 +661,7 @@ export default function Students() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right flex justify-end gap-2">
-                      <StudentProfilesModal student={student} />
+                      <StudentProfilesModal student={student} profileTabs={profileTabs} />
                       <Button
                         variant="ghost"
                         size="sm"
@@ -684,6 +740,7 @@ export default function Students() {
         open={profileModalOpen}
         onOpenChange={setProfileModalOpen}
         showTrigger={false}
+        profileTabs={profileTabs}
       />
     </div>
   );

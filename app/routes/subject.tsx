@@ -59,6 +59,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   // Get all streams for the dropdown
   const streams = await services.academicLevel.getAllStreams();
+  const levels = await services.academicLevel.getLevels();
 
   // Get all teachers for assignment modal
   const teachers = await services.teacher.getAllTeachers({
@@ -80,6 +81,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         ...subject,
         teachers: assignedTeachers || [],
         classes: assignedClasses || [],
+        levelName: levels.find((level) => level.id === subject.levelId)?.name ?? '',
+        streamName: streams.find((stream) => stream.id === subject.streamId)?.name ?? '',
       };
     })
   );
@@ -89,6 +92,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   return {
     subjects: keepVisibleRecords(subjectsWithTeachersAndClasses, scope, (item) => item.subjectIds),
     streams,
+    levels,
     allTeachers: keepVisibleRecords(teachers, scope, (item) => item.teacherIds),
   };
 }
@@ -146,24 +150,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
     // CREATE
     if (method === 'POST') {
-      const streamIdRaw = form.get('streamId');
-      const streamId = Number(streamIdRaw);
-      
-      // Validate required fields
-      if (!streamIdRaw || isNaN(streamId) || streamId < 1) {
-        return { error: 'Please select a stream for this subject.' };
+      const levelId = Number(form.get('levelId'));
+      const streamRaw = String(form.get('streamId') ?? '');
+      const streamId = streamRaw && streamRaw !== 'none' ? Number(streamRaw) : null;
+      if (!Number.isInteger(levelId) || levelId < 1) {
+        return { error: 'Choose a level for this subject.' };
       }
-      
+
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
-        stream: String(form.get('stream') ?? ''),
-        instructor: String(form.get('instructor') ?? ''),
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
         status: String(form.get('status') ?? '') as 'Active' | 'Inactive',
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
+        levelId,
         streamId,
       };
       const created = await services.subject.createSubject(data);
@@ -179,15 +180,17 @@ export async function action({ request, context }: ActionFunctionArgs) {
     if (method === 'PUT') {
       const id = Number(form.get('id'));
       if (!id) return { error: 'Subject ID is required' };
+      const levelId = Number(form.get('levelId'));
+      const streamRaw = String(form.get('streamId') ?? '');
+      const streamId = streamRaw && streamRaw !== 'none' ? Number(streamRaw) : null;
       const data = {
         subjectName: String(form.get('subjectName') ?? ''),
         code: String(form.get('code') ?? ''),
-        stream: String(form.get('stream') ?? ''),
-        instructor: String(form.get('instructor') ?? ''),
         description: form.get('description')
           ? String(form.get('description'))
           : undefined,
-        enrolledStudents: Number(form.get('enrolledStudents') ?? 0),
+        levelId,
+        streamId,
       };
       const updated = await services.subject.updateSubject(id, data);
 
@@ -215,10 +218,12 @@ export default function SubjectsPage() {
   const {
     subjects: initialSubjects,
     streams,
+    levels,
     allTeachers,
   } = useLoaderData<{
     subjects: any[];
     streams: any[];
+    levels: any[];
     allTeachers: any[];
   }>();
   const fetcher = useFetcher();
@@ -244,8 +249,7 @@ export default function SubjectsPage() {
 
   // ✅ Toasts + instant state update
   useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data) {
-      fetcher.load(window.location.pathname); // Reset fetcher state
+    if (fetcher.state === 'idle' && fetcher.data && ('error' in fetcher.data || 'success' in fetcher.data)) {
       const data = fetcher.data;
 
       if (data.error) {
@@ -297,13 +301,13 @@ export default function SubjectsPage() {
   // 🔍 Filter + search
   const filteredSubjects = subjects.filter((s) => {
     const matchesSearch =
-      s.subjectName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.instructor || '').toLowerCase().includes(searchQuery.toLowerCase());
+      (s.subjectName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.code || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (s.levelName || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       statusFilter === 'all' ||
-      s.status.toLowerCase() === statusFilter.toLowerCase();
+      (s.status || '').toLowerCase() === statusFilter.toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
@@ -430,6 +434,7 @@ export default function SubjectsPage() {
                     <TableHead className="font-semibold">
                       {t('subjectName')}
                     </TableHead>
+                    <TableHead className="font-semibold">{t('level')}</TableHead>
                     <TableHead className="font-semibold">{t('streams')}</TableHead>
                     <TableHead className="font-semibold">
                       {t('assignedTeachers')}
@@ -446,7 +451,7 @@ export default function SubjectsPage() {
                 <TableBody>
                   {paginatedSubjectsList.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center">
+                      <TableCell colSpan={8} className="h-24 text-center">
                         <p className="text-muted-foreground">
                           {t('noSubjects')}
                         </p>
@@ -457,7 +462,8 @@ export default function SubjectsPage() {
                       <TableRow key={subject.id}>
                         <TableCell>{subject.code}</TableCell>
                         <TableCell>{subject.subjectName}</TableCell>
-                        <TableCell>{subject.stream}</TableCell>
+                        <TableCell>{subject.levelName}</TableCell>
+                        <TableCell>{subject.streamName || t('noStream')}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 flex-wrap">
                             {subject.teachers?.length > 0 ? (
@@ -538,6 +544,7 @@ export default function SubjectsPage() {
           setOpen={setIsAddModalOpen}
           fetcher={fetcher}
           streams={streams}
+          levels={levels}
         />
       )}
 
@@ -548,6 +555,7 @@ export default function SubjectsPage() {
           fetcher={fetcher}
           subject={selectedSubject}
           streams={streams}
+          levels={levels}
         />
       )}
 

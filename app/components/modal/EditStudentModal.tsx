@@ -35,7 +35,9 @@ export default function EditStudentModal({
 }: EditStudentModalProps) {
   const [formData, setFormData] = useState<{
     firstName: string;
+    middleName: string;
     lastName: string;
+    admissionNumber: string;
     email: string;
     phone: string;
     enrollmentDate: string;
@@ -45,7 +47,9 @@ export default function EditStudentModal({
     status: string;
   }>({
     firstName: '',
+    middleName: '',
     lastName: '',
+    admissionNumber: '',
     email: '',
     phone: '',
     enrollmentDate: '',
@@ -59,7 +63,9 @@ export default function EditStudentModal({
     if (student) {
       setFormData({
         firstName: student.firstName || '',
+        middleName: student.middleName || '',
         lastName: student.lastName || '',
+        admissionNumber: student.admissionNumber || '',
         email: student.email || '',
         phone: student.phone || '',
         enrollmentDate: student.enrollmentDate || '',
@@ -123,7 +129,9 @@ export default function EditStudentModal({
             <div className="space-y-4">
               {[
                 'firstName',
+                'middleName',
                 'lastName',
+                'admissionNumber',
                 'email',
                 'phone',
                 'enrollmentDate',

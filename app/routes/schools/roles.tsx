@@ -3,24 +3,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent } from '~/components/ui/card';
-import { useLanguage, type TranslationKey } from '~/lib/i18n';
+import { useLanguage } from '~/lib/i18n';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
 import type { SelectSchool } from 'workers/database/school';
+import { appModules } from 'workers/kernel/modules';
 import type { SchoolRole } from 'workers/services/access';
-import { permissionCatalog, type PermissionKey } from 'workers/services/permission-catalog';
-
-const permissionLabels: Record<PermissionKey, TranslationKey> = {
-  'school.profile.read': 'permissionViewSchool',
-  'school.profile.update': 'permissionUpdateSchool',
-  'school.archive': 'permissionArchiveSchool',
-  'school.member.manage': 'permissionManageMembers',
-  'school.role.manage': 'permissionManageRoles',
-  'campus.manage': 'permissionManageCampuses',
-  'students.record.read': 'permissionViewStudents',
-  'students.record.write': 'permissionChangeStudents',
-  'staff.record.read': 'permissionViewStaff',
-  'staff.record.write': 'permissionChangeStaff',
-};
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   await context.services.tenancy.ensureForCurrentOwner();
@@ -161,36 +148,46 @@ function RoleGrants({
   schoolId: number | null;
   grants: { roleId: number; permissionKey: string }[];
 }) {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
   const fetcher = useFetcher<{ error?: string }>();
   const adminRole = role.key === 'admin';
+  const modulesWithPermissions = appModules.filter((module) => module.permissions.length > 0);
 
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-2 px-4 pb-4">
-      {permissionCatalog.map((permission) => {
-        const granted = adminRole || grants.some(
-          (grant) => grant.roleId === role.id && grant.permissionKey === permission.key,
-        );
-        return (
-          <label key={permission.key} className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={granted}
-              disabled={adminRole || fetcher.state !== 'idle'}
-              onChange={(event) => {
-                const form = new FormData();
-                form.set('intent', 'grant');
-                form.set('schoolId', String(schoolId ?? ''));
-                form.set('roleId', String(role.id));
-                form.set('permissionKey', permission.key);
-                form.set('enabled', event.target.checked ? '1' : '0');
-                fetcher.submit(form, { method: 'post' });
-              }}
-            />
-            {t(permissionLabels[permission.key])}
-          </label>
-        );
-      })}
+    <div className="space-y-3 px-4 pb-4">
+      {modulesWithPermissions.map((module) => (
+        <div key={module.key}>
+          <p className="mb-1 text-xs font-medium text-muted-foreground">
+            {module.name[language]}
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {module.permissions.map((permission) => {
+              const granted = adminRole || grants.some(
+                (grant) => grant.roleId === role.id && grant.permissionKey === permission.key,
+              );
+              return (
+                <label key={permission.key} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={granted}
+                    disabled={adminRole || fetcher.state !== 'idle'}
+                    onChange={(event) => {
+                      const form = new FormData();
+                      form.set('intent', 'grant');
+                      form.set('schoolId', String(schoolId ?? ''));
+                      form.set('roleId', String(role.id));
+                      form.set('permissionKey', permission.key);
+                      form.set('enabled', event.target.checked ? '1' : '0');
+                      fetcher.submit(form, { method: 'post' });
+                    }}
+                  />
+                  {permission.label[language]}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
       {fetcher.data?.error ? (
         <p className="w-full text-sm text-destructive">{fetcher.data.error}</p>
       ) : null}

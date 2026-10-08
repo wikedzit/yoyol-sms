@@ -9,6 +9,8 @@ import {
 import { z } from "zod";
 import { requireSchoolPermission } from "~/lib/require-school-permission";
 import { loadRecordScope } from "~/lib/load-record-scope";
+import { keepVisibleRecords } from "workers/services/visible-records";
+import { matchingRecords } from "workers/kernel/record-picker";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -121,9 +123,9 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     grades: visibleGrades,
     streams,
     forms,
-    subjects,
-    students,
-    teachers,
+    subjects: keepVisibleRecords(subjects, scope, (item) => item.subjectIds),
+    students: keepVisibleRecords(students, scope, (item) => item.studentIds),
+    teachers: keepVisibleRecords(teachers, scope, (item) => item.teacherIds),
   });
 }
 
@@ -237,6 +239,7 @@ export default function Grades() {
   const [selectedStudent, setSelectedStudent] = useState<string>(
     searchParams.get("studentId") || "",
   );
+  const [studentQuery, setStudentQuery] = useState("");
   const [selectedTeacher, setSelectedTeacher] = useState<string>(
     searchParams.get("teacherId") || "",
   );
@@ -419,21 +422,38 @@ export default function Grades() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select
-                value={selectedStudent}
-                onValueChange={setSelectedStudent}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Student" />
-                </SelectTrigger>
-                <SelectContent>
-                  {students.map((student) => (
-                    <SelectItem key={student.id} value={String(student.id)}>
-                      {student.firstName} {student.lastName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <label className="sr-only" htmlFor="find-student">{t("findStudent")}</label>
+                <input
+                  id="find-student"
+                  value={studentQuery}
+                  onChange={(event) => setStudentQuery(event.target.value)}
+                  placeholder={t("findStudent")}
+                  className="h-9 w-full rounded-md border px-3 text-sm"
+                />
+                <Select
+                  value={selectedStudent}
+                  onValueChange={setSelectedStudent}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Student" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {matchingRecords(
+                      students.map((student) => ({
+                        id: student.id,
+                        label: `${student.firstName} ${student.lastName}`,
+                      })),
+                      studentQuery,
+                      null,
+                    ).map((student) => (
+                      <SelectItem key={student.id} value={String(student.id)}>
+                        {student.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Select
                 value={selectedTeacher}
                 onValueChange={setSelectedTeacher}

@@ -93,10 +93,13 @@ export async function loader({ request, params, context }: LoaderFunctionArgs) {
     sortOrder: 'asc',
   });
 
+  const assignedSubjectIds = await context.services.classSubject.subjectIdsForFormClass(Number(classId));
+
   return {
     students,
     classInfo,
     allSubjects,
+    assignedSubjectIds,
   };
 }
 
@@ -113,6 +116,22 @@ export async function action({ request, context, params }: ActionFunctionArgs) {
   const action = form.get('action') as string | null;
 
   try {
+    if (action === 'assign_form_class_subjects') {
+      const subjectIds = form.getAll('subjectIds[]')
+        .map((value) => Number(value))
+        .filter((id) => Number.isInteger(id) && id > 0);
+      const saved = await context.services.classSubject.replaceFormClassSubjects(Number(classId), subjectIds);
+      if (!saved) {
+        return new Response(JSON.stringify({ error: 'Those subjects could not be assigned.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // CREATE STUDENT
     if (method === 'POST') {
       const studentData = {
@@ -229,10 +248,12 @@ export default function ClassDetails() {
     students: initialStudents,
     classInfo,
     allSubjects,
+    assignedSubjectIds,
   } = useLoaderData() as {
     students: any[];
     classInfo: EnrichedFormClass;
     allSubjects: any[];
+    assignedSubjectIds: number[];
   };
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
@@ -284,7 +305,7 @@ export default function ClassDetails() {
     }
 
     if (fetcher.data.success) {
-      if (action === 'assign_subjects') {
+      if (action === 'assign_form_class_subjects') {
         toast.success('Subjects assigned successfully!');
       } else if (method === 'POST' || !method) {
         toast.success('Student added successfully!');
@@ -498,6 +519,7 @@ export default function ClassDetails() {
           setOpen={setAssignSubjectsModalOpen}
           classInfo={classInfo}
           availableSubjects={allSubjects}
+          assignedSubjectIds={assignedSubjectIds}
           fetcher={fetcher}
         />
       )}

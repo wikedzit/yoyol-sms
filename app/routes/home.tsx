@@ -17,8 +17,11 @@ import type TeacherService from "workers/services/teachers";
 import type AcademicLevelService from "workers/services/academic-levels";
 import type GradeService from "workers/services/grades";
 import type NoticeService from "workers/services/notices";
+import { ViewDocumentView } from "~/components/ViewDocumentView";
 import { useLanguage } from "~/lib/i18n";
 import { requireSchoolPermission } from "~/lib/require-school-permission";
+import type { SchoolSlot } from "workers/services/extensions";
+import { readRememberedSchoolId, selectSchoolId } from "~/lib/selected-school";
 
 // Loader function to fetch dashboard data
 export async function loader({ request, context }: LoaderFunctionArgs) {
@@ -56,6 +59,10 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       }),
       services.notice.getActiveNotices(10),
     ]);
+  const schools = await context.services.school.getAll();
+  const rememberedSchoolId = await readRememberedSchoolId(request);
+  const schoolId = selectSchoolId(new URL(request.url), schools, rememberedSchoolId);
+  const widgets = schoolId === null ? [] : await dashboardWidgets(context.services.extensions, schoolId);
 
   // Calculate statistics
   const totalStudents = students.length;
@@ -165,7 +172,34 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       inactiveStudents,
     },
     notices,
+    widgets,
   };
+}
+
+async function dashboardWidgets(
+  extensions: {
+    enable: (schoolId: number, extensionKey: string) => Promise<void>;
+    runSchoolSlot: (schoolId: number, slotName: string, payload: unknown) => Promise<SchoolSlot[]>;
+  },
+  schoolId: number,
+) {
+  try {
+    await extensions.enable(schoolId, 'notices');
+    await extensions.enable(schoolId, 'attendance');
+  } catch (error) {
+    console.error('Unable to refresh calendar hooks:', error);
+  }
+  try {
+    const slots = await extensions.runSchoolSlot(schoolId, "dashboard.widgets", {});
+    return slots.flatMap((slot) => (
+      slot.kind === "document" && slot.document && slot.catalog
+        ? [{ extensionKey: slot.extensionKey, document: slot.document, catalog: slot.catalog }]
+        : []
+    ));
+  } catch (error) {
+    console.error("Unable to load dashboard widgets:", error);
+    return [];
+  }
 }
 
 // Helper function to calculate performance data by month
@@ -259,7 +293,7 @@ async function calculateStreamInsights(
 }
 
 const Dashboard = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const {
     stats,
     statuses,
@@ -268,6 +302,7 @@ const Dashboard = () => {
     recentStudents,
     activityStats,
     notices,
+    widgets,
   } = useLoaderData<typeof loader>();
 
   return (
@@ -278,6 +313,15 @@ const Dashboard = () => {
         </h1>
         <p className="text-foreground">{t("welcomeBack")}</p>
       </div>
+
+      {widgets.map((widget) => (
+        <ViewDocumentView
+          key={widget.extensionKey}
+          document={widget.document}
+          catalog={widget.catalog}
+          language={language === "sw" ? "sw" : "en"}
+        />
+      ))}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard

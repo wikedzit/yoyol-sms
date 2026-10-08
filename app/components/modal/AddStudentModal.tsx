@@ -57,11 +57,13 @@ export default function AddStudentModal({
 
   const [formData, setFormData] = useState({
     firstName: '',
+    middleName: '',
     lastName: '',
     admissionNumber: '',
     email: '',
     phone: '',
     dateOfBirth: '',
+    enrollmentDate: '',
     streamId: '',
     formId: '',
     campusId: '',
@@ -79,11 +81,13 @@ export default function AddStudentModal({
       setOpen(false);
       setFormData({
         firstName: '',
+        middleName: '',
         lastName: '',
         admissionNumber: '',
         email: '',
         phone: '',
         dateOfBirth: '',
+    enrollmentDate: '',
         streamId: '',
         formId: '',
         campusId: '',
@@ -185,6 +189,19 @@ export default function AddStudentModal({
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('middleName')}
+              </label>
+              <Input
+                type="text"
+                name="middleName"
+                value={formData.middleName}
+                onChange={handleChange}
+                placeholder="Enter Middle Name"
+              />
+            </div>
+
             {/* Last Name */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
@@ -203,15 +220,14 @@ export default function AddStudentModal({
             {/* Admission Number */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Admission Number *
+                Admission Number
               </label>
               <Input
                 type="text"
                 name="admissionNumber"
                 value={formData.admissionNumber}
                 onChange={handleChange}
-                placeholder="Enter Admission Number"
-                required
+                placeholder="Leave blank to generate one"
               />
             </div>
 
@@ -255,6 +271,18 @@ export default function AddStudentModal({
                   onChange={handleChange}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Admission date
+              </label>
+              <Input
+                type="date"
+                name="enrollmentDate"
+                value={formData.enrollmentDate}
+                onChange={handleChange}
+              />
             </div>
 
             {/* Stream & Form Class Selects */}

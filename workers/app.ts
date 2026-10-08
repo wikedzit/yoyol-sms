@@ -26,6 +26,19 @@ const requestHandler = createRequestHandler(
 
 export default {
 	async fetch(request, env, ctx) {
+		const id = crypto.randomUUID();
+		const response = await handleRequest(request, env, ctx, id);
+		const headers = new Headers(response.headers);
+		headers.set('x-request-id', id);
+		return new Response(response.body, {
+			status: response.status,
+			statusText: response.statusText,
+			headers,
+		});
+	},
+} satisfies ExportedHandler<Env>;
+
+async function handleRequest(request: Request, env: Env, ctx: ExecutionContext, requestId: string): Promise<Response> {
 		const driver = readDatabaseDriver((env as { DB_DRIVER?: string }).DB_DRIVER);
 		if (driver === 'postgres') {
 			throw new Error('DB_DRIVER=postgres is for the Node host. This Worker uses D1.');
@@ -48,6 +61,7 @@ export default {
 			env.AUTH_SESSION_SECRET,
 			opened.userId,
 			schoolId,
+			requestId,
 		);
 
 		const response = await requestHandler(opened.request, {
@@ -62,8 +76,7 @@ export default {
 			statusText: response.statusText,
 			headers,
 		}));
-	},
-} satisfies ExportedHandler<Env>;
+}
 
 async function resolveActiveSchoolId(
   db: AppDatabase,

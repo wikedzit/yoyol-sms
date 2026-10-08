@@ -1,3 +1,4 @@
+import { Form } from 'react-router';
 import { useState } from 'react'; 
 import {
   Dialog,
@@ -10,20 +11,33 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Eye } from "lucide-react";
+import { ViewDocumentView } from "~/components/ViewDocumentView";
+import { useLanguage } from "~/lib/i18n";
+import type { ViewDocument } from "workers/kernel/view-document";
+
+interface ProfileTab {
+  extensionKey: string;
+  label: string | null;
+  document: ViewDocument;
+  catalog: { en: Record<string, string>; sw: Record<string, string> };
+}
 
 interface StudentProfilesModalProps {
   student: any;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   showTrigger?: boolean;
+  profileTabs?: ProfileTab[];
 }
 
 export function StudentProfilesModal({
   student,
   open,
   onOpenChange,
-  showTrigger = true, 
+  showTrigger = true,
+  profileTabs = [],
 }: StudentProfilesModalProps) {
+  const { t, language } = useLanguage();
   // new
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -73,7 +87,7 @@ export function StudentProfilesModal({
 
           <div className="grid grid-cols-2 gap-2 text-sm mt-4">
             <p>
-              <strong>Name:</strong> {student.firstName} {student.lastName}
+              <strong>Name:</strong> {[student.firstName, student.middleName, student.lastName].filter(Boolean).join(' ')}
             </p>
             <p>
               <strong>Gender:</strong> {student.gender}
@@ -124,6 +138,37 @@ export function StudentProfilesModal({
               </p>
             )}
           </div>
+
+          {profileTabs.map((tab) => {
+            const catalog = tab.catalog[language === "sw" ? "sw" : "en"];
+            const title = tab.label ? catalog[tab.label] ?? tab.catalog.en[tab.label] ?? tab.label : "";
+            return (
+              <div key={tab.extensionKey} className="border-t pt-3">
+                {title ? <p className="text-sm font-semibold">{title}</p> : null}
+                <ViewDocumentView
+                  document={tab.document}
+                  catalog={tab.catalog}
+                  language={language === "sw" ? "sw" : "en"}
+                />
+              </div>
+            );
+          })}
+
+          {student.id ? (
+            <div className="space-y-2 border-t pt-3">
+              <a className="text-sm underline" href={`/students/${student.id}/data.json`}>
+                {t('exportPersonData')}
+              </a>
+              <p className="text-xs text-muted-foreground">{t('erasePersonHelp')}</p>
+              <Form method="post" action={`/students/${student.id}/data.json`} className="space-y-2">
+                <label className="flex items-start gap-2 text-sm">
+                  <input type="checkbox" name="confirm" value="yes" required />
+                  <span>{t('erasePersonConfirm')}</span>
+                </label>
+                <Button type="submit" variant="outline">{t('erasePersonData')}</Button>
+              </Form>
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

@@ -19,6 +19,7 @@ import { ThemeToggle } from "~/components/ui/theme-toggle";
 import { useTheme } from "next-themes";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
 import { useLanguage } from "~/lib/i18n";
+import type { SchoolSlot } from "workers/services/extensions";
 
 export async function loader({ request, context }: any) {
   const cookieHeader = request.headers.get("Cookie");
@@ -53,12 +54,15 @@ export async function loader({ request, context }: any) {
     Number.isInteger(rememberedId) ? rememberedId : null,
   );
 
+  const navigationLinks = await navigationSlotLinks(context.services, selectedSchoolId);
+
   return {
     schools: activeSchools.map((school: { id: number; name: string }) => ({
       id: school.id,
       name: school.name,
     })),
     selectedSchoolId,
+    navigationLinks,
     activeThemeCss,
     user: {
       email: user.email,
@@ -71,10 +75,35 @@ export async function loader({ request, context }: any) {
   };
 }
 
+async function navigationSlotLinks(
+  services: { extensions: { runSchoolSlot: (schoolId: number, slotName: string, payload: unknown) => Promise<SchoolSlot[]> } },
+  schoolId: number | null,
+) {
+  if (schoolId === null) {
+    return [];
+  }
+  try {
+    const slots = await services.extensions.runSchoolSlot(schoolId, "navigation.items", {});
+    return slots.flatMap((slot) => (
+      slot.kind === "link"
+        ? [{
+          href: slot.href,
+          labelEn: slot.catalog.en[slot.label] ?? slot.label,
+          labelSw: slot.catalog.sw[slot.label] ?? slot.catalog.en[slot.label] ?? slot.label,
+        }]
+        : []
+    ));
+  } catch (error) {
+    console.error("Unable to load navigation slots:", error);
+    return [];
+  }
+}
+
 const DashboardLayout = () => {
-  const { user, activeThemeCss, schools, selectedSchoolId } = useLoaderData<{
+  const { user, activeThemeCss, schools, selectedSchoolId, navigationLinks } = useLoaderData<{
     schools: { id: number; name: string }[];
     selectedSchoolId: number | null;
+    navigationLinks: { href: string; labelEn: string; labelSw: string }[];
     activeThemeCss: string | null;
     user: {
       email: string;
@@ -101,6 +130,7 @@ const DashboardLayout = () => {
       activeThemeCss={activeThemeCss}
       schools={schools}
       selectedSchoolId={selectedSchoolId}
+      navigationLinks={navigationLinks}
     />
   );
 };
@@ -116,6 +146,7 @@ function DashboardContent({
   activeThemeCss,
   schools,
   selectedSchoolId,
+  navigationLinks,
 }: any) {
   const { t, setLanguage } = useLanguage();
   const location = useLocation();
@@ -153,7 +184,7 @@ function DashboardContent({
               />
             </div>
             <div className="flex-1 overflow-y-auto">
-              <AppSidebar />
+              <AppSidebar extraLinks={navigationLinks} />
             </div>
           </div>
 
@@ -181,7 +212,7 @@ function DashboardContent({
               className="flex-1 overflow-y-auto"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <AppSidebar />
+              <AppSidebar extraLinks={navigationLinks} />
             </div>
           </div>
 
@@ -209,9 +240,16 @@ function DashboardContent({
                   )}
                 </Button>
 
-                <h1 className="text-lg lg:text-xl md:text-sm sm:text-xs font-semibold text-foreground">
-                  {t('studentManagementSystem')}
-                </h1>
+                <div>
+                  <h1 className="text-lg lg:text-xl md:text-sm sm:text-xs font-semibold text-foreground">
+                    {t('studentManagementSystem')}
+                  </h1>
+                  {Array.isArray(schools) && selectedSchoolId ? (
+                    <p className="text-xs text-muted-foreground">
+                      {schools.find((item: { id: number; name: string }) => item.id === selectedSchoolId)?.name}
+                    </p>
+                  ) : null}
+                </div>
                 {Array.isArray(schools) && schools.length > 1 ? (
                   <form method="post" action="/schools/switch">
                     <input

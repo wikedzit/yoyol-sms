@@ -194,9 +194,7 @@ export default function AcademicYearPage() {
       const data = fetcher.data;
 
       if (data.error) {
-        // Only surface as a page-level toast for year actions; term errors
-        // are shown inline inside ManageTermsModal.
-        if (lastAction.current?.startsWith("year_")) {
+        if (!lastAction.current || lastAction.current.startsWith("year_")) {
           toast.error(data.error);
         }
         return;

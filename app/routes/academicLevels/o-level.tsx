@@ -150,10 +150,14 @@ export async function action({ request, context }: ActionFunctionArgs) {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    if (message.startsWith('Remove the ')) {
+      return { error: message };
+    }
     console.error('O-Level action error:', err);
     return new Response(
-      JSON.stringify({ error: err?.message || 'Server error' }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }

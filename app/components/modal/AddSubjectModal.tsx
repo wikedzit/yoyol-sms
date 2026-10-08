@@ -23,16 +23,15 @@ export default function AddSubjectModal({
   setOpen,
   fetcher,
   streams,
+  levels,
   id,
 }: any) {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
-    stream: '',
-    instructor: '',
-    enrolledStudents: 0,
     status: 'Active',
+    levelId: '',
     streamId: id || '',
   });
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +52,7 @@ export default function AddSubjectModal({
         setFormData((prev) => ({
           ...prev,
           streamId: String(id),
-          stream: selectedStream.name,
+          levelId: selectedStream.levelId ? String(selectedStream.levelId) : prev.levelId,
         }));
       }
     }
@@ -66,10 +65,8 @@ export default function AddSubjectModal({
       setFormData({
         subjectName: '',
         code: '',
-        stream: '',
-        instructor: '',
-        enrolledStudents: 0,
         status: 'Active',
+        levelId: '',
         streamId: id || '',
       });
     }
@@ -99,8 +96,8 @@ export default function AddSubjectModal({
           <input type="hidden" name="_method" value="POST" />
           <input type="hidden" name="_entity" value="subject" />
           <input type="hidden" name="status" value={formData.status} />
+          <input type="hidden" name="levelId" value={formData.levelId} />
           <input type="hidden" name="streamId" value={formData.streamId} />
-          <input type="hidden" name="stream" value={formData.stream} />
 
           {/* HEADER */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -126,22 +123,40 @@ export default function AddSubjectModal({
             </div>
           )}
 
-          {/* STREAM SELECT */}
           <div className="mb-4 w-full">
             <label className="block text-sm font-medium text-foreground mb-1">
-              Stream
+              {t('level')}
+            </label>
+            <Select
+              value={formData.levelId || undefined}
+              onValueChange={(value) => {
+                setFormData({ ...formData, levelId: value, streamId: '' });
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={`${t('select')} ${t('level').toLowerCase()}`} />
+              </SelectTrigger>
+              <SelectContent>
+                {(levels ?? []).map((level: { id: number; name: string }) => (
+                  <SelectItem key={level.id} value={String(level.id)}>
+                    {level.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mb-4 w-full">
+            <label className="block text-sm font-medium text-foreground mb-1">
+              {t('streams')}
             </label>
 
             <Select
-              value={formData.streamId}
+              value={formData.streamId || 'none'}
               onValueChange={(value) => {
-                const selectedStream = streams?.find(
-                  (s: any) => String(s.id) === String(value)
-                );
                 setFormData({
                   ...formData,
-                  streamId: value,
-                  stream: selectedStream?.name || '',
+                  streamId: value === 'none' ? '' : value,
                 });
               }}
             >
@@ -150,17 +165,14 @@ export default function AddSubjectModal({
               </SelectTrigger>
 
               <SelectContent>
-                {!streams || streams.length === 0 ? (
-                  <SelectItem value="no-stream" disabled>
-                    {t('noStreams')}
-                  </SelectItem>
-                ) : (
-                  streams.map((stream: any) => (
+                <SelectItem value="none">{t('noStream')}</SelectItem>
+                {(streams ?? [])
+                  .filter((stream: { levelId?: number }) => String(stream.levelId ?? '') === formData.levelId)
+                  .map((stream: { id: number; name: string; levelType?: string }) => (
                     <SelectItem key={stream.id} value={String(stream.id)}>
-                      {stream.name} ({stream.levelType})
+                      {stream.name} {stream.levelType ? `(${stream.levelType})` : ''}
                     </SelectItem>
-                  ))
-                )}
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -168,14 +180,8 @@ export default function AddSubjectModal({
           {/* SCROLLABLE CONTENT */}
           <div className="flex-1 overflow-y-auto pr-2">
             {[
-              { label: 'Subject Name', field: 'subjectName', type: 'text' },
-              { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Instructor', field: 'instructor', type: 'text' },
-              {
-                label: 'Enrolled Students',
-                field: 'enrolledStudents',
-                type: 'number',
-              },
+              { label: t('subjectName'), field: 'subjectName', type: 'text' },
+              { label: t('code'), field: 'code', type: 'text' },
             ].map(({ label, field, type }) => (
               <div key={field} className="mb-4">
                 <label className="block text-sm font-medium text-foreground mb-1">

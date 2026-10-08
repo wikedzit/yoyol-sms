@@ -21,16 +21,21 @@ import type { FetcherWithComponents } from 'react-router';
 interface Stream {
   id: string | number;
   name: string;
+  levelId?: string | number;
   levelType?: string;
+}
+
+interface Level {
+  id: string | number;
+  name: string;
 }
 
 interface Subject {
   id: string | number;
   subjectName?: string;
   code?: string;
-  stream?: string;
+  levelId?: string | number;
   streamId?: string | number;
-  instructor?: string;
   description?: string;
 }
 
@@ -40,6 +45,7 @@ interface EditSubjectModalProps {
   fetcher: FetcherWithComponents<any>;
   subject?: Subject | null;
   streams?: Stream[];
+  levels?: Level[];
   id?: string;
 }
 
@@ -49,13 +55,13 @@ export default function EditSubjectModal({
   fetcher,
   subject,
   streams,
+  levels,
 }: EditSubjectModalProps) {
   const [formData, setFormData] = useState({
     subjectName: '',
     code: '',
-    stream: '',
+    levelId: '',
     streamId: '',
-    instructor: '',
     description: '',
   });
   const [error, setError] = useState<string | null>(null);
@@ -66,9 +72,8 @@ export default function EditSubjectModal({
       setFormData({
         subjectName: subject.subjectName || '',
         code: subject.code || '',
-        stream: subject.stream || '',
+        levelId: subject.levelId ? String(subject.levelId) : '',
         streamId: subject.streamId ? String(subject.streamId) : '',
-        instructor: subject.instructor || '',
         description: subject.description || '',
       });
     }
@@ -115,8 +120,8 @@ export default function EditSubjectModal({
           <input type="hidden" name="_method" value="PUT" />
           <input type="hidden" name="_entity" value="subject" />
           <input type="hidden" name="id" value={subject.id} />
+          <input type="hidden" name="levelId" value={formData.levelId} />
           <input type="hidden" name="streamId" value={formData.streamId} />
-          <input type="hidden" name="stream" value={formData.stream} />
 
           {/* Header */}
           <div className="flex justify-between items-center mb-6 md:mb-8">
@@ -143,43 +148,61 @@ export default function EditSubjectModal({
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto pr-1 md:pr-2 space-y-4">
-            {/* Stream Select */}
-            {streams && streams.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Stream
-                </label>
-                <Select
-                  value={formData.streamId}
-                  onValueChange={(value) => {
-                    const selectedStream = streams.find(
-                      (s) => String(s.id) === String(value)
-                    );
-                    setFormData({
-                      ...formData,
-                      streamId: value,
-                      stream: selectedStream?.name || '',
-                    });
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select stream" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {streams.map((stream) => (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Level
+              </label>
+              <Select
+                value={formData.levelId || undefined}
+                onValueChange={(value) => {
+                  setFormData({ ...formData, levelId: value, streamId: '' });
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(levels ?? []).map((level) => (
+                    <SelectItem key={level.id} value={String(level.id)}>
+                      {level.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Stream
+              </label>
+              <Select
+                value={formData.streamId || 'none'}
+                onValueChange={(value) => {
+                  setFormData({
+                    ...formData,
+                    streamId: value === 'none' ? '' : value,
+                  });
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select stream" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No stream</SelectItem>
+                  {(streams ?? [])
+                    .filter((stream) => String(stream.levelId ?? '') === formData.levelId)
+                    .map((stream) => (
                       <SelectItem key={stream.id} value={String(stream.id)}>
                         {stream.name} {stream.levelType ? `(${stream.levelType})` : ''}
                       </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                </SelectContent>
+              </Select>
+            </div>
 
             {[
               { label: 'Subject Name', field: 'subjectName', type: 'text' },
               { label: 'Code', field: 'code', type: 'text' },
-              { label: 'Instructor', field: 'instructor', type: 'text' },
             ].map(({ label, field, type }) => (
               <div key={field}>
                 <label className="block text-sm font-medium text-foreground mb-1">
