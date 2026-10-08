@@ -1,0 +1,2 @@
+ALTER TABLE students ADD COLUMN academic_year_id INTEGER REFERENCES academic_years(id) ON DELETE SET NULL;
+ALTER TABLE grades ADD COLUMN term_id INTEGER REFERENCES terms(id) ON DELETE SET NULL;

@@ -20,4 +20,6 @@ CREATE TABLE IF NOT EXISTS `terms` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years`(`id`) ON UPDATE no action ON DELETE cascade
-);
+);--> statement-breakpoint
+ALTER TABLE `users` ADD `first_name` text;--> statement-breakpoint
+ALTER TABLE `users` ADD `last_name` text;
