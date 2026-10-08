@@ -1,5 +1,6 @@
 import { Link, useFetcher, useLoaderData, useSearchParams } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
+import { ModuleCatalogTable } from '~/components/modules/ModuleCatalogTable';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
@@ -141,9 +142,21 @@ export default function ExtensionsPage() {
         description={t(catalog === 'plugin' ? 'installPluginsDescription' : 'installExtensionsDescription')}
       />
       <SchoolPicker schools={schools} schoolId={schoolId} searchParams={searchParams} />
+      {schoolId !== null && isPlatformAdmin && catalog === 'module' ? (
+        <PackageAdmin
+          schoolId={schoolId}
+          packageUpload={packageUpload}
+          publishers={publishers}
+          revokedVersions={revokedVersions}
+          fetcher={fetcher}
+        />
+      ) : null}
       {schoolId === null ? (
         <p className="text-sm text-muted-foreground">{t('createSchoolFirst')}</p>
       ) : (
+        catalog === 'module' ? (
+          <ModuleCatalogTable modules={extensions} schoolId={schoolId} />
+        ) : (
         <ul className="space-y-3">
           {fetcher.data && 'error' in fetcher.data && fetcher.data.error ? (
             <p className="text-sm text-destructive">{fetcher.data.error}</p>
@@ -259,52 +272,16 @@ export default function ExtensionsPage() {
             );
           })}
         </ul>
+        )
       )}
-      {schoolId !== null && isPlatformAdmin ? (
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">{t('packageUpload')}</h2>
-          {packageUpload ? <p className="text-sm text-muted-foreground">{packageUpload}</p> : null}
-          <h2 className="text-lg font-semibold">{t('trustedPublishers')}</h2>
-          {publishers.length === 0 ? <p className="text-sm text-muted-foreground">{t('noTrustedPublishers')}</p> : null}
-          <ul className="space-y-2">
-            {publishers.map((key) => (
-              <li key={key.id} className="flex flex-wrap items-center gap-3 text-sm">
-                <span>{key.publisher} {key.keyId}{key.revoked ? `, ${t('publisherRevoked')}` : ''}</span>
-                {key.revoked ? null : (
-                  <fetcher.Form method="post">
-                    <input type="hidden" name="intent" value="revokePublisher" />
-                    <input type="hidden" name="schoolId" value={schoolId} />
-                    <input type="hidden" name="publisher" value={key.publisher} />
-                    <input type="hidden" name="keyId" value={key.keyId} />
-                    <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>{t('revokeKey')}</Button>
-                  </fetcher.Form>
-                )}
-              </li>
-            ))}
-          </ul>
-          <fetcher.Form method="post" className="flex flex-wrap items-end gap-2">
-            <input type="hidden" name="intent" value="trustPublisher" />
-            <input type="hidden" name="schoolId" value={schoolId} />
-            <label className="flex flex-col gap-1 text-sm">{t('publisherName')}<Input name="publisher" /></label>
-            <label className="flex flex-col gap-1 text-sm">{t('publisherKeyId')}<Input name="keyId" /></label>
-            <label className="flex flex-col gap-1 text-sm">{t('publisherPublicKey')}<Input name="publicKey" /></label>
-            <Button type="submit" disabled={fetcher.state !== 'idle'}>{t('trustKey')}</Button>
-          </fetcher.Form>
-          {revokedVersions.length === 0 ? null : (
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              {revokedVersions.map((item) => (
-                <li key={`${item.extensionKey}-${item.version}`}>{item.extensionKey} {item.version}, {t('publisherRevoked')}</li>
-              ))}
-            </ul>
-          )}
-          <fetcher.Form method="post" className="flex flex-wrap items-end gap-2">
-            <input type="hidden" name="intent" value="revokeVersion" />
-            <input type="hidden" name="schoolId" value={schoolId} />
-            <label className="flex flex-col gap-1 text-sm">{t('extensionKeyLabel')}<Input name="extensionKey" /></label>
-            <label className="flex flex-col gap-1 text-sm">{t('extensionVersion')}<Input name="version" /></label>
-            <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>{t('revokeVersion')}</Button>
-          </fetcher.Form>
-        </section>
+      {schoolId !== null && isPlatformAdmin && catalog !== 'module' ? (
+        <PackageAdmin
+          schoolId={schoolId}
+          packageUpload={packageUpload}
+          publishers={publishers}
+          revokedVersions={revokedVersions}
+          fetcher={fetcher}
+        />
       ) : null}
       {schoolId !== null && deadEvents.length > 0 ? (
         <section className="space-y-3">
@@ -398,6 +375,69 @@ function extensionStatusLabel(
     return t('extensionRemoved');
   }
   return t('extensionNotInstalled');
+}
+
+function PackageAdmin({
+  schoolId,
+  packageUpload,
+  publishers,
+  revokedVersions,
+  fetcher,
+}: {
+  schoolId: number;
+  packageUpload: string | null;
+  publishers: { id: number; publisher: string; keyId: string; revoked: boolean }[];
+  revokedVersions: { extensionKey: string; version: string }[];
+  fetcher: ReturnType<typeof useFetcher<typeof action>>;
+}) {
+  const { t } = useLanguage();
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-semibold">{t('packageUpload')}</h2>
+      {packageUpload ? <p className="text-sm text-muted-foreground">{packageUpload}</p> : null}
+      <h2 className="text-lg font-semibold">{t('trustedPublishers')}</h2>
+      {publishers.length === 0 ? <p className="text-sm text-muted-foreground">{t('noTrustedPublishers')}</p> : null}
+      <ul className="space-y-2">
+        {publishers.map((key) => (
+          <li key={key.id} className="flex flex-wrap items-center gap-3 text-sm">
+            <span>{key.publisher} {key.keyId}{key.revoked ? `, ${t('publisherRevoked')}` : ''}</span>
+            {key.revoked ? null : (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="revokePublisher" />
+                <input type="hidden" name="schoolId" value={schoolId} />
+                <input type="hidden" name="publisher" value={key.publisher} />
+                <input type="hidden" name="keyId" value={key.keyId} />
+                <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>{t('revokeKey')}</Button>
+              </fetcher.Form>
+            )}
+          </li>
+        ))}
+      </ul>
+      <fetcher.Form method="post" className="flex flex-wrap items-end gap-2">
+        <input type="hidden" name="intent" value="trustPublisher" />
+        <input type="hidden" name="schoolId" value={schoolId} />
+        <label className="flex flex-col gap-1 text-sm">{t('publisherName')}<Input name="publisher" /></label>
+        <label className="flex flex-col gap-1 text-sm">{t('publisherKeyId')}<Input name="keyId" /></label>
+        <label className="flex flex-col gap-1 text-sm">{t('publisherPublicKey')}<Input name="publicKey" /></label>
+        <Button type="submit" disabled={fetcher.state !== 'idle'}>{t('trustKey')}</Button>
+      </fetcher.Form>
+      {revokedVersions.length === 0 ? null : (
+        <ul className="space-y-1 text-sm text-muted-foreground">
+          {revokedVersions.map((item) => (
+            <li key={`${item.extensionKey}-${item.version}`}>{item.extensionKey} {item.version}, {t('publisherRevoked')}</li>
+          ))}
+        </ul>
+      )}
+      <fetcher.Form method="post" className="flex flex-wrap items-end gap-2">
+        <input type="hidden" name="intent" value="revokeVersion" />
+        <input type="hidden" name="schoolId" value={schoolId} />
+        <label className="flex flex-col gap-1 text-sm">{t('extensionKeyLabel')}<Input name="extensionKey" /></label>
+        <label className="flex flex-col gap-1 text-sm">{t('extensionVersion')}<Input name="version" /></label>
+        <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>{t('revokeVersion')}</Button>
+      </fetcher.Form>
+    </section>
+  );
 }
 
 function SchoolPicker({

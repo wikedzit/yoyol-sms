@@ -88,6 +88,7 @@ const routes: RouteConfig = [
       route('calendar', './routes/calendar.tsx'),
       route('settings', './routes/settings.tsx'),
       route('modules', './routes/extensions.tsx', { id: 'modules-page' }),
+      route('modules/:moduleKey', './routes/module-detail.tsx'),
       route('plugins', './routes/extensions.tsx', { id: 'plugins-page' }),
       route('extensions', './routes/extensions.redirect.ts'),
       route('inbox', './routes/inbox.tsx'),
