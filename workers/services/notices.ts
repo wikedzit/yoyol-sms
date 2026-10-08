@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import { eq, desc, asc, like, and } from 'drizzle-orm';
 import { z } from 'zod';
 import {
@@ -6,7 +7,6 @@ import {
   type SelectNotice,
 } from '../database/notices';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod Schemas for Validation ---
 const CreateNoticeSchema = z.object({
@@ -40,26 +40,27 @@ export type GetNoticesInput = z.infer<typeof GetNoticesSchema>;
 
 // --- Notice Service Class ---
 export default class NoticeService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
-
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
-    this.db = database;
-    this.ownerUserId = ownerUserId;
-  }
+  constructor(
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
 
   async createNotice(
     data: CreateNoticeInput
   ): Promise<SelectNotice | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateNoticeSchema.parse(data);
 
       const result = await this.db
         .insert(notices)
         .values({
           ...validated,
-          ownerUserId,
+          schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -74,14 +75,18 @@ export default class NoticeService {
 
   async getNoticeById(id: string): Promise<SelectNotice | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(notices)
         .where(
           and(
             eq(notices.id, parseInt(id)),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, schoolId),
           ),
         )
         .get();
@@ -94,7 +99,11 @@ export default class NoticeService {
 
   async getNotices(options?: GetNoticesInput): Promise<SelectNotice[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const { limit, offset, sortBy, sortOrder, search, status: statusFilter } =
         GetNoticesSchema.parse(options) ?? {};
 
@@ -107,7 +116,7 @@ export default class NoticeService {
           ? notices.createdAt
           : notices.updatedAt;
 
-      const conditions = [eq(notices.ownerUserId, ownerUserId)];
+      const conditions = [eq(notices.schoolId, schoolId)];
       if (search) {
         conditions.push(like(notices.title, `%${search}%`));
       }
@@ -130,14 +139,18 @@ export default class NoticeService {
 
   async getActiveNotices(limit?: number): Promise<SelectNotice[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(notices)
         .where(
           and(
             eq(notices.status, 'Active'),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, schoolId),
           ),
         )
         .orderBy(desc(notices.createdAt))
@@ -153,7 +166,11 @@ export default class NoticeService {
     data: UpdateNoticeInput
   ): Promise<SelectNotice | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateNoticeSchema.parse(data);
       const updateValues: Partial<InsertNotice> = {
         ...validated,
@@ -166,7 +183,7 @@ export default class NoticeService {
         .where(
           and(
             eq(notices.id, parseInt(id)),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, schoolId),
           ),
         )
         .returning();
@@ -180,13 +197,17 @@ export default class NoticeService {
 
   async deleteNotice(id: string): Promise<boolean> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(notices)
         .where(
           and(
             eq(notices.id, parseInt(id)),
-            eq(notices.ownerUserId, ownerUserId),
+            eq(notices.schoolId, schoolId),
           ),
         )
         .returning({ id: notices.id });

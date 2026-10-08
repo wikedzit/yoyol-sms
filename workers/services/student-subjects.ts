@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { eq, and, getTableColumns } from 'drizzle-orm';
 import {
@@ -6,26 +7,27 @@ import {
   students,
   type SelectSubject,
 } from 'workers/database';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 export default class StudentSubjectService {
   constructor(
     private db: DrizzleD1Database,
-    private ownerUserId: number | null,
+    private schoolAccess: SchoolAccess,
   ) {}
 
-  private currentOwner(): number {
-    return requireOwnerUserId(this.ownerUserId);
-  }
 
-  private async studentBelongsToOwner(studentId: number): Promise<boolean> {
+  private async studentBelongsToSchool(studentId: number): Promise<boolean> {
+    const schoolId = await this.schoolAccess.schoolFor('students.student.update');
+    if (schoolId == null) {
+      return false;
+    }
+
     const row = await this.db
       .select({ id: students.id })
       .from(students)
       .where(
         and(
           eq(students.id, studentId),
-          eq(students.ownerUserId, this.currentOwner()),
+          eq(students.schoolId, schoolId),
         ),
       )
       .get();
@@ -33,14 +35,19 @@ export default class StudentSubjectService {
     return Boolean(row);
   }
 
-  private async subjectBelongsToOwner(subjectId: number): Promise<boolean> {
+  private async subjectBelongsToSchool(subjectId: number): Promise<boolean> {
+    const schoolId = await this.schoolAccess.schoolFor('students.student.update');
+    if (schoolId == null) {
+      return false;
+    }
+
     const row = await this.db
       .select({ id: subject.id })
       .from(subject)
       .where(
         and(
           eq(subject.id, subjectId),
-          eq(subject.ownerUserId, this.currentOwner()),
+          eq(subject.schoolId, schoolId),
         ),
       )
       .get();
@@ -56,8 +63,8 @@ export default class StudentSubjectService {
     subjectId: number
   ): Promise<boolean> {
     try {
-      const studentIsOwned = await this.studentBelongsToOwner(studentId);
-      const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+      const studentIsOwned = await this.studentBelongsToSchool(studentId);
+      const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
       if (!studentIsOwned || !subjectIsOwned) {
         return false;
       }
@@ -102,7 +109,7 @@ export default class StudentSubjectService {
     subjectId: number
   ): Promise<boolean> {
     try {
-      const studentIsOwned = await this.studentBelongsToOwner(studentId);
+      const studentIsOwned = await this.studentBelongsToSchool(studentId);
       if (!studentIsOwned) {
         return false;
       }
@@ -125,7 +132,7 @@ export default class StudentSubjectService {
   //get all subjects for a student (returns IDs only)
   async getSubjectsForStudent(studentId: number): Promise<number[]> {
     try {
-      const studentIsOwned = await this.studentBelongsToOwner(studentId);
+      const studentIsOwned = await this.studentBelongsToSchool(studentId);
       if (!studentIsOwned) {
         return [];
       }
@@ -145,6 +152,11 @@ export default class StudentSubjectService {
   //get all subjects for a student (returns full subject objects)
   async getSubjectsByStudent(studentId: number): Promise<SelectSubject[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('students.student.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const results = await this.db
         .select(getTableColumns(subject))
         .from(studentSubjects)
@@ -152,7 +164,7 @@ export default class StudentSubjectService {
         .where(
           and(
             eq(studentSubjects.studentId, studentId),
-            eq(subject.ownerUserId, this.currentOwner()),
+            eq(subject.schoolId, schoolId),
           ),
         )
         .execute();
@@ -167,7 +179,7 @@ export default class StudentSubjectService {
   //get all students for a subject
   async getStudentsForSubject(subjectId: number): Promise<number[]> {
     try {
-      const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+      const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
       if (!subjectIsOwned) {
         return [];
       }
@@ -190,13 +202,13 @@ export default class StudentSubjectService {
     subjectIds: number[]
   ): Promise<boolean> {
     try {
-      const studentIsOwned = await this.studentBelongsToOwner(studentId);
+      const studentIsOwned = await this.studentBelongsToSchool(studentId);
       if (!studentIsOwned) {
         return false;
       }
 
       for (const subjectId of subjectIds) {
-        const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+        const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
         if (!subjectIsOwned) {
           return false;
         }
@@ -222,13 +234,13 @@ export default class StudentSubjectService {
     studentIds: number[]
   ): Promise<boolean> {
     try {
-      const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+      const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
       if (!subjectIsOwned) {
         return false;
       }
 
       for (const studentId of studentIds) {
-        const studentIsOwned = await this.studentBelongsToOwner(studentId);
+        const studentIsOwned = await this.studentBelongsToSchool(studentId);
         if (!studentIsOwned) {
           return false;
         }
@@ -254,13 +266,13 @@ export default class StudentSubjectService {
     subjectIds: number[]
   ): Promise<boolean> {
     try {
-      const studentIsOwned = await this.studentBelongsToOwner(studentId);
+      const studentIsOwned = await this.studentBelongsToSchool(studentId);
       if (!studentIsOwned) {
         return false;
       }
 
       for (const subjectId of subjectIds) {
-        const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+        const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
         if (!subjectIsOwned) {
           return false;
         }
@@ -295,13 +307,13 @@ export default class StudentSubjectService {
     studentIds: number[]
   ): Promise<boolean> {
     try {
-      const subjectIsOwned = await this.subjectBelongsToOwner(subjectId);
+      const subjectIsOwned = await this.subjectBelongsToSchool(subjectId);
       if (!subjectIsOwned) {
         return false;
       }
 
       for (const studentId of studentIds) {
-        const studentIsOwned = await this.studentBelongsToOwner(studentId);
+        const studentIsOwned = await this.studentBelongsToSchool(studentId);
         if (!studentIsOwned) {
           return false;
         }

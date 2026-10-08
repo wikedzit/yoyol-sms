@@ -5,7 +5,7 @@ import {
   integer,
   uniqueIndex,
 } from 'drizzle-orm/sqlite-core';
-import { users } from './users';
+import { school } from './school';
 
 // Academic Years table
 export const academicYears = sqliteTable(
@@ -16,9 +16,9 @@ export const academicYears = sqliteTable(
     startDate: text('start_date').notNull(), // ISO date string
     endDate: text('end_date').notNull(), // ISO date string
     status: text('status').notNull().default('upcoming'), // 'upcoming' | 'active' | 'archived'
-    ownerUserId: integer('owner_user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+    schoolId: integer('school_id').references(() => school.id, {
+      onDelete: 'restrict',
+    }),
     createdAt: integer('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
@@ -27,8 +27,8 @@ export const academicYears = sqliteTable(
       .default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
-    ownerNameUnique: uniqueIndex('academic_years_owner_name_unique').on(
-      table.ownerUserId,
+    schoolNameUnique: uniqueIndex('academic_years_school_name_unique').on(
+      table.schoolId,
       table.name,
     ),
   }),

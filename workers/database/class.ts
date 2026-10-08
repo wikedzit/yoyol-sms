@@ -1,6 +1,6 @@
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
-import { users } from './users';
+import { school } from './school';
 
 /**
  * LEGACY: University-style classes table
@@ -24,9 +24,9 @@ export const classes = sqliteTable('classes', {
   year: integer('year').notNull(),
   // Legacy field - kept for backwards compatibility
   departmentId: integer('department_id'),
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'restrict',
+  }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

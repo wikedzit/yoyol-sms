@@ -6,7 +6,6 @@ import {
   getOwnerOnboardingStatus,
   hasFinishedOnboarding,
 } from "~/lib/onboarding.server";
-import { isAdminRole } from "~/lib/roles";
 
 interface UserPayload {
   id: number;
@@ -49,11 +48,17 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     const pathname = new URL(request.url).pathname;
     const isOnboardingRoute = pathname === "/onboarding";
 
-    if (!isAdminRole(payload.role) && isOnboardingRoute) {
+    const schoolId = await context.services.schoolAccess.currentSchoolId();
+    const mayManageSchool =
+      schoolId == null
+        ? true
+        : await context.services.schoolAccess.can('school.school.update');
+
+    if (!mayManageSchool && isOnboardingRoute) {
       return redirect("/");
     }
 
-    if (isAdminRole(payload.role)) {
+    if (mayManageSchool) {
       const onboardingStatus = await getOwnerOnboardingStatus(
         context.services,
       );

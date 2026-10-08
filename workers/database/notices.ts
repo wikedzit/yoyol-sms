@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
-import { users } from './users';
+import { school } from './school';
 
 export const notices = sqliteTable('notices', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -10,9 +10,9 @@ export const notices = sqliteTable('notices', {
   type: text('type').notNull().default('info'), // 'exam', 'holiday', 'registration', 'meeting', 'info'
   priority: text('priority').notNull().default('normal'), // 'high', 'normal', 'low'
   status: text('status').notNull().default('Active'), // 'Active', 'Inactive'
-  ownerUserId: integer('owner_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
+  schoolId: integer('school_id').references(() => school.id, {
+    onDelete: 'restrict',
+  }),
   createdAt: integer('created_at')
     .notNull()
     .default(sql`CURRENT_TIMESTAMP`),

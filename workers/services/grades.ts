@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import { eq, desc, asc, and, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import {
@@ -10,7 +11,6 @@ import { students } from '../database/students';
 import { subject } from '../database/subjects';
 import { academicStreams, academicForms, academicLevels } from '../database/academic-levels';
 import { teachers } from '../database/teachers';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // Helper function to calculate grade from score
 const getGradeFromScore = (score: number): 'A' | 'B' | 'C' | 'D' | 'F' => {
@@ -100,20 +100,21 @@ export type GradeWithRelations = SelectGrade & {
  * Grades Service Class
  */
 export default class GradeService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
-
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
-    this.db = database;
-    this.ownerUserId = ownerUserId;
-  }
+  constructor(
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
 
   /**
    * Create a new grade
    */
   async create(data: CreateGradeInput): Promise<SelectGrade | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('students.student.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateGradeSchema.parse(data);
       const grade = getGradeFromScore(validated.score);
 
@@ -123,7 +124,7 @@ export default class GradeService {
         .where(
           and(
             eq(students.id, validated.studentId),
-            eq(students.ownerUserId, ownerUserId),
+            eq(students.schoolId, schoolId),
           ),
         )
         .get();
@@ -137,7 +138,7 @@ export default class GradeService {
         .values({
           ...validated,
           grade,
-          ownerUserId,
+          schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -155,14 +156,18 @@ export default class GradeService {
    */
   async getById(id: string): Promise<GradeWithRelations | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('students.student.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const grade = await this.db
         .select()
         .from(grades)
         .where(
           and(
             eq(grades.id, parseInt(id)),
-            eq(grades.ownerUserId, ownerUserId),
+            eq(grades.schoolId, schoolId),
           ),
         )
         .get();
@@ -181,7 +186,11 @@ export default class GradeService {
    */
   async getAll(options?: GetGradesInput): Promise<GradeWithRelations[]> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+    const schoolId = await this.schoolAccess.schoolFor('students.student.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       const {
         limit,
         offset,
@@ -195,7 +204,7 @@ export default class GradeService {
         levelId,
       } = GetGradesSchema.parse(options) ?? {};
 
-      const conditions = [eq(grades.ownerUserId, ownerUserId)];
+      const conditions = [eq(grades.schoolId, schoolId)];
       if (studentId) conditions.push(eq(grades.studentId, studentId));
       if (subjectId) conditions.push(eq(grades.subjectId, subjectId));
       if (streamId) conditions.push(eq(grades.streamId, streamId));
@@ -211,7 +220,7 @@ export default class GradeService {
           .where(
             and(
               eq(academicStreams.levelId, levelId),
-              eq(academicStreams.ownerUserId, ownerUserId),
+              eq(academicStreams.schoolId, schoolId),
             ),
           );
         
@@ -224,7 +233,7 @@ export default class GradeService {
           .where(
             and(
               inArray(grades.streamId, streamIds),
-              eq(grades.ownerUserId, ownerUserId),
+              eq(grades.schoolId, schoolId),
             ),
           );
         
@@ -371,6 +380,11 @@ export default class GradeService {
     data: UpdateGradeInput
   ): Promise<SelectGrade | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('students.student.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateGradeSchema.parse(data);
       const updateValues: Partial<InsertGrade> = {
         ...validated,
@@ -388,7 +402,7 @@ export default class GradeService {
         .where(
           and(
             eq(grades.id, parseInt(id)),
-            eq(grades.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(grades.schoolId, schoolId),
           ),
         )
         .returning();
@@ -405,12 +419,17 @@ export default class GradeService {
    */
   async delete(id: string): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('students.student.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(grades)
         .where(
           and(
             eq(grades.id, parseInt(id)),
-            eq(grades.ownerUserId, requireOwnerUserId(this.ownerUserId)),
+            eq(grades.schoolId, schoolId),
           ),
         )
         .returning({ id: grades.id });

@@ -1,3 +1,4 @@
+import type SchoolAccess from './school-access';
 import { eq, desc, asc, and } from 'drizzle-orm';
 import { z } from 'zod';
 import {
@@ -15,7 +16,6 @@ import {
   type SelectFormClass,
 } from '../database/academic-levels';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
-import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 
 // --- Zod Schemas for Validation ---
 
@@ -71,28 +71,27 @@ export type UpdateFormClassInput = z.infer<typeof UpdateFormClassSchema>;
 
 // --- Academic Level Service Class ---
 export default class AcademicLevelService {
-  private db: DrizzleD1Database;
-  private ownerUserId: number | null;
+  constructor(
+    private db: DrizzleD1Database,
+    private schoolAccess: SchoolAccess,
+  ) {}
 
-  constructor(database: DrizzleD1Database, ownerUserId: number | null) {
-    this.db = database;
-    this.ownerUserId = ownerUserId;
-  }
-
-  private currentOwner(): number {
-    return requireOwnerUserId(this.ownerUserId);
-  }
 
   // ==================== LEVEL OPERATIONS ====================
 
   async createLevel(data: CreateLevelInput): Promise<SelectAcademicLevel | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateLevelSchema.parse(data);
       const result = await this.db
         .insert(academicLevels)
         .values({
           ...validated,
-          ownerUserId: this.currentOwner(),
+          schoolId: schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -106,13 +105,18 @@ export default class AcademicLevelService {
 
   async getLevelById(id: number): Promise<SelectAcademicLevel | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(academicLevels)
         .where(
           and(
             eq(academicLevels.id, id),
-            eq(academicLevels.ownerUserId, this.currentOwner()),
+            eq(academicLevels.schoolId, schoolId),
           ),
         )
         .get();
@@ -125,13 +129,18 @@ export default class AcademicLevelService {
 
   async getLevelByType(type: string): Promise<SelectAcademicLevel | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(academicLevels)
         .where(
           and(
             eq(academicLevels.type, type),
-            eq(academicLevels.ownerUserId, this.currentOwner()),
+            eq(academicLevels.schoolId, schoolId),
           ),
         )
         .get();
@@ -144,10 +153,15 @@ export default class AcademicLevelService {
 
   async getLevels(): Promise<SelectAcademicLevel[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicLevels)
-        .where(eq(academicLevels.ownerUserId, this.currentOwner()))
+        .where(eq(academicLevels.schoolId, schoolId))
         .orderBy(asc(academicLevels.name));
     } catch (error) {
       console.error('Error fetching levels:', error);
@@ -160,6 +174,11 @@ export default class AcademicLevelService {
     data: UpdateLevelInput
   ): Promise<SelectAcademicLevel | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateLevelSchema.parse(data);
       const result = await this.db
         .update(academicLevels)
@@ -170,7 +189,7 @@ export default class AcademicLevelService {
         .where(
           and(
             eq(academicLevels.id, id),
-            eq(academicLevels.ownerUserId, this.currentOwner()),
+            eq(academicLevels.schoolId, schoolId),
           ),
         )
         .returning();
@@ -183,12 +202,17 @@ export default class AcademicLevelService {
 
   async deleteLevel(id: number): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(academicLevels)
         .where(
           and(
             eq(academicLevels.id, id),
-            eq(academicLevels.ownerUserId, this.currentOwner()),
+            eq(academicLevels.schoolId, schoolId),
           ),
         )
         .returning({ id: academicLevels.id });
@@ -203,12 +227,17 @@ export default class AcademicLevelService {
 
   async createStream(data: CreateStreamInput): Promise<SelectAcademicStream | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateStreamSchema.parse(data);
       const result = await this.db
         .insert(academicStreams)
         .values({
           ...validated,
-          ownerUserId: this.currentOwner(),
+          schoolId: schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -222,13 +251,18 @@ export default class AcademicLevelService {
 
   async getStreamById(id: number): Promise<SelectAcademicStream | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(academicStreams)
         .where(
           and(
             eq(academicStreams.id, id),
-            eq(academicStreams.ownerUserId, this.currentOwner()),
+            eq(academicStreams.schoolId, schoolId),
           ),
         )
         .get();
@@ -241,13 +275,18 @@ export default class AcademicLevelService {
 
   async getStreamsByLevelId(levelId: number): Promise<SelectAcademicStream[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicStreams)
         .where(
           and(
             eq(academicStreams.levelId, levelId),
-            eq(academicStreams.ownerUserId, this.currentOwner()),
+            eq(academicStreams.schoolId, schoolId),
           ),
         )
         .orderBy(asc(academicStreams.name));
@@ -259,13 +298,18 @@ export default class AcademicLevelService {
 
   async getStreamsByLevelType(levelType: string): Promise<SelectAcademicStream[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicStreams)
         .where(
           and(
             eq(academicStreams.levelType, levelType),
-            eq(academicStreams.ownerUserId, this.currentOwner()),
+            eq(academicStreams.schoolId, schoolId),
           ),
         )
         .orderBy(asc(academicStreams.name));
@@ -277,10 +321,15 @@ export default class AcademicLevelService {
 
   async getAllStreams(): Promise<SelectAcademicStream[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicStreams)
-        .where(eq(academicStreams.ownerUserId, this.currentOwner()))
+        .where(eq(academicStreams.schoolId, schoolId))
         .orderBy(asc(academicStreams.name));
     } catch (error) {
       console.error('Error fetching all streams:', error);
@@ -293,6 +342,11 @@ export default class AcademicLevelService {
     data: UpdateStreamInput
   ): Promise<SelectAcademicStream | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateStreamSchema.parse(data);
       const result = await this.db
         .update(academicStreams)
@@ -303,7 +357,7 @@ export default class AcademicLevelService {
         .where(
           and(
             eq(academicStreams.id, id),
-            eq(academicStreams.ownerUserId, this.currentOwner()),
+            eq(academicStreams.schoolId, schoolId),
           ),
         )
         .returning();
@@ -316,12 +370,17 @@ export default class AcademicLevelService {
 
   async deleteStream(id: number): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(academicStreams)
         .where(
           and(
             eq(academicStreams.id, id),
-            eq(academicStreams.ownerUserId, this.currentOwner()),
+            eq(academicStreams.schoolId, schoolId),
           ),
         )
         .returning({ id: academicStreams.id });
@@ -336,12 +395,17 @@ export default class AcademicLevelService {
 
   async createForm(data: CreateFormInput): Promise<SelectAcademicForm | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateFormSchema.parse(data);
       const result = await this.db
         .insert(academicForms)
         .values({
           ...validated,
-          ownerUserId: this.currentOwner(),
+          schoolId: schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -355,13 +419,18 @@ export default class AcademicLevelService {
 
   async getFormById(id: number): Promise<SelectAcademicForm | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(academicForms)
         .where(
           and(
             eq(academicForms.id, id),
-            eq(academicForms.ownerUserId, this.currentOwner()),
+            eq(academicForms.schoolId, schoolId),
           ),
         )
         .get();
@@ -374,13 +443,18 @@ export default class AcademicLevelService {
 
   async getFormsByStreamId(streamId: number): Promise<SelectAcademicForm[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicForms)
         .where(
           and(
             eq(academicForms.streamId, streamId),
-            eq(academicForms.ownerUserId, this.currentOwner()),
+            eq(academicForms.schoolId, schoolId),
           ),
         )
         .orderBy(asc(academicForms.number));
@@ -392,13 +466,18 @@ export default class AcademicLevelService {
 
   async getFormsByLevelId(levelId: number): Promise<SelectAcademicForm[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicForms)
         .where(
           and(
             eq(academicForms.levelId, levelId),
-            eq(academicForms.ownerUserId, this.currentOwner()),
+            eq(academicForms.schoolId, schoolId),
           ),
         )
         .orderBy(asc(academicForms.number));
@@ -413,6 +492,11 @@ export default class AcademicLevelService {
     formNumber: number
   ): Promise<SelectAcademicForm | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(academicForms)
@@ -420,7 +504,7 @@ export default class AcademicLevelService {
           and(
             eq(academicForms.streamId, streamId),
             eq(academicForms.number, formNumber),
-            eq(academicForms.ownerUserId, this.currentOwner()),
+            eq(academicForms.schoolId, schoolId),
           )
         )
         .get();
@@ -433,10 +517,15 @@ export default class AcademicLevelService {
 
   async getAllForms(): Promise<SelectAcademicForm[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(academicForms)
-        .where(eq(academicForms.ownerUserId, this.currentOwner()))
+        .where(eq(academicForms.schoolId, schoolId))
         .orderBy(asc(academicForms.number));
     } catch (error) {
       console.error('Error fetching all forms:', error);
@@ -449,6 +538,11 @@ export default class AcademicLevelService {
     data: UpdateFormInput
   ): Promise<SelectAcademicForm | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateFormSchema.parse(data);
       const result = await this.db
         .update(academicForms)
@@ -459,7 +553,7 @@ export default class AcademicLevelService {
         .where(
           and(
             eq(academicForms.id, id),
-            eq(academicForms.ownerUserId, this.currentOwner()),
+            eq(academicForms.schoolId, schoolId),
           ),
         )
         .returning();
@@ -472,12 +566,17 @@ export default class AcademicLevelService {
 
   async deleteForm(id: number): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(academicForms)
         .where(
           and(
             eq(academicForms.id, id),
-            eq(academicForms.ownerUserId, this.currentOwner()),
+            eq(academicForms.schoolId, schoolId),
           ),
         )
         .returning({ id: academicForms.id });
@@ -492,12 +591,17 @@ export default class AcademicLevelService {
 
   async createFormClass(data: CreateFormClassInput): Promise<SelectFormClass | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = CreateFormClassSchema.parse(data);
       const result = await this.db
         .insert(formClasses)
         .values({
           ...validated,
-          ownerUserId: this.currentOwner(),
+          schoolId: schoolId,
           createdAt: Date.now(),
           updatedAt: Date.now(),
         })
@@ -511,13 +615,18 @@ export default class AcademicLevelService {
 
   async getFormClassById(id: number): Promise<SelectFormClass | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return null;
+    }
+
       const result = await this.db
         .select()
         .from(formClasses)
         .where(
           and(
             eq(formClasses.id, id),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, schoolId),
           ),
         )
         .get();
@@ -530,13 +639,18 @@ export default class AcademicLevelService {
 
   async getFormClassesByFormId(formId: number): Promise<SelectFormClass[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(formClasses)
         .where(
           and(
             eq(formClasses.formId, formId),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, schoolId),
           ),
         )
         .orderBy(asc(formClasses.name));
@@ -548,13 +662,18 @@ export default class AcademicLevelService {
 
   async getFormClassesByStreamId(streamId: number): Promise<SelectFormClass[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(formClasses)
         .where(
           and(
             eq(formClasses.streamId, streamId),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, schoolId),
           ),
         )
         .orderBy(asc(formClasses.name));
@@ -566,10 +685,15 @@ export default class AcademicLevelService {
 
   async getAllFormClasses(): Promise<SelectFormClass[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(formClasses)
-        .where(eq(formClasses.ownerUserId, this.currentOwner()))
+        .where(eq(formClasses.schoolId, schoolId))
         .orderBy(asc(formClasses.name));
     } catch (error) {
       console.error('Error fetching all form classes:', error);
@@ -582,6 +706,11 @@ export default class AcademicLevelService {
     data: UpdateFormClassInput
   ): Promise<SelectFormClass | null> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return null;
+    }
+
       const validated = UpdateFormClassSchema.parse(data);
       const result = await this.db
         .update(formClasses)
@@ -592,7 +721,7 @@ export default class AcademicLevelService {
         .where(
           and(
             eq(formClasses.id, id),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, schoolId),
           ),
         )
         .returning();
@@ -605,12 +734,17 @@ export default class AcademicLevelService {
 
   async deleteFormClass(id: number): Promise<boolean> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.update');
+    if (schoolId == null) {
+      return false;
+    }
+
       const result = await this.db
         .delete(formClasses)
         .where(
           and(
             eq(formClasses.id, id),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, schoolId),
           ),
         )
         .returning({ id: formClasses.id });
@@ -822,13 +956,18 @@ export default class AcademicLevelService {
    */
   async getFormClassesByLevelId(levelId: number): Promise<SelectFormClass[]> {
     try {
+    const schoolId = await this.schoolAccess.schoolFor('school.school.read');
+    if (schoolId == null) {
+      return [];
+    }
+
       return await this.db
         .select()
         .from(formClasses)
         .where(
           and(
             eq(formClasses.levelId, levelId),
-            eq(formClasses.ownerUserId, this.currentOwner()),
+            eq(formClasses.schoolId, schoolId),
           ),
         )
         .orderBy(asc(formClasses.name));

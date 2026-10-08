@@ -1,4 +1,5 @@
-CREATE TABLE `campus` (
+-- 0038_adorable_spectrum.sql already creates this table.
+CREATE TABLE IF NOT EXISTS `campus` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`school_id` integer NOT NULL,
 	`name` text NOT NULL,
