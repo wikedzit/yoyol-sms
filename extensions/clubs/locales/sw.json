@@ -1,0 +1,23 @@
+{
+  "clubs.title": "Vilabu",
+  "clubs.description": "Vilabu vya mwaka huu, wanachama, na walichofanya.",
+  "clubs.list": "Vilabu",
+  "clubs.empty": "Hakuna vilabu vilivyongezwa.",
+  "clubs.name": "Klabu",
+  "clubs.about": "Klabu inafanya nini",
+  "clubs.patron": "Mlezi",
+  "clubs.save": "Hifadhi klabu",
+  "clubs.close": "Funga klabu",
+  "clubs.members": "Wanachama",
+  "clubs.membersEmpty": "Hakuna wanafunzi waliojiunga na klabu mwaka huu.",
+  "clubs.student": "Mwanafunzi",
+  "clubs.enrol": "Ongeza mwanachama",
+  "clubs.removeMember": "Ondoa mwanachama",
+  "clubs.activities": "Shughuli",
+  "clubs.activitiesEmpty": "Hakuna shughuli zilizorekodiwa.",
+  "clubs.activityTitle": "Shughuli",
+  "clubs.activityBody": "Klabu ilifanya nini",
+  "clubs.date": "Tarehe",
+  "clubs.saveActivity": "Hifadhi shughuli",
+  "clubs.removeActivity": "Ondoa shughuli"
+}

@@ -1,0 +1,22 @@
+{
+  "lessonPlans.title": "Lesson plans",
+  "lessonPlans.description": "Templates for the year, and the plans teachers submit.",
+  "lessonPlans.templates": "Templates",
+  "lessonPlans.templatesEmpty": "No templates have been added.",
+  "lessonPlans.templateName": "Template",
+  "lessonPlans.templateBody": "What to write",
+  "lessonPlans.saveTemplate": "Save template",
+  "lessonPlans.retireTemplate": "Retire template",
+  "lessonPlans.plans": "Plans",
+  "lessonPlans.plansEmpty": "No lesson plans have been written.",
+  "lessonPlans.titleField": "Title",
+  "lessonPlans.planBody": "Lesson plan",
+  "lessonPlans.subject": "Subject",
+  "lessonPlans.teacher": "Teacher",
+  "lessonPlans.class": "Class",
+  "lessonPlans.savePlan": "Save plan",
+  "lessonPlans.submit": "Submit plan",
+  "lessonPlans.approve": "Approve plan",
+  "lessonPlans.return": "Return plan",
+  "lessonPlans.comment": "Comment"
+}

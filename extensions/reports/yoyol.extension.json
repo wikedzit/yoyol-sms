@@ -1,0 +1,41 @@
+{
+  "manifestVersion": 1,
+  "key": "reports",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Reports", "sw": "Ripoti" },
+  "description": {
+    "en": "A dashboard for each role, and spreadsheet import and export. This module ships with the system.",
+    "sw": "Dashibodi kwa kila jukumu, na uingizaji na usafirishaji wa jedwali. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "students": "^1.0.0",
+      "staff": "^1.0.0",
+      "finance": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "reports.dashboard.read",
+      "label": { "en": "View reports", "sw": "Angalia ripoti" },
+      "defaultRoles": ["admin", "teacher", "student", "parent"]
+    },
+    {
+      "key": "reports.import.write",
+      "label": { "en": "Import and export records", "sw": "Ingiza na safirisha rekodi" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "hooks": {
+    "listens": [{ "name": "dashboard.widgets", "priority": 10 }]
+  },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

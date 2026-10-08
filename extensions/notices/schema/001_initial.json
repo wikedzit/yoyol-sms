@@ -1,0 +1,18 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "notices",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "title", "type": "text", "notNull": true },
+        { "name": "description", "type": "text", "notNull": true },
+        { "name": "date", "type": "text", "notNull": true },
+        { "name": "type", "type": "text", "notNull": true, "default": "info" },
+        { "name": "priority", "type": "text", "notNull": true, "default": "normal" },
+        { "name": "status", "type": "text", "notNull": true, "default": "Active" }
+      ]
+    }
+  ]
+}

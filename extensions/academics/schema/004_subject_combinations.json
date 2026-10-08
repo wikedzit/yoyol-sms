@@ -1,0 +1,24 @@
+{
+  "id": "004_subject_combinations",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "subject_combinations",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "level_id", "type": "reference", "references": "academics.academic_levels", "notNull": true },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "status", "type": "text", "notNull": true, "default": "active" }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "combination_subjects",
+      "columns": [
+        { "name": "combination_id", "type": "reference", "references": "academics.subject_combinations", "onDelete": "cascade", "notNull": true },
+        { "name": "subject_id", "type": "reference", "references": "academics.subjects", "onDelete": "cascade", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["combination_id", "subject_id"] }]
+    }
+  ]
+}

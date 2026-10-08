@@ -1,0 +1,53 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "teachers",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "first_name", "type": "text", "notNull": true },
+        { "name": "last_name", "type": "text", "notNull": true },
+        { "name": "subject", "type": "text", "notNull": true },
+        { "name": "email", "type": "text", "notNull": true },
+        { "name": "phone", "type": "text", "notNull": true },
+        { "name": "address", "type": "text", "notNull": true },
+        { "name": "qualification", "type": "text" },
+        { "name": "gender", "type": "text", "notNull": true },
+        { "name": "experience", "type": "integer" },
+        { "name": "status", "type": "text", "notNull": true, "default": "Active" },
+        { "name": "campus_id", "type": "reference", "references": "core.campuses", "onDelete": "set null" }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "teacher_classes",
+      "columns": [
+        { "name": "teacher_id", "type": "reference", "references": "staff.teachers", "onDelete": "cascade", "notNull": true },
+        { "name": "class_id", "type": "reference", "references": "academics.classes", "onDelete": "cascade", "notNull": true },
+        { "name": "assigned_at", "type": "timestamp", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["teacher_id", "class_id"] }]
+    },
+    {
+      "op": "createTable",
+      "name": "teacher_subjects",
+      "columns": [
+        { "name": "teacher_id", "type": "reference", "references": "staff.teachers", "onDelete": "cascade", "notNull": true },
+        { "name": "subject_id", "type": "reference", "references": "academics.subjects", "onDelete": "cascade", "notNull": true },
+        { "name": "assigned_at", "type": "timestamp", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["teacher_id", "subject_id"] }]
+    },
+    {
+      "op": "createTable",
+      "name": "teacher_form_classes",
+      "columns": [
+        { "name": "teacher_id", "type": "reference", "references": "staff.teachers", "onDelete": "cascade", "notNull": true },
+        { "name": "form_class_id", "type": "reference", "references": "academics.form_classes", "onDelete": "cascade", "notNull": true },
+        { "name": "assigned_at", "type": "timestamp", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["teacher_id", "form_class_id"] }]
+    }
+  ]
+}

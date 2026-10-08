@@ -1,0 +1,50 @@
+{
+  "manifestVersion": 1,
+  "key": "attendance",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Attendance", "sw": "Mahudhurio" },
+  "description": {
+    "en": "Daily attendance for a class. This module ships with the system.",
+    "sw": "Mahudhurio ya kila siku kwa darasa. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0",
+      "staff": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "attendance.record.read",
+      "label": { "en": "View attendance", "sw": "Angalia mahudhurio" },
+      "defaultRoles": ["admin", "teacher", "student", "parent"]
+    },
+    {
+      "key": "attendance.record.write",
+      "label": { "en": "Record attendance", "sw": "Rekodi mahudhurio" },
+      "defaultRoles": ["admin", "teacher"]
+    }
+  ],
+  "hooks": {
+    "listens": [
+      { "name": "dashboard.widgets" },
+      { "name": "student.profile.tabs" }
+    ]
+  },
+  "events": {
+    "publishes": ["attendance.record.marked_absent"]
+  },
+  "settings": [
+    { "key": "editableDays", "type": "text", "default": "7" },
+    { "key": "absenceAlerts", "type": "select", "options": ["off", "on"], "default": "off" }
+  ],
+  "provides": [],
+  "outboundHosts": []
+}

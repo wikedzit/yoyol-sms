@@ -1,0 +1,23 @@
+{
+  "clubs.title": "Clubs",
+  "clubs.description": "Clubs for this year, their members, and what they did.",
+  "clubs.list": "Clubs",
+  "clubs.empty": "No clubs have been added.",
+  "clubs.name": "Club",
+  "clubs.about": "What the club does",
+  "clubs.patron": "Patron",
+  "clubs.save": "Save club",
+  "clubs.close": "Close club",
+  "clubs.members": "Members",
+  "clubs.membersEmpty": "No students have joined a club this year.",
+  "clubs.student": "Student",
+  "clubs.enrol": "Add member",
+  "clubs.removeMember": "Remove member",
+  "clubs.activities": "Activities",
+  "clubs.activitiesEmpty": "No activities have been recorded.",
+  "clubs.activityTitle": "Activity",
+  "clubs.activityBody": "What the club did",
+  "clubs.date": "Date",
+  "clubs.saveActivity": "Save activity",
+  "clubs.removeActivity": "Remove activity"
+}

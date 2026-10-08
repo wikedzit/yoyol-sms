@@ -1,0 +1,15 @@
+{
+  "id": "003_form_class_subjects",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "form_class_subjects",
+      "columns": [
+        { "name": "form_class_id", "type": "reference", "references": "academics.form_classes", "onDelete": "cascade", "notNull": true },
+        { "name": "subject_id", "type": "reference", "references": "academics.subjects", "onDelete": "cascade", "notNull": true },
+        { "name": "assigned_at", "type": "timestamp", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["form_class_id", "subject_id"] }]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "discipline.title": "Discipline",
+  "discipline.description": "Incident types, severity, and the records staff may see.",
+  "discipline.types": "Incident types",
+  "discipline.typesEmpty": "No incident types have been added.",
+  "discipline.severities": "Severity",
+  "discipline.severitiesEmpty": "No severity levels have been added.",
+  "discipline.name": "Name",
+  "discipline.save": "Save",
+  "discipline.deactivate": "Deactivate",
+  "discipline.incidents": "Incidents",
+  "discipline.incidentsEmpty": "No incidents are visible.",
+  "discipline.student": "Student",
+  "discipline.type": "Type",
+  "discipline.severity": "Severity",
+  "discipline.date": "Date",
+  "discipline.whatHappened": "What happened",
+  "discipline.actionTaken": "Action taken",
+  "discipline.saveIncident": "Save incident",
+  "discipline.close": "Close incident"
+}

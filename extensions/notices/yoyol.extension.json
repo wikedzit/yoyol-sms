@@ -1,0 +1,23 @@
+{
+  "manifestVersion": 1,
+  "key": "notices",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Notices", "sw": "Matangazo" },
+  "description": {
+    "en": "School notices. This module ships with the system.",
+    "sw": "Matangazo ya shule. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0" },
+  "capabilities": ["core.academics:read"],
+  "hooks": {
+    "listens": [{ "name": "dashboard.widgets" }]
+  },
+  "permissions": [],
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

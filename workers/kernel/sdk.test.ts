@@ -1,0 +1,91 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import test from 'node:test';
+import { defineModule, definePlugin } from './sdk.ts';
+
+const extensionsRoot = join(import.meta.dirname, '../../extensions');
+
+function contextFor(schoolId: number) {
+  return {
+    schoolId,
+    settings: { get: async () => null },
+    core: {},
+    log: { info() {}, error() {} },
+  };
+}
+
+function readManifest(key: string) {
+  return JSON.parse(readFileSync(join(extensionsRoot, key, 'yoyol.extension.json'), 'utf8'));
+}
+
+test('SDK-01 definePlugin builds the hello entrypoint', async () => {
+  let enabledSchool = 0;
+  const plugin = definePlugin({
+    manifest: readManifest('hello'),
+    onEnable(context) {
+      enabledSchool = context.schoolId;
+    },
+  });
+
+  await plugin.onEnable(contextFor(4));
+  assert.equal(plugin.manifest.key, 'hello');
+  assert.equal(plugin.manifest.type, 'plugin');
+  assert.equal(enabledSchool, 4);
+  const page = await plugin.handlePage({ path: '/' }, contextFor(4));
+  assert.equal(page.kind, 'notFound');
+});
+
+test('SDK-01 a plugin cannot declare permissions', () => {
+  const hello = readManifest('hello');
+  assert.throws(
+    () => definePlugin({
+      manifest: {
+        ...hello,
+        permissions: [{ key: 'hello.greet' }],
+      },
+    }),
+    /plugin cannot declare/,
+  );
+});
+
+test('SDK-02 an entrypoint can read a setting from its context', async () => {
+  let greeting: string | null = null;
+  const plugin = definePlugin({
+    manifest: readManifest('hello'),
+    async runHook(_name, _payload, context) {
+      greeting = await context.settings.get('greeting');
+      assert.equal(context.core.students, undefined);
+      return null;
+    },
+  });
+
+  await plugin.runHook('dashboard.widgets', {}, {
+    schoolId: 1,
+    settings: { get: async () => 'Habari' },
+    core: {},
+    log: { info() {}, error() {} },
+  });
+  assert.equal(greeting, 'Habari');
+});
+
+test('SDK-01 definePlugin rejects a module manifest', () => {
+  assert.throws(
+    () => definePlugin({ manifest: readManifest('students') }),
+    /only accepts a plugin/,
+  );
+});
+
+test('SDK-01 defineModule serves a declared page', async () => {
+  const students = defineModule({
+    manifest: readManifest('students'),
+    pages: {
+      '/list': () => ({ title: 'Students' }),
+    },
+  });
+
+  const page = await students.handlePage({ path: '/list' }, contextFor(1));
+  assert.deepEqual(page, { kind: 'view', document: { title: 'Students' } });
+  const missing = await students.handlePage({ path: '/missing' }, contextFor(1));
+  assert.equal(missing.kind, 'notFound');
+});

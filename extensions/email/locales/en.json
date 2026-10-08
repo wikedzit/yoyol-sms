@@ -1,0 +1,5 @@
+{
+  "email.title": "Email",
+  "email.description": "Emails recorded for guardians. A row stays not sent until an email gateway is configured.",
+  "email.empty": "No email has been recorded yet."
+}

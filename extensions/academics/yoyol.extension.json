@@ -1,0 +1,22 @@
+{
+  "manifestVersion": 1,
+  "key": "academics",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Academics", "sw": "Masomo" },
+  "description": {
+    "en": "Levels, subjects, and classrooms. This module ships with the system.",
+    "sw": "Ngazi, masomo, na madarasa. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0" },
+  "capabilities": ["core.academics:read"],
+  "permissions": [],
+  "pages": [{ "path": "/" }],
+  "events": { "publishes": ["academics.term.started"] },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

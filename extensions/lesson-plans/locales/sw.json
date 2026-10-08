@@ -1,0 +1,22 @@
+{
+  "lessonPlans.title": "Mipango ya somo",
+  "lessonPlans.description": "Violezo vya mwaka, na mipango walimu wanayowasilisha.",
+  "lessonPlans.templates": "Violezo",
+  "lessonPlans.templatesEmpty": "Hakuna violezo vilivyoongezwa.",
+  "lessonPlans.templateName": "Kiolezo",
+  "lessonPlans.templateBody": "Cha kuandika",
+  "lessonPlans.saveTemplate": "Hifadhi kiolezo",
+  "lessonPlans.retireTemplate": "Staafu kiolezo",
+  "lessonPlans.plans": "Mipango",
+  "lessonPlans.plansEmpty": "Hakuna mipango ya somo iliyoandikwa.",
+  "lessonPlans.titleField": "Kichwa",
+  "lessonPlans.planBody": "Mpango wa somo",
+  "lessonPlans.subject": "Somo",
+  "lessonPlans.teacher": "Mwalimu",
+  "lessonPlans.class": "Darasa",
+  "lessonPlans.savePlan": "Hifadhi mpango",
+  "lessonPlans.submit": "Wasilisha mpango",
+  "lessonPlans.approve": "Kubali mpango",
+  "lessonPlans.return": "Rudisha mpango",
+  "lessonPlans.comment": "Maoni"
+}

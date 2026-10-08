@@ -1,0 +1,23 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "records",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "student_id", "type": "integer", "notNull": true },
+        { "name": "form_class_id", "type": "integer", "notNull": true },
+        { "name": "academic_year_id", "type": "integer", "notNull": true },
+        { "name": "term_id", "type": "integer" },
+        { "name": "attendance_date", "type": "date", "notNull": true },
+        { "name": "status", "type": "enum", "notNull": true, "values": ["present", "absent", "late"] },
+        { "name": "comment", "type": "text" },
+        { "name": "teacher_id", "type": "integer" }
+      ],
+      "indexes": [
+        { "columns": ["student_id", "attendance_date"] }
+      ]
+    }
+  ]
+}

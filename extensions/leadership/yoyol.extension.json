@@ -1,0 +1,38 @@
+{
+  "manifestVersion": 1,
+  "key": "leadership",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Leadership", "sw": "Uongozi" },
+  "description": {
+    "en": "Positions and the students who hold them this year. This module ships with the system.",
+    "sw": "Vyeo na wanafunzi wanaoshikilia mwaka huu. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "leadership.position.read",
+      "label": { "en": "View leadership", "sw": "Angalia uongozi" },
+      "defaultRoles": ["admin", "teacher", "student", "parent"]
+    },
+    {
+      "key": "leadership.position.write",
+      "label": { "en": "Manage leadership", "sw": "Simamia uongozi" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "hooks": { "listens": [] },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

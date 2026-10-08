@@ -1,0 +1,27 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "positions",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "retired", "type": "boolean", "notNull": true, "default": false }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "appointments",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "position_id", "type": "integer", "notNull": true },
+        { "name": "student_id", "type": "integer", "notNull": true },
+        { "name": "academic_year_id", "type": "integer", "notNull": true },
+        { "name": "starts_on", "type": "date", "notNull": true },
+        { "name": "ends_on", "type": "date", "notNull": true },
+        { "name": "ended", "type": "boolean", "notNull": true, "default": false }
+      ]
+    }
+  ]
+}

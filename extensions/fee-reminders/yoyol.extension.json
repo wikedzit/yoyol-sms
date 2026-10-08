@@ -1,0 +1,21 @@
+{
+  "manifestVersion": 1,
+  "key": "fee-reminders",
+  "type": "plugin",
+  "version": "1.0.0",
+  "name": { "en": "Fee reminders", "sw": "Vikumbusho vya ada" },
+  "description": {
+    "en": "Reminds guardians about outstanding balances. A person runs the job. A daily clock is not configured.",
+    "sw": "Inawakumbusha walezi kuhusu salio la ada. Mtu anaendesha kazi. Saa ya kila siku haijawekwa."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0", "extensions": { "finance": "^1.0.0" } },
+  "capabilities": ["notifications:send"],
+  "hooks": {
+    "listens": [{ "name": "navigation.items" }]
+  },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

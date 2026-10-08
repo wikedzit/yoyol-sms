@@ -1,0 +1,14 @@
+{
+  "students.title": "Wanafunzi",
+  "students.description": "Rekodi za wanafunzi wa shule moja.",
+  "students.records": "Rekodi",
+  "students.empty": "Hakuna wanafunzi walioongezwa kwa shule hii bado.",
+  "students.enrolments": "Uandikishaji",
+  "students.enrolmentsEmpty": "Bado hakuna darasa lililorekodiwa kwa mwaka.",
+  "students.guardians": "Walezi",
+  "students.guardiansEmpty": "Hakuna walezi bado.",
+  "students.subjects": "Masomo",
+  "students.subjectsEmpty": "Bado hakuna somo lililorekodiwa kwa mwaka.",
+  "students.results": "Matokeo",
+  "students.resultsEmpty": "Bado hakuna matokeo yaliyotolewa."
+}

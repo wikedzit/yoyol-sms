@@ -1,0 +1,47 @@
+{
+  "manifestVersion": 1,
+  "key": "finance",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Finance", "sw": "Fedha" },
+  "description": {
+    "en": "Fee items, invoices, payments, and receipts. This module ships with the system.",
+    "sw": "Vitu vya ada, ankara, malipo, na risiti. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "finance.invoice.view",
+      "label": { "en": "View invoices", "sw": "Angalia ankara" },
+      "defaultRoles": ["admin", "finance", "parent"]
+    },
+    {
+      "key": "finance.payment.record",
+      "label": { "en": "Record payments", "sw": "Rekodi malipo" },
+      "defaultRoles": ["admin", "finance"]
+    }
+  ],
+  "hooks": {
+    "listens": [{ "name": "student.profile.tabs" }],
+    "defines": ["finance.invoice.beforeIssue"]
+  },
+  "events": {
+    "subscribes": ["students.student.enrolled"],
+    "publishes": ["finance.payment.confirmed"]
+  },
+  "settings": [
+    { "key": "currency", "type": "select", "options": ["TZS", "KES", "UGX"], "default": "TZS" }
+  ],
+  "provides": ["finance.paymentProvider"],
+  "outboundHosts": []
+}

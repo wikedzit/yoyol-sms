@@ -1,0 +1,21 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "grades",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "student_id", "type": "reference", "references": "students.students", "onDelete": "cascade", "notNull": true },
+        { "name": "subject_id", "type": "reference", "references": "academics.subjects", "onDelete": "cascade", "notNull": true },
+        { "name": "stream_id", "type": "reference", "references": "academics.academic_streams", "onDelete": "cascade", "notNull": true },
+        { "name": "form_id", "type": "reference", "references": "academics.academic_forms", "onDelete": "cascade", "notNull": true },
+        { "name": "teacher_id", "type": "reference", "references": "staff.teachers", "onDelete": "set null" },
+        { "name": "status", "type": "text", "notNull": true, "default": "Active" },
+        { "name": "score", "type": "integer", "notNull": true },
+        { "name": "grade", "type": "text", "notNull": true },
+        { "name": "remarks", "type": "text" }
+      ]
+    }
+  ]
+}

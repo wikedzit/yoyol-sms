@@ -1,0 +1,21 @@
+{
+  "manifestVersion": 1,
+  "key": "absence-alerts",
+  "type": "plugin",
+  "version": "1.0.0",
+  "name": { "en": "Absence alerts", "sw": "Arifa za kutokuwepo" },
+  "description": {
+    "en": "When a student is marked absent, guardians are notified in their preferred language.",
+    "sw": "Mwanafunzi anapowekwa hayupo, walezi huarifiwa kwa lugha wanayopendelea."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0", "extensions": { "attendance": "^1.0.0" } },
+  "capabilities": ["notifications:send"],
+  "events": {
+    "subscribes": ["attendance.record.marked_absent"]
+  },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

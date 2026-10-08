@@ -1,0 +1,38 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "clubs",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "description", "type": "text", "notNull": true },
+        { "name": "patron_id", "type": "integer", "notNull": true },
+        { "name": "closed", "type": "boolean", "notNull": true, "default": false }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "memberships",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "club_id", "type": "integer", "notNull": true },
+        { "name": "student_id", "type": "integer", "notNull": true },
+        { "name": "academic_year_id", "type": "integer", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "activities",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "club_id", "type": "integer", "notNull": true },
+        { "name": "title", "type": "text", "notNull": true },
+        { "name": "description", "type": "text", "notNull": true },
+        { "name": "activity_date", "type": "date", "notNull": true },
+        { "name": "teacher_id", "type": "integer" }
+      ]
+    }
+  ]
+}

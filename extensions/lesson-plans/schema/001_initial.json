@@ -1,0 +1,31 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "templates",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "body", "type": "text", "notNull": true },
+        { "name": "retired", "type": "boolean", "notNull": true, "default": false }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "plans",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "template_id", "type": "integer", "notNull": true },
+        { "name": "academic_year_id", "type": "integer", "notNull": true },
+        { "name": "form_class_id", "type": "integer", "notNull": true },
+        { "name": "subject_id", "type": "integer", "notNull": true },
+        { "name": "teacher_id", "type": "integer", "notNull": true },
+        { "name": "title", "type": "text", "notNull": true },
+        { "name": "body", "type": "text", "notNull": true },
+        { "name": "status", "type": "enum", "notNull": true, "values": ["draft", "submitted", "approved", "returned"] },
+        { "name": "review_comment", "type": "text", "notNull": true, "default": "" }
+      ]
+    }
+  ]
+}

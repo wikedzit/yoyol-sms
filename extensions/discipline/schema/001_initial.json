@@ -1,0 +1,38 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "types",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "active", "type": "boolean", "notNull": true, "default": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "severities",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "active", "type": "boolean", "notNull": true, "default": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "incidents",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "student_id", "type": "integer", "notNull": true },
+        { "name": "type_id", "type": "integer", "notNull": true },
+        { "name": "severity_id", "type": "integer", "notNull": true },
+        { "name": "teacher_id", "type": "integer" },
+        { "name": "description", "type": "text", "notNull": true },
+        { "name": "action_taken", "type": "text", "notNull": true },
+        { "name": "incident_date", "type": "date", "notNull": true },
+        { "name": "closed", "type": "boolean", "notNull": true, "default": false }
+      ]
+    }
+  ]
+}

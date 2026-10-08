@@ -1,0 +1,5 @@
+{
+  "fee-reminders.title": "Fee reminders",
+  "fee-reminders.description": "Send a reminder for each student who still owes fees. The daily schedule is not configured, so an administrator runs this job.",
+  "fee-reminders.send": "Send reminders"
+}

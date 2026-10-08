@@ -1,0 +1,18 @@
+{
+  "reports.title": "Ripoti",
+  "reports.description": "Dashibodi hii imejengwa kutoka vijisehemu. Ingiza jedwali baada ya ukaguzi kutokuwa na makosa.",
+  "reports.dashboard": "Dashibodi",
+  "reports.dashboardEmpty": "Hakuna vijisehemu kwa jukumu hili.",
+  "reports.transfer": "Ingiza na safirisha",
+  "reports.kind": "Rekodi",
+  "reports.students": "Wanafunzi",
+  "reports.staff": "Wafanyakazi",
+  "reports.fees": "Miundo ya ada",
+  "reports.csv": "Jedwali",
+  "reports.preview": "Kagua",
+  "reports.save": "Hifadhi uingizaji",
+  "reports.previewEmpty": "Bandika jedwali ili kulikagua.",
+  "reports.exportStudents": "Safirisha wanafunzi",
+  "reports.exportStaff": "Safirisha wafanyakazi",
+  "reports.exportFees": "Safirisha miundo ya ada"
+}

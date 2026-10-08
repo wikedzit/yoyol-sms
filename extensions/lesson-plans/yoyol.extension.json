@@ -1,0 +1,44 @@
+{
+  "manifestVersion": 1,
+  "key": "lesson-plans",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Lesson plans", "sw": "Mipango ya somo" },
+  "description": {
+    "en": "Templates, teacher plans, and review. This module ships with the system.",
+    "sw": "Violezo, mipango ya walimu, na uhakiki. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0",
+      "staff": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "lesson-plans.plan.read",
+      "label": { "en": "View lesson plans", "sw": "Angalia mipango ya somo" },
+      "defaultRoles": ["admin", "teacher"]
+    },
+    {
+      "key": "lesson-plans.plan.write",
+      "label": { "en": "Write lesson plans", "sw": "Andika mipango ya somo" },
+      "defaultRoles": ["teacher"]
+    },
+    {
+      "key": "lesson-plans.plan.review",
+      "label": { "en": "Review lesson plans", "sw": "Hakiki mipango ya somo" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "hooks": { "listens": [] },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

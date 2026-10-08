@@ -1,0 +1,14 @@
+{
+  "academics.title": "Academics",
+  "academics.description": "Levels, subjects, and classrooms.",
+  "academics.structure": "Structure",
+  "academics.empty": "No levels have been added for this school yet.",
+  "academics.calendar": "Academic year",
+  "academics.calendarEmpty": "No academic year has been added for this school yet.",
+  "academics.subjects": "Subjects",
+  "academics.subjectsEmpty": "No subjects have been added for this school yet.",
+  "academics.classSubjects": "Class subjects",
+  "academics.classSubjectsEmpty": "No subjects have been assigned to a class yet.",
+  "academics.combinations": "Combinations",
+  "academics.combinationsEmpty": "No A-Level combinations yet."
+}

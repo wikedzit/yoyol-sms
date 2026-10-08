@@ -1,0 +1,50 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "students",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "first_name", "type": "text", "notNull": true },
+        { "name": "last_name", "type": "text", "notNull": true },
+        { "name": "gender", "type": "text", "notNull": true, "default": "Male" },
+        { "name": "dob", "type": "date" },
+        { "name": "email", "type": "text" },
+        { "name": "phone", "type": "text" },
+        { "name": "address", "type": "text" },
+        { "name": "guardian_name", "type": "text" },
+        { "name": "guardian_phone", "type": "text" },
+        { "name": "photo_url", "type": "text" },
+        { "name": "course", "type": "text" },
+        { "name": "grade", "type": "text" },
+        { "name": "enrollment_date", "type": "date" },
+        { "name": "status", "type": "text", "notNull": true, "default": "Active" },
+        { "name": "class_id", "type": "reference", "references": "academics.classes", "onDelete": "cascade" },
+        { "name": "form_class_id", "type": "reference", "references": "academics.form_classes", "onDelete": "cascade" },
+        { "name": "admission_number", "type": "text" },
+        { "name": "campus_id", "type": "reference", "references": "core.campuses", "onDelete": "set null" }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "student_guardians",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "student_id", "type": "reference", "references": "students.students", "onDelete": "cascade", "notNull": true },
+        { "name": "user_id", "type": "reference", "references": "core.users", "onDelete": "cascade", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["student_id", "user_id"] }]
+    },
+    {
+      "op": "createTable",
+      "name": "student_subjects",
+      "columns": [
+        { "name": "student_id", "type": "reference", "references": "students.students", "onDelete": "cascade", "notNull": true },
+        { "name": "subject_id", "type": "reference", "references": "academics.subjects", "onDelete": "cascade", "notNull": true },
+        { "name": "assigned_at", "type": "timestamp", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["student_id", "subject_id"] }]
+    }
+  ]
+}

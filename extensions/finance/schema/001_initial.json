@@ -1,0 +1,100 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "fee_items",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "code", "type": "text" },
+        { "name": "active", "type": "boolean", "notNull": true, "default": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "structures",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "fee_item_id", "type": "integer", "notNull": true },
+        { "name": "form_class_id", "type": "integer", "notNull": true },
+        { "name": "academic_year_id", "type": "integer", "notNull": true },
+        { "name": "amount_minor", "type": "integer", "notNull": true },
+        { "name": "currency", "type": "text", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "invoices",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "student_id", "type": "integer", "notNull": true },
+        { "name": "form_class_id", "type": "integer", "notNull": true },
+        { "name": "academic_year_id", "type": "integer", "notNull": true },
+        { "name": "term_id", "type": "integer", "notNull": true },
+        { "name": "number", "type": "text", "notNull": true },
+        { "name": "currency", "type": "text", "notNull": true },
+        { "name": "voided", "type": "boolean", "notNull": true, "default": false }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "lines",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "invoice_id", "type": "integer", "notNull": true },
+        { "name": "fee_item_id", "type": "integer" },
+        { "name": "description", "type": "text", "notNull": true },
+        { "name": "amount_minor", "type": "integer", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "payments",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "amount_minor", "type": "integer", "notNull": true },
+        { "name": "paid_on", "type": "date", "notNull": true },
+        { "name": "method", "type": "enum", "notNull": true, "values": ["cash", "bank", "mobile"] },
+        { "name": "reference", "type": "text" },
+        { "name": "kind", "type": "enum", "notNull": true, "values": ["payment", "reversal"] },
+        { "name": "reverses_payment_id", "type": "integer" },
+        { "name": "reason", "type": "text" }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "allocations",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "payment_id", "type": "integer", "notNull": true },
+        { "name": "invoice_id", "type": "integer", "notNull": true },
+        { "name": "amount_minor", "type": "integer", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "receipts",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "payment_id", "type": "integer", "notNull": true },
+        { "name": "number", "type": "text", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "provider_payments",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "provider", "type": "text", "notNull": true },
+        { "name": "external_id", "type": "text", "notNull": true },
+        { "name": "amount_minor", "type": "integer", "notNull": true },
+        { "name": "currency", "type": "text", "notNull": true },
+        { "name": "paid_on", "type": "date", "notNull": true },
+        { "name": "invoice_id", "type": "integer" },
+        { "name": "payment_id", "type": "integer" },
+        { "name": "status", "type": "enum", "notNull": true, "values": ["unmatched", "matched", "rejected"] }
+      ]
+    }
+  ]
+}

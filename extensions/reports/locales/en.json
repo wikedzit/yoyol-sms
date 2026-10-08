@@ -1,0 +1,18 @@
+{
+  "reports.title": "Reports",
+  "reports.description": "This dashboard is built from widgets. Import a spreadsheet only after the preview has no errors.",
+  "reports.dashboard": "Dashboard",
+  "reports.dashboardEmpty": "No widgets are available for this role.",
+  "reports.transfer": "Import and export",
+  "reports.kind": "Records",
+  "reports.students": "Students",
+  "reports.staff": "Staff",
+  "reports.fees": "Fee structures",
+  "reports.csv": "Spreadsheet",
+  "reports.preview": "Preview",
+  "reports.save": "Save import",
+  "reports.previewEmpty": "Paste a spreadsheet to preview it.",
+  "reports.exportStudents": "Export students",
+  "reports.exportStaff": "Export staff",
+  "reports.exportFees": "Export fee structures"
+}

@@ -1,0 +1,18 @@
+{
+  "leadership.title": "Uongozi",
+  "leadership.description": "Vyeo vya mwaka huu, na wanafunzi wanaoshikilia.",
+  "leadership.positions": "Vyeo",
+  "leadership.positionsEmpty": "Hakuna vyeo vilivyongezwa.",
+  "leadership.name": "Cheo",
+  "leadership.save": "Hifadhi cheo",
+  "leadership.retire": "Staafu cheo",
+  "leadership.holders": "Wanaoshikilia sasa",
+  "leadership.holdersEmpty": "Hakuna mtu anayeshikilia cheo leo.",
+  "leadership.appointments": "Uteuzi",
+  "leadership.appointmentsEmpty": "Hakuna uteuzi uliofanywa.",
+  "leadership.student": "Mwanafunzi",
+  "leadership.starts": "Unaanza",
+  "leadership.ends": "Unaisha",
+  "leadership.appoint": "Teua",
+  "leadership.end": "Maliza uteuzi"
+}

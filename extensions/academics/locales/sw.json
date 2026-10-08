@@ -1,0 +1,14 @@
+{
+  "academics.title": "Masomo",
+  "academics.description": "Ngazi, masomo, na madarasa.",
+  "academics.structure": "Muundo",
+  "academics.empty": "Shule hii bado haina ngazi.",
+  "academics.calendar": "Mwaka wa masomo",
+  "academics.calendarEmpty": "Shule hii bado haina mwaka wa masomo.",
+  "academics.subjects": "Masomo ya kiada",
+  "academics.subjectsEmpty": "Shule hii bado haina masomo ya kiada.",
+  "academics.classSubjects": "Masomo ya darasa",
+  "academics.classSubjectsEmpty": "Bado hakuna somo lililowekwa darasani.",
+  "academics.combinations": "Michanganyiko",
+  "academics.combinationsEmpty": "Bado hakuna michanganyiko ya A-Level."
+}

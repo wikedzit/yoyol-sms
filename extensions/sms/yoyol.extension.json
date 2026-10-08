@@ -1,0 +1,24 @@
+{
+  "manifestVersion": 1,
+  "key": "sms",
+  "type": "plugin",
+  "version": "1.0.0",
+  "name": { "en": "SMS", "sw": "SMS" },
+  "description": {
+    "en": "Records an SMS for a guardian. Nothing is sent until a gateway is configured.",
+    "sw": "Inarekodi SMS kwa mlezi. Hakuna kinachotumwa hadi lango la ujumbe liwekwe."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0" },
+  "capabilities": ["notifications:send"],
+  "hooks": {
+    "listens": [{ "name": "navigation.items" }]
+  },
+  "settings": [
+    { "key": "sender", "type": "text", "default": "" },
+    { "key": "gateway", "type": "text", "default": "" }
+  ],
+  "provides": ["notifications.channel"],
+  "outboundHosts": []
+}

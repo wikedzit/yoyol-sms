@@ -1,0 +1,28 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "periods",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "starts_at", "type": "text", "notNull": true },
+        { "name": "ends_at", "type": "text", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "entries",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "academic_year_id", "type": "integer", "notNull": true },
+        { "name": "form_class_id", "type": "integer", "notNull": true },
+        { "name": "subject_id", "type": "integer", "notNull": true },
+        { "name": "teacher_id", "type": "integer", "notNull": true },
+        { "name": "day", "type": "enum", "notNull": true, "values": ["monday", "tuesday", "wednesday", "thursday", "friday"] },
+        { "name": "period_id", "type": "integer", "notNull": true }
+      ]
+    }
+  ]
+}

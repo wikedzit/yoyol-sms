@@ -1,0 +1,30 @@
+{
+  "manifestVersion": 1,
+  "key": "assessment",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Assessment", "sw": "Tathmini" },
+  "description": {
+    "en": "Grades for a school. This module ships with the system.",
+    "sw": "Madaraja ya shule. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0",
+      "staff": "^1.0.0"
+    }
+  },
+  "capabilities": ["core.students:read"],
+  "hooks": {
+    "listens": [{ "name": "student.profile.tabs" }]
+  },
+  "permissions": [],
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

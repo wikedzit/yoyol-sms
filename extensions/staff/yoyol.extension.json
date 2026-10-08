@@ -1,0 +1,34 @@
+{
+  "manifestVersion": 1,
+  "key": "staff",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Staff", "sw": "Wafanyakazi" },
+  "description": {
+    "en": "Teacher and staff records. This module ships with the system.",
+    "sw": "Rekodi za walimu na wafanyakazi. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": { "academics": "^1.0.0" }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "staff.record.read",
+      "label": { "en": "View staff records", "sw": "Angalia walimu" },
+      "defaultRoles": ["admin"]
+    },
+    {
+      "key": "staff.record.write",
+      "label": { "en": "Change staff records", "sw": "Badilisha walimu" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

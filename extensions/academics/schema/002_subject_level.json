@@ -1,0 +1,15 @@
+{
+  "id": "002_subject_level",
+  "operations": [
+    {
+      "op": "addColumn",
+      "table": "subjects",
+      "column": {
+        "name": "level_id",
+        "type": "reference",
+        "references": "academics.academic_levels",
+        "onDelete": "restrict"
+      }
+    }
+  ]
+}

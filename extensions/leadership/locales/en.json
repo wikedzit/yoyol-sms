@@ -1,0 +1,18 @@
+{
+  "leadership.title": "Leadership",
+  "leadership.description": "Positions for this year, and the students who hold them.",
+  "leadership.positions": "Positions",
+  "leadership.positionsEmpty": "No positions have been added.",
+  "leadership.name": "Position",
+  "leadership.save": "Save position",
+  "leadership.retire": "Retire position",
+  "leadership.holders": "Current holders",
+  "leadership.holdersEmpty": "No one holds a position today.",
+  "leadership.appointments": "Appointments",
+  "leadership.appointmentsEmpty": "No appointments have been made.",
+  "leadership.student": "Student",
+  "leadership.starts": "Starts",
+  "leadership.ends": "Ends",
+  "leadership.appoint": "Appoint",
+  "leadership.end": "End appointment"
+}

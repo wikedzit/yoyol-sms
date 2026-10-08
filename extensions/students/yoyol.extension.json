@@ -1,0 +1,37 @@
+{
+  "manifestVersion": 1,
+  "key": "students",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Students", "sw": "Wanafunzi" },
+  "description": {
+    "en": "Student records. This module ships with the system.",
+    "sw": "Rekodi za wanafunzi. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": { "academics": "^1.0.0" }
+  },
+  "capabilities": ["core.students:read"],
+  "permissions": [
+    {
+      "key": "students.record.read",
+      "label": { "en": "View student records", "sw": "Angalia wanafunzi" },
+      "defaultRoles": ["admin", "teacher", "student", "parent"]
+    },
+    {
+      "key": "students.record.write",
+      "label": { "en": "Change student records", "sw": "Badilisha wanafunzi" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "pages": [{ "path": "/" }],
+  "settings": [
+    { "key": "admissionNumberFormat", "type": "text", "default": "{year}-{seq:4}" }
+  ],
+  "provides": [],
+  "outboundHosts": []
+}

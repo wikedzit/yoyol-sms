@@ -1,0 +1,14 @@
+{
+  "students.title": "Students",
+  "students.description": "Student records for one school.",
+  "students.records": "Records",
+  "students.empty": "No students have been added for this school yet.",
+  "students.enrolments": "Enrolments",
+  "students.enrolmentsEmpty": "No class has been recorded for a year yet.",
+  "students.guardians": "Guardians",
+  "students.guardiansEmpty": "No guardians yet.",
+  "students.subjects": "Subjects",
+  "students.subjectsEmpty": "No subjects have been recorded for a year yet.",
+  "students.results": "Results",
+  "students.resultsEmpty": "No results have been released yet."
+}

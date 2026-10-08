@@ -1,0 +1,87 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "academic_levels",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "type", "type": "text", "notNull": true },
+        { "name": "description", "type": "text" }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "academic_streams",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "level_id", "type": "reference", "references": "academics.academic_levels", "onDelete": "cascade", "notNull": true },
+        { "name": "level_type", "type": "text", "notNull": true },
+        { "name": "color", "type": "text", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "academic_forms",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "number", "type": "integer", "notNull": true },
+        { "name": "stream_id", "type": "reference", "references": "academics.academic_streams", "onDelete": "cascade", "notNull": true },
+        { "name": "level_id", "type": "reference", "references": "academics.academic_levels", "onDelete": "cascade", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "form_classes",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "form_id", "type": "reference", "references": "academics.academic_forms", "onDelete": "cascade", "notNull": true },
+        { "name": "stream_id", "type": "reference", "references": "academics.academic_streams", "onDelete": "cascade", "notNull": true },
+        { "name": "level_id", "type": "reference", "references": "academics.academic_levels", "onDelete": "cascade", "notNull": true },
+        { "name": "student_count", "type": "integer", "notNull": true, "default": 0 },
+        { "name": "campus_id", "type": "reference", "references": "core.campuses", "onDelete": "set null" }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "subjects",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "subject_name", "type": "text", "notNull": true },
+        { "name": "code", "type": "text", "notNull": true },
+        { "name": "stream", "type": "text", "notNull": true },
+        { "name": "instructor", "type": "text", "notNull": true },
+        { "name": "description", "type": "text" },
+        { "name": "enrolled_students", "type": "integer", "default": 0 },
+        { "name": "status", "type": "text", "default": "Active" },
+        { "name": "stream_id", "type": "reference", "references": "academics.academic_streams", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["code"] }]
+    },
+    {
+      "op": "createTable",
+      "name": "classes",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "name", "type": "text", "notNull": true },
+        { "name": "level", "type": "text", "notNull": true },
+        { "name": "section", "type": "text", "default": "General" },
+        { "name": "year", "type": "integer", "notNull": true }
+      ]
+    },
+    {
+      "op": "createTable",
+      "name": "class_subjects",
+      "columns": [
+        { "name": "class_id", "type": "reference", "references": "academics.classes", "onDelete": "cascade", "notNull": true },
+        { "name": "subject_id", "type": "reference", "references": "academics.subjects", "onDelete": "cascade", "notNull": true },
+        { "name": "assigned_at", "type": "timestamp", "notNull": true }
+      ],
+      "indexes": [{ "columns": ["class_id", "subject_id"] }]
+    }
+  ]
+}

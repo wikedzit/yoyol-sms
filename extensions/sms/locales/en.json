@@ -1,0 +1,5 @@
+{
+  "sms.title": "SMS",
+  "sms.description": "Messages recorded for guardians. A row stays not sent until an SMS gateway is configured.",
+  "sms.empty": "No SMS has been recorded yet."
+}

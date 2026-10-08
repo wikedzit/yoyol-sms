@@ -1,0 +1,16 @@
+{
+  "id": "001_initial",
+  "operations": [
+    {
+      "op": "createTable",
+      "name": "previews",
+      "columns": [
+        { "name": "id", "type": "id" },
+        { "name": "kind", "type": "text", "notNull": true },
+        { "name": "csv_text", "type": "text", "notNull": true },
+        { "name": "summary", "type": "text", "notNull": true },
+        { "name": "ready", "type": "boolean", "notNull": true, "default": false }
+      ]
+    }
+  ]
+}

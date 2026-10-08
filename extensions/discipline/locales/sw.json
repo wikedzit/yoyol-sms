@@ -1,0 +1,21 @@
+{
+  "discipline.title": "Nidhamu",
+  "discipline.description": "Aina za matukio, ukali, na kumbukumbu wafanyakazi wanaweza kuziona.",
+  "discipline.types": "Aina za matukio",
+  "discipline.typesEmpty": "Hakuna aina za matukio zilizoongezwa.",
+  "discipline.severities": "Ukali",
+  "discipline.severitiesEmpty": "Hakuna viwango vya ukali vilivyongezwa.",
+  "discipline.name": "Jina",
+  "discipline.save": "Hifadhi",
+  "discipline.deactivate": "Zima",
+  "discipline.incidents": "Matukio",
+  "discipline.incidentsEmpty": "Hakuna matukio yanayoonekana.",
+  "discipline.student": "Mwanafunzi",
+  "discipline.type": "Aina",
+  "discipline.severity": "Ukali",
+  "discipline.date": "Tarehe",
+  "discipline.whatHappened": "Kilichotokea",
+  "discipline.actionTaken": "Hatua iliyochukuliwa",
+  "discipline.saveIncident": "Hifadhi tukio",
+  "discipline.close": "Funga tukio"
+}

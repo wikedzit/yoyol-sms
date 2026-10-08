@@ -1,0 +1,41 @@
+{
+  "manifestVersion": 1,
+  "key": "timetable",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Timetable", "sw": "Ratiba" },
+  "description": {
+    "en": "The school week: periods, subjects, teachers, and classes. This module ships with the system.",
+    "sw": "Wiki ya shule: vipindi, masomo, walimu, na madarasa. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0",
+      "staff": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "timetable.entry.read",
+      "label": { "en": "View the timetable", "sw": "Angalia ratiba" },
+      "defaultRoles": ["admin", "teacher", "student", "parent"]
+    },
+    {
+      "key": "timetable.entry.write",
+      "label": { "en": "Change the timetable", "sw": "Badilisha ratiba" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "hooks": {
+    "listens": [{ "name": "student.profile.tabs" }]
+  },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

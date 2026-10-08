@@ -1,0 +1,27 @@
+{
+  "manifestVersion": 1,
+  "key": "hello",
+  "type": "plugin",
+  "version": "1.0.0",
+  "name": { "en": "Hello", "sw": "Habari" },
+  "description": {
+    "en": "A bundled plugin that proves a school can turn an extension on and off.",
+    "sw": "Kiendelezi cha mfumo kinachothibitisha shule inaweza kuwasha na kuzima kiendelezi."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": { "core": "^1.0.0" },
+  "capabilities": [],
+  "hooks": {
+    "listens": [
+      { "name": "dashboard.widgets" },
+      { "name": "navigation.items" },
+      { "name": "student.profile.tabs" }
+    ]
+  },
+  "settings": [
+    { "key": "greeting", "type": "text", "default": "Hello" }
+  ],
+  "provides": [],
+  "outboundHosts": []
+}

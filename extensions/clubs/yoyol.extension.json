@@ -1,0 +1,44 @@
+{
+  "manifestVersion": 1,
+  "key": "clubs",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Clubs", "sw": "Vilabu" },
+  "description": {
+    "en": "Clubs, members for the year, and activities. This module ships with the system.",
+    "sw": "Vilabu, wanachama wa mwaka, na shughuli. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "academics": "^1.0.0",
+      "students": "^1.0.0",
+      "staff": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "clubs.club.read",
+      "label": { "en": "View clubs", "sw": "Angalia vilabu" },
+      "defaultRoles": ["admin", "teacher", "student", "parent"]
+    },
+    {
+      "key": "clubs.club.write",
+      "label": { "en": "Manage clubs", "sw": "Simamia vilabu" },
+      "defaultRoles": ["admin"]
+    },
+    {
+      "key": "clubs.activity.write",
+      "label": { "en": "Record club activities", "sw": "Rekodi shughuli za klabu" },
+      "defaultRoles": ["admin", "teacher"]
+    }
+  ],
+  "hooks": { "listens": [] },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}

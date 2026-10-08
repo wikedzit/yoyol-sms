@@ -1,0 +1,43 @@
+{
+  "manifestVersion": 1,
+  "key": "discipline",
+  "type": "module",
+  "version": "1.0.0",
+  "required": true,
+  "name": { "en": "Discipline", "sw": "Nidhamu" },
+  "description": {
+    "en": "Incident types, records, and who may see them. This module ships with the system.",
+    "sw": "Aina za matukio, kumbukumbu, na nani anaweza kuziona. Moduli hii inakuja na mfumo."
+  },
+  "publisher": "nottech",
+  "license": "MIT",
+  "requires": {
+    "core": "^1.0.0",
+    "extensions": {
+      "students": "^1.0.0",
+      "staff": "^1.0.0"
+    }
+  },
+  "capabilities": [],
+  "permissions": [
+    {
+      "key": "discipline.incident.read",
+      "label": { "en": "View incidents", "sw": "Angalia matukio" },
+      "defaultRoles": ["admin", "teacher", "parent"]
+    },
+    {
+      "key": "discipline.incident.write",
+      "label": { "en": "Record incidents", "sw": "Rekodi matukio" },
+      "defaultRoles": ["admin", "teacher"]
+    },
+    {
+      "key": "discipline.incident.close",
+      "label": { "en": "Close incidents", "sw": "Funga matukio" },
+      "defaultRoles": ["admin"]
+    }
+  ],
+  "hooks": { "listens": [] },
+  "settings": [],
+  "provides": [],
+  "outboundHosts": []
+}
