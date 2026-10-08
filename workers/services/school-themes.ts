@@ -1,9 +1,13 @@
 import { and, desc, eq } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
+import greenThemeJson from '../../themes/themes/green.json';
+import yoyolThemeJson from '../../themes/themes/yoyol-default.json';
 import {
   buildThemeCss,
   defaultThemeKey,
+  parseThemeDocument,
   parseThemePackage,
+  themesOfferedToSchool,
   type ThemeDocument,
 } from '../../themes/src/theme-document';
 import { school } from '../database/school';
@@ -21,13 +25,13 @@ export type ListedSchoolTheme = {
   isBundled: boolean;
 };
 
-const bundledTheme: ListedSchoolTheme = {
-  key: defaultThemeKey,
-  nameEn: 'YOYOL',
-  nameSw: 'YOYOL',
-  isActive: true,
-  isBundled: true,
-};
+const systemThemes: ThemeDocument[] = [yoyolThemeJson, greenThemeJson].map((theme) =>
+  parseThemeDocument(theme),
+);
+
+function systemTheme(themeKey: string): ThemeDocument | null {
+  return systemThemes.find((theme) => theme.key === themeKey) ?? null;
+}
 
 export default class SchoolThemeService {
   constructor(
@@ -41,15 +45,18 @@ export default class SchoolThemeService {
 
     try {
       const uploaded = await this.selectForSchool(schoolId);
-      const customIsActive = uploaded.some((theme) => theme.isActive);
-
-      return [
-        { ...bundledTheme, isActive: !customIsActive },
-        ...uploaded.map(toListedTheme),
-      ];
+      return themesOfferedToSchool(
+        systemThemes,
+        uploaded.map((theme) => ({
+          key: theme.themeKey,
+          nameEn: theme.nameEn,
+          nameSw: theme.nameSw,
+          isActive: theme.isActive,
+        })),
+      );
     } catch (error) {
       console.error('Unable to list site themes:', error);
-      return [{ ...bundledTheme }];
+      return themesOfferedToSchool(systemThemes, []);
     }
   }
 
@@ -57,8 +64,8 @@ export default class SchoolThemeService {
     const ownerUserId = await this.requireOwnedSchool(schoolId);
     const document = parseThemePackage(rawText);
 
-    if (document.key === defaultThemeKey) {
-      throw new Error('The YOYOL theme is built in and cannot be replaced.');
+    if (systemTheme(document.key)) {
+      throw new Error('That theme comes with the system and cannot be replaced.');
     }
 
     const now = Date.now();
@@ -102,6 +109,12 @@ export default class SchoolThemeService {
       return;
     }
 
+    const bundled = systemTheme(themeKey);
+    if (bundled) {
+      await this.saveActiveSystemTheme(schoolId, bundled, now);
+      return;
+    }
+
     const selected = await this.findByKey(schoolId, themeKey);
     if (!selected) {
       throw new Error('That theme is not uploaded for this school.');
@@ -116,9 +129,12 @@ export default class SchoolThemeService {
   // Null means "keep the colours already in the stylesheet".
   async getActiveCss(): Promise<string | null> {
     try {
-      const ownerUserId = requireOwnerUserId(this.ownerUserId);
+      requireOwnerUserId(this.ownerUserId);
       const active = await this.db
-        .select({ tokensJson: schoolThemes.tokensJson })
+        .select({
+          themeKey: schoolThemes.themeKey,
+          tokensJson: schoolThemes.tokensJson,
+        })
         .from(schoolThemes)
         .innerJoin(school, eq(schoolThemes.schoolId, school.id))
         .where(
@@ -135,7 +151,8 @@ export default class SchoolThemeService {
         return null;
       }
 
-      const document = parseThemePackage(active.tokensJson);
+      const bundled = systemTheme(active.themeKey);
+      const document = bundled ?? parseThemePackage(active.tokensJson);
       return buildThemeCss(document);
     } catch (error) {
       console.error('Unable to load the active site theme:', error);
@@ -166,6 +183,35 @@ export default class SchoolThemeService {
       .orderBy(desc(schoolThemes.updatedAt));
   }
 
+  private async saveActiveSystemTheme(
+    schoolId: number,
+    document: ThemeDocument,
+    now: number,
+  ): Promise<void> {
+    const saved = {
+      nameEn: document.name.en,
+      nameSw: document.name.sw,
+      tokensJson: JSON.stringify(document),
+      isActive: true,
+      updatedAt: now,
+    };
+    const existing = await this.findByKey(schoolId, document.key);
+    if (existing) {
+      await this.db
+        .update(schoolThemes)
+        .set(saved)
+        .where(eq(schoolThemes.id, existing.id));
+      return;
+    }
+
+    await this.db.insert(schoolThemes).values({
+      schoolId,
+      themeKey: document.key,
+      ...saved,
+      createdAt: now,
+    });
+  }
+
   private async findByKey(
     schoolId: number,
     themeKey: string,
@@ -180,16 +226,6 @@ export default class SchoolThemeService {
 
     return row ?? null;
   }
-}
-
-function toListedTheme(theme: SelectSchoolTheme): ListedSchoolTheme {
-  return {
-    key: theme.themeKey,
-    nameEn: theme.nameEn,
-    nameSw: theme.nameSw,
-    isActive: theme.isActive,
-    isBundled: false,
-  };
 }
 
 export type { ThemeDocument };

@@ -1,6 +1,6 @@
 # Site themes
 
-Upload a colour theme for a school. The built-in YOYOL theme stays the default.
+YOYOL and Green come with the system. A school can activate one, or upload its own colours later.
 
 ## Package
 

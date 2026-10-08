@@ -5,8 +5,8 @@
   "version": "1.0.0",
   "name": { "en": "Site themes", "sw": "Mandhari ya tovuti" },
   "description": {
-    "en": "Upload a colour theme for a school. The built-in YOYOL theme stays the default.",
-    "sw": "Pakia mandhari ya rangi kwa shule. Mandhari ya YOYOL hubaki kuwa chaguo-msingi."
+    "en": "YOYOL and Green come with the system. A school can activate one, or upload its own colours later.",
+    "sw": "YOYOL na Kijani huja na mfumo. Shule inaweza kuwasha moja, au kupakia rangi zake baadaye."
   },
   "publisher": "nottech",
   "license": "MIT",

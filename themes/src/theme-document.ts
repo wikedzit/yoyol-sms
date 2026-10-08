@@ -127,3 +127,42 @@ export function buildThemeCss(document: ThemeDocument): string | null {
     writeTokens('.dark', document.dark),
   ].join('\n');
 }
+
+export type OfferedTheme = {
+  key: string;
+  nameEn: string;
+  nameSw: string;
+  isActive: boolean;
+  isBundled: boolean;
+};
+
+// System themes stay in the list even when a school has not saved them.
+// A saved copy of a system theme only records which one is active.
+export function themesOfferedToSchool(
+  systemThemes: ThemeDocument[],
+  savedThemes: { key: string; nameEn: string; nameSw: string; isActive: boolean }[],
+): OfferedTheme[] {
+  const systemKeys = new Set(systemThemes.map((theme) => theme.key));
+  const activeSaved = savedThemes.find((theme) => theme.isActive);
+  const activeKey = activeSaved?.key ?? defaultThemeKey;
+
+  const offeredSystem = systemThemes.map((theme) => ({
+    key: theme.key,
+    nameEn: theme.name.en,
+    nameSw: theme.name.sw,
+    isActive: theme.key === activeKey,
+    isBundled: true,
+  }));
+
+  const offeredCustom = savedThemes
+    .filter((theme) => !systemKeys.has(theme.key))
+    .map((theme) => ({
+      key: theme.key,
+      nameEn: theme.nameEn,
+      nameSw: theme.nameSw,
+      isActive: theme.isActive,
+      isBundled: false,
+    }));
+
+  return [...offeredSystem, ...offeredCustom];
+}

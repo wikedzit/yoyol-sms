@@ -485,8 +485,8 @@ under each feature.
 - **PLG-07 Upload and activate.** A school administrator uploads a theme on `/themes` and activates it for that school. The school profile links to that page. Packages are stored by the core.
 - **PLG-08 Example theme.** A downloadable example that changes colours only after it is activated.
 - **PLG-09 Themes installation page.** A page at `/themes` where a school administrator
-  installs theme packages and sets the active theme. The built-in YOYOL theme stays
-  available and leaves the current colours unchanged until another theme is activated.
+  installs theme packages and sets the active theme. YOYOL and Green come with the
+  system. YOYOL leaves the current colours unchanged until another theme is activated.
 
 ## 11. Documentation (DOC)
 

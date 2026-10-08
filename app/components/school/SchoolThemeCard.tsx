@@ -69,8 +69,13 @@ export function SchoolThemeCard({
               >
                 <div>
                   <p className="font-medium">{name}</p>
-                  {theme.isActive ? (
-                    <p className="text-xs text-muted-foreground">{t('activeTheme')}</p>
+                  {theme.isBundled || theme.isActive ? (
+                    <p className="text-xs text-muted-foreground">
+                      {[
+                        theme.isBundled ? t('extensionIncluded') : null,
+                        theme.isActive ? t('activeTheme') : null,
+                      ].filter(Boolean).join(' · ')}
+                    </p>
                   ) : null}
                 </div>
                 {theme.isActive ? null : (
