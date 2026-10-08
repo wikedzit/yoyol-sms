@@ -1,7 +1,7 @@
 import { Link, useFetcher, useLoaderData, useSearchParams } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { ModuleCatalogTable } from '~/components/modules/ModuleCatalogTable';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -136,11 +136,10 @@ export default function ExtensionsPage() {
   const fetcher = useFetcher<typeof action>();
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={t(catalog === 'plugin' ? 'installPlugins' : 'installExtensions')}
-        description={t(catalog === 'plugin' ? 'installPluginsDescription' : 'installExtensionsDescription')}
-      />
+    <PageFrame
+      title={t(catalog === 'plugin' ? 'installPlugins' : 'installExtensions')}
+      description={t(catalog === 'plugin' ? 'installPluginsDescription' : 'installExtensionsDescription')}
+    >
       <SchoolPicker schools={schools} schoolId={schoolId} searchParams={searchParams} />
       {schoolId !== null && isPlatformAdmin && catalog === 'module' ? (
         <PackageAdmin
@@ -304,7 +303,7 @@ export default function ExtensionsPage() {
           </ul>
         </section>
       ) : null}
-    </div>
+    </PageFrame>
   );
 }
 

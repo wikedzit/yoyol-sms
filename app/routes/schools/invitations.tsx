@@ -1,6 +1,6 @@
 import { Form, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import {
   Table,
@@ -62,8 +62,7 @@ export default function InvitationsPage() {
   const actionData = useActionData<typeof action>();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('invitations')} description={t('invitationsDescription')} />
+    <PageFrame title={t('invitations')} description={t('invitationsDescription')}>
       {schoolId === null ? <p>{t('createSchoolFirst')}</p> : (
         <>
           <Form method="post" className="grid gap-3 max-w-xl">
@@ -105,6 +104,6 @@ export default function InvitationsPage() {
           </div>
         </>
       )}
-    </div>
+    </PageFrame>
   );
 }

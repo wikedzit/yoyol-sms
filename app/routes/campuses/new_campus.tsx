@@ -11,6 +11,7 @@ import { safeInternalPath } from '~/lib/safe-return-path';
 import { Building2, Save } from 'lucide-react';
 
 import { PageHeader } from '~/components/ui/PageHeader';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -129,6 +130,7 @@ export default function NewCampusPage() {
 
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <PageHeader
         title="Add Campus"
         description={`Add a new campus to ${school.name}`}

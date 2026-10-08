@@ -13,6 +13,7 @@ import {
 import { useState } from 'react';
 import { Form, Link } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import {
   Table,
@@ -62,6 +63,7 @@ export function SchoolProfileView({
   if (!school) {
     return (
       <div className="min-h-screen space-y-6 pb-8">
+        <PageBreadcrumb />
         <PageHeader title={t('aboutSchool')} />
         <Card>
           <CardContent className="flex min-h-[240px] flex-col items-center justify-center text-center">
@@ -97,6 +99,7 @@ export function SchoolProfileView({
 
   return (
     <div className="min-h-screen space-y-6 pb-8">
+      <PageBreadcrumb />
       <PageHeader
         title={t('aboutSchool')}
         actions={

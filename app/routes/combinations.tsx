@@ -1,7 +1,7 @@
 import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import {
   Table,
   TableBody,
@@ -69,8 +69,7 @@ export default function CombinationsPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('combinations')} description={t('combinationsDescription')} />
+    <PageFrame title={t('combinations')} description={t('combinationsDescription')}>
       {result && 'error' in result ? <p className="text-sm text-destructive">{result.error}</p> : null}
       <Form method="post" className="flex flex-wrap items-center gap-2">
         <input type="hidden" name="intent" value="create" />
@@ -150,6 +149,6 @@ export default function CombinationsPage() {
           </Table>
         </div>
       )}
-    </div>
+    </PageFrame>
   );
 }

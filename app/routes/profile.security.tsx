@@ -1,7 +1,7 @@
 import { Form, useActionData, useLoaderData, redirect } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import jwt from '@tsndr/cloudflare-worker-jwt';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import { accessCookie } from 'workers/utils/cookies.server';
 import { useLanguage } from '~/lib/i18n';
@@ -70,8 +70,7 @@ export default function SecurityPage() {
   const secret = actionData && 'secret' in actionData ? actionData.secret : null;
 
   return (
-    <div className="space-y-6 max-w-xl">
-      <PageHeader title={t('accountSecurity')} description={data.email} />
+    <PageFrame className="max-w-xl" title={t('accountSecurity')} description={data.email}>
       <p>{data.totpEnabled ? t('totpOn') : t('totpOff')}</p>
       <Form method="post">
         <input type="hidden" name="intent" value="begin" />
@@ -101,6 +100,6 @@ export default function SecurityPage() {
         <input type="hidden" name="everywhere" value="1" />
         <Button type="submit" variant="outline">{t('signOutEverywhere')}</Button>
       </Form>
-    </div>
+    </PageFrame>
   );
 }

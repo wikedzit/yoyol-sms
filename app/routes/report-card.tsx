@@ -1,7 +1,7 @@
 import { Form, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { loadRecordScope } from '~/lib/load-record-scope';
 import { requireSchoolPermission, selectedSchoolId } from '~/lib/require-school-permission';
@@ -43,8 +43,7 @@ export default function ReportCardPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('reportCard')} description={t('reportCardDescription')} />
+    <PageFrame title={t('reportCard')} description={t('reportCardDescription')}>
       <Form method="get" className="flex flex-wrap items-center gap-2">
         <select name="studentId" defaultValue={data.studentId || ''} required aria-label={t('studentsList')} className="h-9 rounded-md border px-3 text-sm">
           {data.students.map((student) => <option key={student.id} value={student.id}>{student.name}</option>)}
@@ -65,6 +64,6 @@ export default function ReportCardPage() {
           <Button type="button" onClick={() => window.print()}>{t('printReport')}</Button>
         </section>
       ) : null}
-    </div>
+    </PageFrame>
   );
 }

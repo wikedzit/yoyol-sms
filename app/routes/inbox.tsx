@@ -1,6 +1,6 @@
 import { useFetcher, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import {
   Table,
@@ -46,8 +46,7 @@ export default function InboxPage() {
   const fetcher = useFetcher<typeof action>();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('inbox')} description={t('inboxDescription')} />
+    <PageFrame title={t('inbox')} description={t('inboxDescription')}>
       {messages.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('inboxEmpty')}</p>
       ) : (
@@ -84,6 +83,6 @@ export default function InboxPage() {
           </Table>
         </div>
       )}
-    </div>
+    </PageFrame>
   );
 }

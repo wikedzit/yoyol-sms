@@ -1,7 +1,7 @@
 import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import {
   Table,
   TableBody,
@@ -96,8 +96,7 @@ export default function StaffPage() {
       : null;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('staffRecords')} description={t('staffRecordsDescription')} />
+    <PageFrame title={t('staffRecords')} description={t('staffRecordsDescription')}>
       {message ? <p className="text-sm">{message}</p> : null}
       {lines.length === 0 ? <p className="text-sm">{t('noStaff')}</p> : (
         <ul className="space-y-1 text-sm">
@@ -197,6 +196,6 @@ export default function StaffPage() {
           </Form>
         </>
       ) : null}
-    </div>
+    </PageFrame>
   );
 }

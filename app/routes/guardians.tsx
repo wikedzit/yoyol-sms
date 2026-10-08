@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import {
   Table,
   TableBody,
@@ -124,8 +124,7 @@ export default function GuardiansPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('guardians')} description={t('guardiansDescription')} />
+    <PageFrame title={t('guardians')} description={t('guardiansDescription')}>
       {result && 'error' in result ? <p className="text-sm text-destructive">{result.error}</p> : null}
       {result && 'acceptPath' in result ? (
         <p className="text-sm">{t('invitationLink')}: <a className="underline" href={result.acceptPath}>{result.acceptPath}</a></p>
@@ -238,6 +237,6 @@ export default function GuardiansPage() {
           </Table>
         </div>
       )}
-    </div>
+    </PageFrame>
   );
 }

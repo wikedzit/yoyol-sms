@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { authCookie } from "workers/utils/cookies.server";
 import { PageHeader } from "~/components/ui/PageHeader";
+import { PageBreadcrumb } from "~/components/ui/PageFrame";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -468,6 +469,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
+        <PageBreadcrumb />
         <div className="max-w-2xl">
         <PageHeader title="My Profile" description="Your account information" />
 

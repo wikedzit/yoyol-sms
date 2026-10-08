@@ -13,6 +13,7 @@ import {
 } from '~/components/ui/table';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Input } from '~/components/ui/input';
 import { Plus, Search, Eye, Pencil, BookOpen } from 'lucide-react';
 import {
@@ -550,7 +551,8 @@ export default function Students() {
   }, [fetcher.state, fetcher.data, fetcher.formData]);
 
   return (
-    <div className="space-y-2 h-min-screen">
+    <div className="space-y-6 h-min-screen">
+      <PageBreadcrumb />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Students</h1>

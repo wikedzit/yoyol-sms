@@ -11,6 +11,7 @@ import {
 } from '~/components/ui/table';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Input } from '~/components/ui/input';
 import { Plus, Search, Pencil, BookOpen, Feather } from 'lucide-react';
 import {
@@ -397,6 +398,7 @@ export default function Teachers() {
 
   return (
     <div className="space-y-6 h-screen overflow-y-auto">
+      <PageBreadcrumb />
       {/* Header section with text-foreground */}
       <div className="flex items-center justify-between">
         <div>

@@ -2,7 +2,7 @@ import { Form, Link, useLoaderData, useSearchParams } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { SchoolThemeCard } from '~/components/school/SchoolThemeCard';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { selectSchoolId } from '~/lib/selected-school';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
@@ -76,8 +76,11 @@ export default function ThemesPage() {
   const [searchParams] = useSearchParams();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('installThemes')} description={t('installThemesDescription')} />
+    <PageFrame
+      title={t('installThemes')}
+      description={t('installThemesDescription')}
+      contain={false}
+    >
       {schools.length > 1 ? (
         <div className="flex flex-wrap gap-2">
           {schools.map((school) => {
@@ -114,6 +117,6 @@ export default function ThemesPage() {
       {schoolId !== null && themesExtensionEnabled ? (
         <SchoolThemeCard themes={themes} schoolId={schoolId} />
       ) : null}
-    </div>
+    </PageFrame>
   );
 }

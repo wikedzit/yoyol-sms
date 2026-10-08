@@ -14,7 +14,7 @@ import {
 import type AcademicLevelService from 'workers/services/academic-levels';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import {
   Table,
   TableBody,
@@ -31,14 +31,6 @@ import {
   AccordionTrigger,
 } from '~/components/ui/accordion';
 import type { LevelType } from '~/type/shools';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '~/components/ui/breadcrumb';
 import { getFormsForLevel, getLevelConfig } from '~/config/academic-levels';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 
@@ -174,22 +166,14 @@ export default function StreamPage() {
   );
 
   return (
-    <div className="animate-fade-in">
-      {/* Breadcrumb */}
-      <Breadcrumb className="mb-6">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to={levelConfig.basePath}>{levelConfig.name}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{stream.name}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
+    <PageFrame
+      title={stream.name}
+      description={levelConfig.name}
+      trail={[
+        { label: levelConfig.name, to: levelConfig.basePath },
+        { label: stream.name },
+      ]}
+    >
       {/* Forms List */}
       <div className="rounded-md border">
         <Table>
@@ -228,6 +212,6 @@ export default function StreamPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageFrame>
   );
 }

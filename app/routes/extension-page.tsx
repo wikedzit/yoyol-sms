@@ -1,11 +1,13 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { Link, redirect, useActionData, useLoaderData } from 'react-router';
-import { ViewDocumentView } from '~/components/ViewDocumentView';
+import { Link, redirect, useActionData, useLoaderData, useParams } from 'react-router';
+import { renderText, ViewDocumentView } from '~/components/ViewDocumentView';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { loadRecordScope } from '~/lib/load-record-scope';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import { selectSchoolId } from '~/lib/selected-school';
 import type { SelectSchool } from 'workers/database/school';
+import { appModules } from 'workers/kernel/modules';
 import { bundledExtensionHost } from 'workers/kernel/bundled-host';
 import { localesFor } from 'workers/kernel/bundled-locales';
 import { createExtensionLog } from 'workers/kernel/log';
@@ -125,31 +127,40 @@ export async function action({ request, params, context }: ActionFunctionArgs) {
 export default function ExtensionPage() {
   const page = useLoaderData<typeof loader>();
   const result = useActionData<typeof action>();
+  const params = useParams();
   const { t, language } = useLanguage();
+  const appLanguage = language === 'sw' ? 'sw' : 'en';
+  const extensionKey = params.extension ?? '';
+  const moduleName = appModules.find((module) => module.key === extensionKey)?.name[appLanguage];
+  const title = page.state === 'view'
+    ? renderText(page.document.title, page.catalog, appLanguage)
+    : moduleName || t('extensionPageInvalid');
 
   if (page.state === 'off') {
     return (
-      <div className="space-y-3">
+      <PageFrame title={title}>
         <p className="text-sm text-muted-foreground">{t('extensionOff')}</p>
         <Link className="text-sm underline" to="/modules">{t('installExtensions')}</Link>
-      </div>
+      </PageFrame>
     );
   }
-  if (page.state === 'invalid') {
-    return <p className="text-sm text-muted-foreground">{t('extensionPageInvalid')}</p>;
-  }
-  if (page.state === 'missing') {
-    return <p className="text-sm text-muted-foreground">{t('extensionPageInvalid')}</p>;
+  if (page.state === 'invalid' || page.state === 'missing') {
+    return (
+      <PageFrame title={title}>
+        <p className="text-sm text-muted-foreground">{t('extensionPageInvalid')}</p>
+      </PageFrame>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <PageFrame title={title}>
       {result && 'error' in result && result.error ? <p className="text-sm">{result.error}</p> : null}
       <ViewDocumentView
         document={page.document}
         catalog={page.catalog}
-        language={language === 'sw' ? 'sw' : 'en'}
+        language={appLanguage}
+        showTitle={false}
       />
-    </div>
+    </PageFrame>
   );
 }

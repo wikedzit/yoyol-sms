@@ -10,12 +10,14 @@ import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import { Switch } from '~/components/ui/switch';
 import { Separator } from '~/components/ui/separator';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 
 export default function Settings() {
   const { t } = useLanguage();
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t('settings')}</h1>
         <p className="text-muted-foreground mt-1">

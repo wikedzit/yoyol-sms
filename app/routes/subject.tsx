@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { LoaderFunctionArgs, ActionFunctionArgs } from 'react-router';
 import { useFetcher, useLoaderData } from 'react-router';
 import { Button } from '~/components/ui/button';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Input } from '~/components/ui/input';
 import { Card, CardContent } from '~/components/ui/card';
 import {
@@ -330,6 +331,7 @@ export default function SubjectsPage() {
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
+        <PageBreadcrumb />
         {/* Header section with text-foreground */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "~/components/ui/PageHeader";
+import { PageBreadcrumb } from "~/components/ui/PageFrame";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -272,6 +273,7 @@ export default function AcademicYearPage() {
   return (
     <div className="min-h-screen">
       <div className="space-y-6">
+        <PageBreadcrumb />
         <PageHeader
           title="Academic Year"
           description="Configure academic years, terms, and active periods"

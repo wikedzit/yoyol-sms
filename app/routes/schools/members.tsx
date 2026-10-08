@@ -1,6 +1,6 @@
 import { useFetcher, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import {
   Table,
@@ -117,8 +117,7 @@ export default function MembersPage() {
   const actionError = fetcher.data && 'error' in fetcher.data ? fetcher.data.error : null;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('schoolMembers')} description={t('schoolMembersDescription')} />
+    <PageFrame title={t('schoolMembers')} description={t('schoolMembersDescription')}>
       {schoolId === null ? (
         <p className="text-sm text-muted-foreground">{t('createSchoolFirst')}</p>
       ) : null}
@@ -208,7 +207,7 @@ export default function MembersPage() {
           </Table>
         </div>
       )}
-    </div>
+    </PageFrame>
   );
 }
 

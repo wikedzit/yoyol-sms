@@ -20,8 +20,10 @@ import {
 } from '~/components/ui/table';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Input } from '~/components/ui/input';
 import { Plus, Search, Pencil, ArrowBigLeftDash } from 'lucide-react';
+import { useLanguage } from '~/lib/i18n';
 import {
   Select,
   SelectTrigger,
@@ -258,6 +260,7 @@ export default function ClassDetails() {
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
   const { classId } = useParams();
+  const { t } = useLanguage();
   const processedResponseRef = useRef<any>(null);
 
   const [search, setSearch] = useState('');
@@ -331,7 +334,14 @@ export default function ClassDetails() {
   }, [fetcher.data, fetcher.state, revalidator]);
 
   return (
-    <div className="space-y-2 h-min-screen">
+    <div className="space-y-6 h-min-screen">
+      <PageBreadcrumb
+        trail={[
+          { label: t('academicLevels'), to: '/x/academics' },
+          { label: t('classrooms'), to: '/classes' },
+          { label: classInfo?.name || t('classrooms') },
+        ]}
+      />
       {/* Back Button */}
       <Link
         to="/classes"

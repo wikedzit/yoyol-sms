@@ -7,6 +7,7 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { Button } from "~/components/ui/button";
+import { PageFrame } from "~/components/ui/PageFrame";
 import {
   Table,
   TableBody,
@@ -295,30 +296,20 @@ export default function ClassesRoute() {
   const getClassDetailLink = (cls: EnrichedFormClass) => `/classes/${cls.id}`;
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-3xl font-bold text-foreground">
-            Classes
-          </h1>
-          <p className="text-foreground mt-1 text-sm sm:text-base">
-            {t("manageClasses")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap justify-end">
-          {/* Create Button */}
-          <Button
-            onClick={() => setOpenCreate(true)}
-            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto hover:scale-105 transition cursor-pointer"
-          >
-            <span className="text-xl">+</span>
-            <span className="font-medium">{t("addClass")}</span>
-          </Button>
-        </div>
-      </div>
-
+    <PageFrame
+      className="pb-8"
+      title={t("classrooms")}
+      description={t("manageClasses")}
+      actions={
+        <Button
+          onClick={() => setOpenCreate(true)}
+          className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto hover:scale-105 transition cursor-pointer"
+        >
+          <span className="text-xl">+</span>
+          <span className="font-medium">{t("addClass")}</span>
+        </Button>
+      }
+    >
       {/* LEVEL FILTER TABS */}
       <div className="flex items-center gap-2 border-b border-border pb-4 overflow-x-auto">
         <button
@@ -468,6 +459,6 @@ export default function ClassesRoute() {
           editingClass={editingClass}
         />
       )}
-    </div>
+    </PageFrame>
   );
 }

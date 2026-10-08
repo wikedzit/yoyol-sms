@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { useFetcher, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import {
   Table,
@@ -76,8 +76,7 @@ export default function RolesPage() {
   const actionError = fetcher.data && 'error' in fetcher.data ? fetcher.data.error : null;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('schoolRoles')} description={t('schoolRolesDescription')} />
+    <PageFrame title={t('schoolRoles')} description={t('schoolRolesDescription')}>
       {schoolId === null ? (
         <p className="text-sm text-muted-foreground">{t('createSchoolFirst')}</p>
       ) : (
@@ -158,7 +157,7 @@ export default function RolesPage() {
           </TableBody>
         </Table>
       </div>
-    </div>
+    </PageFrame>
   );
 }
 

@@ -1,7 +1,7 @@
 import { Form, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission, selectedSchoolId } from '~/lib/require-school-permission';
 
@@ -108,8 +108,7 @@ export default function MarksPage() {
   const message = result && 'error' in result ? result.error : null;
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('marks')} description={t('marksDescription')} />
+    <PageFrame title={t('marks')} description={t('marksDescription')}>
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
       <Form method="get" className="flex flex-wrap items-center gap-2">
         <select name="classId" defaultValue={data.classId || ''} required aria-label={t('classrooms')} className="h-9 rounded-md border px-3 text-sm">
@@ -179,6 +178,6 @@ export default function MarksPage() {
           </Form>
         </div>
       ) : null}
-    </div>
+    </PageFrame>
   );
 }

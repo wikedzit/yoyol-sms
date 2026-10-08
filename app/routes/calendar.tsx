@@ -1,7 +1,7 @@
 import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import {
   Table,
   TableBody,
@@ -51,8 +51,7 @@ export default function CalendarPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('schoolCalendar')} description={t('schoolCalendarDescription')} />
+    <PageFrame title={t('schoolCalendar')} description={t('schoolCalendarDescription')}>
       {result && 'error' in result ? <p className="text-sm text-destructive">{result.error}</p> : null}
       {events.length === 0 ? <p className="text-sm">{t('noEvents')}</p> : (
         <div className="rounded-md border">
@@ -109,6 +108,6 @@ export default function CalendarPage() {
           </Form>
         </>
       ) : null}
-    </div>
+    </PageFrame>
   );
 }

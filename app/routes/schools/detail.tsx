@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Label } from '~/components/ui/label';
@@ -164,6 +165,7 @@ export default function SchoolProfilePage() {
 
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
 
       {/* Back to Schools */}
       <Link

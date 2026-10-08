@@ -2,7 +2,7 @@ import { Form, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { ViewDocumentView } from '~/components/ViewDocumentView';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
@@ -63,8 +63,7 @@ export default function StudentPortalPage() {
   const appLanguage = language === 'sw' ? 'sw' : 'en';
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('myProfile')} description={t('myProfileDescription')} />
+    <PageFrame title={t('myProfile')} description={t('myProfileDescription')}>
       {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       {result && 'error' in result ? <p className="text-sm text-destructive">{result.error}</p> : null}
       {result && 'acceptPath' in result ? (
@@ -93,6 +92,6 @@ export default function StudentPortalPage() {
           </section>
         );
       })}
-    </div>
+    </PageFrame>
   );
 }

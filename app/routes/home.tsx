@@ -18,6 +18,8 @@ import type AcademicLevelService from "workers/services/academic-levels";
 import type GradeService from "workers/services/grades";
 import type NoticeService from "workers/services/notices";
 import { ViewDocumentView } from "~/components/ViewDocumentView";
+import { Card, CardContent } from "~/components/ui/card";
+import { PageBreadcrumb } from "~/components/ui/PageFrame";
 import { useLanguage } from "~/lib/i18n";
 import { requireSchoolPermission } from "~/lib/require-school-permission";
 import type { SchoolSlot } from "workers/services/extensions";
@@ -307,6 +309,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">
           {t("dashboard")}
@@ -315,12 +318,15 @@ const Dashboard = () => {
       </div>
 
       {widgets.map((widget) => (
-        <ViewDocumentView
-          key={widget.extensionKey}
-          document={widget.document}
-          catalog={widget.catalog}
-          language={language === "sw" ? "sw" : "en"}
-        />
+        <Card key={widget.extensionKey} className="hover:bg-card">
+          <CardContent>
+            <ViewDocumentView
+              document={widget.document}
+              catalog={widget.catalog}
+              language={language === "sw" ? "sw" : "en"}
+            />
+          </CardContent>
+        </Card>
       ))}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">

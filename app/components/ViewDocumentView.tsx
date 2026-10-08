@@ -8,16 +8,20 @@ export function ViewDocumentView({
   document,
   catalog,
   language,
+  showTitle = true,
 }: {
   document: ViewDocument;
   catalog: Catalog;
   language: AppLanguage;
+  showTitle?: boolean;
 }) {
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground">{renderText(document.title, catalog, language)}</h1>
-      </header>
+      {showTitle ? (
+        <header className="space-y-1">
+          <h1 className="text-2xl font-bold text-foreground">{renderText(document.title, catalog, language)}</h1>
+        </header>
+      ) : null}
       <div className="space-y-4">
         {document.body.map((node, index) => (
           <ViewNode key={index} node={node} catalog={catalog} language={language} />
@@ -135,7 +139,7 @@ function ViewNode({
   return <p className="text-sm text-muted-foreground">This page could not be shown.</p>;
 }
 
-function renderText(value: unknown, catalog: Catalog, language: AppLanguage): string {
+export function renderText(value: unknown, catalog: Catalog, language: AppLanguage): string {
   if (typeof value === 'string') {
     return value;
   }

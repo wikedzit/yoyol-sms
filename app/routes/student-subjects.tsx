@@ -1,7 +1,7 @@
 import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { loadRecordScope } from '~/lib/load-record-scope';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
@@ -51,8 +51,7 @@ export default function StudentSubjectsPage() {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('studentSubjects')} description={t('studentSubjectsDescription')} />
+    <PageFrame title={t('studentSubjects')} description={t('studentSubjectsDescription')}>
       {activeYear ? <p className="text-sm">{t('academicYear')}: {activeYear}</p> : null}
       {result && 'error' in result ? <p className="text-sm text-destructive">{result.error}</p> : null}
       <Form method="post" className="space-y-3">
@@ -90,6 +89,6 @@ export default function StudentSubjectsPage() {
       <ul className="space-y-2 text-sm">
         {lines.map((line) => <li key={line}>{line}</li>)}
       </ul>
-    </div>
+    </PageFrame>
   );
 }

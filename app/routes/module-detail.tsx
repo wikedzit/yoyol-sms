@@ -1,7 +1,7 @@
 import { Link, useFetcher, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { moduleStatusLabel } from '~/components/modules/ModuleCatalogTable';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Input } from '~/components/ui/input';
@@ -62,9 +62,16 @@ export default function ModuleDetailPage() {
   const listPath = `/modules?schoolId=${schoolId}`;
 
   return (
-    <div className="space-y-6">
+    <PageFrame
+      title={name}
+      description={description}
+      contain={false}
+      trail={[
+        { label: t('installExtensions'), to: listPath },
+        { label: name },
+      ]}
+    >
       <Link className="text-sm underline" to={listPath}>{t('backToModules')}</Link>
-      <PageHeader title={name} description={description} />
       {fetcher.data && 'error' in fetcher.data && fetcher.data.error ? (
         <p className="text-sm text-destructive">{fetcher.data.error}</p>
       ) : null}
@@ -155,7 +162,7 @@ export default function ModuleDetailPage() {
           </CardContent>
         </Card>
       ) : null}
-    </div>
+    </PageFrame>
   );
 }
 

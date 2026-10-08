@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
-  Link,
   useFetcher,
   useLoaderData,
   useParams,
@@ -20,7 +19,6 @@ import {
 import {
   Plus,
   Pencil,
-  ChevronRight,
   GraduationCap,
   School,
 } from 'lucide-react';
@@ -28,7 +26,7 @@ import { toast } from 'sonner';
 import type AcademicLevelService from 'workers/services/academic-levels';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import { useLanguage } from '~/lib/i18n';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import type { LevelType } from '~/type/shools';
@@ -426,47 +424,25 @@ export default function FormPage() {
   );
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
-        <Link
-          to={levelConfig.basePath}
-          className="hover:text-foreground transition-colors"
+    <PageFrame
+      className="pb-8"
+      title={form.name}
+      description={`Manage and organize classes for ${stream.name}, form ${form.number}`}
+      trail={[
+        { label: levelConfig.name, to: levelConfig.basePath },
+        { label: stream.name, to: `${levelConfig.basePath}/${params.streamId}` },
+        { label: form.name },
+      ]}
+      actions={
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto hover:scale-110 hover:text-white-600 transition cursor-pointer"
         >
-          {levelConfig.name}
-        </Link>
-        <ChevronRight size={14} />
-        <Link
-          to={`${levelConfig.basePath}/${params.streamId}`}
-          className="hover:text-foreground transition-colors"
-        >
-          {stream.name}
-        </Link>
-        <ChevronRight size={14} />
-        <span className="text-foreground font-medium">{form.name}</span>
-      </nav>
-
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-3xl font-bold">{form.name}</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage and organize classes for {stream.name} – Form {form.number}
-          </p>
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex items-center gap-3 flex-wrap justify-end">
-          {/* Add Button */}
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            className="bg-primary-gradient text-white rounded-lg px-4 py-2 flex items-center gap-2 w-full sm:w-auto  hover:scale-110 hover:text-white-600 transition cursor-pointer"
-          >
-            <span className="text-xl">+</span>
-            <span className="font-medium">Add Class</span>
-          </Button>
-        </div>
-      </div>
+          <span className="text-xl">+</span>
+          <span className="font-medium">Add Class</span>
+        </Button>
+      }
+    >
 
       {/* EMPTY STATE */}
       {sortedClasses.length === 0 ? (
@@ -531,6 +507,6 @@ export default function FormPage() {
         editingClass={selectedClass}
         formNumber={form.number}
       />
-    </div>
+    </PageFrame>
   );
 }

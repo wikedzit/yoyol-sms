@@ -1,7 +1,7 @@
 import { Form, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
-import { PageHeader } from '~/components/ui/PageHeader';
+import { PageFrame } from '~/components/ui/PageFrame';
 import {
   Table,
   TableBody,
@@ -38,8 +38,7 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader title={t('auditLog')} description={t('auditDescription')} />
+    <PageFrame title={t('auditLog')} description={t('auditDescription')}>
       <Form method="get" className="flex flex-wrap items-center gap-2">
         {schoolId ? <input type="hidden" name="schoolId" value={schoolId} /> : null}
         <input
@@ -82,6 +81,6 @@ export default function AuditPage() {
           </Table>
         </div>
       )}
-    </div>
+    </PageFrame>
   );
 }

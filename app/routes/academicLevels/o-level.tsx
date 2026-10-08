@@ -14,6 +14,7 @@ import type AcademicLevelService from 'workers/services/academic-levels';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { PageBreadcrumb } from '~/components/ui/PageFrame';
 import { AddStreamModal } from '~/components/modal/addStreamModal';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import { useLanguage } from '~/lib/i18n';
@@ -287,6 +288,7 @@ export default function OLevelPage() {
 
   return (
     <div className="min-h-screen space-y-6 pb-8">
+      <PageBreadcrumb />
       {/* Header */}
       <PageHeader
         title={LEVEL_INFO.name}

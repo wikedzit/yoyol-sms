@@ -12,6 +12,7 @@ import { loadRecordScope } from "~/lib/load-record-scope";
 import { keepVisibleRecords } from "workers/services/visible-records";
 import { matchingRecords } from "workers/kernel/record-picker";
 import { Button } from "~/components/ui/button";
+import { PageBreadcrumb } from "~/components/ui/PageFrame";
 import {
   Card,
   CardContent,
@@ -356,6 +357,7 @@ export default function Grades() {
 
   return (
     <div className="space-y-6">
+      <PageBreadcrumb />
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">
