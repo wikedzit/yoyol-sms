@@ -15,6 +15,14 @@ import { Form, Link } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
+import {
   Card,
   CardContent,
   CardDescription,
@@ -259,48 +267,49 @@ export function SchoolProfileView({
                   {t('mainCampusOnly')}
                 </label>
               </div>
-            <ul className="space-y-3">
-              {visibleCampuses.map((campus) => (
-                <li
-                  key={campus.id}
-                  className="rounded-lg border border-border px-4 py-3"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{campus.name}</p>
-                        {campus.isMain && (
-                          <span className="rounded-full bg-purple/10 px-2 py-0.5 text-xs font-medium text-purple">
-                            {t('mainCampusBadge')}
-                          </span>
-                        )}
-                        {campus.code && (
-                          <span className="text-xs text-muted-foreground">
-                            {campus.code}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {campus.address || t('notProvided')}
-                      </p>
-                    </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <ViewCampusModal campus={campus} />
-
-                    <EditCampusModal campus={campus} />
-
-                    <DeleteButton
-                      id={campus.id}
-                      name={campus.name}
-                      entityName="campus"
-                      entityType="campus"
-                      action={`/schools/${school.id}/campuses`}
-                    />
-                  </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="font-semibold">{t('campusName')}</TableHead>
+                    <TableHead className="font-semibold">{t('campusCode')}</TableHead>
+                    <TableHead className="font-semibold">{t('address')}</TableHead>
+                    <TableHead className="font-semibold">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleCampuses.map((campus) => (
+                    <TableRow key={campus.id}>
+                      <TableCell className="font-medium">
+                        <span className="inline-flex items-center gap-2">
+                          {campus.name}
+                          {campus.isMain ? (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                              {t('mainCampusBadge')}
+                            </span>
+                          ) : null}
+                        </span>
+                      </TableCell>
+                      <TableCell>{campus.code}</TableCell>
+                      <TableCell className="whitespace-normal">{campus.address || t('notProvided')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <ViewCampusModal campus={campus} />
+                          <EditCampusModal campus={campus} />
+                          <DeleteButton
+                            id={campus.id}
+                            name={campus.name}
+                            entityName="campus"
+                            entityType="campus"
+                            action={`/schools/${school.id}/campuses`}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
             </>
           )}
         </CardContent>

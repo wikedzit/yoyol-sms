@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, LayoutGrid, List, Pencil, GraduationCap } from "lucide-react";
+import { Pencil, GraduationCap } from "lucide-react";
 import {
   useFetcher,
   useLoaderData,
@@ -7,6 +7,14 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { Button } from "~/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import type AcademicLevelService from "workers/services/academic-levels";
@@ -222,7 +230,6 @@ export default function ClassesRoute() {
   const [editingClass, setEditingClass] = useState<EnrichedFormClass | null>(
     null,
   );
-  const [view, setView] = useState<"grid" | "list">("grid");
   const [levelFilter, setLevelFilter] = useState<"all" | LevelType>("all");
 
   // Sync state with incoming loader updates when navigating back or performing full reloads
@@ -301,33 +308,6 @@ export default function ClassesRoute() {
         </div>
 
         <div className="flex items-center gap-3 flex-wrap justify-end">
-          {/* View Toggle */}
-          <div className="flex items-center border border-border rounded-lg overflow-hidden bg-card">
-            <button
-              onClick={() => setView("grid")}
-              aria-label="Grid view"
-              className={`p-2 transition hover:scale-105 cursor-pointer ${
-                view === "grid"
-                  ? "bg-primary-gradient text-white"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <LayoutGrid size={18} />
-            </button>
-
-            <button
-              onClick={() => setView("list")}
-              aria-label="List view"
-              className={`p-2 transition hover:scale-105 cursor-pointer ${
-                view === "list"
-                  ? "bg-primary-gradient text-white"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <List size={18} />
-            </button>
-          </div>
-
           {/* Create Button */}
           <Button
             onClick={() => setOpenCreate(true)}
@@ -412,144 +392,61 @@ export default function ClassesRoute() {
             </Link>
           </div>
         </div>
-      ) : view === "grid" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredClasses.map((c) => (
-            <div
-              key={c.id}
-              className="bg-card text-card-foreground border border-border rounded-xl p-4 shadow-sm hover:shadow-lg transition flex flex-col justify-between gap-3"
-            >
-              <Link to={getClassDetailLink(c)} className="block space-y-3">
-                <img
-                  src="/assets/card_image.png"
-                  className="w-full h-32 sm:h-36 object-cover rounded-lg"
-                  alt={c.name}
-                />
-
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-muted-foreground">
-                      Class:
-                    </span>
-                    <span className="text-foreground font-medium">
-                      {c.name}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-muted-foreground">
-                      Form:
-                    </span>
-                    <span className="text-foreground">{c.formName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-muted-foreground">
-                      Stream:
-                    </span>
-                    <span className="text-foreground">{c.streamName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-semibold text-muted-foreground">
-                      Level:
-                    </span>
-                    <span className="text-foreground">{c.levelName}</span>
-                  </div>
-                  {c.campusName ? (
-                    <div className="flex justify-between">
-                      <span className="font-semibold text-muted-foreground">
-                        Campus:
-                      </span>
-                      <span className="text-foreground">{c.campusName}</span>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-1 text-xs text-muted-foreground pt-1">
-                  <Users size={14} />
-                  <span>{c.studentCount} students</span>
-                </div>
-              </Link>
-
-              <div className="flex justify-between border-t border-border pt-3 mt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditingClass(c);
-                    setOpenEdit(true);
-                  }}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:scale-105 transition"
-                >
-                  <Pencil size={16} /> Edit
-                </Button>
-
-                <DeleteStudentButton
-                  id={String(c.id)}
-                  name={c.name}
-                  fetcher={fetcher}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-        /* LIST VIEW */
-        <div className="space-y-3">
-          {filteredClasses.map((c) => (
-            <div
-              key={c.id}
-              className="bg-card border border-border text-card-foreground p-4 rounded-lg shadow-sm hover:shadow-md transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-            >
-              <Link
-                to={getClassDetailLink(c)}
-                className="flex gap-4 items-center flex-1"
-              >
-                <img
-                  src="/assets/card_image.png"
-                  className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                  alt={c.name}
-                />
-
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-foreground text-lg">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t("name")}</TableHead>
+                <TableHead className="font-semibold">{t("form")}</TableHead>
+                <TableHead className="font-semibold">{t("stream")}</TableHead>
+                <TableHead className="font-semibold">{t("level")}</TableHead>
+                <TableHead className="font-semibold">{t("campusName")}</TableHead>
+                <TableHead className="font-semibold">{t("studentCount")}</TableHead>
+                <TableHead className="font-semibold">{t("actions")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClasses.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">
+                    <Link to={getClassDetailLink(c)} className="underline">
                       {c.name}
-                    </h3>
-                    <LevelBadge level={c.levelType} size="sm" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">
-                    {c.formName} • {c.streamName} • {c.levelName}
-                    {c.campusName ? ` • ${c.campusName}` : ""}
-                  </p>
-                </div>
-              </Link>
-
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Users size={14} /> {c.studentCount} students
-                </span>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setEditingClass(c);
-                    setOpenEdit(true);
-                  }}
-                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground hover:scale-105 transition"
-                >
-                  <Pencil size={16} /> Edit
-                </Button>
-
-                <DeleteStudentButton
-                  id={String(c.id)}
-                  name={c.name}
-                  fetcher={fetcher}
-                />
-              </div>
-            </div>
-          ))}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{c.formName}</TableCell>
+                  <TableCell>{c.streamName}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center gap-2">
+                      {c.levelName}
+                      <LevelBadge level={c.levelType} size="sm" />
+                    </span>
+                  </TableCell>
+                  <TableCell>{c.campusName}</TableCell>
+                  <TableCell>{c.studentCount}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingClass(c);
+                          setOpenEdit(true);
+                        }}
+                      >
+                        <Pencil size={16} /> Edit
+                      </Button>
+                      <DeleteStudentButton
+                        id={String(c.id)}
+                        name={c.name}
+                        fetcher={fetcher}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 

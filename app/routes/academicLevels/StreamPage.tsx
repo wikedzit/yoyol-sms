@@ -7,7 +7,6 @@ import {
 import { Card } from '~/components/ui/card';
 import {
   Users,
-  ChevronRight,
   GraduationCap,
   Layers,
   ArrowRight,
@@ -16,6 +15,15 @@ import type AcademicLevelService from 'workers/services/academic-levels';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
+import { useLanguage } from '~/lib/i18n';
 import {
   Accordion,
   AccordionContent,
@@ -89,6 +97,7 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
 
 // --- StreamPage Component ---
 export default function StreamPage() {
+  const { t } = useLanguage();
   const { stream, level, forms, levelType, levelConfig } = useLoaderData<{
     stream: {
       id: number;
@@ -182,38 +191,32 @@ export default function StreamPage() {
       </Breadcrumb>
 
       {/* Forms List */}
-      <div className="space-y-3">
-        {forms.map((form) => {
-          const formClasses = form.classCount;
-          const totalStudents = form.studentCount;
-
-          return (
-            <Link
-              key={form.number}
-              to={`${levelConfig.basePath}/${params.streamId}/forms/${form.number}`}
-              className="group bg-card rounded-xl p-5 border border-border 
-          hover:border-primary/30 shadow-card hover:shadow-card-hover 
-          transition-all flex items-center justify-between cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">{form.name}</h3>
-
-                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                    <span>{formClasses} classes</span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {totalStudents} students
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chevron */}
-              <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </Link>
-          );
-        })}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="font-semibold">{t('form')}</TableHead>
+              <TableHead className="font-semibold">{t('classrooms')}</TableHead>
+              <TableHead className="font-semibold">{t('studentCount')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {forms.map((form) => (
+              <TableRow key={form.number}>
+                <TableCell className="font-medium">
+                  <Link
+                    className="underline"
+                    to={`${levelConfig.basePath}/${params.streamId}/forms/${form.number}`}
+                  >
+                    {form.name}
+                  </Link>
+                </TableCell>
+                <TableCell>{form.classCount}</TableCell>
+                <TableCell>{form.studentCount}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
         {forms.length === 0 && (
           <div className="text-center py-12 text-muted-foreground bg-card rounded-xl border border-border">

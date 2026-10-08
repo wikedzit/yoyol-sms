@@ -1,8 +1,16 @@
+import { Fragment } from 'react';
 import { useFetcher, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent } from '~/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
 import type { SelectSchool } from 'workers/database/school';
@@ -89,52 +97,67 @@ export default function RolesPage() {
       )}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
-      <ul className="space-y-3">
-        {roles.map((role) => (
-          <li key={role.id}>
-            <Card>
-              <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
-                <div>
-                  <p className="font-medium">{role.name}</p>
-                  {role.isSystem ? (
-                    <p className="text-sm text-muted-foreground">{t('builtInRole')}</p>
-                  ) : null}
-                  {role.key === 'admin' ? (
-                    <p className="text-sm text-muted-foreground">{t('adminKeepsPermissions')}</p>
-                  ) : null}
-                </div>
-                {role.isSystem ? null : (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <fetcher.Form method="post" className="flex items-center gap-2">
-                      <input type="hidden" name="intent" value="rename" />
-                      <input type="hidden" name="schoolId" value={schoolId ?? ''} />
-                      <input type="hidden" name="roleId" value={role.id} />
-                      <input
-                        name="name"
-                        defaultValue={role.name}
-                        className="h-9 rounded-md border border-border bg-background px-3 text-sm"
-                        aria-label={t('renameRole')}
-                      />
-                      <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                        {t('renameRole')}
-                      </Button>
-                    </fetcher.Form>
-                    <fetcher.Form method="post">
-                      <input type="hidden" name="intent" value="delete" />
-                      <input type="hidden" name="schoolId" value={schoolId ?? ''} />
-                      <input type="hidden" name="roleId" value={role.id} />
-                      <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                        {t('deleteRole')}
-                      </Button>
-                    </fetcher.Form>
-                  </div>
-                )}
-              </CardContent>
-              <RoleGrants role={role} schoolId={schoolId} grants={grants} />
-            </Card>
-          </li>
-        ))}
-      </ul>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="font-semibold">{t('name')}</TableHead>
+              <TableHead className="font-semibold">{t('eventType')}</TableHead>
+              <TableHead className="font-semibold">{t('actions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {roles.map((role) => (
+              <Fragment key={role.id}>
+                <TableRow>
+                  <TableCell className="font-medium">
+                    {role.name}
+                    {role.key === 'admin' ? (
+                      <p className="text-xs font-normal text-muted-foreground">{t('adminKeepsPermissions')}</p>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {role.isSystem ? t('builtInRole') : ''}
+                  </TableCell>
+                  <TableCell>
+                    {role.isSystem ? null : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <fetcher.Form method="post" className="flex items-center gap-2">
+                          <input type="hidden" name="intent" value="rename" />
+                          <input type="hidden" name="schoolId" value={schoolId ?? ''} />
+                          <input type="hidden" name="roleId" value={role.id} />
+                          <input
+                            name="name"
+                            defaultValue={role.name}
+                            className="h-8 rounded-md border border-border bg-background px-3 text-sm"
+                            aria-label={t('renameRole')}
+                          />
+                          <Button type="submit" size="sm" variant="outline" disabled={fetcher.state !== 'idle'}>
+                            {t('renameRole')}
+                          </Button>
+                        </fetcher.Form>
+                        <fetcher.Form method="post">
+                          <input type="hidden" name="intent" value="delete" />
+                          <input type="hidden" name="schoolId" value={schoolId ?? ''} />
+                          <input type="hidden" name="roleId" value={role.id} />
+                          <Button type="submit" size="sm" variant="outline" disabled={fetcher.state !== 'idle'}>
+                            {t('deleteRole')}
+                          </Button>
+                        </fetcher.Form>
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell colSpan={3} className="whitespace-normal">
+                    <RoleGrants role={role} schoolId={schoolId} grants={grants} />
+                  </TableCell>
+                </TableRow>
+              </Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
@@ -154,7 +177,7 @@ function RoleGrants({
   const modulesWithPermissions = appModules.filter((module) => module.permissions.length > 0);
 
   return (
-    <div className="space-y-3 px-4 pb-4">
+    <div className="space-y-3">
       {modulesWithPermissions.map((module) => (
         <div key={module.key}>
           <p className="mb-1 text-xs font-medium text-muted-foreground">

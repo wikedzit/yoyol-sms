@@ -2,6 +2,14 @@ import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission, selectedSchoolId } from '~/lib/require-school-permission';
 
@@ -47,9 +55,28 @@ export default function CalendarPage() {
       <PageHeader title={t('schoolCalendar')} description={t('schoolCalendarDescription')} />
       {result && 'error' in result ? <p className="text-sm text-destructive">{result.error}</p> : null}
       {events.length === 0 ? <p className="text-sm">{t('noEvents')}</p> : (
-        <ul className="space-y-1 text-sm">
-          {events.map((event) => <li key={event.id}>{event.line}</li>)}
-        </ul>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('eventDate')}</TableHead>
+                <TableHead className="font-semibold">{t('name')}</TableHead>
+                <TableHead className="font-semibold">{t('eventType')}</TableHead>
+                <TableHead className="font-semibold">{t('status')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {events.map((event) => (
+                <TableRow key={event.id}>
+                  <TableCell>{event.eventDate}</TableCell>
+                  <TableCell className="font-medium">{event.title}</TableCell>
+                  <TableCell>{event.eventType}</TableCell>
+                  <TableCell>{event.status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
       {canWrite ? (
         <>

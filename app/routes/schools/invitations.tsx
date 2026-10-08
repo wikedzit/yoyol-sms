@@ -2,6 +2,14 @@ import { Form, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
@@ -75,13 +83,26 @@ export default function InvitationsPage() {
             </p>
           )}
           {actionData && 'error' in actionData && <p className="text-sm text-destructive">{actionData.error}</p>}
-          <ul className="space-y-2">
-            {invitations.map((invitation: ListedInvitation) => (
-              <li key={invitation.id} className="border rounded-md px-3 py-2">
-                {invitation.email || invitation.phone} · {invitation.roleName}
-              </li>
-            ))}
-          </ul>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-semibold">{t('email')}</TableHead>
+                  <TableHead className="font-semibold">{t('phone')}</TableHead>
+                  <TableHead className="font-semibold">{t('roleName')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invitations.map((invitation: ListedInvitation) => (
+                  <TableRow key={invitation.id}>
+                    <TableCell>{invitation.email}</TableCell>
+                    <TableCell>{invitation.phone}</TableCell>
+                    <TableCell>{invitation.roleName}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </>
       )}
     </div>

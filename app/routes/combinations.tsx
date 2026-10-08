@@ -2,6 +2,14 @@ import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 
@@ -75,53 +83,73 @@ export default function CombinationsPage() {
         />
         <Button type="submit">{t('addCombination')}</Button>
       </Form>
-      {combinations.length === 0 ? <p>{t('noCombinations')}</p> : null}
-      <div className="space-y-4">
-        {combinations.map((combination) => (
-          <section key={combination.id} className="space-y-2 rounded-md border p-4">
-            <h2 className="text-lg font-semibold">
-              {combination.name}
-              {combination.status === 'retired' ? ` (${t('combinationRetired')})` : ''}
-            </h2>
-            {combination.subjects.length === 0 ? <p className="text-sm">{t('combinationNoSubjects')}</p> : null}
-            <ul className="space-y-1">
-              {combination.subjects.map((subject) => (
-                <li key={subject.id} className="flex items-center gap-2 text-sm">
-                  <span>{subject.name} ({subject.code})</span>
-                  {combination.status === 'active' ? (
-                    <Form method="post">
-                      <input type="hidden" name="intent" value="remove" />
-                      <input type="hidden" name="combinationId" value={combination.id} />
-                      <input type="hidden" name="subjectId" value={subject.id} />
-                      <Button type="submit" variant="outline">{t('removeCombinationSubject')}</Button>
-                    </Form>
-                  ) : null}
-                </li>
+      {combinations.length === 0 ? <p>{t('noCombinations')}</p> : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('combinationName')}</TableHead>
+                <TableHead className="font-semibold">{t('status')}</TableHead>
+                <TableHead className="font-semibold">{t('subjects')}</TableHead>
+                <TableHead className="font-semibold">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {combinations.map((combination) => (
+                <TableRow key={combination.id}>
+                  <TableCell className="font-medium">{combination.name}</TableCell>
+                  <TableCell>
+                    {combination.status === 'retired' ? t('combinationRetired') : combination.status}
+                  </TableCell>
+                  <TableCell className="whitespace-normal">
+                    {combination.subjects.length === 0 ? (
+                      <span className="text-muted-foreground">{t('combinationNoSubjects')}</span>
+                    ) : (
+                      <ul className="space-y-1">
+                        {combination.subjects.map((subject) => (
+                          <li key={subject.id} className="flex items-center gap-2">
+                            <span>{subject.name} ({subject.code})</span>
+                            {combination.status === 'active' ? (
+                              <Form method="post">
+                                <input type="hidden" name="intent" value="remove" />
+                                <input type="hidden" name="combinationId" value={combination.id} />
+                                <input type="hidden" name="subjectId" value={subject.id} />
+                                <Button type="submit" size="sm" variant="outline">{t('removeCombinationSubject')}</Button>
+                              </Form>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {combination.status === 'active' ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Form method="post" className="flex flex-wrap items-center gap-2">
+                          <input type="hidden" name="intent" value="add" />
+                          <input type="hidden" name="combinationId" value={combination.id} />
+                          <select name="subjectId" aria-label={t('addCombinationSubject')} className="h-8 rounded-md border px-2 text-sm" required>
+                            <option value="">{t('addCombinationSubject')}</option>
+                            {subjects.map((subject) => (
+                              <option key={subject.id} value={subject.id}>{subject.name} ({subject.code})</option>
+                            ))}
+                          </select>
+                          <Button type="submit" size="sm">{t('addCombinationSubject')}</Button>
+                        </Form>
+                        <Form method="post">
+                          <input type="hidden" name="intent" value="retire" />
+                          <input type="hidden" name="combinationId" value={combination.id} />
+                          <Button type="submit" size="sm" variant="outline">{t('retireCombination')}</Button>
+                        </Form>
+                      </div>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
               ))}
-            </ul>
-            {combination.status === 'active' ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Form method="post" className="flex flex-wrap items-center gap-2">
-                  <input type="hidden" name="intent" value="add" />
-                  <input type="hidden" name="combinationId" value={combination.id} />
-                  <select name="subjectId" aria-label={t('addCombinationSubject')} className="h-9 rounded-md border px-2 text-sm" required>
-                    <option value="">{t('addCombinationSubject')}</option>
-                    {subjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>{subject.name} ({subject.code})</option>
-                    ))}
-                  </select>
-                  <Button type="submit">{t('addCombinationSubject')}</Button>
-                </Form>
-                <Form method="post">
-                  <input type="hidden" name="intent" value="retire" />
-                  <input type="hidden" name="combinationId" value={combination.id} />
-                  <Button type="submit" variant="outline">{t('retireCombination')}</Button>
-                </Form>
-              </div>
-            ) : null}
-          </section>
-        ))}
-      </div>
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

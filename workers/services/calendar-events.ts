@@ -24,7 +24,14 @@ export default class CalendarEventService {
     private notify?: (input: { schoolId: number; userId: number; title: string; body: string }) => Promise<void>,
   ) {}
 
-  async list(): Promise<{ id: number; line: string; status: string }[]> {
+  async list(): Promise<{
+    id: number;
+    line: string;
+    status: string;
+    title: string;
+    eventDate: string;
+    eventType: string;
+  }[]> {
     const schoolId = requireSchoolId(this.activeSchoolId);
     const rows = await this.db
       .select()
@@ -34,6 +41,9 @@ export default class CalendarEventService {
     return rows.map((row) => ({
       id: row.id,
       status: row.status,
+      title: row.title,
+      eventDate: row.eventDate,
+      eventType: row.eventType,
       line: `${row.eventDate}: ${row.title} (${row.eventType})${row.attachment ? `, ${row.attachment}` : ''}${row.status === 'cancelled' ? ', cancelled' : ''}`,
     }));
   }

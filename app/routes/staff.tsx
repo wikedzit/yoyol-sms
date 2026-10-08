@@ -2,6 +2,14 @@ import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission, selectedSchoolId } from '~/lib/require-school-permission';
 
@@ -97,11 +105,30 @@ export default function StaffPage() {
         </ul>
       )}
       {people.length > 0 ? (
-        <ul className="space-y-1 text-sm">
-          {people.map((person) => (
-            <li key={person.id}>{person.name}, {person.staffType}, {person.email}, {person.status}</li>
-          ))}
-        </ul>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('name')}</TableHead>
+                <TableHead className="font-semibold">{t('staffType')}</TableHead>
+                <TableHead className="font-semibold">{t('email')}</TableHead>
+                <TableHead className="font-semibold">{t('phone')}</TableHead>
+                <TableHead className="font-semibold">{t('status')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {people.map((person) => (
+                <TableRow key={person.id}>
+                  <TableCell className="font-medium">{person.name}</TableCell>
+                  <TableCell>{person.staffType}</TableCell>
+                  <TableCell>{person.email}</TableCell>
+                  <TableCell>{person.phone}</TableCell>
+                  <TableCell>{person.status}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       ) : null}
       {canWrite ? (
         <>

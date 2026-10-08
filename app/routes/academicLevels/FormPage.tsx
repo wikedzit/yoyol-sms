@@ -10,20 +10,26 @@ import {
 import { Button } from '~/components/ui/button';
 import { Card } from '~/components/ui/card';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
+import {
   Plus,
   Pencil,
-  Users,
   ChevronRight,
   GraduationCap,
   School,
-  LayoutGrid,
-  List,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type AcademicLevelService from 'workers/services/academic-levels';
 import { LevelBadge } from '~/components/ui/LevelBadge';
 import { StreamBadge } from '~/components/ui/StreamBadge';
 import { PageHeader } from '~/components/ui/PageHeader';
+import { useLanguage } from '~/lib/i18n';
 import { DeleteStudentButton } from '~/components/DeleteStudentButton';
 import type { LevelType } from '~/type/shools';
 import CreateClassModal from '~/components/modal/CreateClassModal';
@@ -298,7 +304,7 @@ export default function FormPage() {
   const fetcher = useFetcher();
   const listFetcher = useFetcher();
   const lastMethod = useRef<string | null>(null);
-  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const { t } = useLanguage();
   const [classes, setClasses] = useState(initialClasses ?? []);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -451,31 +457,6 @@ export default function FormPage() {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3 flex-wrap justify-end">
-          {/* View Toggle */}
-          <div className="flex items-center border rounded-lg overflow-hidden">
-            <button
-              onClick={() => setView('grid')}
-              className={`p-2 transition  hover:scale-110 hover:text-white-600 transition cursor-pointer ${
-                view === 'grid'
-                  ? 'bg-primary-gradient text-white'
-                  : 'text-gray-500'
-              }`}
-            >
-              <LayoutGrid size={18} />
-            </button>
-
-            <button
-              onClick={() => setView('list')}
-              className={`p-2 transition  hover:scale-110 hover:text-white-600 transition cursor-pointer" ${
-                view === 'list'
-                  ? 'bg-primary-gradient text-white'
-                  : 'text-gray-500'
-              }`}
-            >
-              <List size={18} />
-            </button>
-          </div>
-
           {/* Add Button */}
           <Button
             onClick={() => setIsAddModalOpen(true)}
@@ -490,121 +471,48 @@ export default function FormPage() {
       {/* EMPTY STATE */}
       {sortedClasses.length === 0 ? (
         <p className="text-center text-gray-500 mt-10">No classes yet.</p>
-      ) : view === 'grid' ? (
-        /* GRID VIEW – EXACT MATCH */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {sortedClasses.map((c) => (
-            <div
-              key={c.id}
-              className="bg-white rounded-xl p-4 shadow hover:shadow-lg transition flex flex-col gap-3"
-            >
-              <Link to=".">
-                {/* Image */}
-                <img
-                  src="/assets/card_image.png"
-                  className="w-full h-32 sm:h-36 object-cover rounded-lg"
-                />
-
-                {/* Top Section */}
-                <div className="mt-2 space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="font-bold">Name:</span>
-                    <span>{c.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-bold">Form:</span>
-                    <span>{form.name}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="font-bold">Stream:</span>
-                    <span>{stream.name}</span>
-                  </div>
-                </div>
-
-                {/* Counts */}
-                <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <Users size={14} /> {c.studentCount || 0} students
-                  </div>
-                </div>
-              </Link>
-
-              {/* Actions */}
-              <div className="flex justify-between mt-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedClass(c);
-                    setIsEditModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 text-gray-600 hover:text-black hover:scale-105 transition"
-                >
-                  <Pencil size={16} /> Edit
-                </Button>
-
-                <DeleteStudentButton
-                  id={String(c.id)}
-                  name={c.name}
-                  fetcher={fetcher}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-        /* LIST VIEW – EXACT MATCH */
-        <div className="space-y-3">
-          {sortedClasses.map((c) => (
-            <div
-              key={c.id}
-              className="bg-white p-4 rounded-lg shadow hover:shadow-md transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-            >
-              <Link to="." className="flex gap-4 items-start">
-                {/* Thumbnail */}
-                <img
-                  src="/assets/card_image.png"
-                  className="w-14 h-14 rounded-lg object-cover"
-                />
-
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">
-                    {c.name}
-                  </h3>
-                  <p className="text-gray-500 text-sm">
-                    {form.name} • {stream.name}
-                  </p>
-                </div>
-              </Link>
-
-              <div className="flex flex-wrap gap-4 text-xs text-gray-600">
-                <span className="flex items-center gap-1">
-                  <Users size={14} /> {c.studentCount || 0} students
-                </span>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedClass(c);
-                    setIsEditModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 text-gray-600 hover:text-black hover:scale-105 transition"
-                >
-                  <Pencil size={16} /> Edit
-                </Button>
-
-                <DeleteStudentButton
-                  id={String(c.id)}
-                  name={c.name}
-                  fetcher={fetcher}
-                />
-              </div>
-            </div>
-          ))}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('name')}</TableHead>
+                <TableHead className="font-semibold">{t('form')}</TableHead>
+                <TableHead className="font-semibold">{t('stream')}</TableHead>
+                <TableHead className="font-semibold">{t('studentCount')}</TableHead>
+                <TableHead className="font-semibold">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedClasses.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell className="font-medium">{c.name}</TableCell>
+                  <TableCell>{form.name}</TableCell>
+                  <TableCell>{stream.name}</TableCell>
+                  <TableCell>{c.studentCount || 0}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedClass(c);
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        <Pencil size={16} /> Edit
+                      </Button>
+                      <DeleteStudentButton
+                        id={String(c.id)}
+                        name={c.name}
+                        fetcher={fetcher}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
 

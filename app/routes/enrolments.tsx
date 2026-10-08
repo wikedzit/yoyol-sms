@@ -2,6 +2,14 @@ import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { loadRecordScope } from '~/lib/load-record-scope';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
@@ -157,51 +165,68 @@ export default function EnrolmentsPage() {
         </label>
         <Button type="submit" variant="outline">{t('graduateStudents')}</Button>
       </Form>
-      {enrolments.length === 0 ? <p>{t('noEnrolments')}</p> : null}
-      <div className="space-y-4">
-        {enrolments.map((enrolment) => (
-          <section key={enrolment.id} className="space-y-2 rounded-md border p-4">
-            <p>
-              {enrolment.studentName}, {enrolment.yearName}
-              {enrolment.className ? ` / ${enrolment.className}` : ''} ({enrolment.status})
-              {enrolment.moveReason ? `, moved: ${enrolment.moveReason}` : ''}
-            </p>
-            {enrolment.status === 'enrolled' ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <Form method="post" className="flex flex-wrap items-center gap-2">
-                  <input type="hidden" name="intent" value="move" />
-                  <input type="hidden" name="enrolmentId" value={enrolment.id} />
-                  <select name="formClassId" required aria-label={t('classrooms')} className="h-9 rounded-md border px-3 text-sm">
-                    {classes.map((formClass) => (
-                      <option key={formClass.id} value={formClass.id}>{formClass.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    name="reason"
-                    required
-                    placeholder={t('moveReason')}
-                    aria-label={t('moveReason')}
-                    className="h-9 rounded-md border px-3 text-sm"
-                  />
-                  <Button type="submit" variant="outline">{t('moveClass')}</Button>
-                </Form>
-                <Form method="post">
-                  <input type="hidden" name="intent" value="end" />
-                  <input type="hidden" name="enrolmentId" value={enrolment.id} />
-                  <input type="hidden" name="status" value="left" />
-                  <Button type="submit" variant="outline">{t('endAsLeft')}</Button>
-                </Form>
-                <Form method="post">
-                  <input type="hidden" name="intent" value="end" />
-                  <input type="hidden" name="enrolmentId" value={enrolment.id} />
-                  <input type="hidden" name="status" value="transferred" />
-                  <Button type="submit" variant="outline">{t('endAsTransferred')}</Button>
-                </Form>
-              </div>
-            ) : null}
-          </section>
-        ))}
-      </div>
+      {enrolments.length === 0 ? <p>{t('noEnrolments')}</p> : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('name')}</TableHead>
+                <TableHead className="font-semibold">{t('academicYear')}</TableHead>
+                <TableHead className="font-semibold">{t('classrooms')}</TableHead>
+                <TableHead className="font-semibold">{t('status')}</TableHead>
+                <TableHead className="font-semibold">{t('moveReason')}</TableHead>
+                <TableHead className="font-semibold">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {enrolments.map((enrolment) => (
+                <TableRow key={enrolment.id}>
+                  <TableCell className="font-medium">{enrolment.studentName}</TableCell>
+                  <TableCell>{enrolment.yearName}</TableCell>
+                  <TableCell>{enrolment.className}</TableCell>
+                  <TableCell>{enrolment.status}</TableCell>
+                  <TableCell className="whitespace-normal">{enrolment.moveReason}</TableCell>
+                  <TableCell>
+                    {enrolment.status === 'enrolled' ? (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Form method="post" className="flex flex-wrap items-center gap-2">
+                          <input type="hidden" name="intent" value="move" />
+                          <input type="hidden" name="enrolmentId" value={enrolment.id} />
+                          <select name="formClassId" required aria-label={t('classrooms')} className="h-8 rounded-md border px-2 text-sm">
+                            {classes.map((formClass) => (
+                              <option key={formClass.id} value={formClass.id}>{formClass.name}</option>
+                            ))}
+                          </select>
+                          <input
+                            name="reason"
+                            required
+                            placeholder={t('moveReason')}
+                            aria-label={t('moveReason')}
+                            className="h-8 w-36 rounded-md border px-2 text-sm"
+                          />
+                          <Button type="submit" size="sm" variant="outline">{t('moveClass')}</Button>
+                        </Form>
+                        <Form method="post">
+                          <input type="hidden" name="intent" value="end" />
+                          <input type="hidden" name="enrolmentId" value={enrolment.id} />
+                          <input type="hidden" name="status" value="left" />
+                          <Button type="submit" size="sm" variant="outline">{t('endAsLeft')}</Button>
+                        </Form>
+                        <Form method="post">
+                          <input type="hidden" name="intent" value="end" />
+                          <input type="hidden" name="enrolmentId" value={enrolment.id} />
+                          <input type="hidden" name="status" value="transferred" />
+                          <Button type="submit" size="sm" variant="outline">{t('endAsTransferred')}</Button>
+                        </Form>
+                      </div>
+                    ) : null}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

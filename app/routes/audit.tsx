@@ -2,6 +2,14 @@ import { Form, useLoaderData } from 'react-router';
 import type { LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
@@ -49,16 +57,30 @@ export default function AuditPage() {
       {entries.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('auditEmpty')}</p>
       ) : (
-        <ul className="space-y-2">
-          {entries.map((entry) => (
-            <li key={entry.id} className="rounded-md border p-3 text-sm">
-              <p className="font-medium">{entry.action}</p>
-              <p className="text-muted-foreground">
-                {[entry.extensionKey, entry.target].filter(Boolean).join(' / ')}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('auditAction')}</TableHead>
+                <TableHead className="font-semibold">{t('auditTarget')}</TableHead>
+                <TableHead className="font-semibold">{t('messageBody')}</TableHead>
+                <TableHead className="font-semibold">{t('eventDate')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {entries.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell className="font-medium">{entry.action}</TableCell>
+                  <TableCell>
+                    {[entry.extensionKey, entry.target].filter(Boolean).join(' / ')}
+                  </TableCell>
+                  <TableCell className="whitespace-normal text-muted-foreground">{entry.detail}</TableCell>
+                  <TableCell>{new Date(entry.createdAt).toLocaleString()}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );

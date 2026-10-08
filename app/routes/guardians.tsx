@@ -1,7 +1,16 @@
+import { Fragment } from 'react';
 import { Form, redirect, useActionData, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { loadRecordScope } from '~/lib/load-record-scope';
 import { requireSchoolPermission } from '~/lib/require-school-permission';
@@ -129,69 +138,106 @@ export default function GuardiansPage() {
         <input name="address" aria-label={t('address')} placeholder={t('address')} className="h-9 rounded-md border px-3 text-sm" />
         <Button type="submit">{t('addGuardian')}</Button>
       </Form>
-      {guardians.length === 0 ? <p className="text-sm text-muted-foreground">{t('noGuardians')}</p> : null}
       {guardians.map((guardian) => (
-        <section key={guardian.id} className="space-y-3 rounded-md border p-4">
-          <Form method="post" className="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="intent" value="update" />
-            <input type="hidden" name="guardianId" value={guardian.id} />
-            <input name="fullName" required defaultValue={guardian.fullName} aria-label={t('guardianName')} className="h-9 rounded-md border px-3 text-sm" />
-            <input name="phone" defaultValue={guardian.phone ?? ''} aria-label={t('phone')} className="h-9 rounded-md border px-3 text-sm" />
-            <input name="email" defaultValue={guardian.email ?? ''} aria-label={t('email')} className="h-9 rounded-md border px-3 text-sm" />
-            <input name="address" defaultValue={guardian.address ?? ''} aria-label={t('address')} className="h-9 rounded-md border px-3 text-sm" />
-            <Button type="submit">{t('saveGuardian')}</Button>
-          </Form>
-          <div className="flex flex-wrap items-center gap-2">
-            <Form method="post">
-              <input type="hidden" name="intent" value="remove" />
-              <input type="hidden" name="guardianId" value={guardian.id} />
-              <Button type="submit" variant="outline">{t('delete')}</Button>
-            </Form>
-            {guardian.userId ? <p className="text-sm text-muted-foreground">{t('guardianHasAccount')}</p> : null}
-            {canInvite && !guardian.userId ? (
-              <Form method="post">
-                <input type="hidden" name="intent" value="invite" />
-                <input type="hidden" name="guardianId" value={guardian.id} />
-                <Button type="submit" variant="outline">{t('inviteGuardian')}</Button>
-              </Form>
-            ) : null}
-          </div>
-          <ul className="space-y-2 text-sm">
-            {guardian.links.map((link) => (
-              <li key={link.id} className="flex flex-wrap items-center gap-2">
-                <span>{link.studentName}: {link.relationship}{link.primary ? `, ${t('primaryContact')}` : ''}</span>
-                <Form method="post">
-                  <input type="hidden" name="intent" value="unlink" />
-                  <input type="hidden" name="linkId" value={link.id} />
-                  <Button type="submit" variant="outline" size="sm">{t('unlink')}</Button>
-                </Form>
-                {link.primary ? null : (
-                  <Form method="post">
-                    <input type="hidden" name="intent" value="primary" />
-                    <input type="hidden" name="linkId" value={link.id} />
-                    <Button type="submit" variant="outline" size="sm">{t('primaryContact')}</Button>
-                  </Form>
-                )}
-              </li>
-            ))}
-          </ul>
-          <Form method="post" className="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="intent" value="link" />
-            <input type="hidden" name="guardianId" value={guardian.id} />
-            <select name="studentId" required aria-label={t('studentsList')} className="h-9 rounded-md border px-3 text-sm">
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>{student.name}</option>
-              ))}
-            </select>
-            <input name="relationship" required aria-label={t('relationship')} placeholder={t('relationship')} className="h-9 rounded-md border px-3 text-sm" />
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="primary" value="yes" />
-              {t('primaryContact')}
-            </label>
-            <Button type="submit">{t('linkStudent')}</Button>
-          </Form>
-        </section>
+        <Form key={guardian.id} method="post" id={`guardian-${guardian.id}`} className="hidden">
+          <input type="hidden" name="intent" value="update" />
+          <input type="hidden" name="guardianId" value={guardian.id} />
+        </Form>
       ))}
+      {guardians.length === 0 ? <p className="text-sm text-muted-foreground">{t('noGuardians')}</p> : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('guardianName')}</TableHead>
+                <TableHead className="font-semibold">{t('phone')}</TableHead>
+                <TableHead className="font-semibold">{t('email')}</TableHead>
+                <TableHead className="font-semibold">{t('address')}</TableHead>
+                <TableHead className="font-semibold">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {guardians.map((guardian) => {
+                const formId = `guardian-${guardian.id}`;
+                return (
+                  <Fragment key={guardian.id}>
+                    <TableRow>
+                      <TableCell>
+                        <input form={formId} name="fullName" required defaultValue={guardian.fullName} aria-label={t('guardianName')} className="h-8 w-40 rounded-md border px-2 text-sm" />
+                      </TableCell>
+                      <TableCell>
+                        <input form={formId} name="phone" defaultValue={guardian.phone ?? ''} aria-label={t('phone')} className="h-8 w-32 rounded-md border px-2 text-sm" />
+                      </TableCell>
+                      <TableCell>
+                        <input form={formId} name="email" defaultValue={guardian.email ?? ''} aria-label={t('email')} className="h-8 w-44 rounded-md border px-2 text-sm" />
+                      </TableCell>
+                      <TableCell>
+                        <input form={formId} name="address" defaultValue={guardian.address ?? ''} aria-label={t('address')} className="h-8 w-40 rounded-md border px-2 text-sm" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button type="submit" form={formId} size="sm">{t('saveGuardian')}</Button>
+                          <Form method="post">
+                            <input type="hidden" name="intent" value="remove" />
+                            <input type="hidden" name="guardianId" value={guardian.id} />
+                            <Button type="submit" size="sm" variant="outline">{t('delete')}</Button>
+                          </Form>
+                          {guardian.userId ? <span className="text-xs text-muted-foreground">{t('guardianHasAccount')}</span> : null}
+                          {canInvite && !guardian.userId ? (
+                            <Form method="post">
+                              <input type="hidden" name="intent" value="invite" />
+                              <input type="hidden" name="guardianId" value={guardian.id} />
+                              <Button type="submit" size="sm" variant="outline">{t('inviteGuardian')}</Button>
+                            </Form>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={5} className="whitespace-normal">
+                        <div className="space-y-2">
+                          {guardian.links.map((link) => (
+                            <div key={link.id} className="flex flex-wrap items-center gap-2 text-sm">
+                              <span>{link.studentName}: {link.relationship}{link.primary ? `, ${t('primaryContact')}` : ''}</span>
+                              <Form method="post">
+                                <input type="hidden" name="intent" value="unlink" />
+                                <input type="hidden" name="linkId" value={link.id} />
+                                <Button type="submit" variant="outline" size="sm">{t('unlink')}</Button>
+                              </Form>
+                              {link.primary ? null : (
+                                <Form method="post">
+                                  <input type="hidden" name="intent" value="primary" />
+                                  <input type="hidden" name="linkId" value={link.id} />
+                                  <Button type="submit" variant="outline" size="sm">{t('primaryContact')}</Button>
+                                </Form>
+                              )}
+                            </div>
+                          ))}
+                          <Form method="post" className="flex flex-wrap items-center gap-2">
+                            <input type="hidden" name="intent" value="link" />
+                            <input type="hidden" name="guardianId" value={guardian.id} />
+                            <select name="studentId" required aria-label={t('studentsList')} className="h-8 rounded-md border px-2 text-sm">
+                              {students.map((student) => (
+                                <option key={student.id} value={student.id}>{student.name}</option>
+                              ))}
+                            </select>
+                            <input name="relationship" required aria-label={t('relationship')} placeholder={t('relationship')} className="h-8 rounded-md border px-2 text-sm" />
+                            <label className="flex items-center gap-2 text-sm">
+                              <input type="checkbox" name="primary" value="yes" />
+                              {t('primaryContact')}
+                            </label>
+                            <Button type="submit" size="sm">{t('linkStudent')}</Button>
+                          </Form>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

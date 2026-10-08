@@ -2,7 +2,14 @@ import { useFetcher, useLoaderData } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { Button } from '~/components/ui/button';
-import { Card, CardContent } from '~/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '~/components/ui/table';
 import { useLanguage } from '~/lib/i18n';
 import { readRememberedSchoolId, selectSchoolId } from '~/lib/selected-school';
 import type { SelectSchool } from 'workers/database/school';
@@ -117,74 +124,90 @@ export default function MembersPage() {
       ) : null}
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
-      <ul className="space-y-3">
-        {members.map((member) => {
-          const name = [member.firstName, member.lastName].filter(Boolean).join(' ') || member.email;
-          return (
-            <li key={member.membershipId}>
-              <Card>
-                <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
-                  <div>
-                    <p className="font-medium">{name}</p>
-                    <p className="text-sm text-muted-foreground">{member.email}</p>
-                    <p className="text-sm text-muted-foreground">{member.status}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <fetcher.Form method="post" className="flex items-center gap-2">
-                      <input type="hidden" name="intent" value="role" />
-                      <input type="hidden" name="schoolId" value={schoolId ?? ''} />
-                      <input type="hidden" name="membershipId" value={member.membershipId} />
-                      <select
-                        name="roleId"
-                        defaultValue={member.roleId}
-                        className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-                        aria-label={t('changeRole')}
-                      >
-                        {roles.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {role.name}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
-                        {t('changeRole')}
-                      </Button>
-                    </fetcher.Form>
-                    {member.status === 'active' ? (
-                      <MemberAction
-                        intent="suspend"
-                        label={t('suspendMember')}
+      {schoolId === null ? null : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="font-semibold">{t('name')}</TableHead>
+                <TableHead className="font-semibold">{t('email')}</TableHead>
+                <TableHead className="font-semibold">{t('status')}</TableHead>
+                <TableHead className="font-semibold">{t('roleName')}</TableHead>
+                <TableHead className="font-semibold">{t('linkedRecord')}</TableHead>
+                <TableHead className="font-semibold">{t('actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {members.map((member) => {
+                const name = [member.firstName, member.lastName].filter(Boolean).join(' ') || member.email;
+                return (
+                  <TableRow key={member.membershipId}>
+                    <TableCell className="font-medium">{name}</TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>{member.status}</TableCell>
+                    <TableCell>
+                      <fetcher.Form method="post" className="flex items-center gap-2">
+                        <input type="hidden" name="intent" value="role" />
+                        <input type="hidden" name="schoolId" value={schoolId} />
+                        <input type="hidden" name="membershipId" value={member.membershipId} />
+                        <select
+                          name="roleId"
+                          defaultValue={member.roleId}
+                          className="h-8 rounded-md border border-border bg-background px-2 text-sm"
+                          aria-label={t('changeRole')}
+                        >
+                          {roles.map((role) => (
+                            <option key={role.id} value={role.id}>
+                              {role.name}
+                            </option>
+                          ))}
+                        </select>
+                        <Button type="submit" size="sm" variant="outline" disabled={fetcher.state !== 'idle'}>
+                          {t('changeRole')}
+                        </Button>
+                      </fetcher.Form>
+                    </TableCell>
+                    <TableCell>
+                      <MemberLink
+                        member={member}
                         schoolId={schoolId}
-                        membershipId={member.membershipId}
+                        teachers={teachers}
+                        students={students}
+                        guardianLinks={guardianLinks}
                       />
-                    ) : (
-                      <MemberAction
-                        intent="restore"
-                        label={t('restoreMember')}
-                        schoolId={schoolId}
-                        membershipId={member.membershipId}
-                      />
-                    )}
-                    <MemberAction
-                      intent="remove"
-                      label={t('removeMember')}
-                      schoolId={schoolId}
-                      membershipId={member.membershipId}
-                    />
-                  </div>
-                  <MemberLink
-                    member={member}
-                    schoolId={schoolId}
-                    teachers={teachers}
-                    students={students}
-                    guardianLinks={guardianLinks}
-                  />
-                </CardContent>
-              </Card>
-            </li>
-          );
-        })}
-      </ul>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {member.status === 'active' ? (
+                          <MemberAction
+                            intent="suspend"
+                            label={t('suspendMember')}
+                            schoolId={schoolId}
+                            membershipId={member.membershipId}
+                          />
+                        ) : (
+                          <MemberAction
+                            intent="restore"
+                            label={t('restoreMember')}
+                            schoolId={schoolId}
+                            membershipId={member.membershipId}
+                          />
+                        )}
+                        <MemberAction
+                          intent="remove"
+                          label={t('removeMember')}
+                          schoolId={schoolId}
+                          membershipId={member.membershipId}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
@@ -214,7 +237,7 @@ function MemberLink({
     .join(',');
 
   return (
-    <fetcher.Form method="post" className="flex w-full flex-wrap items-center gap-2">
+    <fetcher.Form method="post" className="flex flex-wrap items-center gap-2">
       <input type="hidden" name="intent" value="link" />
       <input type="hidden" name="roleKey" value={member.roleKey} />
       <input type="hidden" name="schoolId" value={schoolId ?? ''} />
@@ -225,7 +248,7 @@ function MemberLink({
           name="teacherId"
           defaultValue={member.teacherId ?? ''}
           aria-label={t('linkedTeacher')}
-          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+          className="h-8 rounded-md border border-border bg-background px-2 text-sm"
         >
           <option value="">{t('noLinkedRecord')}</option>
           {teachers.map((teacher) => (
@@ -240,7 +263,7 @@ function MemberLink({
           name="studentId"
           defaultValue={member.studentId ?? ''}
           aria-label={t('linkedStudent')}
-          className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+          className="h-8 rounded-md border border-border bg-background px-2 text-sm"
         >
           <option value="">{t('noLinkedRecord')}</option>
           {students.map((student) => (
@@ -256,10 +279,10 @@ function MemberLink({
           defaultValue={linkedStudentIds}
           aria-label={t('linkedStudents')}
           placeholder={t('linkedStudents')}
-          className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+          className="h-8 w-28 rounded-md border border-border bg-background px-3 text-sm"
         />
       ) : null}
-      <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
+      <Button type="submit" size="sm" variant="outline" disabled={fetcher.state !== 'idle'}>
         {t('saveLink')}
       </Button>
       {fetcher.data?.error ? <p className="text-sm text-destructive">{fetcher.data.error}</p> : null}
@@ -285,7 +308,7 @@ function MemberAction({
       <input type="hidden" name="intent" value={intent} />
       <input type="hidden" name="schoolId" value={schoolId ?? ''} />
       <input type="hidden" name="membershipId" value={membershipId} />
-      <Button type="submit" variant="outline" disabled={fetcher.state !== 'idle'}>
+      <Button type="submit" size="sm" variant="outline" disabled={fetcher.state !== 'idle'}>
         {label}
       </Button>
       {message ? <p className="text-sm text-destructive">{message}</p> : null}
