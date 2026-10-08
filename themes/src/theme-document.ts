@@ -23,6 +23,7 @@ const colourTokensSchema = z
     accentForeground: hexColour,
     border: hexColour,
     ring: hexColour,
+    primaryEnd: hexColour.optional(),
     sidebar: hexColour,
     sidebarForeground: hexColour,
     sidebarPrimary: hexColour,
@@ -53,7 +54,7 @@ export const themeDocumentSchema = z
 export type ThemeDocument = z.infer<typeof themeDocumentSchema>;
 export type ColourTokens = z.infer<typeof colourTokensSchema>;
 
-const cssVariables: Record<keyof ColourTokens, string> = {
+const cssVariables: Record<Exclude<keyof ColourTokens, 'primaryEnd'>, string> = {
   primary: '--primary',
   primaryForeground: '--primary-foreground',
   background: '--background',
@@ -109,6 +110,8 @@ function writeTokens(selector: string, tokens: ColourTokens): string {
     const colour = tokens[tokenName as keyof ColourTokens];
     return `  ${variableName}: ${colour};`;
   });
+  // A theme without its own gradient end stays a solid primary, not the default purple.
+  lines.push(`  --primary-end: ${tokens.primaryEnd ?? tokens.primary};`);
 
   return `${selector} {\n${lines.join('\n')}\n}`;
 }

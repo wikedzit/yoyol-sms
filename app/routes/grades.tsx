@@ -516,7 +516,7 @@ export default function Grades() {
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100">
+                <TableRow>
                   <TableHead>
                     {t("student")} {t("name")}
                   </TableHead>

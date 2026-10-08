@@ -102,7 +102,7 @@ export function ModuleCatalogTable({
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100">
+                <TableRow>
                   <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">{t('name')}</TableHead>
                   <TableHead className="font-semibold">{t('moduleDescription')}</TableHead>

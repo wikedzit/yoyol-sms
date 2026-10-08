@@ -4,6 +4,7 @@
   "name": { "en": "YOYOL", "sw": "YOYOL" },
   "light": {
     "primary": "#5a30f1",
+    "primaryEnd": "#a259ff",
     "primaryForeground": "#ffffff",
     "background": "#f8fafc",
     "foreground": "#1e293b",
@@ -27,6 +28,7 @@
   },
   "dark": {
     "primary": "#7c5cff",
+    "primaryEnd": "#a259ff",
     "primaryForeground": "#ffffff",
     "background": "#0b0f19",
     "foreground": "#f8fafc",

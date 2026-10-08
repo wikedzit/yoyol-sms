@@ -27,6 +27,7 @@ test('an uploaded theme becomes CSS variables and nothing else', () => {
   const css = buildThemeCss(document);
   assert.ok(css);
   assert.match(css, /--primary: #0f766e;/);
+  assert.match(css, /--primary-end: #0f766e;/);
   assert.equal(css.includes('<'), false);
   assert.equal(css.includes('expression'), false);
 });

@@ -410,7 +410,7 @@ export default function ClassDetails() {
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100">
+                <TableRow>
                   <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">First name</TableHead>
                   <TableHead className="font-semibold">Last name</TableHead>

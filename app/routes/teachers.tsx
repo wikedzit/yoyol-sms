@@ -449,7 +449,7 @@ export default function Teachers() {
           <div className="rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-100">
+                <TableRow>
                   <TableHead className="font-semibold">SN</TableHead>
                   <TableHead className="font-semibold">{t('firstName')}</TableHead>
                   <TableHead className="font-semibold">{t('lastName')}</TableHead>

@@ -429,7 +429,7 @@ export default function SubjectsPage() {
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-100">
+                  <TableRow>
                     <TableHead className="font-semibold">{t('code')}</TableHead>
                     <TableHead className="font-semibold">
                       {t('subjectName')}

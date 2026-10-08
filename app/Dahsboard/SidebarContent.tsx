@@ -121,7 +121,7 @@ export const SidebarContent = ({
             className={cn(
               "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out",
               location.pathname === link.href
-                ? "bg-primary-gradient text-white font-semibold"
+                ? "sidebar-item-active font-semibold"
                 : "text-app-body hover:bg-accent hover:text-app-text",
             )}
           >
@@ -193,7 +193,7 @@ const SidebarLink = ({
       className={cn(
         "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 ease-out group",
         isActive
-          ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+          ? "sidebar-item-active font-semibold"
           : "text-app-body hover:bg-accent hover:text-app-text",
       )}
     >
@@ -201,7 +201,7 @@ const SidebarLink = ({
         className={cn(
           "h-5 w-5 transition-transform duration-200",
           isActive
-            ? "text-white scale-105"
+            ? "scale-105"
             : "text-app-body group-hover:scale-105",
         )}
       />
@@ -209,7 +209,7 @@ const SidebarLink = ({
       <span className="truncate">{t(item.labelKey)}</span>
 
       {/* Subtle indicator icon for active route */}
-      {isActive && <ChevronRight className="ml-auto h-4 w-4 text-white" />}
+      {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
     </Link>
   );
 };
@@ -245,7 +245,7 @@ const SidebarParent = ({
         className={cn(
           "relative w-full flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium rounded-[8px] transition-all duration-200 cursor-pointer group",
           isChildActive
-            ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+            ? "sidebar-item-active font-semibold"
             : "text-app-body hover:bg-accent hover:text-app-text",
         )}
       >
@@ -253,7 +253,7 @@ const SidebarParent = ({
           className={cn(
             "h-5 w-5 transition-transform duration-200",
             isChildActive
-              ? "text-white scale-105"
+              ? "scale-105"
               : "text-app-body group-hover:scale-105",
           )}
         />
@@ -262,7 +262,7 @@ const SidebarParent = ({
         <ChevronDown
           className={cn(
             "ml-auto h-4 w-4 transition-transform duration-200",
-            isChildActive ? "text-white" : "text-app-body",
+            isChildActive ? "text-current" : "text-app-body",
             open && "rotate-180",
           )}
         />
@@ -281,7 +281,7 @@ const SidebarParent = ({
                 className={cn(
                   "relative flex items-center px-3 py-2 text-sm rounded-[8px] transition-all duration-200",
                   isActive
-                    ? "bg-primary-gradient text-white font-semibold shadow-md shadow-[#5a30f1]/25 border border-white/10 opacity-100"
+                    ? "sidebar-item-active font-semibold"
                     : "text-app-body hover:bg-accent hover:text-app-text font-medium",
                 )}
               >

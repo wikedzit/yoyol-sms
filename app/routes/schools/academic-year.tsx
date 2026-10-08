@@ -344,7 +344,7 @@ export default function AcademicYearPage() {
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-100">
+                  <TableRow>
                     <TableHead className="font-semibold">Name</TableHead>
                     <TableHead className="font-semibold">Start Date</TableHead>
                     <TableHead className="font-semibold">End Date</TableHead>
