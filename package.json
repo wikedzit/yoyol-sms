@@ -17,7 +17,8 @@
     "db:reset": "rm -rf .wrangler/state/v3/d1 && pnpm db:migrate && pnpm db:seed",
     "postinstall": "npm run cf-typegen",
     "preview": "pnpm run build && vite preview",
-    "typecheck": "npm run cf-typegen && react-router typegen && tsc -b"
+    "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
+    "ext": "node --experimental-strip-types scripts/yoyol-ext.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
