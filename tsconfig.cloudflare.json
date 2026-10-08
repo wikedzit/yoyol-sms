@@ -1,13 +1,15 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["extensions/**/*.test.ts", "workers/**/*.test.ts", "workers/database/postgres-adapter.ts"],
+  "exclude": ["modules/**/*.test.ts", "plugins/**/*.test.ts", "themes/**/*.test.ts", "workers/**/*.test.ts", "workers/database/postgres-adapter.ts"],
   "include": [
     ".react-router/types/**/*",
     "app/**/*",
     "app/**/.server/**/*",
     "app/**/.client/**/*",
     "workers/**/*",
-    "extensions/**/*",
+    "modules/**/*",
+    "plugins/**/*",
+    "themes/**/*",
     "worker-configuration.d.ts"
   ],
   "compilerOptions": {

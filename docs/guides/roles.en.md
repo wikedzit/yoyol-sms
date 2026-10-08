@@ -2,7 +2,7 @@
 
 ## Admin
 
-The school owner installs extensions at `/extensions` and themes at `/themes`. The owner can trust or revoke a publisher key. Other roles do not see package upload. Students, staff, classes, fees, attendance, and the other school screens are modules that ship with the system. Roles list each module's permissions.
+The school owner turns modules on at `/modules`, plugins at `/plugins`, and themes at `/themes`. The owner can trust or revoke a publisher key. Other roles do not see package upload. Students, staff, classes, fees, attendance, and the other school screens are modules that ship with the system. Roles list each module's permissions.
 
 ## Teacher
 

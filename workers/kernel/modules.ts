@@ -1,7 +1,7 @@
 // The shell is built from modules. Kernel modules cannot be removed.
 // Core modules ship installed. An optional module adds its menu item only
-// after a school installs it. Extensions and Themes are shell pages: they
-// manage the app, they are not records of one school.
+// after a school installs it. Modules, plugins, themes, inbox, and the
+// audit log are system pages. They manage the app, not a school record.
 
 export type ModulePresence = 'kernel' | 'core' | 'optional';
 
@@ -16,9 +16,12 @@ export type ModuleMenuItem = {
   path: string;
 };
 
+export type MenuGroup = 'school' | 'system';
+
 export type AppModule = {
   key: string;
   presence: ModulePresence;
+  menuGroup: MenuGroup;
   name: { en: string; sw: string };
   menuLabelKey: string;
   menuOrder: number;
@@ -30,6 +33,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'access',
     presence: 'kernel',
+    menuGroup: 'system',
     name: { en: 'Access', sw: 'Ufikiaji' },
     menuLabelKey: 'access',
     menuOrder: 30,
@@ -37,8 +41,6 @@ export const appModules: readonly AppModule[] = [
       { labelKey: 'schoolMembers', path: '/schools/members' },
       { labelKey: 'invitations', path: '/schools/invitations' },
       { labelKey: 'schoolRoles', path: '/schools/roles' },
-      { labelKey: 'inbox', path: '/inbox' },
-      { labelKey: 'auditLog', path: '/audit' },
     ],
     permissions: [
       {
@@ -56,9 +58,10 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'school',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'School', sw: 'Shule' },
     menuLabelKey: 'schoolsSetup',
-    menuOrder: 20,
+    menuOrder: 5,
     menu: [
       { labelKey: 'schoolProfile', path: '/schools/profile' },
       { labelKey: 'academicYear', path: '/schools/academic-year' },
@@ -90,6 +93,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'academics',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Academics', sw: 'Masomo' },
     menuLabelKey: 'academicLevels',
     menuOrder: 10,
@@ -106,6 +110,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'students',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Students', sw: 'Wanafunzi' },
     menuLabelKey: 'studentsList',
     menuOrder: 40,
@@ -133,6 +138,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'staff',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Staff', sw: 'Wafanyakazi' },
     menuLabelKey: 'teachers',
     menuOrder: 50,
@@ -156,6 +162,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'assessment',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Assessment', sw: 'Tathmini' },
     menuLabelKey: 'grades',
     menuOrder: 60,
@@ -169,6 +176,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'attendance',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Attendance', sw: 'Mahudhurio' },
     menuLabelKey: 'attendance',
     menuOrder: 70,
@@ -189,6 +197,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'finance',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Finance', sw: 'Fedha' },
     menuLabelKey: 'finance',
     menuOrder: 80,
@@ -209,6 +218,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'timetable',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Timetable', sw: 'Ratiba' },
     menuLabelKey: 'timetable',
     menuOrder: 90,
@@ -229,6 +239,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'lesson-plans',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Lesson plans', sw: 'Mipango ya somo' },
     menuLabelKey: 'lessonPlans',
     menuOrder: 100,
@@ -254,6 +265,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'discipline',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Discipline', sw: 'Nidhamu' },
     menuLabelKey: 'discipline',
     menuOrder: 110,
@@ -279,6 +291,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'clubs',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Clubs', sw: 'Vilabu' },
     menuLabelKey: 'clubs',
     menuOrder: 120,
@@ -304,6 +317,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'leadership',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Leadership', sw: 'Uongozi' },
     menuLabelKey: 'leadership',
     menuOrder: 130,
@@ -324,6 +338,7 @@ export const appModules: readonly AppModule[] = [
   {
     key: 'reports',
     presence: 'core',
+    menuGroup: 'school',
     name: { en: 'Reports', sw: 'Ripoti' },
     menuLabelKey: 'reports',
     menuOrder: 140,
@@ -344,13 +359,16 @@ export const appModules: readonly AppModule[] = [
 ];
 
 export const shellMenu: readonly ModuleMenuItem[] = [
-  { labelKey: 'installExtensions', path: '/extensions' },
+  { labelKey: 'inbox', path: '/inbox' },
+  { labelKey: 'auditLog', path: '/audit' },
+  { labelKey: 'installExtensions', path: '/modules' },
+  { labelKey: 'installPlugins', path: '/plugins' },
   { labelKey: 'installThemes', path: '/themes' },
 ];
 
-export function modulesInTheMenu(): readonly AppModule[] {
+export function modulesInTheMenu(group: MenuGroup = 'school'): readonly AppModule[] {
   return appModules
-    .filter((module) => module.presence !== 'optional')
+    .filter((module) => module.presence !== 'optional' && module.menuGroup === group)
     .slice()
     .sort((left, right) => left.menuOrder - right.menuOrder);
 }

@@ -1,4 +1,4 @@
-// Every bundled extension is a folder under extensions/<key>/.
+// Every bundled package is a folder under modules/<key>/, plugins/<key>/, or themes/.
 // The same files are what a future zip package is allowed to contain,
 // plus README.md and src/, which stay in the repository and are not packed.
 

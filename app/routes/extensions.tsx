@@ -18,8 +18,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   await context.services.tenancy.ensureForCurrentOwner();
   const schools: SelectSchool[] = await context.services.school.getAll();
   const schoolId = selectSchoolId(new URL(request.url), schools);
+  const catalog = new URL(request.url).pathname.startsWith('/plugins') ? 'plugin' : 'module';
   const extensions: InstalledExtension[] = schoolId
-    ? await context.services.extensions.listForSchool(schoolId)
+    ? (await context.services.extensions.listForSchool(schoolId)).filter(
+        (extension) => extension.type === catalog && extension.key !== 'themes',
+      )
     : [];
   const deadEvents = schoolId ? await context.services.events.listDead(schoolId) : [];
   const settingFields: ExtensionSettingField[] = schoolId
@@ -43,6 +46,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     schools: schools.map((school) => ({ id: school.id, name: school.name })),
     schoolId,
     extensions,
+    catalog,
     deadEvents,
     settingFields,
     isPlatformAdmin,
@@ -117,6 +121,7 @@ export default function ExtensionsPage() {
     schools,
     schoolId,
     extensions,
+    catalog,
     deadEvents,
     settingFields,
     isPlatformAdmin,
@@ -131,7 +136,10 @@ export default function ExtensionsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('installExtensions')} description={t('installExtensionsDescription')} />
+      <PageHeader
+        title={t(catalog === 'plugin' ? 'installPlugins' : 'installExtensions')}
+        description={t(catalog === 'plugin' ? 'installPluginsDescription' : 'installExtensionsDescription')}
+      />
       <SchoolPicker schools={schools} schoolId={schoolId} searchParams={searchParams} />
       {schoolId === null ? (
         <p className="text-sm text-muted-foreground">{t('createSchoolFirst')}</p>
@@ -245,11 +253,6 @@ export default function ExtensionsPage() {
                           </fetcher.Form>
                         ))
                       : null}
-                    {extension.key === 'themes' && isEnabled ? (
-                      <Link className="text-sm underline" to={`/themes?schoolId=${schoolId}`}>
-                        {t('openThemes')}
-                      </Link>
-                    ) : null}
                   </CardContent>
                 </Card>
               </li>

@@ -11,7 +11,7 @@ import {
 } from './schema-compiler.ts';
 
 const studentsMigration = parseModuleMigration(JSON.parse(readFileSync(
-  join(import.meta.dirname, '../../extensions/students/schema/001_initial.json'),
+  join(import.meta.dirname, '../../modules/students/schema/001_initial.json'),
   'utf8',
 )));
 

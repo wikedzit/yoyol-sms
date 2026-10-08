@@ -1,4 +1,4 @@
-import defaultTheme from '../../extensions/themes/themes/yoyol-default.json';
+import defaultTheme from '../../themes/themes/yoyol-default.json';
 
 export function loader() {
   return new Response(JSON.stringify(defaultTheme, null, 2), {

@@ -33,4 +33,4 @@ The view document for the sample page is a title and a text line. The renderer a
 
 ## Local run
 
-`pnpm ext dev` checks the folder and prints the local app commands. It does not hot-reload an unpacked zip. This server has no Worker Loader binding, so a signed zip cannot be installed from the Extensions page. Bundled extensions in `extensions/` load with the app.
+`pnpm ext dev` checks the folder and prints the local app commands. It does not hot-reload an unpacked zip. This server has no Worker Loader binding, so a signed zip cannot be installed from the Modules or Plugins page. Bundled packages in `modules/`, `plugins/`, and `themes/` load with the app.

@@ -12,7 +12,7 @@ const sqlTables = readdirSync(sqlDirectory)
     tables: tablesInSql(readFileSync(join(sqlDirectory, file), 'utf8')),
   }));
 
-const extensionsRoot = join(root, 'extensions');
+const extensionsRoot = join(root, 'modules');
 const moduleTables = readdirSync(extensionsRoot, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)

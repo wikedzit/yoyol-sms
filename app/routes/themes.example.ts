@@ -1,4 +1,4 @@
-import coastalTheme from '../../extensions/themes/themes/coastal.json';
+import coastalTheme from '../../themes/themes/coastal.json';
 
 export function loader() {
   return new Response(JSON.stringify(coastalTheme, null, 2), {

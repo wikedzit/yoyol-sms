@@ -5,7 +5,7 @@ import {
   defaultThemeKey,
   parseThemePackage,
   type ThemeDocument,
-} from '../../extensions/themes/src/theme-document';
+} from '../../themes/src/theme-document';
 import { school } from '../database/school';
 import {
   schoolThemes,

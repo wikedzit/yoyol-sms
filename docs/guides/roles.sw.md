@@ -2,7 +2,7 @@
 
 ## Msimamizi
 
-Mmiliki wa shule anaweka viendelezi kwenye `/extensions` na mandhari kwenye `/themes`. Mmiliki anaweza kuamini au kubatilisha funguo ya mchapishaji. Majukumu mengine hayaoni upakiaji wa kifurushi. Wanafunzi, wafanyakazi, madarasa, ada, mahudhurio, na skrini nyingine za shule ni moduli zinazokuja na mfumo. Majukumu yanaorodhesha ruhusa za kila moduli.
+Mmiliki wa shule anawasha moduli kwenye `/modules`, programu-jalizi kwenye `/plugins`, na mandhari kwenye `/themes`. Mmiliki anaweza kuamini au kubatilisha funguo ya mchapishaji. Majukumu mengine hayaoni upakiaji wa kifurushi. Wanafunzi, wafanyakazi, madarasa, ada, mahudhurio, na skrini nyingine za shule ni moduli zinazokuja na mfumo. Majukumu yanaorodhesha ruhusa za kila moduli.
 
 ## Mwalimu
 

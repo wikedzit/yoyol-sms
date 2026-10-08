@@ -1,6 +1,7 @@
-import { Link, useLoaderData, useSearchParams } from 'react-router';
+import { Form, Link, useLoaderData, useSearchParams } from 'react-router';
 import type { ActionFunctionArgs, LoaderFunctionArgs } from 'react-router';
 import { SchoolThemeCard } from '~/components/school/SchoolThemeCard';
+import { Button } from '~/components/ui/button';
 import { PageHeader } from '~/components/ui/PageHeader';
 import { useLanguage } from '~/lib/i18n';
 import { selectSchoolId } from '~/lib/selected-school';
@@ -34,6 +35,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const form = await request.formData();
   const schoolId = Number(form.get('schoolId'));
   const intent = String(form.get('intent') || '');
+  if (intent === 'enable-themes') {
+    await context.services.extensions.enable(schoolId, 'themes');
+    return { themeSuccess: 'enabled' as const };
+  }
   const themesEnabled = await context.services.extensions.isEnabled(schoolId, 'themes');
 
   if (!themesEnabled) {
@@ -99,12 +104,12 @@ export default function ThemesPage() {
         <p className="text-sm text-muted-foreground">{t('createSchoolFirst')}</p>
       ) : null}
       {schoolId !== null && !themesExtensionEnabled ? (
-        <p className="text-sm">
-          {t('installThemesExtensionFirst')}{' '}
-          <Link className="underline" to={`/extensions?schoolId=${schoolId}`}>
-            {t('installExtensions')}
-          </Link>
-        </p>
+        <Form method="post" className="space-y-3">
+          <p className="text-sm">{t('installThemesExtensionFirst')}</p>
+          <input type="hidden" name="intent" value="enable-themes" />
+          <input type="hidden" name="schoolId" value={schoolId} />
+          <Button type="submit">{t('turnOnThemes')}</Button>
+        </Form>
       ) : null}
       {schoolId !== null && themesExtensionEnabled ? (
         <SchoolThemeCard themes={themes} schoolId={schoolId} />

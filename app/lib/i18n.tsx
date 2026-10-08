@@ -104,7 +104,8 @@ const translations = {
     themeActivated: 'Theme activated. Open any page to see it.',
     downloadThemeTemplate: 'Download template',
     downloadExampleTheme: 'Download example theme',
-    installExtensions: 'Extensions',
+    installExtensions: 'Modules',
+    installPlugins: 'Plugins',
     packageUpload: 'Package upload',
     trustedPublishers: 'Trusted publishers',
     noTrustedPublishers: 'No publisher keys are trusted yet.',
@@ -117,7 +118,9 @@ const translations = {
     extensionKeyLabel: 'Extension key',
     revokeVersion: 'Revoke version',
     installExtensionsDescription:
-      'Install an extension for this school. Theme packages are installed on the Themes page.',
+      'Turn school modules on or off. Plugins and themes have their own pages.',
+    installPluginsDescription:
+      'Turn plugins on or off for this school. A plugin adds a behaviour, such as a message, without its own records.',
     installExtension: 'Install',
     extensionInstalled: 'Installed',
     extensionIncluded: 'Included with the system',
@@ -163,7 +166,8 @@ const translations = {
     installThemes: 'Themes',
     installThemesDescription:
       'Install a theme package for this school and set the one that is active.',
-    installThemesExtensionFirst: 'Install the site themes extension first.',
+    installThemesExtensionFirst: 'Turn on themes for this school before uploading a file.',
+    turnOnThemes: 'Turn on themes',
     createSchoolFirst: 'Create a school before installing extensions or themes.',
     schoolMembers: 'Members',
     schoolMembersDescription: 'People who belong to this school, and the role each one holds.',
@@ -533,7 +537,8 @@ const translations = {
     themeActivated: 'Mandhari yamewashwa. Fungua ukurasa wowote kuyaona.',
     downloadThemeTemplate: 'Pakua kiolezo',
     downloadExampleTheme: 'Pakua mandhari ya mfano',
-    installExtensions: 'Viendelezi',
+    installExtensions: 'Moduli',
+    installPlugins: 'Programu-jalizi',
     packageUpload: 'Kupakia kifurushi',
     trustedPublishers: 'Wachapishaji waaminifu',
     noTrustedPublishers: 'Hakuna funguo za wachapishaji zilizoaminiwa bado.',
@@ -546,7 +551,9 @@ const translations = {
     extensionKeyLabel: 'Ufunguo wa kiendelezi',
     revokeVersion: 'Batilisha toleo',
     installExtensionsDescription:
-      'Sakinisha kiendelezi kwa shule hii. Mandhari yanasakinishwa kwenye ukurasa wa Mandhari.',
+      'Washa au zima moduli za shule. Programu-jalizi na mandhari vina kurasa zao.',
+    installPluginsDescription:
+      'Washa au zima programu-jalizi kwa shule hii. Programu-jalizi huongeza tabia, kama ujumbe, bila rekodi zake.',
     installExtension: 'Sakinisha',
     extensionInstalled: 'Imesakinishwa',
     extensionIncluded: 'Inakuja na mfumo',
@@ -592,7 +599,8 @@ const translations = {
     installThemes: 'Mandhari',
     installThemesDescription:
       'Sakinisha kifurushi cha mandhari kwa shule hii na weka linalotumika.',
-    installThemesExtensionFirst: 'Sakinisha kiendelezi cha mandhari kwanza.',
+    installThemesExtensionFirst: 'Washa mandhari kwa shule hii kabla ya kupakia faili.',
+    turnOnThemes: 'Washa mandhari',
     createSchoolFirst: 'Unda shule kabla ya kusakinisha viendelezi au mandhari.',
     schoolMembers: 'Wanachama',
     schoolMembersDescription: 'Watu wa shule hii, na jukumu la kila mmoja.',

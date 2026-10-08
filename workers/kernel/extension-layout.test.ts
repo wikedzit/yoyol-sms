@@ -6,8 +6,24 @@ import { extensionLayoutProblems, kernelOwnedTables } from './extension-layout.t
 import { parseManifest } from './manifest.ts';
 import { parseModuleMigration, tablesInMigration } from './module-schema.ts';
 
-const extensionsRoot = join(import.meta.dirname, '../../extensions');
+const repoRoot = join(import.meta.dirname, '../..');
 const kernelRoot = import.meta.dirname;
+
+function bundledPackages(): { key: string; root: string; importPrefix: string }[] {
+  const grouped = ['modules', 'plugins'].flatMap((folder) =>
+    readdirSync(join(repoRoot, folder), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => ({
+        key: entry.name,
+        root: join(repoRoot, folder, entry.name),
+        importPrefix: `${folder}/${entry.name}`,
+      })),
+  );
+  return [
+    ...grouped,
+    { key: 'themes', root: join(repoRoot, 'themes'), importPrefix: 'themes' },
+  ];
+}
 
 const tablesOwnedByModule: Record<string, readonly string[]> = {
   academics: [
@@ -51,27 +67,23 @@ test('KRN-REG-03 every bundled extension follows the kernel layout', () => {
   const migrationRegistry = readFileSync(join(kernelRoot, 'bundled-migrations.ts'), 'utf8');
   const seenTables = new Map<string, string>();
 
-  for (const entry of readdirSync(extensionsRoot, { withFileTypes: true })) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-
-    const root = join(extensionsRoot, entry.name);
+  for (const entry of bundledPackages()) {
+    const root = entry.root;
     const files = filesUnder(root);
     const manifest = parseManifest(JSON.parse(readFileSync(join(root, 'yoyol.extension.json'), 'utf8')));
-    assert.equal(manifest.key, entry.name);
+    assert.equal(manifest.key, entry.key);
     assert.deepEqual(extensionLayoutProblems({ key: manifest.key, type: manifest.type, files }), []);
-    assert.match(manifestRegistry, new RegExp(`extensions/${manifest.key}/yoyol.extension.json`));
-    assert.match(entrypointRegistry, new RegExp(`extensions/${manifest.key}/entrypoint`));
+    assert.match(manifestRegistry, new RegExp(`${entry.importPrefix}/yoyol.extension.json`));
+    assert.match(entrypointRegistry, new RegExp(`${entry.importPrefix}/entrypoint`));
     const localeRegistry = readFileSync(join(kernelRoot, 'bundled-locales.ts'), 'utf8');
-    assert.match(localeRegistry, new RegExp(`extensions/${manifest.key}/locales/en.json`));
-    assert.match(localeRegistry, new RegExp(`extensions/${manifest.key}/locales/sw.json`));
+    assert.match(localeRegistry, new RegExp(`${entry.importPrefix}/locales/en.json`));
+    assert.match(localeRegistry, new RegExp(`${entry.importPrefix}/locales/sw.json`));
     assertLocale(join(root, 'locales/en.json'));
     assertLocale(join(root, 'locales/sw.json'));
 
     const schemaFiles = files.filter((file) => file.startsWith('schema/'));
     for (const file of schemaFiles) {
-      assert.match(migrationRegistry, new RegExp(`extensions/${manifest.key}/${file}`));
+      assert.match(migrationRegistry, new RegExp(`${entry.importPrefix}/${file}`));
     }
     if (manifest.type === 'plugin') {
       assert.deepEqual(schemaFiles, []);

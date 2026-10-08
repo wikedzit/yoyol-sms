@@ -12,12 +12,20 @@ import {
   type ExtensionManifest,
 } from './manifest.ts';
 
-const extensionsRoot = join(import.meta.dirname, '../../extensions');
+function packageDirectories(): string[] {
+  const repoRoot = join(import.meta.dirname, '../..');
+  const grouped = ['modules', 'plugins'].flatMap((folder) =>
+    readdirSync(join(repoRoot, folder), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join(repoRoot, folder, entry.name)),
+  );
+  return [...grouped, join(repoRoot, 'themes')];
+}
 
 function readManifests() {
-  return readdirSync(extensionsRoot, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => JSON.parse(readFileSync(join(extensionsRoot, entry.name, 'yoyol.extension.json'), 'utf8')));
+  return packageDirectories().map((directory) =>
+    JSON.parse(readFileSync(join(directory, 'yoyol.extension.json'), 'utf8')),
+  );
 }
 
 test('KRN-REG-01 the themes manifest matches the shared schema', () => {

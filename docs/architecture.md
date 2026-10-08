@@ -1,6 +1,6 @@
 # Architecture
 
-YOYOL is one package. `app/` is the React Router interface. `workers/` is the Cloudflare Worker: kernel, services, and Drizzle tables. `extensions/` holds bundled modules and plugins.
+YOYOL is one package. `app/` is the React Router interface. `workers/` is the Cloudflare Worker: kernel, services, and Drizzle tables. `modules/` holds school modules, `plugins/` holds plugins, and `themes/` holds the theme package.
 
 ## Request
 

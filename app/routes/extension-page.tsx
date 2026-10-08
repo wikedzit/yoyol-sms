@@ -131,7 +131,7 @@ export default function ExtensionPage() {
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{t('extensionOff')}</p>
-        <Link className="text-sm underline" to="/extensions">{t('installExtensions')}</Link>
+        <Link className="text-sm underline" to="/modules">{t('installExtensions')}</Link>
       </div>
     );
   }

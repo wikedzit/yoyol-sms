@@ -8,6 +8,9 @@ import {
   LogOut,
   Puzzle,
   Palette,
+  Inbox,
+  ScrollText,
+  Boxes,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,7 +19,8 @@ import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { LogoutConfirmDialog } from "~/components/LogoutConfirmDialog";
 import { useLanguage, type TranslationKey } from "~/lib/i18n";
-import { modulesInTheMenu, shellMenu } from "workers/kernel/modules";
+import { modulesInTheMenu, shellMenu, type AppModule } from "workers/kernel/modules";
+import { Separator } from "~/components/ui/separator";
 
 type NavChild = { labelKey: TranslationKey; href: string };
 type NavItem = {
@@ -36,11 +40,14 @@ const moduleIcons: Record<string, LucideIcon> = {
 };
 
 const shellIcons: Record<string, LucideIcon> = {
-  "/extensions": Puzzle,
+  "/inbox": Inbox,
+  "/audit": ScrollText,
+  "/modules": Boxes,
+  "/plugins": Puzzle,
   "/themes": Palette,
 };
 
-const moduleNavigation: NavItem[] = modulesInTheMenu().map((module) => {
+function navigationFor(module: AppModule): NavItem {
   const icon = moduleIcons[module.key] ?? LayoutDashboard;
   if (module.menu.length === 1) {
     return {
@@ -58,11 +65,15 @@ const moduleNavigation: NavItem[] = modulesInTheMenu().map((module) => {
       href: item.path,
     })),
   };
-});
+}
 
-const mainNavigation: NavItem[] = [
+const schoolNavigation: NavItem[] = [
   { labelKey: "dashboard", href: "/", icon: LayoutDashboard },
-  ...moduleNavigation,
+  ...modulesInTheMenu("school").map(navigationFor),
+];
+
+const systemNavigation: NavItem[] = [
+  ...modulesInTheMenu("system").map(navigationFor),
   ...shellMenu.map((item) => ({
     labelKey: item.labelKey as TranslationKey,
     href: item.path,
@@ -84,7 +95,7 @@ export const SidebarContent = ({
     <div className="flex flex-col h-full w-full lg:w-[286px] border-r border-border bg-card/95 backdrop-blur-lg transition-colors duration-200">
       {/* Main Navigation List */}
       <nav className="flex-1 p-3 space-y-1.5 overflow-y-auto">
-        {mainNavigation.map((item) =>
+        {schoolNavigation.map((item) =>
           item.children ? (
             <SidebarParent
               key={item.labelKey}
@@ -118,6 +129,26 @@ export const SidebarContent = ({
             <span className="truncate">{language === "sw" ? link.labelSw : link.labelEn}</span>
           </Link>
         ))}
+
+        <Separator className="my-3" />
+
+        {systemNavigation.map((item) =>
+          item.children ? (
+            <SidebarParent
+              key={item.labelKey}
+              item={item}
+              location={location}
+              onNavigate={onNavigate}
+            />
+          ) : (
+            <SidebarLink
+              key={item.labelKey}
+              item={item}
+              location={location}
+              onNavigate={onNavigate}
+            />
+          ),
+        )}
 
         {/* Logout trigger button */}
         <LogoutConfirmDialog

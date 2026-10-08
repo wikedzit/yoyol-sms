@@ -4,7 +4,22 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { defineModule, definePlugin } from './sdk.ts';
 
-const extensionsRoot = join(import.meta.dirname, '../../extensions');
+function packageDirectory(key: string): string {
+  const repoRoot = join(import.meta.dirname, '../..');
+  const candidates = [join(repoRoot, 'modules', key), join(repoRoot, 'plugins', key), join(repoRoot, key)];
+  const match = candidates.find((directory) => {
+    try {
+      readFileSync(join(directory, 'yoyol.extension.json'));
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  if (!match) {
+    throw new Error(`No package named ${key}.`);
+  }
+  return match;
+}
 
 function contextFor(schoolId: number) {
   return {
@@ -16,7 +31,7 @@ function contextFor(schoolId: number) {
 }
 
 function readManifest(key: string) {
-  return JSON.parse(readFileSync(join(extensionsRoot, key, 'yoyol.extension.json'), 'utf8'));
+  return JSON.parse(readFileSync(join(packageDirectory(key), 'yoyol.extension.json'), 'utf8'));
 }
 
 test('SDK-01 definePlugin builds the hello entrypoint', async () => {
