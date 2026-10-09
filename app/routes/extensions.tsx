@@ -24,8 +24,8 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     : [];
   const deadEvents = schoolId ? await context.services.events.listDead(schoolId) : [];
 
-  const selected = schools.find((school) => school.id === schoolId) ?? null;
-  const isPlatformAdmin = selected != null && selected.ownerUserId === context.services.currentUserId;
+  const isPlatformAdmin = schoolId != null
+    && await context.services.access.can(schoolId, 'school.profile.update');
   const loaderPresent = workerLoaderPresent(context.cloudflare.env);
   const publishers = isPlatformAdmin ? await context.services.publishers.list() : [];
   const revokedVersions = isPlatformAdmin ? await context.services.publishers.revokedVersions() : [];
@@ -169,8 +169,9 @@ async function packageAdminAction(
 ) {
   const schoolId = Number(form.get('schoolId'));
   const school = schools.find((item) => item.id === schoolId);
-  if (!school || school.ownerUserId !== context.services.currentUserId) {
-    return { error: 'Only a platform administrator can upload a package.' };
+  const isSchoolAdmin = school != null && await context.services.access.can(schoolId, 'school.profile.update');
+  if (!isSchoolAdmin) {
+    return { error: 'Only a school administrator can upload a package.' };
   }
   const intent = String(form.get('intent') || '');
   if (intent === 'uploadPackage') {

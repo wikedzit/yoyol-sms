@@ -1,7 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import type { AppDatabase } from '../database/app-database';
 import { roles } from '../database/roles';
-import { school } from '../database/school';
 import { schoolMemberships } from '../database/school-memberships';
 import { requireOwnerUserId } from 'workers/utils/require-owner-user';
 import AccessService from './access';
@@ -23,19 +22,12 @@ export default class TenancyService {
   async ensureForCurrentOwner(): Promise<void> {
     try {
       const ownerUserId = requireOwnerUserId(this.ownerUserId);
-      const founded = await this.db
-        .select({ id: school.id })
-        .from(school)
-        .where(eq(school.ownerUserId, ownerUserId));
       const joined = await this.db
         .select({ id: schoolMemberships.schoolId })
         .from(schoolMemberships)
         .where(eq(schoolMemberships.userId, ownerUserId));
 
-      const schoolIds = new Set<number>([
-        ...founded.map((row) => row.id),
-        ...joined.map((row) => row.id),
-      ]);
+      const schoolIds = new Set<number>(joined.map((row) => row.id));
 
       for (const schoolId of schoolIds) {
         await this.ensureSchool(schoolId, ownerUserId);

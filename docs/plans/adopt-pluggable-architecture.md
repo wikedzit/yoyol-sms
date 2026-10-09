@@ -176,7 +176,7 @@ Every ID from `docs/features.md` is listed once. Descriptions live in that file.
 
 | ID | Work | ADR | Status |
 |----|------|-----|--------|
-| KRN-IAM-01 | Child records are read and written by `school_id`. The active school comes from membership, the `schoolId` query, then the `yoyol-school` cookie. `school.owner_user_id` stays as the founding account. | 0002 | done |
+| KRN-IAM-01 | Child records are read and written by `school_id`. The active school comes from membership, the `schoolId` query, then the `yoyol-school` cookie. `school.owner_user_id` is dropped. A person belongs to each school through a membership. | 0002 | done |
 | KRN-IAM-02 | Students, staff, and form classes can belong to a campus. The class form asks for a campus and still saves when it is left blank. | 0002 | done |
 | KRN-IAM-03 | `school_memberships`. The founding account is an admin. School lists use active memberships. | 0002 | done |
 | KRN-IAM-04 | Roles as data. Five system roles are seeded per school and marked system. Custom roles are edited on `/schools/roles`. | 0002 | done |

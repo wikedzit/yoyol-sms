@@ -568,6 +568,13 @@
       "when": 1794355200000,
       "tag": "0080_notification_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "6",
+      "when": 1794441600000,
+      "tag": "0081_drop_school_owner",
+      "breakpoints": true
     }
   ]
 }

@@ -189,7 +189,6 @@ export default class SchoolService {
         .insert(school)
         .values({
           ...validated,
-          ownerUserId,
           createdAt: now,
           updatedAt: now,
         })
